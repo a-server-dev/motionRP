@@ -20,6 +20,10 @@ public final class BundledModels {
     private static final String PLAYER_020_SHA = "5c6a2b0425861d8fd648dfeacc5b61592ca2ef1c46da3ae6dfa55d08e46916d6";
     private static final String PLAYER_021_SHA = "e62db71a5d780a4ae7a3a3771e281e90c3b0fa4795c121e331ebf616b56d4c5d";
     private static final String PLAYER_023_SHA = "2e2fba7179fb111f67963a2619896c7cca7a2f434d241a1679f3a50f93bafc2e";
+    private static final java.util.Map<String,String> SUMMON_040_SHA=java.util.Map.of(
+            "players/motionrp_gate_of_babylon.bbmodel","ce7a2a55f8c02aa33a9050dfd8793d6c8cd35e6498d1f5b9e6d0edd7fd070f9c",
+            "models/motionrp_susanoo_armor.bbmodel","d054d6147211c1cc72e6281ee5b9cc1a3ddcda8d9da6548e4472affedb16040c",
+            "models/motionrp_susanoo_ribs.bbmodel","74993bf47a065b5da8cb50a3ceccfbfc6bf6fa5c13d6bd14c2c804773e1db912");
     private final MotionPlugin plugin;
     public BundledModels(MotionPlugin plugin) { this.plugin = plugin; }
 
@@ -50,7 +54,8 @@ public final class BundledModels {
                 try (InputStream source = Objects.requireNonNull(plugin.getResource(resource), resource)) {
                     var result = new BundledAssetUpdater().install(target, source.readAllBytes(),
                             file.equals("players/" + PLAYER + ".bbmodel") ? Set.of(PLAYER_020_SHA, PLAYER_021_SHA, PLAYER_023_SHA)
-                                    : file.equals("players/" + SHURIKEN_PLAYER + ".bbmodel") ? Set.of(SHURIKEN_030_SHA) : Set.of(),
+                                    : file.equals("players/" + SHURIKEN_PLAYER + ".bbmodel") ? Set.of(SHURIKEN_030_SHA)
+                                    : SUMMON_040_SHA.containsKey(file) ? Set.of(SUMMON_040_SHA.get(file)) : Set.of(),
                             plugin.getDataFolder().toPath().resolve("model-backups"),
                             plugin.getDataFolder().toPath().resolve("model-updates"));
                     if (result == BundledAssetUpdater.Result.INSTALLED || result == BundledAssetUpdater.Result.UPDATED) changed = true;

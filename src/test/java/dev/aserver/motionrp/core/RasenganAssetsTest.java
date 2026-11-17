@@ -52,7 +52,16 @@ class RasenganAssetsTest {
             var model=read("models/motionrp_"+id+".bbmodel");
             String source=model.getAsJsonArray("textures").get(0).getAsJsonObject().get("source").getAsString();
             var image=ImageIO.read(new ByteArrayInputStream(Base64.getDecoder().decode(source.substring(source.indexOf(',')+1))));
-            assertNotNull(image);assertEquals(8,image.getWidth());assertEquals(1,image.getHeight());
+            assertNotNull(image);
+            if(id.equals("susanoo_ribs") || id.equals("susanoo_armor")) {
+                assertEquals(128,image.getWidth());assertEquals(16,image.getHeight());
+                int holes=0,solid=0;
+                for(int y=0;y<16;y++) for(int x=0;x<128;x++) {
+                    int alpha=(image.getRGB(x,y)>>>24)&255;
+                    if(alpha==0) holes++;else if(alpha==255) solid++;
+                }
+                assertTrue(holes>80 && solid>1000,"Chakra cutout needs visible holes and solid outlines");
+            } else { assertEquals(8,image.getWidth());assertEquals(1,image.getHeight()); }
         }
         Set<Integer> counts=new HashSet<>();
         for(String kind:List.of("sword","spear","axe")) counts.add(read("models/motionrp_treasury_"+kind+".bbmodel").getAsJsonArray("elements").size());

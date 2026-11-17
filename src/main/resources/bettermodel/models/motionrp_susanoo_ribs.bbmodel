@@ -3631,12 +3631,12 @@
       "name": "summon_palette.png",
       "id": "0",
       "uuid": "8e028830-5ce0-5950-8cfd-e79bcb678d83",
-      "width": 8,
-      "height": 1,
+      "width": 128,
+      "height": 16,
       "uv_width": 8,
       "uv_height": 1,
       "internal": true,
-      "source": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAABCAYAAADjAO9DAAAALElEQVR4nAEhAN7/AP/PQf//+Lr/eUQO/9/u//9Llf//jEne/0Ihcv/Yrf//g6cXOxKJoYwAAAAASUVORK5CYII="
+      "source": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAAAQCAYAAADeWHeIAAAAnUlEQVR4nO3VoQ2FQBBF0a2AHigFgiF0g6MHLGX8BmgCi4IO0LjBkzXzH2KTueIm4+ckL9nWmNS9Sk1dJXVeJjUsWnN/SLX1KLX/TCoBAAAA+BZA8tyZpybPDYCyALienwHgej4AygLgfv4LgPv5ACgLABMAACYgMgAmIDgAJgAATEBkAExAcABMAACYgMgAmIDgAP4qMwGuAAAAqQcz2NurICVMlgAAAABJRU5ErkJggg=="
     }
   ]
 }

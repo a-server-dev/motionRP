@@ -161,6 +161,14 @@ try {
   const oldShuriken=gunzipSync(fs.readFileSync(path.join(project,'src/test/resources/motionrp_rasenshuriken-0.3.0.bbmodel.gz')));
   fs.mkdirSync(path.join(run,'plugins/BetterModel/players'),{recursive:true});
   fs.writeFileSync(path.join(run,'plugins/BetterModel/players/motionrp_rasenshuriken.bbmodel'),oldShuriken);
+  const oldSummons=[['players/motionrp_gate_of_babylon','ce7a2a55f8c02aa33a9050dfd8793d6c8cd35e6498d1f5b9e6d0edd7fd070f9c'],
+    ['models/motionrp_susanoo_armor','d054d6147211c1cc72e6281ee5b9cc1a3ddcda8d9da6548e4472affedb16040c'],
+    ['models/motionrp_susanoo_ribs','74993bf47a065b5da8cb50a3ceccfbfc6bf6fa5c13d6bd14c2c804773e1db912']];
+  for(const [relative] of oldSummons) {
+    const base=path.basename(relative);
+    fs.writeFileSync(path.join(run,'plugins/BetterModel',relative+'.bbmodel'),
+      gunzipSync(fs.readFileSync(path.join(project,'src/test/resources',base+'-0.4.0.bbmodel.gz'))));
+  }
   fs.writeFileSync(path.join(run, 'eula.txt'), 'eula=true\n');
   fs.writeFileSync(path.join(run, 'server.properties'), `server-ip=127.0.0.1
 server-port=${port}
@@ -195,6 +203,12 @@ generate-structures=false
     fs.readFileSync(path.join(project,'src/main/resources/bettermodel/players/motionrp_rasenshuriken.bbmodel')));
   assert.deepEqual(fs.readFileSync(path.join(run,'plugins/MotionRP/model-backups/motionrp_rasenshuriken.bbmodel.497bcb980eef3288e8ece86779fa8651c6fb97f40ef49cde598b78232c30dce1.bak')),oldShuriken);
   pass('untouched 0.3.0 shuriken animation is backed up and replaced with the faster body motion');
+  for(const [relative,hash] of oldSummons) {
+    assert.deepEqual(fs.readFileSync(path.join(run,'plugins/BetterModel',relative+'.bbmodel')),
+      fs.readFileSync(path.join(project,'src/main/resources/bettermodel',relative+'.bbmodel')));
+    assert.equal(createHash('sha256').update(fs.readFileSync(path.join(run,'plugins/MotionRP/model-backups',path.basename(relative)+'.bbmodel.'+hash+'.bak'))).digest('hex'),hash);
+  }
+  pass('0.4.0 guardian meshes and treasury pose are automatically backed up and upgraded');
   let a = await connect('MotionTesterA');
   let b = await connect('MotionTesterB');
   consoleCommand('motionrp give controller MotionTesterA');
@@ -647,16 +661,27 @@ generate-structures=false
   clearInterval(heightSampler);heightSampler=null;
   const gateTrace=output.slice(gateBegin);
   const fired=[...gateTrace.matchAll(/Gate fire index=(\d+) tick=(\d+)/g)].map(m => [Number(m[1]),Number(m[2])]);
-  assert.deepEqual(fired,[[0,64],[1,70],[2,76],[3,82],[4,88],[5,94],[6,110],[7,110],[8,110],[9,110]]);
-  assert.equal([...gateTrace.matchAll(/Gate impact index=/g)].length,10);
+  assert.deepEqual(fired,[[0,64],[1,70],[2,76],[3,82],[4,88],[5,94],...Array.from({length:10},(_,i)=>[i,110])]);
+  assert.equal([...gateTrace.matchAll(/Gate impact index=/g)].length,16);
+  const reloaded=[...gateTrace.matchAll(/Gate reload index=(\d+) tick=(\d+)/g)].map(m => [Number(m[1]),Number(m[2])]);
+  assert.deepEqual(reloaded,[[0,65],[1,71],[2,77],[3,83],[4,89],[5,95]]);
+  const allGateEntries=summonTrace('Gate',gateBegin);
+  assert.equal(allGateEntries.length,26);assert.ok(renderedForBoth(allGateEntries));assert.ok(removedForBoth(allGateEntries));
   assert.ok(a.entity.position.distanceTo(gateOrigin)<.01);assert.deepEqual(gateLowest,gateHealth);
-  pass('six sequential shots precede four simultaneous shots, ten cosmetic impacts and complete cleanup without movement or damage');
+  pass('six shots immediately reload, then all ten gates fire together, with sixteen impacts and complete cleanup');
   sceneDisplays.clear();sceneRemoved.clear();const gateCancel=output.length;a._testLeftClick();
   await waitFor(() => output.slice(gateCancel).includes('Gate phase: DRAW'),'gate cancellation before firing');
   const cancelGates=summonTrace('Gate',gateCancel);assert.equal(cancelGates.length,20);
   a._testLeftClick();await waitFor(() => removedForBoth(cancelGates) && sceneRemoved.size===sceneDisplays.size,'cancel removes all same-model gates and weapons');
   await sleep(500);assert.ok(!output.slice(gateCancel).includes('Gate fire index='));
   pass('cancelling Gate of Babylon removes all twenty portal/weapon trackers for both clients and prevents later shots');
+  sceneDisplays.clear();sceneRemoved.clear();const reloadCancel=output.length;a._testLeftClick();
+  await waitFor(() => output.slice(reloadCancel).includes('Gate reload index=0'),'loaded and flying weapons coexist');
+  const reloadingGates=summonTrace('Gate',reloadCancel);assert.ok(reloadingGates.length>=21);
+  a._testLeftClick();await waitFor(() => removedForBoth(reloadingGates) && sceneRemoved.size===sceneDisplays.size,'cancel in-flight and replacement weapons');
+  const cancelledFireCount=[...output.slice(reloadCancel).matchAll(/Gate fire index=/g)].length;
+  await sleep(800);assert.equal([...output.slice(reloadCancel).matchAll(/Gate fire index=/g)].length,cancelledFireCount);
+  pass('cancelling during reload removes both in-flight and newly loaded weapons with no later volley');
 
   await addSummon('susanoo',3);pass('Susanoo stacks to 64 and registers/selects as a separate GUI motion');
   sceneDisplays.clear();sceneRemoved.clear();const susanooBegin=output.length;

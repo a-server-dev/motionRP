@@ -12,59 +12,61 @@ final class GateOfBabylonScene extends SummonScene {
     private static final Particle.DustOptions GOLD=new Particle.DustOptions(Color.fromRGB(255,211,75),.8f);
     private static final String[] WEAPONS={SummonAssets.SWORD,SummonAssets.SPEAR,SummonAssets.AXE};
     private final DummyTracker[] gates=new DummyTracker[COUNT], weapons=new DummyTracker[COUNT];
-    private final Location[] starts=new Location[COUNT], targets=new Location[COUNT], previous=new Location[COUNT];
-    private final boolean[] done=new boolean[COUNT];
-    GateOfBabylonScene(MotionPlugin plugin,Player owner) { super(plugin,owner,"Gate",END); }
+    private final int[] loadedAt=new int[COUNT],reloadAt=new int[COUNT],loads=new int[COUNT];
+    private final java.util.List<Shot> shots=new java.util.ArrayList<>();
+    private record Shot(int gate,int fired,DummyTracker model,Location start,Location target,Location previous) {}
+    GateOfBabylonScene(MotionPlugin plugin,Player owner) { super(plugin,owner,"Gate",END);java.util.Arrays.fill(reloadAt,-1); }
     @Override String phase() { return GateTimeline.phase(tick); }
     @Override void update() {
         if(tick==OPEN) sound(at(0,-1.5,2.5),Sound.BLOCK_ENCHANTMENT_TABLE_USE,.7f,.85f);
         if(tick==VOLLEY) sound(origin,Sound.ENTITY_ENDER_DRAGON_FLAP,.7f,1.4f);
         for(int i=0;i<COUNT;i++) {
-            double right=(i%5-2)*1.3, up=i<5 ? 2.35 : 4.0;
-            Location gate=at(right,-1.6,up);
-            int age=tick-openAt(i);
-            if(age==0) {
-                gates[i]=model(SummonAssets.GATE,gate,.05f,"portal"+i);loop(gates[i],"spin");
-            }
+            var portal=portal(i);
+            double right=portal.right(),up=portal.up(),back=portal.forward();
+            Location gate=at(right,back,up);int age=tick-openAt(i);
+            if(age==0) { gates[i]=model(SummonAssets.GATE,gate,.05f,"portal"+i);loop(gates[i],"spin"); }
             if(gates[i]!=null) {
-                float scale=(float)Math.max(.02,opening(tick,i));
+                float scale=(float)Math.max(.02,opening(tick,i)*portal.scale());
                 if(tick>=FADE) scale*=Math.max(.02f,(END-tick)/(float)(END-FADE));
                 gates[i].scaler(ModelScaler.value(scale));
                 if(tick%4==0) {
                     double a=tick*.3+i;
-                    dust(at(right+Math.cos(a)*.6,-1.6,up+Math.sin(a)*.6),GOLD,2,.02);
+                    dust(at(right+Math.cos(a)*.6*portal.scale(),back,up+Math.sin(a)*.6*portal.scale()),GOLD,2,.02);
                 }
             }
-            if(age==12) {
-                starts[i]=at(right,-1.35,up);previous[i]=starts[i].clone();
-                weapons[i]=model(WEAPONS[i%3],at(right,-1.85,up),.8f,"weapon"+i);
+            if(age==12 || tick==reloadAt[i]) {
+                loadedAt[i]=tick;
+                weapons[i]=model(WEAPONS[(i+loads[i])%3],at(right,back-.25,up),.8f,
+                        "weapon"+i+(loads[i]==0 ? "" : "_reload"+loads[i]));
+                if(loads[i]>0) trace("reload index="+i+" tick="+tick);
+                loads[i]++;
             }
-            if(weapons[i]==null || done[i]) continue;
-            if(tick<fireAt(i)) {
-                double emerging=Math.clamp((age-12)/10.0,0,1);
-                weapons[i].location(BukkitAdapter.adapt(at(right,-1.85+.5*emerging,up)));
-            } else {
-                if(tick==fireAt(i)) {
-                    targets[i]=ground(at((i%5-2)*.65,9+(i%3)*.6,0));
-                    if(targets[i]==null) targets[i]=at((i%5-2)*.65,9+(i%3)*.6,.2);
-                    sound(starts[i],Sound.ITEM_TRIDENT_THROW,.7f,1.15f+(i%3)*.15f);
-                    trace("fire index="+i+" tick="+tick);
-                }
-                double progress=Math.clamp((tick-fireAt(i))/18.0,0,1);
-                Location next=starts[i].clone().add(targets[i].toVector().subtract(starts[i].toVector()).multiply(progress));
-                Vector segment=next.toVector().subtract(previous[i].toVector());
-                var hit=segment.lengthSquared()<1e-10 ? null : next.getWorld().rayTraceBlocks(previous[i],
-                        segment.clone().normalize(),segment.length(),FluidCollisionMode.NEVER,true);
-                if(hit!=null) next=hit.getHitPosition().toLocation(next.getWorld());
-                Vector direction=targets[i].toVector().subtract(starts[i].toVector());next.setDirection(direction);
-                weapons[i].location(BukkitAdapter.adapt(next));previous[i]=next.clone();
-                if(tick%2==0) dust(next,GOLD,3,.04);
-                if(hit!=null || progress>=1) {
-                    done[i]=true;audience.hide(weapons[i]);weapons[i]=null;
-                    particle(next,Particle.ELECTRIC_SPARK,12,.14,.03);
-                    sound(next,Sound.ENTITY_ARROW_HIT,.65f,1.3f);
-                    trace("impact index="+i+" tick="+tick);
-                }
+            if(weapons[i]==null) continue;
+            double emerging=Math.clamp((tick-loadedAt[i])/8.0,0,1);
+            weapons[i].location(BukkitAdapter.adapt(at(right,back-.25+.5*emerging,up)));
+            if(shoots(tick,i)) {
+                Location start=at(right,back+.25,up),target=ground(at((i%5-2)*.65,9+(i%3)*.6,0));
+                if(target==null) target=at((i%5-2)*.65,9+(i%3)*.6,.2);
+                shots.add(new Shot(i,tick,weapons[i],start,target,start.clone()));weapons[i]=null;
+                if(tick<VOLLEY) reloadAt[i]=tick+1;
+                sound(start,Sound.ITEM_TRIDENT_THROW,.7f,1.15f+(i%3)*.15f);trace("fire index="+i+" tick="+tick);
+            }
+        }
+        var iterator=shots.iterator();
+        while(iterator.hasNext()) {
+            Shot shot=iterator.next();double progress=Math.clamp((tick-shot.fired())/18.0,0,1);
+            Location next=shot.start().clone().add(shot.target().toVector().subtract(shot.start().toVector()).multiply(progress));
+            Vector segment=next.toVector().subtract(shot.previous().toVector());
+            var hit=segment.lengthSquared()<1e-10 ? null : next.getWorld().rayTraceBlocks(shot.previous(),
+                    segment.clone().normalize(),segment.length(),FluidCollisionMode.NEVER,true);
+            if(hit!=null) next=hit.getHitPosition().toLocation(next.getWorld());
+            next.setDirection(shot.target().toVector().subtract(shot.start().toVector()));
+            shot.model().location(BukkitAdapter.adapt(next));
+            shot.previous().setX(next.getX());shot.previous().setY(next.getY());shot.previous().setZ(next.getZ());
+            if(tick%2==0) dust(next,GOLD,3,.04);
+            if(hit!=null || progress>=1) {
+                audience.hide(shot.model());iterator.remove();particle(next,Particle.ELECTRIC_SPARK,12,.14,.03);
+                sound(next,Sound.ENTITY_ARROW_HIT,.65f,1.3f);trace("impact index="+shot.gate()+" tick="+tick);
             }
         }
     }

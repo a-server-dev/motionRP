@@ -26,19 +26,35 @@ def ident(label):
     return str(uuid.uuid5(uuid.NAMESPACE_URL,'motionrp:summons:'+label))
 
 
-def palette():
+def palette(ethereal=False):
     def chunk(kind,data):
         return struct.pack('!I',len(data))+kind+data+struct.pack('!I',zlib.crc32(kind+data)&0xffffffff)
-    return b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('!2I5B',8,1,8,6,0,0,0))+chunk(b'IDAT',zlib.compress(b'\0'+b''.join(bytes(c) for c in COLORS)))+chunk(b'IEND',b'')
+    if not ethereal:
+        width,height,raw=8,1,b'\0'+b''.join(bytes(c) for c in COLORS)
+    else:
+        width,height=128,16
+        rows=[]
+        for y in range(height):
+            row=b''
+            for x in range(width):
+                cell,local=x//16,x%16
+                color=COLORS[cell]
+                # Real alpha-zero holes work with cutout item rendering. Keep
+                # bright bones/edges solid; no custom shader or partial-alpha claim.
+                hole=cell in (5,6) and 1<local<14 and 1<y<14 and (local+y)%3==0
+                row+=bytes(color[:3]+(0 if hole else 255,))
+            rows.append(b'\0'+row)
+        raw=b''.join(rows)
+    return b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('!2I5B',width,height,8,6,0,0,0))+chunk(b'IDAT',zlib.compress(raw))+chunk(b'IEND',b'')
 
 
 class Model:
-    def __init__(self,name):
+    def __init__(self,name,ethereal=False):
         self.name=name
         self.data=dict(meta=dict(format_version='5.0',model_format='free',box_uv=False),name=name,
             model_identifier=name,resolution=dict(width=8,height=1),elements=[],groups=[],outliner=[],animations=[],
-            textures=[dict(name='summon_palette.png',id='0',uuid=ident(name+'/texture'),width=8,height=1,
-                uv_width=8,uv_height=1,internal=True,source='data:image/png;base64,'+base64.b64encode(palette()).decode())])
+            textures=[dict(name='summon_palette.png',id='0',uuid=ident(name+'/texture'),width=128 if ethereal else 8,height=16 if ethereal else 1,
+                uv_width=8,uv_height=1,internal=True,source='data:image/png;base64,'+base64.b64encode(palette(ethereal)).decode())])
 
     def cube(self,name,center,size,color=0,rotation=None):
         uid=ident(self.name+'/'+name)
@@ -102,7 +118,7 @@ def weapon(kind):
 
 
 def ribs():
-    model=Model('motionrp_susanoo_ribs');parts=[]
+    model=Model('motionrp_susanoo_ribs',True);parts=[]
     for level in range(4):
         for segment in range(11):
             angle=math.radians(15+segment*15)
@@ -115,29 +131,55 @@ def ribs():
 
 
 def armor():
-    model=Model('motionrp_susanoo_armor')
-    torso=[model.cube('torso',[0,20,1],[18,20,10],5),model.cube('waist',[0,6,1],[14,9,8],6)]
+    model=Model('motionrp_susanoo_armor',True)
+    # Open rib framework rather than a filled rectangular chest.
+    torso=[model.cube('spinal_column',[0,20,5],[2.3,24,2.3],7),
+           model.cube('sternum',[0,20,-6],[1.6,22,1.5],7)]
+    for row in range(5):
+        for i in range(20):
+            angle=math.tau*i/20
+            torso.append(model.cube(f'chakra_rib_{row}_{i}',[10*math.cos(angle),12+row*3.4,6*math.sin(angle)],
+                                    [2.8,1.15,2],7 if i%5==0 else 5))
     for side in [-1,1]:
-        for row in range(3):
-            torso.append(model.cube(f'chest_plate_{side}_{row}',[side*4.3,15+row*4,-4.8],[7,2,2],7))
-        torso.append(model.cube(f'hip_guard_{side}',[side*9,6,1],[5,11,11],5))
+        for j in range(3):
+            torso.append(model.cube(f'waist_lamella_{side}_{j}',[side*(5+j*3),6-j,2],
+                                    [3.4,7,3],6,[0,0,-side*22.5]))
     model.group('armored_torso',torso,origin=(0,11,0))
-    head=[model.cube('helmet',[0,35,1],[13,12,12],5),model.cube('face',[0,34,-5.3],[9,7,1],6),
-          model.cube('jaw',[0,29.5,-4],[8,3,5],7)]
+    # Stepped, tapered mask, swept cheek plates, long horns and angry white eyes.
+    head=[]
+    for row,width in enumerate([5,8,10,12,11,9]):
+        head.append(model.cube(f'mask_contour_{row}',[0,29.5+row*1.7,-1],[width,1.8,7],6))
     for side in [-1,1]:
-        head.append(model.cube(f'eye_{side}',[side*2.3,35,-6],[3,.8,.4],1))
-        for i in range(3): head.append(model.cube(f'horn_{side}_{i}',[side*(6+i),40+i*2,0],[2.7-i*.6,3,3-i*.5],7))
+        head.append(model.cube(f'temple_{side}',[side*6,36,1],[3,9,8],5))
+        head.append(model.cube(f'cheek_flare_{side}',[side*6.5,31,-2.7],[2,9,3],7,[0,0,-side*22.5]))
+        head.append(model.cube(f'eye_{side}',[side*2.6,35.8,-4.8],[3.5,.65,.4],3,[0,0,side*22.5]))
+        head.append(model.cube(f'brow_{side}',[side*2.5,37,-4.8],[4,.8,.6],5,[0,0,side*22.5]))
+        for j in range(3):
+            head.append(model.cube(f'horn_{side}_{j}',[side*(6.5+j*2),40+j*3,1],
+                                   [3-j*.6,5,3-j*.5],7,[0,0,-side*22.5]))
+        head.append(model.cube(f'horn_tip_{side}',[side*11.3,49,1],[1,4,1],3,[0,0,-side*22.5]))
+        head.append(model.cube(f'fang_{side}',[side*2.7,30,-4.8],[.9,2.3,.8],7))
+    head.append(model.cube('forehead_crest',[0,40,-1],[2,6,5],7))
+    head.append(model.cube('chin_tip',[0,27.5,-2],[2,3,3],7))
     model.group('samurai_head',head,origin=(0,30,0))
     for side,name in [(1,'sword_arm'),(-1,'guard_arm')]:
-        parts=[model.cube(name+'_shoulder',[side*14,28,1],[10,9,13],6),
-               model.cube(name+'_upper',[side*18,21,1],[7,12,8],5),
-               model.cube(name+'_forearm',[side*18,12,0],[8,9,9],6),
-               model.cube(name+'_hand',[side*18,7,-1],[7,5,7],7)]
+        parts=[model.cube(name+'_upper',[side*18,21,1],[5,12,5],5),
+               model.cube(name+'_arm_bone',[side*18,21,-2],[1.5,12,1.5],7),
+               model.cube(name+'_forearm',[side*18,12,0],[5,9,5],5),
+               model.cube(name+'_palm',[side*18,6,-1],[5.5,4,5],6)]
+        for j in range(4):
+            parts.append(model.cube(f'{name}_shoulder_lamella_{j}',[side*(12+j*.8),31-j*2.1,1],
+                                    [7+j*1.1,1.6,11],6 if j%2 else 5,[0,0,-side*22.5]))
+        for j in range(3):
+            parts.append(model.cube(f'{name}_bracer_{j}',[side*18,10+j*2.5,-.3],[7,1.4,7],7))
+        for j in range(4):
+            parts.append(model.cube(f'{name}_finger_{j}',[side*18-2+j*1.3,3.5,-2],[.9,4,1.5],7))
         if side==1:
-            parts += [model.cube('katana_grip',[18,7,-6],[2,2,10],6),
-                      model.cube('katana_guard',[18,7,-11],[9,2,2],7),
-                      model.cube('katana_blade',[18,7,-23],[3,1,22],7),
-                      model.cube('katana_edge',[16.4,7,-23],[.5,1.1,22],3)]
+            parts += [model.cube('katana_grip',[18,7,-6],[1.5,1.5,9],6),
+                      model.cube('katana_guard',[18,7,-11],[7,1.5,1.5],7)]
+            for j in range(8):
+                parts.append(model.cube(f'curved_katana_{j}',[18+j*.18,7,-13-j*2.5],[2.5-j*.22,.6,2.8],7))
+                parts.append(model.cube(f'katana_glow_edge_{j}',[16.6+j*.29,7,-13-j*2.5],[.35,.7,2.8],3))
         g=model.group(name,parts,origin=(side*14,29,1))
         if side==1:
             attack=animation('slash',2.4,{})
@@ -168,13 +210,16 @@ def main():
     if hashlib.sha256(raw).hexdigest()!=RIG_SHA: raise SystemExit('Input is not the pinned upstream BetterModel 3.6.0 rig')
     rig=json.loads(raw)
     player(rig,'gate_of_babylon',8,{
-        'pra_right_arm':[(0,(0,0,0)),(.5,(-165,0,-15)),(2.9,(-165,0,-15)),(3.2,(-90,0,-10)),
-            (4.9,(-90,0,-10)),(5.3,(-145,-15,-20)),(5.5,(-100,10,-5)),(6.8,(-100,10,-5)),(8,(0,0,0))],
-        'prfa_right_forearm':[(0,(0,0,0)),(.5,(-10,0,0)),(2.9,(-10,0,0)),(3.2,(0,0,0)),(8,(0,0,0))],
-        'pla_left_arm':[(0,(0,0,0)),(.5,(0,0,-30)),(5.5,(-15,0,-45)),(8,(0,0,0))],
-        'pc_chest':[(0,(0,0,0)),(.5,(0,-15,0)),(3.2,(8,5,0)),(5.5,(12,15,0)),(8,(0,0,0))],
-        'prl_right_leg':[(0,(0,0,0)),(.5,(-10,0,12)),(6.8,(-10,0,12)),(8,(0,0,0))],
-        'pll_left_leg':[(0,(0,0,0)),(.5,(5,0,-12)),(6.8,(5,0,-12)),(8,(0,0,0))]})
+        'pra_right_arm':[(0,(0,0,0)),(.65,(-55,-20,45)),(2.9,(-55,-20,45)),(3.2,(-70,0,25)),
+            (4.9,(-70,0,25)),(5.3,(-45,-15,45)),(5.5,(-80,10,20)),(6.8,(-80,10,20)),(8,(0,0,0))],
+        'prfa_right_forearm':[(0,(0,0,0)),(.65,(-65,0,15)),(2.9,(-65,0,15)),(3.2,(-15,0,5)),
+            (4.9,(-15,0,5)),(5.3,(-70,0,15)),(5.5,(-10,0,0)),(8,(0,0,0))],
+        'pla_left_arm':[(0,(0,0,0)),(.65,(15,-10,25)),(6.8,(15,-10,25)),(8,(0,0,0))],
+        'plfa_left_forearm':[(0,(0,0,0)),(.65,(-75,0,-15)),(6.8,(-75,0,-15)),(8,(0,0,0))],
+        'h_ph_head':[(0,(0,0,0)),(.65,(-18,12,-5)),(6.8,(-18,12,-5)),(8,(0,0,0))],
+        'pc_chest':[(0,(0,0,0)),(.65,(-7,-15,-6)),(3.2,(-7,-10,-6)),(5.5,(-5,5,-4)),(8,(0,0,0))],
+        'prl_right_leg':[(0,(0,0,0)),(.65,(-5,0,12)),(6.8,(-5,0,12)),(8,(0,0,0))],
+        'pll_left_leg':[(0,(0,0,0)),(.65,(5,0,-12)),(6.8,(5,0,-12)),(8,(0,0,0))]})
     player(rig,'susanoo',6.4,{
         'pra_right_arm':[(0,(0,0,0)),(.3,(-75,0,-30)),(1.3,(-75,0,-30)),(2.7,(35,-25,-35)),
             (3.8,(35,-25,-35)),(4.1,(-105,10,-5)),(5,(-105,10,-5)),(6.4,(0,0,0))],
