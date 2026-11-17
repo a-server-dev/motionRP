@@ -1,0 +1,43 @@
+package dev.aserver.motionrp;
+
+import org.bukkit.NamespacedKey;
+import org.bukkit.configuration.file.FileConfiguration;
+import java.util.*;
+import dev.aserver.motionrp.core.RasenganTimeline;
+
+public record MotionCatalog(Map<String, Definition> motions, String controllerName, NamespacedKey controllerModel) {
+    public record Definition(String id, String name, String model, String animation, int maxTicks, NamespacedKey itemModel, String effect) {}
+
+    public static MotionCatalog read(FileConfiguration config) {
+        var section = config.getConfigurationSection("motions");
+        if (section == null || section.getKeys(false).isEmpty()) throw new IllegalArgumentException("motions is empty");
+        var definitions = new LinkedHashMap<String, Definition>();
+        for (String id : section.getKeys(false)) {
+            if (!id.matches("[a-z0-9_-]{1,64}")) throw new IllegalArgumentException("Invalid motion id: " + id);
+            String base = "motions." + id + ".";
+            String model = required(config, base + "model");
+            String animation = required(config, base + "animation");
+            int ticks = config.getInt(base + "max-ticks", 200);
+            if (ticks < 1 || ticks > 12_000) throw new IllegalArgumentException(base + "max-ticks must be 1..12000");
+            String effect = config.getString(base + "effect", "none");
+            if (!Set.of("none", "rasengan").contains(effect)) throw new IllegalArgumentException("Unknown effect: " + effect);
+            if (effect.equals("rasengan") && ticks < RasenganTimeline.END) throw new IllegalArgumentException("Rasengan max-ticks must be at least " + RasenganTimeline.END);
+            definitions.put(id, new Definition(id, config.getString(base + "name", id), model, animation, ticks, key(config, base + "item-model"), effect));
+        }
+        return new MotionCatalog(Collections.unmodifiableMap(definitions), config.getString("controller.name", "モーションセット"), key(config, "controller.item-model"));
+    }
+
+    private static String required(FileConfiguration config, String path) {
+        String value = config.getString(path);
+        if (value == null || value.isBlank()) throw new IllegalArgumentException("Missing " + path);
+        return value;
+    }
+
+    private static NamespacedKey key(FileConfiguration config, String path) {
+        String value = config.getString(path);
+        if (value == null) return null;
+        NamespacedKey key = NamespacedKey.fromString(value);
+        if (key == null) throw new IllegalArgumentException("Invalid item model: " + path);
+        return key;
+    }
+}

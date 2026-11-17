@@ -1,0 +1,18 @@
+name: MotionRP
+version: '${version}'
+main: dev.aserver.motionrp.MotionPlugin
+api-version: '26.3'
+description: Player motion items, persistent loadouts and BetterModel integration
+depend: [BetterModel]
+commands:
+  motionrp:
+    description: モーションの登録・管理
+    aliases: [mrp]
+    usage: /motionrp [gui|give|reload|status]
+permissions:
+  motionrp.use:
+    description: モーションの登録・再生
+    default: true
+  motionrp.admin:
+    description: アイテム配布・設定の再読み込み
+    default: op

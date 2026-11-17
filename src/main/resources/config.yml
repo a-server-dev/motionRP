@@ -1,0 +1,24 @@
+# 操作の調査用。通常は false のまま使用します。
+debug-input: false
+
+# BetterModel/players にあるプレイヤーモデルを指定します。
+# 標準の steve.bbmodel に含まれる roll を初期モーションとして使用します。
+motions:
+  rasengan:
+    name: 螺旋丸（影分身）
+    model: motionrp_rasengan
+    animation: rasengan
+    effect: rasengan
+    max-ticks: 140
+  roll:
+    name: 前転
+    model: steve
+    animation: roll
+    # ループ設定に関係なく1回だけ再生します。安全のための終了上限（tick）。
+    max-ticks: 100
+    # 任意。配布するリソースパック側に対応するアイテムモデルが必要です。
+    # item-model: motionrp:roll
+
+controller:
+  name: モーションセット
+  # item-model: motionrp:controller
