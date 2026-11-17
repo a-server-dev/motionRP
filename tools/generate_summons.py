@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Editable gate/treasury/Susanoo models and player motions; no external textures.
+"""Editable gate/treasury/Susanoo/cherry-blade models and player motions; no external textures.
 
 Usage: python3 tools/generate_summons.py path/to/pinned/steve.bbmodel
 Player rig: BetterModel 3.6.0 (MIT); same pinned rig as generate_rasengan.py.
@@ -26,11 +26,11 @@ def ident(label):
     return str(uuid.uuid5(uuid.NAMESPACE_URL,'motionrp:summons:'+label))
 
 
-def palette(ethereal=False):
+def palette(ethereal=False, colors=COLORS):
     def chunk(kind,data):
         return struct.pack('!I',len(data))+kind+data+struct.pack('!I',zlib.crc32(kind+data)&0xffffffff)
     if not ethereal:
-        width,height,raw=8,1,b'\0'+b''.join(bytes(c) for c in COLORS)
+        width,height,raw=8,1,b'\0'+b''.join(bytes(c) for c in colors)
     else:
         width,height=128,16
         rows=[]
@@ -38,7 +38,7 @@ def palette(ethereal=False):
             row=b''
             for x in range(width):
                 cell,local=x//16,x%16
-                color=COLORS[cell]
+                color=colors[cell]
                 # Real alpha-zero holes work with cutout item rendering. Keep
                 # bright bones/edges solid; no custom shader or partial-alpha claim.
                 hole=cell in (5,6) and 1<local<14 and 1<y<14 and (local+y)%3==0
@@ -49,12 +49,12 @@ def palette(ethereal=False):
 
 
 class Model:
-    def __init__(self,name,ethereal=False):
+    def __init__(self,name,ethereal=False,colors=COLORS):
         self.name=name
         self.data=dict(meta=dict(format_version='5.0',model_format='free',box_uv=False),name=name,
             model_identifier=name,resolution=dict(width=8,height=1),elements=[],groups=[],outliner=[],animations=[],
             textures=[dict(name='summon_palette.png',id='0',uuid=ident(name+'/texture'),width=128 if ethereal else 8,height=16 if ethereal else 1,
-                uv_width=8,uv_height=1,internal=True,source='data:image/png;base64,'+base64.b64encode(palette(ethereal)).decode())])
+                uv_width=8,uv_height=1,internal=True,source='data:image/png;base64,'+base64.b64encode(palette(ethereal,colors)).decode())])
 
     def cube(self,name,center,size,color=0,rotation=None):
         uid=ident(self.name+'/'+name)
@@ -205,21 +205,36 @@ def player(rig,name,length,poses):
     model['animations']=[motion];save('players/motionrp_'+name+'.bbmodel',model)
 
 
+def cherry_models():
+    colors=[(246,134,187,255),(255,220,238,255),(110,47,91,255),(242,245,255,255),
+            (191,139,241,255),(255,170,210,255),(156,66,121,255),(255,248,254,255)]
+    blade=Model('motionrp_senbonzakura_blade',colors=colors)
+    parts=[blade.cube('grip',[0,3,0],[1.3,6,1.3],2),blade.cube('guard',[0,6.5,0],[5,1.2,3],0)]
+    for j in range(10):
+        parts.append(blade.cube('steel_'+str(j),[j*.08,8+j*2.3,0],[1.8-j*.1,2.6,.7],3))
+        parts.append(blade.cube('rose_edge_'+str(j),[-.9+j*.13,8+j*2.3,-.1],[.35,2.6,.8],1))
+    blade.group('cherry_katana',parts);blade.save()
+    petals=Model('motionrp_senbonzakura_petals',colors=colors);parts=[]
+    for j in range(32):
+        angle=j*math.pi*(3-math.sqrt(5));radius=4+(j%7)*1.25
+        center=[math.cos(angle)*radius,((j*7)%19)-9,math.sin(angle)*radius*.7]
+        parts.append(petals.cube('petal_'+str(j),center,[2.5,.24,1.25],j%2, [0,0,22.5 if j%2 else -22.5]))
+        parts.append(petals.cube('petal_tip_'+str(j),[center[0]+1.2,center[1],center[2]],[.7,.2,.75],7))
+    g=petals.group('petal_cloud',parts);spin=animation('swirl',1.5,{})
+    spin['loop']='loop';spin['animators'][g['uuid']]=animator(g,[(i*.375,(i%2*15,i*90,i%2*12)) for i in range(5)])
+    petals.data['animations']=[spin];petals.save()
+
+
 def main():
     raw=Path(sys.argv[1]).read_bytes()
     if hashlib.sha256(raw).hexdigest()!=RIG_SHA: raise SystemExit('Input is not the pinned upstream BetterModel 3.6.0 rig')
     rig=json.loads(raw)
-    player(rig,'gate_of_babylon',8,{
-        'pra_right_arm':[(0,(0,0,0)),(.65,(-55,-20,45)),(2.9,(-55,-20,45)),(3.2,(-70,0,25)),
-            (4.9,(-70,0,25)),(5.3,(-45,-15,45)),(5.5,(-80,10,20)),(6.8,(-80,10,20)),(8,(0,0,0))],
-        'prfa_right_forearm':[(0,(0,0,0)),(.65,(-65,0,15)),(2.9,(-65,0,15)),(3.2,(-15,0,5)),
-            (4.9,(-15,0,5)),(5.3,(-70,0,15)),(5.5,(-10,0,0)),(8,(0,0,0))],
-        'pla_left_arm':[(0,(0,0,0)),(.65,(15,-10,25)),(6.8,(15,-10,25)),(8,(0,0,0))],
-        'plfa_left_forearm':[(0,(0,0,0)),(.65,(-75,0,-15)),(6.8,(-75,0,-15)),(8,(0,0,0))],
-        'h_ph_head':[(0,(0,0,0)),(.65,(-18,12,-5)),(6.8,(-18,12,-5)),(8,(0,0,0))],
-        'pc_chest':[(0,(0,0,0)),(.65,(-7,-15,-6)),(3.2,(-7,-10,-6)),(5.5,(-5,5,-4)),(8,(0,0,0))],
-        'prl_right_leg':[(0,(0,0,0)),(.65,(-5,0,12)),(6.8,(-5,0,12)),(8,(0,0,0))],
-        'pll_left_leg':[(0,(0,0,0)),(.65,(5,0,-12)),(6.8,(5,0,-12)),(8,(0,0,0))]})
+    player(rig,'gate_of_babylon',5.4,{
+        'pra_right_arm':[(0,(0,0,0)),(.35,(-50,0,-35)),(4.95,(-50,0,-35)),(5.4,(0,0,0))],
+        'prfa_right_forearm':[(0,(0,0,0)),(.35,(-8,0,-70)),(4.95,(-8,0,-70)),(5.4,(0,0,0))],
+        'pla_left_arm':[(0,(0,0,0)),(.35,(-50,0,35)),(4.95,(-50,0,35)),(5.4,(0,0,0))],
+        'plfa_left_forearm':[(0,(0,0,0)),(.35,(5,0,70)),(4.95,(5,0,70)),(5.4,(0,0,0))],
+        'h_ph_head':[(0,(0,0,0)),(.35,(-12,8,0)),(4.95,(-12,8,0)),(5.4,(0,0,0))]})
     player(rig,'susanoo',6.4,{
         'pra_right_arm':[(0,(0,0,0)),(.3,(-75,0,-30)),(1.3,(-75,0,-30)),(2.7,(35,-25,-35)),
             (3.8,(35,-25,-35)),(4.1,(-105,10,-5)),(5,(-105,10,-5)),(6.4,(0,0,0))],
@@ -229,6 +244,14 @@ def main():
         'pc_chest':[(0,(0,0,0)),(1.3,(5,0,0)),(3.7,(5,-25,0)),(4.1,(12,20,0)),(5,(12,20,0)),(6.4,(0,0,0))],
         'prl_right_leg':[(0,(0,0,0)),(.5,(-15,0,15)),(5,(-15,0,15)),(6.4,(0,0,0))],
         'pll_left_leg':[(0,(0,0,0)),(.5,(10,0,-15)),(5,(10,0,-15)),(6.4,(0,0,0))]})
+    player(rig,'senbonzakura',7.2,{
+        'pra_right_arm':[(0,(0,0,0)),(.2,(-65,0,-8)),(.7,(-50,0,-8)),(1.0,(0,0,0)),
+            (2.5,(-65,0,-18)),(4.5,(-65,0,-18)),(4.65,(-95,0,-10)),(5.6,(-95,0,-10)),(7.2,(0,0,0))],
+        'prfa_right_forearm':[(0,(0,0,0)),(.2,(0,0,0)),(2.5,(-20,0,0)),(4.65,(0,0,0)),(7.2,(0,0,0))],
+        'pla_left_arm':[(0,(0,0,0)),(2.5,(0,0,-12)),(5.6,(0,0,-12)),(7.2,(0,0,0))],
+        'pc_chest':[(0,(0,0,0)),(.2,(0,-5,0)),(4.5,(0,-5,0)),(4.65,(5,10,0)),(7.2,(0,0,0))],
+        'h_ph_head':[(0,(0,0,0)),(.2,(8,0,0)),(2.5,(0,0,0)),(7.2,(0,0,0))]})
+    cherry_models()
     gate()
     for kind in ['sword','spear','axe']: weapon(kind)
     ribs();armor();slash()

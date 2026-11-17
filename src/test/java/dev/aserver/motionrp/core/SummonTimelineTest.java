@@ -5,22 +5,34 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SummonTimelineTest {
-    @Test void tenScatteredGatesOpenBeforeSequentialShotsAndAllTenJoinTheVolley() {
+    @Test void twentyScatteredGatesCompleteFasterAndAllJoinTheVolley() {
         Set<Integer> sequential=new HashSet<>();
         Set<Double> heights=new HashSet<>(),depths=new HashSet<>();int volley=0;
         for(int gate=0;gate<GateTimeline.COUNT;gate++) {
             assertEquals(0,GateTimeline.opening(GateTimeline.openAt(gate),gate));
             assertEquals(1,GateTimeline.opening(GateTimeline.fireAt(gate),gate));
-            assertTrue(GateTimeline.fireAt(gate)+18<GateTimeline.FADE);
+            assertTrue(GateTimeline.fireAt(gate)+GateTimeline.FLIGHT_TICKS<GateTimeline.FADE);
             if(gate<6) sequential.add(GateTimeline.fireAt(gate));
             else assertEquals(GateTimeline.VOLLEY,GateTimeline.fireAt(gate));
             if(GateTimeline.shoots(GateTimeline.VOLLEY,gate)) volley++;
             heights.add(GateTimeline.portal(gate).up());depths.add(GateTimeline.portal(gate).forward());
         }
         assertEquals(6,sequential.size());assertEquals("FINISHED",GateTimeline.phase(GateTimeline.END));
-        assertEquals(10,volley);assertTrue(heights.size()>8);assertTrue(depths.size()>7);
+        assertEquals(20,volley);assertTrue(heights.size()>16);assertTrue(depths.size()>12);
+        assertEquals(108,GateTimeline.END);assertEquals(12,GateTimeline.FLIGHT_TICKS);
         assertThrows(IllegalArgumentException.class,()->GateTimeline.fireAt(-1));
-        assertThrows(IllegalArgumentException.class,()->GateTimeline.fireAt(10));
+        assertThrows(IllegalArgumentException.class,()->GateTimeline.fireAt(GateTimeline.COUNT));
+    }
+    @Test void cherryBladesRiseFullyBeforeDissolvingThenSwirlAndConverge() {
+        for(int i=0;i<SenbonzakuraTimeline.SWORDS;i++) {
+            assertTrue(SenbonzakuraTimeline.swordAt(i)>=SenbonzakuraTimeline.RISE);
+            assertTrue(SenbonzakuraTimeline.swordAt(i)+12<=SenbonzakuraTimeline.BLOOM);
+        }
+        assertEquals("BLOOM",SenbonzakuraTimeline.phase(SenbonzakuraTimeline.BLOOM));
+        assertEquals("ORBIT",SenbonzakuraTimeline.phase(SenbonzakuraTimeline.ORBIT));
+        assertEquals("SURGE",SenbonzakuraTimeline.phase(SenbonzakuraTimeline.SURGE));
+        assertEquals("IMPACT",SenbonzakuraTimeline.phase(SenbonzakuraTimeline.IMPACT));
+        assertEquals("FINISHED",SenbonzakuraTimeline.phase(SenbonzakuraTimeline.END));
     }
     @Test void guardianFormsBeforeWindingUpAndLeavesTimeForImpactAndDissolve() {
         int[] moments={SusanooTimeline.RIBS,SusanooTimeline.ARMOR,SusanooTimeline.READY,SusanooTimeline.SLASH,

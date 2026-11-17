@@ -142,6 +142,7 @@ try {
   fs.writeFileSync(path.join(run, 'plugins/MotionRP/config.yml'),
     fs.readFileSync(path.join(project, 'src/main/resources/config.yml'), 'utf8')
       .replace('debug-input: false', 'debug-input: true')
+      .replace(/  senbonzakura:\n[\s\S]*?(?=  gate_of_babylon:)/, '')
       .replace(/  gate_of_babylon:\n[\s\S]*?(?=  susanoo:)/, '')
       .replace(/  susanoo:\n[\s\S]*?(?=  rasenshuriken:)/, '')
       .replace(/  rasenshuriken:\n[\s\S]*?(?=  rasengan:)/, '')
@@ -161,13 +162,13 @@ try {
   const oldShuriken=gunzipSync(fs.readFileSync(path.join(project,'src/test/resources/motionrp_rasenshuriken-0.3.0.bbmodel.gz')));
   fs.mkdirSync(path.join(run,'plugins/BetterModel/players'),{recursive:true});
   fs.writeFileSync(path.join(run,'plugins/BetterModel/players/motionrp_rasenshuriken.bbmodel'),oldShuriken);
-  const oldSummons=[['players/motionrp_gate_of_babylon','ce7a2a55f8c02aa33a9050dfd8793d6c8cd35e6498d1f5b9e6d0edd7fd070f9c'],
+  const oldSummons=[['players/motionrp_gate_of_babylon','308b4f2762d09705d8c7852b215092556d1a36e46e9aa99b7956ea7fd780ea7d','0.4.1'],
     ['models/motionrp_susanoo_armor','d054d6147211c1cc72e6281ee5b9cc1a3ddcda8d9da6548e4472affedb16040c'],
     ['models/motionrp_susanoo_ribs','74993bf47a065b5da8cb50a3ceccfbfc6bf6fa5c13d6bd14c2c804773e1db912']];
-  for(const [relative] of oldSummons) {
+  for(const [relative,,version='0.4.0'] of oldSummons) {
     const base=path.basename(relative);
     fs.writeFileSync(path.join(run,'plugins/BetterModel',relative+'.bbmodel'),
-      gunzipSync(fs.readFileSync(path.join(project,'src/test/resources',base+'-0.4.0.bbmodel.gz'))));
+      gunzipSync(fs.readFileSync(path.join(project,'src/test/resources',base+'-'+version+'.bbmodel.gz'))));
   }
   fs.writeFileSync(path.join(run, 'eula.txt'), 'eula=true\n');
   fs.writeFileSync(path.join(run, 'server.properties'), `server-ip=127.0.0.1
@@ -208,7 +209,7 @@ generate-structures=false
       fs.readFileSync(path.join(project,'src/main/resources/bettermodel',relative+'.bbmodel')));
     assert.equal(createHash('sha256').update(fs.readFileSync(path.join(run,'plugins/MotionRP/model-backups',path.basename(relative)+'.bbmodel.'+hash+'.bak'))).digest('hex'),hash);
   }
-  pass('0.4.0 guardian meshes and treasury pose are automatically backed up and upgraded');
+  pass('legacy guardian meshes and 0.4.1 treasury pose are backed up and upgraded');
   let a = await connect('MotionTesterA');
   let b = await connect('MotionTesterB');
   consoleCommand('motionrp give controller MotionTesterA');
@@ -639,6 +640,7 @@ generate-structures=false
   const newConfig=fs.readFileSync(path.join(run,'plugins/MotionRP/config.yml'),'utf8');
   assert.ok(newConfig.includes('gate_of_babylon-definition-installed: true'));
   assert.ok(newConfig.includes('susanoo-definition-installed: true'));
+  assert.ok(newConfig.includes('senbonzakura-definition-installed: true'));
   consoleCommand('motionrp status');
   await waitFor(() => /gate_of_babylon:.*利用可能/.test(output) && /susanoo:.*利用可能/.test(output),'both summoned motion catalogs available');
   pass('both new definitions migrate into an old config and every summon model loads in BetterModel');
@@ -651,33 +653,33 @@ generate-structures=false
   heightSampler=setInterval(() => {gateLowest=[Math.min(gateLowest[0],a.health),Math.min(gateLowest[1],b.health)];},20);
   a._testLeftClick();await waitFor(() => output.slice(gateBegin).includes('Gate phase: DRAW'),'all portals open');await sleep(300);
   const gateEntries=summonTrace('Gate',gateBegin);
-  assert.equal(gateEntries.filter(e => e.kind.startsWith('portal')).length,10);
-  assert.equal(gateEntries.filter(e => e.kind.startsWith('weapon')).length,10);
+  assert.equal(gateEntries.filter(e => e.kind.startsWith('portal')).length,20);
+  assert.equal(gateEntries.filter(e => e.kind.startsWith('weapon')).length,20);
   assert.ok(renderedForBoth(gateEntries),'Some portal or weapon has empty render metadata');
   a._testStep(.2,0,.2);await sleep(150);
-  pass('caster and observer receive all ten golden portals and all ten swords/spears/axes');
+  pass('caster and observer receive all twenty golden portals and twenty loaded weapons');
   await waitFor(() => output.slice(gateBegin).includes('Gate phase: FADE'),'final gate volley',15000);
   await waitFor(() => sceneDisplays.size>25 && sceneRemoved.size===sceneDisplays.size && removedForBoth(gateEntries),'all gate models cleaned up');
   clearInterval(heightSampler);heightSampler=null;
   const gateTrace=output.slice(gateBegin);
   const fired=[...gateTrace.matchAll(/Gate fire index=(\d+) tick=(\d+)/g)].map(m => [Number(m[1]),Number(m[2])]);
-  assert.deepEqual(fired,[[0,64],[1,70],[2,76],[3,82],[4,88],[5,94],...Array.from({length:10},(_,i)=>[i,110])]);
-  assert.equal([...gateTrace.matchAll(/Gate impact index=/g)].length,16);
+  assert.deepEqual(fired,[[0,44],[1,48],[2,52],[3,56],[4,60],[5,64],...Array.from({length:20},(_,i)=>[i,74])]);
+  assert.equal([...gateTrace.matchAll(/Gate impact index=/g)].length,26);
   const reloaded=[...gateTrace.matchAll(/Gate reload index=(\d+) tick=(\d+)/g)].map(m => [Number(m[1]),Number(m[2])]);
-  assert.deepEqual(reloaded,[[0,65],[1,71],[2,77],[3,83],[4,89],[5,95]]);
+  assert.deepEqual(reloaded,[[0,45],[1,49],[2,53],[3,57],[4,61],[5,65]]);
   const allGateEntries=summonTrace('Gate',gateBegin);
-  assert.equal(allGateEntries.length,26);assert.ok(renderedForBoth(allGateEntries));assert.ok(removedForBoth(allGateEntries));
+  assert.equal(allGateEntries.length,46);assert.ok(renderedForBoth(allGateEntries));assert.ok(removedForBoth(allGateEntries));
   assert.ok(a.entity.position.distanceTo(gateOrigin)<.01);assert.deepEqual(gateLowest,gateHealth);
-  pass('six shots immediately reload, then all ten gates fire together, with sixteen impacts and complete cleanup');
+  pass('faster six-shot sequence reloads, all twenty gates fire at tick 74, with twenty-six impacts and full cleanup');
   sceneDisplays.clear();sceneRemoved.clear();const gateCancel=output.length;a._testLeftClick();
   await waitFor(() => output.slice(gateCancel).includes('Gate phase: DRAW'),'gate cancellation before firing');
-  const cancelGates=summonTrace('Gate',gateCancel);assert.equal(cancelGates.length,20);
+  const cancelGates=summonTrace('Gate',gateCancel);assert.equal(cancelGates.length,40);
   a._testLeftClick();await waitFor(() => removedForBoth(cancelGates) && sceneRemoved.size===sceneDisplays.size,'cancel removes all same-model gates and weapons');
   await sleep(500);assert.ok(!output.slice(gateCancel).includes('Gate fire index='));
-  pass('cancelling Gate of Babylon removes all twenty portal/weapon trackers for both clients and prevents later shots');
+  pass('cancelling Gate of Babylon removes all forty portal/weapon trackers for both clients and prevents later shots');
   sceneDisplays.clear();sceneRemoved.clear();const reloadCancel=output.length;a._testLeftClick();
   await waitFor(() => output.slice(reloadCancel).includes('Gate reload index=0'),'loaded and flying weapons coexist');
-  const reloadingGates=summonTrace('Gate',reloadCancel);assert.ok(reloadingGates.length>=21);
+  const reloadingGates=summonTrace('Gate',reloadCancel);assert.ok(reloadingGates.length>=41);
   a._testLeftClick();await waitFor(() => removedForBoth(reloadingGates) && sceneRemoved.size===sceneDisplays.size,'cancel in-flight and replacement weapons');
   const cancelledFireCount=[...output.slice(reloadCancel).matchAll(/Gate fire index=/g)].length;
   await sleep(800);assert.equal([...output.slice(reloadCancel).matchAll(/Gate fire index=/g)].length,cancelledFireCount);
@@ -705,6 +707,43 @@ generate-structures=false
   await sleep(700);assert.ok(!output.slice(guardianCancel).includes('Susanoo phase: SLASH'));
   pass('cancelling Susanoo during formation clears both ribs and armor and prevents the slash');
   assert.ok(!/Gate scene failed|Susanoo scene failed/.test(output),'A summon scene logged a runtime failure');
+
+  await addSummon('senbonzakura',4);
+  consoleCommand('motionrp status');await waitFor(() => /senbonzakura:.*利用可能/.test(output),'new cherry models available');
+  pass('Senbonzakura migrates into the old config, stacks to 64 and registers/selects as the fifth GUI motion');
+  sceneDisplays.clear();sceneRemoved.clear();const cherryBegin=output.length;
+  const cherryOrigin=a.entity.position.clone(),cherryHealth=[a.health,b.health];
+  const particleBeforeCherry=particles;
+  a._testLeftClick();await waitFor(() => output.slice(cherryBegin).includes('Senbonzakura phase: BLOOM'),'swords dissolve into petals');
+  await sleep(400);
+  const cherryEntries=summonTrace('Senbonzakura',cherryBegin);
+  assert.equal(cherryEntries.filter(e => e.kind.startsWith('blade')).length,12);
+  assert.equal(cherryEntries.filter(e => e.kind.startsWith('petals')).length,6);
+  assert.equal(cherryEntries.filter(e => e.kind==='dropped').length,1);
+  assert.ok(renderedForBoth(cherryEntries),'Cherry blade/cloud render metadata missing');
+  pass('caster and observer receive the dropped sword, all twelve rising blades and all six pink blade-petal clouds');
+  await waitFor(() => output.slice(cherryBegin).includes('Senbonzakura phase: FADE'),'petal convergence and impact',15000);
+  await waitFor(() => removedForBoth(cherryEntries) && sceneRemoved.size===sceneDisplays.size,'cherry scene completely removed');
+  for(const phase of ['DROP','RISE','BLOOM','ORBIT','SURGE','IMPACT','FADE'])
+    assert.ok(output.slice(cherryBegin).includes('Senbonzakura phase: '+phase));
+  assert.ok(cherryEntries.filter(e => e.kind.startsWith('petals')).some(e => e.ids.some(id => (rotations.get(id)?.size||0)>4)));
+  assert.ok(particles>particleBeforeCherry);assert.ok(a.entity.position.distanceTo(cherryOrigin)<.01);
+  assert.deepEqual([a.health,b.health],cherryHealth);
+  pass('pink blade clouds rotate, orbit and converge with particles, then clean up without moving or damaging players');
+  sceneDisplays.clear();sceneRemoved.clear();const bladeCancel=output.length;a._testLeftClick();
+  await waitFor(() => output.slice(bladeCancel).includes('Senbonzakura displays blade5'),'cancel while ground swords rise');
+  const cancelledBlades=summonTrace('Senbonzakura',bladeCancel);a._testLeftClick();
+  await waitFor(() => removedForBoth(cancelledBlades) && sceneRemoved.size===sceneDisplays.size,'all same-model rising swords removed');
+  await sleep(1400);assert.ok(!output.slice(bladeCancel).includes('Senbonzakura phase: BLOOM'));
+  pass('cancelling during sword emergence removes every blade and prevents petal formation');
+  sceneDisplays.clear();sceneRemoved.clear();const petalsCancel=output.length;a._testLeftClick();
+  await waitFor(() => output.slice(petalsCancel).includes('Senbonzakura phase: ORBIT'),'cancel during petal orbit');
+  const cancelledPetals=summonTrace('Senbonzakura',petalsCancel);a._testLeftClick();
+  await waitFor(() => removedForBoth(cancelledPetals) && sceneRemoved.size===sceneDisplays.size,'all petal clouds removed');
+  const stoppedParticles=particles;await sleep(1800);
+  assert.equal(particles,stoppedParticles);assert.ok(!output.slice(petalsCancel).includes('Senbonzakura phase: SURGE'));
+  pass('cancelling during petal orbit removes all clouds, stops future particles and prevents convergence');
+  assert.ok(!output.includes('Senbonzakura scene failed'),'Cherry scene logged a runtime failure');
 
   await disconnect(b);
   await disconnect(a);

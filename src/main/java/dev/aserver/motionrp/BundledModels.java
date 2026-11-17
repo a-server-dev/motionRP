@@ -44,7 +44,7 @@ public final class BundledModels {
             }
             var files=new java.util.ArrayList<>(java.util.List.of("players/" + PLAYER + ".bbmodel", "models/" + ORB + ".bbmodel",
                     "players/" + SHURIKEN_PLAYER + ".bbmodel", "models/" + SHURIKEN_ORB + ".bbmodel", "LICENSE-MotionRP-models.txt"));
-            for(String effect:java.util.List.of("gate_of_babylon","susanoo")) {
+            for(String effect:java.util.List.of("gate_of_babylon","susanoo","senbonzakura")) {
                 files.add("players/motionrp_"+effect+".bbmodel");
                 for(String model:SummonAssets.models(effect)) files.add("models/"+model+".bbmodel");
             }
@@ -55,6 +55,7 @@ public final class BundledModels {
                     var result = new BundledAssetUpdater().install(target, source.readAllBytes(),
                             file.equals("players/" + PLAYER + ".bbmodel") ? Set.of(PLAYER_020_SHA, PLAYER_021_SHA, PLAYER_023_SHA)
                                     : file.equals("players/" + SHURIKEN_PLAYER + ".bbmodel") ? Set.of(SHURIKEN_030_SHA)
+                                    : file.equals("players/motionrp_gate_of_babylon.bbmodel") ? Set.of(SUMMON_040_SHA.get(file),"308b4f2762d09705d8c7852b215092556d1a36e46e9aa99b7956ea7fd780ea7d")
                                     : SUMMON_040_SHA.containsKey(file) ? Set.of(SUMMON_040_SHA.get(file)) : Set.of(),
                             plugin.getDataFolder().toPath().resolve("model-backups"),
                             plugin.getDataFolder().toPath().resolve("model-updates"));

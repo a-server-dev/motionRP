@@ -24,6 +24,20 @@ Windowsでは `gradlew.bat` を使用できます。ビルドにクラウド環�
 
 ## 螺旋丸（影分身）
 
+### 0.5.0：千本桜と腕組み・20門の王の財宝
+
+`senbonzakura`（千本桜景厳、約7.2秒）を追加しました。右手から刀を落とし、周囲に12本の大きな刀を順に立ち上げ、桜色の刃へほどけさせます。刃は6個のモデル群で周囲を旋回し、最後に発動方向の前方7ブロック付近へ収束して消えます。モデル群には計192枚の小さな刃があり、CHERRY_LEAVESと桃色の粒子を合わせています。物理的な刀・攻撃判定・ダメージ・ブロック変更はありません。
+
+```text
+/motionrp give motion senbonzakura 1
+```
+
+追加アイテムは64個までスタックでき、既存GUIへ1個預けてシフト＋左クリックで選択できます。移動キーでは位置を固定して再生を続けます。再クリック・被ダメージ・外部テレポート・死亡・ログアウト・持ち替え・停止時には、立ち上がる刀も旋回中の刃もまとめて片付けます。
+
+王の財宝は腕組みで直立するポーズへ変更し、射出中も腕を動かしません。門を20個へ増やし、横幅・高さ・奥行きをさらにばらしました。先行6発の再装填と最後の全20門同時射出で計26発です。全体を8秒から約5.4秒へ短縮し、門の展開・装填・弾の飛翔・回転も速めました。
+
+旧JARを外して `motionRP-0.5.0.jar` に差し替え、Paperを再起動してください。既存設定には千本桜の定義を一度だけ追加し、未編集の0.4.0／0.4.1の王の財宝モデルはバックアップ後に自動更新します。**千本桜の新モデルがあるため、生成後の `plugins/BetterModel/build.zip` をクライアントへ再適用してください。** 独自編集したモデルは保持し、更新候補を `plugins/MotionRP/model-updates/` へ出力します。
+
 ### 0.4.1：須佐能乎の造形・透かしと王の財宝の再装填
 
 須佐能乎は箱状の胴体を開いた肋骨へ変更し、細い吊り目・尖った面頬・長い角・重なる肩鎧・指・細く反った刀を追加しました。紫の外装にはアルファ0の穴を持つチャクラ模様を使います。**滑らかに背景を混ぜる半透明ではなく、透過穴と形状の隙間から奥が見える表現です。** カスタムシェーダーやクライアントModは使いません。
@@ -158,8 +172,8 @@ GUIを開いた状態で、**下の所持品のモーションアイテムをク
 ## 導入
 
 1. Java 25で `./gradlew build` を実行します。
-2. `build/libs/motionRP-0.4.1.jar` とBetterModel 3.6.0のPaper版をPaperの `plugins/` に置き、再起動します。旧MotionRP JARは同時に置かないでください。
-3. `/motionrp status` で `roll`・`rasengan`・`rasenshuriken`・`gate_of_babylon`・`susanoo` が利用可能であることを確認します。前転はBetterModel標準の `players/steve.bbmodel` を使い、専用モデルは自動配置されます。
+2. `build/libs/motionRP-0.5.0.jar` とBetterModel 3.6.0のPaper版をPaperの `plugins/` に置き、再起動します。旧MotionRP JARは同時に置かないでください。
+3. `/motionrp status` で `roll`・`rasengan`・`rasenshuriken`・`gate_of_babylon`・`susanoo`・`senbonzakura` が利用可能であることを確認します。前転はBetterModel標準の `players/steve.bbmodel` を使い、専用モデルは自動配置されます。
 4. 管理者が `/motionrp give controller` と `/motionrp give motion roll 64` を実行します。
 5. 専用セットアイテムを右クリックし、所持品のモーションアイテムをクリックして登録します。
 
@@ -211,7 +225,7 @@ motions:
 
 螺旋手裏剣は `effect: rasenshuriken`・`model: motionrp_rasenshuriken`・`animation: rasenshuriken` を使用し、`max-ticks` は152以上にしてください。球モデルは `motionrp_rasenshuriken_orb`、手元の追従位置は同梱の `rasenshuriken-hand-path.csv` を使います。モデルを独自編集した場合は生成スクリプト側の姿勢と追従位置も合わせて調整してください。
 
-王の財宝は `effect: gate_of_babylon`・`model: motionrp_gate_of_babylon`・`animation: gate_of_babylon` を指定し、`max-ticks` は160以上にします。須佐能乎は `effect: susanoo`・`model: motionrp_susanoo`・`animation: susanoo` を指定し、`max-ticks` は128以上にします。
+王の財宝は `effect: gate_of_babylon`・`model: motionrp_gate_of_babylon`・`animation: gate_of_babylon` を指定し、`max-ticks` は108以上にします。須佐能乎は `effect: susanoo`・`model: motionrp_susanoo`・`animation: susanoo` を指定し、`max-ticks` は128以上にします。千本桜は `effect: senbonzakura`・`model: motionrp_senbonzakura`・`animation: senbonzakura` を指定し、`max-ticks` は144以上にします。新しいモデル群も `tools/generate_summons.py` で再生成できます。
 
 ## 保存
 
@@ -275,3 +289,5 @@ MOTIONRP_PAPER_FIXTURE="$(cd ../build/paper-fixture && pwd)" npm test
 0.4.0では単体テスト29件・結合確認40項目が成功しました。新しい9モデルの骨・階層・キーフレーム・埋め込みパレット、3種類の武器の異なる形状、巨体の寸法、射出と斬撃の時系列を確認しています。Paper 26.3では旧設定への2定義の追加、64個スタック・GUIでの登録と選択、本人と観測者への全10門・全10武器の描画データ、6本の順次射出と4本の同時射出、10回の着弾、須佐能乎の段階形成・刀の回転データの変化・斬撃の送信を確認しました。両モーションとも完走時と途中キャンセル時に全モデルが削除され、移動やダメージが発生しないことを確認しています。生成パックに全モデルが含まれ、キューブ座標がMinecraftのモデル制限内に収まることも確認しました。実クライアントでの最終的な見た目は目視確認が必要です。
 
 0.4.1では単体テスト29件・結合確認42項目が成功しました。旧標準3モデルのバックアップと自動更新、門の高さ・奥行きのばらつき、先行6発の翌tick再装填、全10門の同時射出、計16回の着弾、再装填中のキャンセルによる飛翔中・装填中の全表示削除を確認しています。須佐能乎のPNGには透過穴と不透明な輪郭が共存し、BetterModelが生成したパックでも128×16のテクスチャとアルファ0の穴が保持されることを確認しました。形状プレビューで造形を確認していますが、実Minecraftクライアントでの最終的な見た目は別途目視確認が必要です。
+
+0.5.0では単体テスト31件・結合確認47項目が成功しました。王の財宝は両手首が胸の前で交差し、射出中の姿勢が固定されることを階層の回転から検証しています。Paper 26.3では全20門・20本の装填武器、再装填6回、tick 74での全20門一斉射出、計26回の着弾と全表示の削除を確認しました。千本桜では旧設定からの定義の追加、64個スタックとGUI登録、落とす刀・12本の刀・6群の刃の本人と観測者への描画送信、旋回・収束・粒子・完走時の片付け、刀の出現中と刃の旋回中それぞれでのキャンセルを確認しています。生成パックの新モデル・PNG・キューブ座標も確認しました。実クライアントでの最終的な見た目は目視確認が必要です。

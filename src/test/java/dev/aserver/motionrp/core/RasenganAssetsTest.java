@@ -21,7 +21,8 @@ class RasenganAssetsTest {
                 "players/motionrp_gate_of_babylon.bbmodel", "players/motionrp_susanoo.bbmodel",
                 "models/motionrp_golden_gate.bbmodel", "models/motionrp_treasury_sword.bbmodel",
                 "models/motionrp_treasury_spear.bbmodel", "models/motionrp_treasury_axe.bbmodel",
-                "models/motionrp_susanoo_ribs.bbmodel", "models/motionrp_susanoo_armor.bbmodel", "models/motionrp_susanoo_slash.bbmodel")) {
+                "models/motionrp_susanoo_ribs.bbmodel", "models/motionrp_susanoo_armor.bbmodel", "models/motionrp_susanoo_slash.bbmodel",
+                "players/motionrp_senbonzakura.bbmodel","models/motionrp_senbonzakura_blade.bbmodel","models/motionrp_senbonzakura_petals.bbmodel")) {
             var model = read(file);
             Set<String> groups = new HashSet<>();
             Set<String> all = new HashSet<>();
@@ -48,7 +49,7 @@ class RasenganAssetsTest {
     }
 
     @Test void summonsContainEmbeddedTexturesDifferentWeaponsAndAnAnimatedGiantSword() throws Exception {
-        for(String id:List.of("golden_gate","treasury_sword","treasury_spear","treasury_axe","susanoo_ribs","susanoo_armor","susanoo_slash")) {
+        for(String id:List.of("golden_gate","treasury_sword","treasury_spear","treasury_axe","susanoo_ribs","susanoo_armor","susanoo_slash","senbonzakura_blade","senbonzakura_petals")) {
             var model=read("models/motionrp_"+id+".bbmodel");
             String source=model.getAsJsonArray("textures").get(0).getAsJsonObject().get("source").getAsString();
             var image=ImageIO.read(new ByteArrayInputStream(Base64.getDecoder().decode(source.substring(source.indexOf(',')+1))));
@@ -73,10 +74,30 @@ class RasenganAssetsTest {
         double top=0;
         for(var element:armor.getAsJsonArray("elements")) top=Math.max(top,element.getAsJsonObject().getAsJsonArray("to").get(1).getAsDouble());
         assertTrue(top*2/16>5.5,"Upper-body guardian should tower over the caster");
-        for(String name:List.of("gate_of_babylon","susanoo")) {
+        for(String name:List.of("gate_of_babylon","susanoo","senbonzakura")) {
             var motion=read("players/motionrp_"+name+".bbmodel").getAsJsonArray("animations").get(0).getAsJsonObject();
             assertEquals(name,motion.get("name").getAsString());
-            assertEquals((name.equals("susanoo") ? SusanooTimeline.END : GateTimeline.END)/20.0,motion.get("length").getAsDouble());
+            int duration=switch(name) {case "susanoo" -> SusanooTimeline.END;case "senbonzakura" -> SenbonzakuraTimeline.END;default -> GateTimeline.END;};
+            assertEquals(duration/20.0,motion.get("length").getAsDouble());
+        }
+    }
+
+    @Test void treasuryArmsStayCrossedInFrontOfTheChestWhileStandingStill() throws Exception {
+        var model=read("players/motionrp_gate_of_babylon.bbmodel");
+        Map<String,JsonObject> groups=new HashMap<>();Map<String,String> names=new HashMap<>(),parents=new HashMap<>();
+        for(var raw:model.getAsJsonArray("groups")) {
+            var g=raw.getAsJsonObject();String id=g.get("uuid").getAsString();groups.put(id,g);names.put(g.get("name").getAsString(),id);
+        }
+        parentTree(model.getAsJsonArray("outliner"),null,parents);
+        var animation=model.getAsJsonArray("animations").get(0).getAsJsonObject();
+        double[] previousRight=null,previousLeft=null;
+        for(double time:new double[]{1,2.5,4}) {
+            var right=posedOrigin(names.get("pri_right_item"),time,animation,groups,parents);
+            var left=posedOrigin(names.get("pli_left_item"),time,animation,groups,parents);
+            assertTrue(right[0]<0 && left[0]>0,"Wrists must cross the body's centerline");
+            assertTrue(right[2]<-3 && left[2]<-3,"Crossed arms must remain in front of the chest");
+            if(previousRight!=null) { assertArrayEquals(previousRight,right,1e-7);assertArrayEquals(previousLeft,left,1e-7); }
+            previousRight=right;previousLeft=left;
         }
     }
 

@@ -24,7 +24,11 @@ final class GateOfBabylonScene extends SummonScene {
             var portal=portal(i);
             double right=portal.right(),up=portal.up(),back=portal.forward();
             Location gate=at(right,back,up);int age=tick-openAt(i);
-            if(age==0) { gates[i]=model(SummonAssets.GATE,gate,.05f,"portal"+i);loop(gates[i],"spin"); }
+            if(age==0) {
+                gates[i]=model(SummonAssets.GATE,gate,.05f,"portal"+i);
+                gates[i].animate("spin",kr.toxicity.model.api.animation.AnimationModifier.builder()
+                        .type(kr.toxicity.model.api.animation.AnimationIterator.Type.LOOP).speed(1.5f).build());
+            }
             if(gates[i]!=null) {
                 float scale=(float)Math.max(.02,opening(tick,i)*portal.scale());
                 if(tick>=FADE) scale*=Math.max(.02f,(END-tick)/(float)(END-FADE));
@@ -34,7 +38,7 @@ final class GateOfBabylonScene extends SummonScene {
                     dust(at(right+Math.cos(a)*.6*portal.scale(),back,up+Math.sin(a)*.6*portal.scale()),GOLD,2,.02);
                 }
             }
-            if(age==12 || tick==reloadAt[i]) {
+            if(age==OPEN_TICKS || tick==reloadAt[i]) {
                 loadedAt[i]=tick;
                 weapons[i]=model(WEAPONS[(i+loads[i])%3],at(right,back-.25,up),.8f,
                         "weapon"+i+(loads[i]==0 ? "" : "_reload"+loads[i]));
@@ -42,7 +46,7 @@ final class GateOfBabylonScene extends SummonScene {
                 loads[i]++;
             }
             if(weapons[i]==null) continue;
-            double emerging=Math.clamp((tick-loadedAt[i])/8.0,0,1);
+            double emerging=Math.clamp((tick-loadedAt[i])/(double)EMERGE_TICKS,0,1);
             weapons[i].location(BukkitAdapter.adapt(at(right,back-.25+.5*emerging,up)));
             if(shoots(tick,i)) {
                 Location start=at(right,back+.25,up),target=ground(at((i%5-2)*.65,9+(i%3)*.6,0));
@@ -54,7 +58,7 @@ final class GateOfBabylonScene extends SummonScene {
         }
         var iterator=shots.iterator();
         while(iterator.hasNext()) {
-            Shot shot=iterator.next();double progress=Math.clamp((tick-shot.fired())/18.0,0,1);
+            Shot shot=iterator.next();double progress=Math.clamp((tick-shot.fired())/(double)FLIGHT_TICKS,0,1);
             Location next=shot.start().clone().add(shot.target().toVector().subtract(shot.start().toVector()).multiply(progress));
             Vector segment=next.toVector().subtract(shot.previous().toVector());
             var hit=segment.lengthSquared()<1e-10 ? null : next.getWorld().rayTraceBlocks(shot.previous(),

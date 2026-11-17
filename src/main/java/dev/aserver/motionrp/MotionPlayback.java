@@ -29,6 +29,8 @@ public final class MotionPlayback {
             return "須佐能乎の斬撃アニメーションが未登録";
         if(definition.effect().equals("gate_of_babylon") && BetterModel.modelOrNull(SummonAssets.GATE).animation("spin").isEmpty())
             return "黄金の門の回転アニメーションが未登録";
+        if(definition.effect().equals("senbonzakura") && BetterModel.modelOrNull(SummonAssets.CHERRY_PETALS).animation("swirl").isEmpty())
+            return "千本桜の旋回アニメーションが未登録";
         if (Set.of("rasengan", "rasenshuriken").contains(definition.effect())) {
             if (model.animation("rasengan_helper").isEmpty()) return "分身アニメーションが未登録: rasengan_helper";
             var orb = BetterModel.modelOrNull(definition.effect().equals("rasenshuriken") ? BundledModels.SHURIKEN_ORB : BundledModels.ORB);
@@ -72,6 +74,7 @@ public final class MotionPlayback {
                 case "rasenshuriken" -> new RasenshurikenScene(plugin, player, definition.model());
                 case "gate_of_babylon" -> new GateOfBabylonScene(plugin,player);
                 case "susanoo" -> new SusanooScene(plugin,player);
+                case "senbonzakura" -> new SenbonzakuraScene(plugin,player);
                 default -> null;
             };
             playing.put(uuid, new Playing(owned, timeout, scene));
