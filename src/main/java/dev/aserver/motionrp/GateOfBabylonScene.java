@@ -14,6 +14,7 @@ final class GateOfBabylonScene extends SummonScene {
     private final DummyTracker[] gates=new DummyTracker[COUNT], weapons=new DummyTracker[COUNT];
     private final int[] loadedAt=new int[COUNT],reloadAt=new int[COUNT],loads=new int[COUNT];
     private final java.util.List<Shot> shots=new java.util.ArrayList<>();
+    private boolean volleyBoom;
     private record Shot(int gate,int fired,DummyTracker model,Location start,Location target,Location previous) {}
     GateOfBabylonScene(MotionPlugin plugin,Player owner) { super(plugin,owner,"Gate",END);java.util.Arrays.fill(reloadAt,-1); }
     @Override String phase() { return GateTimeline.phase(tick); }
@@ -49,8 +50,9 @@ final class GateOfBabylonScene extends SummonScene {
             double emerging=Math.clamp((tick-loadedAt[i])/(double)EMERGE_TICKS,0,1);
             weapons[i].location(BukkitAdapter.adapt(at(right,back-.25+.5*emerging,up)));
             if(shoots(tick,i)) {
-                Location start=at(right,back+.25,up),target=ground(at((i%5-2)*.65,9+(i%3)*.6,0));
-                if(target==null) target=at((i%5-2)*.65,9+(i%3)*.6,.2);
+                double spread=(i%5-2)*2.1+(i/5-1.5)*.15;
+                Location start=at(right,back+.25,up),target=ground(at(spread,9+(i%3)*.6,0));
+                if(target==null) target=at(spread,9+(i%3)*.6,.2);
                 shots.add(new Shot(i,tick,weapons[i],start,target,start.clone()));weapons[i]=null;
                 if(tick<VOLLEY) reloadAt[i]=tick+1;
                 sound(start,Sound.ITEM_TRIDENT_THROW,.7f,1.15f+(i%3)*.15f);trace("fire index="+i+" tick="+tick);
@@ -70,7 +72,15 @@ final class GateOfBabylonScene extends SummonScene {
             if(tick%2==0) dust(next,GOLD,3,.04);
             if(hit!=null || progress>=1) {
                 audience.hide(shot.model());iterator.remove();particle(next,Particle.ELECTRIC_SPARK,12,.14,.03);
-                sound(next,Sound.ENTITY_ARROW_HIT,.65f,1.3f);trace("impact index="+shot.gate()+" tick="+tick);
+                if(shot.fired()==VOLLEY) {
+                    particle(next,Particle.EXPLOSION,1,0,0);particle(next,Particle.CLOUD,10,.35,.04);
+                    dust(next,GOLD,8,.25);trace("explosion index="+shot.gate()+" tick="+tick);
+                    if(!volleyBoom) {
+                        volleyBoom=true;sound(next,Sound.ENTITY_GENERIC_EXPLODE,1.5f,.7f);
+                        sound(next,Sound.ENTITY_BREEZE_WIND_BURST,1,.9f);
+                    }
+                } else sound(next,Sound.ENTITY_ARROW_HIT,.65f,1.3f);
+                trace("impact index="+shot.gate()+" tick="+tick);
             }
         }
     }

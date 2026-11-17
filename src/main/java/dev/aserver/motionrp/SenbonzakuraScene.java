@@ -7,7 +7,7 @@ import org.bukkit.*;
 import org.bukkit.entity.Player;
 import static dev.aserver.motionrp.core.SenbonzakuraTimeline.*;
 
-/** Twelve rising blades dissolve into six bounded clouds of pink blade petals. */
+/** Two rows of descending-tip katanas dissolve into bounded pink blade clouds. */
 final class SenbonzakuraScene extends SummonScene {
     private static final Particle.DustOptions ROSE=new Particle.DustOptions(Color.fromRGB(255,151,207),.65f);
     private DummyTracker dropped;
@@ -17,26 +17,28 @@ final class SenbonzakuraScene extends SummonScene {
     @Override String phase() { return SenbonzakuraTimeline.phase(tick); }
     @Override void update() {
         if(tick==DROP) {
-            Location hand=at(.3,.65,1.25);hand.setPitch(180);
-            dropped=model(SummonAssets.CHERRY_BLADE,hand,.75f,"dropped");
+            Location hand=at(.3,.65,1.1-45*.42/16);
+            dropped=model(SummonAssets.CHERRY_BLADE,hand,.42f,"dropped");
             sound(hand,Sound.BLOCK_CHAIN_PLACE,.6f,1.2f);
         }
         if(dropped!=null) {
-            Location fall=at(.3,.65,1.25-1.6*Math.clamp((tick-DROP)/(double)(RISE-DROP),0,1));fall.setPitch(180);
+            Location fall=at(.3,.65,1.1-45*.42/16-1.6*Math.clamp((tick-DROP)/(double)(RISE-DROP),0,1));
             dropped.location(BukkitAdapter.adapt(fall));
             if(tick==RISE) { audience.hide(dropped);dropped=null; }
         }
         for(int i=0;i<SWORDS;i++) {
-            double angle=Math.PI*2*i/SWORDS;
-            double right=Math.cos(angle)*(i%2==0?3.3:4),forward=Math.sin(angle)*2.7;
+            var pose=blade(i);double right=pose.right(),forward=pose.forward();
             if(tick==swordAt(i)) {
-                swords[i]=model(SummonAssets.CHERRY_BLADE,at(right,forward,-2),1.2f,"blade"+i);
+                swords[i]=model(SummonAssets.CHERRY_BLADE,at(right,forward,-4.5),1.35f,"blade"+i);
                 sound(at(right,forward,0),Sound.BLOCK_CHAIN_PLACE,.3f,1.4f);
             }
             if(swords[i]!=null) {
-                double rise=Math.clamp((tick-swordAt(i))/12.0,0,1);
-                swords[i].location(BukkitAdapter.adapt(at(right,forward,-2+2*rise)));
-                if(tick==BLOOM) { dust(at(right,forward,1.2),ROSE,14,.3);audience.hide(swords[i]);swords[i]=null; }
+                double rise=Math.clamp((tick-swordAt(i))/(double)RISE_TICKS,0,1);
+                swords[i].location(BukkitAdapter.adapt(at(right,forward,-4.5+4.5*rise)));
+                if(tick==BLOOM) {
+                    dust(at(right,forward,1.1),ROSE,8,.5);dust(at(right,forward,3.2),ROSE,8,.5);
+                    audience.hide(swords[i]);swords[i]=null;
+                }
             }
         }
         if(tick==BLOOM) {
@@ -54,7 +56,7 @@ final class SenbonzakuraScene extends SummonScene {
                 Location focus=at(0,7,1.2);
                 point=surgeFrom[i].clone().add(focus.toVector().subtract(surgeFrom[i].toVector()).multiply(p));
                 if(tick>IMPACT) {
-                    double spread=(tick-IMPACT)*.06,angle=i*Math.PI/3;
+                    double spread=(tick-IMPACT)*.06,angle=i*Math.PI*2/CLOUDS;
                     point.add(Math.cos(angle)*spread,Math.sin(angle*2)*spread*.35,Math.sin(angle)*spread);
                 }
             }
@@ -62,7 +64,7 @@ final class SenbonzakuraScene extends SummonScene {
             float scale=(float)Math.clamp((tick-BLOOM)/10.0,.1,1);
             if(tick>=FADE) scale*=Math.max(.02f,(END-tick)/(float)(END-FADE));
             clouds[i].scaler(ModelScaler.value(scale));
-            if(tick%3==0) { dust(point,ROSE,2,.2);particle(point,Particle.CHERRY_LEAVES,1,.15,0); }
+            if(tick%3==0) { dust(point,ROSE,3,.3);particle(point,Particle.CHERRY_LEAVES,2,.25,0); }
         }
         if(tick==SURGE) {
             sound(at(0,1,1.5),Sound.ENTITY_PLAYER_ATTACK_SWEEP,.9f,1.3f);
@@ -75,7 +77,7 @@ final class SenbonzakuraScene extends SummonScene {
         }
     }
     private Location orbit(int i) {
-        double angle=tick*.065+i*Math.PI/3;
-        return at(Math.cos(angle)*3.1,Math.sin(angle)*2.4,1.9+.8*Math.sin(angle*2+i));
+        double angle=tick*.085+i*Math.PI*2/CLOUDS;
+        return at(Math.cos(angle)*3.5,Math.sin(angle)*3,2+1.1*Math.sin(angle*2+i));
     }
 }

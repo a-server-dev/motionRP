@@ -101,6 +101,26 @@ class RasenganAssetsTest {
         }
     }
 
+    @Test void cherryKatanaHasHandleAboveSteelPointAndUsesMetalInsteadOfPink() throws Exception {
+        var model=read("models/motionrp_senbonzakura_blade.bbmodel");
+        double gripBottom=0,bladeTop=0,tip=1000,top=0;int wraps=0;
+        for(var raw:model.getAsJsonArray("elements")) {
+            var e=raw.getAsJsonObject();String name=e.get("name").getAsString();
+            double from=e.getAsJsonArray("from").get(1).getAsDouble(),to=e.getAsJsonArray("to").get(1).getAsDouble();
+            top=Math.max(top,to);
+            if(name.equals("black_grip")) gripBottom=from;
+            if(name.startsWith("steel_")) { bladeTop=Math.max(bladeTop,to);tip=Math.min(tip,from); }
+            if(name.startsWith("hilt_wrap_")) wraps++;
+        }
+        assertTrue(gripBottom>bladeTop && tip<.1,"Blade must point down below the upper handle");
+        assertTrue(top*1.35/16>4,"Standing blades should exceed four blocks");assertTrue(wraps>=7);
+        var source=model.getAsJsonArray("textures").get(0).getAsJsonObject().get("source").getAsString();
+        var image=ImageIO.read(new ByteArrayInputStream(Base64.getDecoder().decode(source.substring(source.indexOf(',')+1))));
+        var metal=new java.awt.Color(image.getRGB(3,0));var handle=new java.awt.Color(image.getRGB(2,0));
+        assertTrue(Math.abs(metal.getRed()-metal.getGreen())<25 && Math.abs(metal.getGreen()-metal.getBlue())<25);
+        assertTrue(handle.getRed()<50 && handle.getGreen()<50 && handle.getBlue()<50);
+    }
+
     @Test void shurikenIsRaisedOverheadThenThrownAndHasFourWideBlades() throws Exception {
         var model=read("players/motionrp_rasenshuriken.bbmodel");
         var animations=model.getAsJsonArray("animations");

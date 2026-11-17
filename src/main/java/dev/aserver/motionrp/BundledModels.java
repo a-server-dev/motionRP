@@ -24,6 +24,10 @@ public final class BundledModels {
             "players/motionrp_gate_of_babylon.bbmodel","ce7a2a55f8c02aa33a9050dfd8793d6c8cd35e6498d1f5b9e6d0edd7fd070f9c",
             "models/motionrp_susanoo_armor.bbmodel","d054d6147211c1cc72e6281ee5b9cc1a3ddcda8d9da6548e4472affedb16040c",
             "models/motionrp_susanoo_ribs.bbmodel","74993bf47a065b5da8cb50a3ceccfbfc6bf6fa5c13d6bd14c2c804773e1db912");
+    private static final java.util.Map<String,String> SUMMON_050_SHA=java.util.Map.of(
+            "players/motionrp_gate_of_babylon.bbmodel","2e0bae16f4570116a383ccaa91e09319564665870b34c7cc03a9c156c34c2272",
+            "players/motionrp_senbonzakura.bbmodel","7a38d287afad202d93644f1d54ba0267baa33eff01315860675bd940c5944afe",
+            "models/motionrp_senbonzakura_blade.bbmodel","aebce2d6a72045a193e54ebaad4e7cf8fd579ccc19aba3182b659c5f5ed44d70");
     private final MotionPlugin plugin;
     public BundledModels(MotionPlugin plugin) { this.plugin = plugin; }
 
@@ -55,7 +59,8 @@ public final class BundledModels {
                     var result = new BundledAssetUpdater().install(target, source.readAllBytes(),
                             file.equals("players/" + PLAYER + ".bbmodel") ? Set.of(PLAYER_020_SHA, PLAYER_021_SHA, PLAYER_023_SHA)
                                     : file.equals("players/" + SHURIKEN_PLAYER + ".bbmodel") ? Set.of(SHURIKEN_030_SHA)
-                                    : file.equals("players/motionrp_gate_of_babylon.bbmodel") ? Set.of(SUMMON_040_SHA.get(file),"308b4f2762d09705d8c7852b215092556d1a36e46e9aa99b7956ea7fd780ea7d")
+                                    : file.equals("players/motionrp_gate_of_babylon.bbmodel") ? Set.of(SUMMON_040_SHA.get(file),"308b4f2762d09705d8c7852b215092556d1a36e46e9aa99b7956ea7fd780ea7d",SUMMON_050_SHA.get(file))
+                                    : SUMMON_050_SHA.containsKey(file) ? Set.of(SUMMON_050_SHA.get(file))
                                     : SUMMON_040_SHA.containsKey(file) ? Set.of(SUMMON_040_SHA.get(file)) : Set.of(),
                             plugin.getDataFolder().toPath().resolve("model-backups"),
                             plugin.getDataFolder().toPath().resolve("model-updates"));

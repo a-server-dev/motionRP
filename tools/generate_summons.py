@@ -208,11 +208,25 @@ def player(rig,name,length,poses):
 def cherry_models():
     colors=[(246,134,187,255),(255,220,238,255),(110,47,91,255),(242,245,255,255),
             (191,139,241,255),(255,170,210,255),(156,66,121,255),(255,248,254,255)]
-    blade=Model('motionrp_senbonzakura_blade',colors=colors)
-    parts=[blade.cube('grip',[0,3,0],[1.3,6,1.3],2),blade.cube('guard',[0,6.5,0],[5,1.2,3],0)]
-    for j in range(10):
-        parts.append(blade.cube('steel_'+str(j),[j*.08,8+j*2.3,0],[1.8-j*.1,2.6,.7],3))
-        parts.append(blade.cube('rose_edge_'+str(j),[-.9+j*.13,8+j*2.3,-.1],[.35,2.6,.8],1))
+    steel=[(170,151,99,255),(210,215,226,255),(24,25,31,255),(224,230,239,255),
+           (103,117,137,255),(40,43,52,255),(201,191,162,255),(247,248,252,255)]
+    blade=Model('motionrp_senbonzakura_blade',colors=steel)
+    # Author tip-down directly: the point is at Y=0 and the handle at Y=45.
+    # This avoids relying on dummy entity pitch to invert an upright item.
+    parts=[]
+    for j in range(13):
+        width=.45+min(j,10)*.19;x=.65*(j/12)**2;y=1.5+j*2.7
+        parts.append(blade.cube('steel_'+str(j),[x,y,0],[width,2.9,.85],3))
+        parts.append(blade.cube('cutting_edge_'+str(j),[x-width/2,y,-.12],[.22,2.9,.96],7))
+        parts.append(blade.cube('spine_'+str(j),[x+width/2,y,.1],[.22,2.9,.75],4))
+    parts += [blade.cube('habaki',[.65,35.7,0],[2.9,2.3,1.3],0),
+              blade.cube('oval_tsuba',[.65,37.6,0],[5.6,1.4,3.2],0),
+              blade.cube('tsuba_rim',[.65,37.9,0],[6,.45,3.5],6),
+              blade.cube('black_grip',[.65,44.2,0],[1.65,11.5,1.6],2),
+              blade.cube('pommel',[.65,50.5,0],[2,1.3,1.9],0)]
+    for j in range(7):
+        parts.append(blade.cube('hilt_wrap_'+str(j),[.65,39.2+j*1.5,0],[1.9,.5,1.85],5))
+        parts.append(blade.cube('wrap_diamond_'+str(j),[.65,39.8+j*1.5,-.85],[.6,.65,.12],1))
     blade.group('cherry_katana',parts);blade.save()
     petals=Model('motionrp_senbonzakura_petals',colors=colors);parts=[]
     for j in range(32):
@@ -229,12 +243,12 @@ def main():
     raw=Path(sys.argv[1]).read_bytes()
     if hashlib.sha256(raw).hexdigest()!=RIG_SHA: raise SystemExit('Input is not the pinned upstream BetterModel 3.6.0 rig')
     rig=json.loads(raw)
-    player(rig,'gate_of_babylon',5.4,{
-        'pra_right_arm':[(0,(0,0,0)),(.35,(-50,0,-35)),(4.95,(-50,0,-35)),(5.4,(0,0,0))],
-        'prfa_right_forearm':[(0,(0,0,0)),(.35,(-8,0,-70)),(4.95,(-8,0,-70)),(5.4,(0,0,0))],
-        'pla_left_arm':[(0,(0,0,0)),(.35,(-50,0,35)),(4.95,(-50,0,35)),(5.4,(0,0,0))],
-        'plfa_left_forearm':[(0,(0,0,0)),(.35,(5,0,70)),(4.95,(5,0,70)),(5.4,(0,0,0))],
-        'h_ph_head':[(0,(0,0,0)),(.35,(-12,8,0)),(4.95,(-12,8,0)),(5.4,(0,0,0))]})
+    player(rig,'gate_of_babylon',5.8,{
+        'pra_right_arm':[(0,(0,0,0)),(.35,(-50,0,-35)),(5.35,(-50,0,-35)),(5.8,(0,0,0))],
+        'prfa_right_forearm':[(0,(0,0,0)),(.35,(-8,0,-70)),(5.35,(-8,0,-70)),(5.8,(0,0,0))],
+        'pla_left_arm':[(0,(0,0,0)),(.35,(-50,0,35)),(5.35,(-50,0,35)),(5.8,(0,0,0))],
+        'plfa_left_forearm':[(0,(0,0,0)),(.35,(5,0,70)),(5.35,(5,0,70)),(5.8,(0,0,0))],
+        'h_ph_head':[(0,(0,0,0)),(.35,(-12,8,0)),(5.35,(-12,8,0)),(5.8,(0,0,0))]})
     player(rig,'susanoo',6.4,{
         'pra_right_arm':[(0,(0,0,0)),(.3,(-75,0,-30)),(1.3,(-75,0,-30)),(2.7,(35,-25,-35)),
             (3.8,(35,-25,-35)),(4.1,(-105,10,-5)),(5,(-105,10,-5)),(6.4,(0,0,0))],
@@ -244,13 +258,13 @@ def main():
         'pc_chest':[(0,(0,0,0)),(1.3,(5,0,0)),(3.7,(5,-25,0)),(4.1,(12,20,0)),(5,(12,20,0)),(6.4,(0,0,0))],
         'prl_right_leg':[(0,(0,0,0)),(.5,(-15,0,15)),(5,(-15,0,15)),(6.4,(0,0,0))],
         'pll_left_leg':[(0,(0,0,0)),(.5,(10,0,-15)),(5,(10,0,-15)),(6.4,(0,0,0))]})
-    player(rig,'senbonzakura',7.2,{
+    player(rig,'senbonzakura',10.6,{
         'pra_right_arm':[(0,(0,0,0)),(.2,(-65,0,-8)),(.7,(-50,0,-8)),(1.0,(0,0,0)),
-            (2.5,(-65,0,-18)),(4.5,(-65,0,-18)),(4.65,(-95,0,-10)),(5.6,(-95,0,-10)),(7.2,(0,0,0))],
-        'prfa_right_forearm':[(0,(0,0,0)),(.2,(0,0,0)),(2.5,(-20,0,0)),(4.65,(0,0,0)),(7.2,(0,0,0))],
-        'pla_left_arm':[(0,(0,0,0)),(2.5,(0,0,-12)),(5.6,(0,0,-12)),(7.2,(0,0,0))],
-        'pc_chest':[(0,(0,0,0)),(.2,(0,-5,0)),(4.5,(0,-5,0)),(4.65,(5,10,0)),(7.2,(0,0,0))],
-        'h_ph_head':[(0,(0,0,0)),(.2,(8,0,0)),(2.5,(0,0,0)),(7.2,(0,0,0))]})
+            (3.2,(-65,0,-18)),(7.5,(-65,0,-18)),(7.65,(-95,0,-10)),(8.8,(-95,0,-10)),(10.6,(0,0,0))],
+        'prfa_right_forearm':[(0,(0,0,0)),(.2,(0,0,0)),(3.2,(-20,0,0)),(7.65,(0,0,0)),(10.6,(0,0,0))],
+        'pla_left_arm':[(0,(0,0,0)),(3.2,(0,0,-12)),(8.8,(0,0,-12)),(10.6,(0,0,0))],
+        'pc_chest':[(0,(0,0,0)),(.2,(0,-5,0)),(7.5,(0,-5,0)),(7.65,(5,10,0)),(10.6,(0,0,0))],
+        'h_ph_head':[(0,(0,0,0)),(.2,(8,0,0)),(3.2,(0,0,0)),(10.6,(0,0,0))]})
     cherry_models()
     gate()
     for kind in ['sword','spear','axe']: weapon(kind)

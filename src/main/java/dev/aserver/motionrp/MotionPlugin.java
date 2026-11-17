@@ -33,6 +33,12 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
                 saveConfig();
             }
         }
+        // Extend only this bundled scene's old timeout when upgrading its longer orbit.
+        if("motionrp_senbonzakura".equals(getConfig().getString("motions.senbonzakura.model"))
+                && "senbonzakura".equals(getConfig().getString("motions.senbonzakura.effect"))
+                && getConfig().getInt("motions.senbonzakura.max-ticks",0)<dev.aserver.motionrp.core.SenbonzakuraTimeline.END) {
+            getConfig().set("motions.senbonzakura.max-ticks",260);saveConfig();
+        }
         catalog = MotionCatalog.read(getConfig());
         items = new MotionItems(this);
         loadouts = new PlayerLoadouts(this, items);

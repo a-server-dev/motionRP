@@ -12,22 +12,30 @@ class SummonTimelineTest {
             assertEquals(0,GateTimeline.opening(GateTimeline.openAt(gate),gate));
             assertEquals(1,GateTimeline.opening(GateTimeline.fireAt(gate),gate));
             assertTrue(GateTimeline.fireAt(gate)+GateTimeline.FLIGHT_TICKS<GateTimeline.FADE);
-            if(gate<6) sequential.add(GateTimeline.fireAt(gate));
+            if(gate<15) sequential.add(GateTimeline.fireAt(gate));
             else assertEquals(GateTimeline.VOLLEY,GateTimeline.fireAt(gate));
             if(GateTimeline.shoots(GateTimeline.VOLLEY,gate)) volley++;
             heights.add(GateTimeline.portal(gate).up());depths.add(GateTimeline.portal(gate).forward());
         }
-        assertEquals(6,sequential.size());assertEquals("FINISHED",GateTimeline.phase(GateTimeline.END));
+        assertEquals(15,sequential.size());assertEquals("FINISHED",GateTimeline.phase(GateTimeline.END));
         assertEquals(20,volley);assertTrue(heights.size()>16);assertTrue(depths.size()>12);
-        assertEquals(108,GateTimeline.END);assertEquals(12,GateTimeline.FLIGHT_TICKS);
+        assertEquals(116,GateTimeline.END);assertEquals(12,GateTimeline.FLIGHT_TICKS);
+        assertTrue(GateTimeline.portal(17).right()-GateTimeline.portal(10).right()>16);
+        for(int i=1;i<15;i++) assertEquals(2,GateTimeline.fireAt(i)-GateTimeline.fireAt(i-1));
         assertThrows(IllegalArgumentException.class,()->GateTimeline.fireAt(-1));
         assertThrows(IllegalArgumentException.class,()->GateTimeline.fireAt(GateTimeline.COUNT));
     }
     @Test void cherryBladesRiseFullyBeforeDissolvingThenSwirlAndConverge() {
         for(int i=0;i<SenbonzakuraTimeline.SWORDS;i++) {
             assertTrue(SenbonzakuraTimeline.swordAt(i)>=SenbonzakuraTimeline.RISE);
-            assertTrue(SenbonzakuraTimeline.swordAt(i)+12<=SenbonzakuraTimeline.BLOOM);
+            assertTrue(SenbonzakuraTimeline.swordAt(i)+SenbonzakuraTimeline.RISE_TICKS<=SenbonzakuraTimeline.BLOOM);
+            var pose=SenbonzakuraTimeline.blade(i);
+            assertEquals(2.4,Math.abs(pose.right()));
+            if(i%2==1) assertEquals(SenbonzakuraTimeline.blade(i-1).forward(),pose.forward());
+            if(i>=2) assertTrue(pose.forward()>SenbonzakuraTimeline.blade(i-2).forward());
         }
+        assertTrue(SenbonzakuraTimeline.blade(0).forward()<0 && SenbonzakuraTimeline.blade(11).forward()>0);
+        assertTrue(SenbonzakuraTimeline.SURGE-SenbonzakuraTimeline.ORBIT>=76);
         assertEquals("BLOOM",SenbonzakuraTimeline.phase(SenbonzakuraTimeline.BLOOM));
         assertEquals("ORBIT",SenbonzakuraTimeline.phase(SenbonzakuraTimeline.ORBIT));
         assertEquals("SURGE",SenbonzakuraTimeline.phase(SenbonzakuraTimeline.SURGE));
