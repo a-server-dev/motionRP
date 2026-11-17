@@ -5,6 +5,7 @@ import kr.toxicity.model.api.BetterModel;
 import kr.toxicity.model.api.animation.*;
 import kr.toxicity.model.api.bukkit.platform.BukkitAdapter;
 import kr.toxicity.model.api.profile.ModelProfile;
+import kr.toxicity.model.api.manager.PlayerManager;
 import kr.toxicity.model.api.tracker.*;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
@@ -24,6 +25,10 @@ public final class RasenganScene implements AutoCloseable {
     private int tick;
     private boolean closed;
     private RasenganTimeline.Phase lastPhase;
+    // Scene viewers are already bounded by distance/world/vanish visibility.
+    // Generic model culling uses player facing, which need not match an F5 camera.
+    private static final TrackerModifier EFFECT_MODIFIER = TrackerModifier.builder()
+            .sightTrace(false).damageAnimation(false).damageTint(false).build();
     private static final Particle.DustOptions CYAN = new Particle.DustOptions(Color.fromRGB(90, 224, 255), .65f);
     private static final Particle.DustOptions WHITE = new Particle.DustOptions(Color.fromRGB(220, 255, 255), .45f);
 
@@ -53,9 +58,10 @@ public final class RasenganScene implements AutoCloseable {
             assistant.setYaw((float) Math.toDegrees(Math.atan2(-toward.getX(), toward.getZ())));
             if (frame.cloneVisible() && clone == null) {
                 clone = Objects.requireNonNull(BetterModel.limbOrNull(playerModel))
-                        .create(BukkitAdapter.adapt(assistant), ModelProfile.of(BukkitAdapter.adapt(owner)));
+                        .create(BukkitAdapter.adapt(assistant), ModelProfile.of(BukkitAdapter.adapt(owner)), EFFECT_MODIFIER);
                 clone.animate("rasengan_helper", AnimationModifier.DEFAULT_WITH_PLAY_ONCE);
                 spawnForViewers(clone);
+                traceDisplays("clone", clone);
                 smoke(assistant.clone().add(0, .85, 0));
                 sound(assistant, Sound.ENTITY_ILLUSIONER_MIRROR_MOVE, .65f, 1.4f);
             }
@@ -67,9 +73,13 @@ public final class RasenganScene implements AutoCloseable {
             if (clone != null) clone.location(BukkitAdapter.adapt(assistant));
             if (frame.orbVisible() && orb == null) {
                 orb = Objects.requireNonNull(BetterModel.modelOrNull(BundledModels.ORB)).create(BukkitAdapter.adapt(ball),
-                        TrackerModifier.DEFAULT, t -> t.update(TrackerUpdateAction.brightness(15, 15)));
+                        EFFECT_MODIFIER, t -> {
+                            t.update(TrackerUpdateAction.brightness(15, 15));
+                            t.scaler(ModelScaler.value((float) frame.scale()));
+                        });
                 orb.animate("spin", AnimationModifier.builder().type(AnimationIterator.Type.LOOP).build());
                 spawnForViewers(orb);
+                traceDisplays("orb", orb);
                 sound(ball, Sound.BLOCK_BEACON_POWER_SELECT, .5f, 1.8f);
             }
             if (!frame.orbVisible() && orb != null) { orb.close(); orb = null; }
@@ -115,10 +125,13 @@ public final class RasenganScene implements AutoCloseable {
             if (player.getWorld() != owner.getWorld() || !player.canSee(owner)
                     || player.getLocation().distanceSquared(owner.getLocation()) > 48 * 48) continue;
             eligible.add(player.getUniqueId());
-            if (viewers.putIfAbsent(player.getUniqueId(), player) == null) {
-                if (clone != null) clone.spawn(BukkitAdapter.adapt(player));
-                if (orb != null) orb.spawn(BukkitAdapter.adapt(player));
+            Player previous = viewers.put(player.getUniqueId(), player);
+            if (previous != null && previous != player) {
+                if (clone != null) clone.remove(BukkitAdapter.adapt(previous));
+                if (orb != null) orb.remove(BukkitAdapter.adapt(previous));
             }
+            if (clone != null) spawnIfNeeded(clone, player);
+            if (orb != null) spawnIfNeeded(orb, player);
         }
         var iterator = viewers.entrySet().iterator();
         while (iterator.hasNext()) {
@@ -131,7 +144,32 @@ public final class RasenganScene implements AutoCloseable {
     }
 
     private void spawnForViewers(DummyTracker tracker) {
-        for (Player viewer : viewers.values()) tracker.spawn(BukkitAdapter.adapt(viewer));
+        for (Player viewer : viewers.values()) spawnIfNeeded(tracker, viewer);
+    }
+
+    private void spawnIfNeeded(DummyTracker tracker, Player viewer) {
+        if (tracker.isSpawned(viewer.getUniqueId())) return;
+        var adapted = BukkitAdapter.adapt(viewer);
+        // DummyTracker.spawn silently declines an unregistered channel. Use the
+        // supported get-or-create API for real online players, then retry on refresh.
+        BetterModel.platform().manager(PlayerManager.class).player(adapted);
+        tracker.spawn(adapted);
+        tracker.forceUpdate(true);
+    }
+
+    private void traceDisplays(String kind, DummyTracker tracker) {
+        if (!plugin.getConfig().getBoolean("debug-input", false)) return;
+        String ids = tracker.getPipeline().stream().filter(b -> b.getDisplay() != null)
+                .map(b -> Integer.toString(b.getDisplay().id())).collect(java.util.stream.Collectors.joining(","));
+        plugin.getLogger().info("Rasengan displays " + kind + " ids=" + ids + " viewers=" + viewers.size());
+        for (Player viewer : viewers.values()) {
+            var adapted = BukkitAdapter.adapt(viewer);
+            boolean passesView = tracker.getPipeline().viewedPlayer().anyMatch(p -> p.uuid().equals(viewer.getUniqueId()));
+            plugin.getLogger().info("Rasengan visibility " + kind + " viewer=" + viewer.getName()
+                    + " spawned=" + tracker.isSpawned(adapted) + " hidden=" + tracker.isHide(adapted)
+                    + " view=" + passesView + " models=" + tracker.getPipeline().stream()
+                    .filter(b -> b.getDisplay() != null && !b.getDisplay().invisible()).count());
+        }
     }
 
     private void smoke(Location at) {

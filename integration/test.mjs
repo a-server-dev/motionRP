@@ -71,8 +71,9 @@ async function connect(name) {
     if (['position', 'position_look', 'look', 'flying'].includes(name)) return;
     return write(name, packet);
   };
-  bot._testLookUp = () => write('look', { yaw: 0, pitch: -60,
+  bot._testLook = (yaw, pitch) => write('look', { yaw, pitch,
     flags: { onGround: true, hasHorizontalCollision: false } });
+  bot._testLookUp = () => bot._testLook(0, -60);
   bot._testLeftClick = () => write('arm_animation', { hand: 'main_hand' });
   bots.push(bot);
   bot.on('error', error => console.error(name, error.message));
@@ -159,6 +160,7 @@ view-distance=4
 simulation-distance=4
 spawn-protection=0
 max-players=5
+difficulty=peaceful
 level-type=minecraft:flat
 generator-settings={"layers":[{"block":"minecraft:bedrock","height":1},{"block":"minecraft:dirt","height":2},{"block":"minecraft:grass_block","height":1}],"biome":"minecraft:plains"}
 generate-structures=false
@@ -302,6 +304,13 @@ generate-structures=false
   await closeMenu(a);
   // Exercise the custom scene on the actual 26.3 server after the regression tests.
   b = await connect('MotionTesterB');
+  // A near-camera effect must still send item data when the viewer faces away
+  // (F5 may look in a different direction from the server-side eye direction).
+  const bmConfig = path.join(run, 'plugins/BetterModel/config.yml');
+  fs.writeFileSync(bmConfig, fs.readFileSync(bmConfig, 'utf8').replace(/^min-sight:.*$/m, 'min-sight: 0'));
+  const reloadBegin = output.length;
+  consoleCommand('bettermodel reload');
+  await waitFor(() => /Reload completed/i.test(output.slice(reloadBegin)), 'reload strict sight culling test config', 30_000);
   consoleCommand('motionrp status');
   await waitFor(() => output.includes('rasengan:') && output.includes('rasengan: \u001b[97m利用可能')
       || /rasengan:.*利用可能/.test(output), 'bundled Rasengan player/orb models loaded', 30_000);
@@ -320,8 +329,18 @@ generate-structures=false
   consoleCommand('tp MotionTesterB 2 -60 0');
   await sleep(1000);
   a._testLookUp();
+  b._testLook(-90, 0);
   const sceneDisplays = new Set();
   const sceneRemoved = new Set();
+  const visibleItems = { owner: new Map(), observer: new Map() };
+  const itemMetadataIndex = b.registry.entitiesByName.item_display.metadataKeys.indexOf('item_stack');
+  for (const [client, role] of [[a, 'owner'], [b, 'observer']]) {
+    client._client.on('entity_metadata', packet => {
+      for (const entry of packet.metadata) {
+        if (entry.key === itemMetadataIndex) visibleItems[role].set(packet.entityId, entry.value);
+      }
+    });
+  }
   let particles = 0;
   let sounds = 0;
   b._client.on('spawn_entity', packet => { if (packet.type === b.registry.entitiesByName.item_display.id) sceneDisplays.add(packet.entityId); });
@@ -329,16 +348,42 @@ generate-structures=false
   b._client.on('world_particles', () => particles++);
   b._client.on('sound_effect', () => sounds++);
   const health = b.health;
+  let lowestHealth = health;
+  const trackHealth = () => { lowestHealth = Math.min(lowestHealth, b.health); };
+  b.on('health', trackHealth);
   const begin = output.length;
   a._testLeftClick();
+  await waitFor(() => output.slice(begin).includes('Rasengan phase: CHARGE'), 'charge item metadata sample');
+  await sleep(400);
+  const chargeTrace = output.slice(begin);
+  for (const role of ['owner', 'observer']) for (const kind of ['clone', 'orb']) {
+    const ids = chargeTrace.match(new RegExp('Rasengan displays ' + kind + ' ids=([0-9,]+)'))[1].split(',').map(Number);
+    assert.ok(ids.some(id => (visibleItems[role].get(id)?.itemCount || 0) > 0), role + '/' + kind + ' was empty while charging');
+  }
   await waitFor(() => output.slice(begin).includes('Rasengan phase: DISSIPATE'), 'complete Rasengan choreography', 15_000);
   await waitFor(() => sceneDisplays.size > 12 && sceneRemoved.size === sceneDisplays.size, 'clone, orb and body cleanup', 10_000);
+  const trace = output.slice(begin);
+  const idsFor = kind => trace.match(new RegExp('Rasengan displays ' + kind + ' ids=([0-9,]+)'))[1].split(',').map(Number);
+  fs.writeFileSync(path.join(project, 'build/visual-metadata.json'), JSON.stringify({
+    clone: idsFor('clone'), orb: idsFor('orb'),
+    owner: Object.fromEntries(visibleItems.owner), observer: Object.fromEntries(visibleItems.observer)
+  }, (_, value) => typeof value === 'bigint' ? value.toString() : value, 2));
+  for (const role of ['owner', 'observer']) for (const kind of ['clone', 'orb']) {
+    const rendered = idsFor(kind).filter(id => {
+      const item = visibleItems[role].get(id);
+      return item && (item.itemCount || item.count || 0) > 0;
+    });
+    assert.ok(rendered.length > 0, role + ' received no renderable item metadata for ' + kind);
+  }
+  pass('both caster and observer receive nonempty renderable item metadata for clone and orb');
   for (const phase of ['SIGNS', 'ASSIST', 'CHARGE', 'WINDUP', 'THRUST', 'DISSIPATE']) {
     assert.ok(output.slice(begin).includes('Rasengan phase: ' + phase), 'Missing phase ' + phase);
   }
   assert.ok(particles > 0, 'No effect particles received');
   assert.ok(sounds > 0, 'No effect sounds received');
   assert.equal(b.health, health, 'Cosmetic Rasengan changed another player health');
+  assert.equal(lowestHealth, health, 'Cosmetic Rasengan temporarily damaged another player');
+  b.off('health', trackHealth);
   pass('shadow clone, charging orb, thrust, particles/sounds and full cleanup reach another player without damage');
 
   sceneDisplays.clear(); sceneRemoved.clear();

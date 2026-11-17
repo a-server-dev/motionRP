@@ -83,10 +83,14 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
                     tell(sender, "設定を再読み込みしました。既存アイテムと登録内容は保持されます。");
                 }
                 case "status" -> {
+                    tell(sender, "MotionRP " + getPluginMeta().getVersion() + " / BetterModel "
+                            + Objects.requireNonNull(Bukkit.getPluginManager().getPlugin("BetterModel")).getPluginMeta().getVersion());
+                    tell(sender, "BetterModel sight-trace=" + BetterModel.config().sightTrace()
+                            + " min=" + BetterModel.config().minSight() + " max=" + BetterModel.config().maxSight());
                     tell(sender, "BetterModel プレイヤーモデル: " + String.join(", ", BetterModel.limbKeys()));
                     for (var definition : catalog.motions().values()) {
                         String problem = playback.unavailable(definition);
-                        tell(sender, definition.id() + ": " + (problem == null ? "利用可能" : problem));
+                        tell(sender, definition.id() + ": " + (problem == null ? "利用可能" : problem) + " [effect=" + definition.effect() + "]");
                     }
                 }
                 case "give" -> give(sender, args);
