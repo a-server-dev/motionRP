@@ -16,9 +16,20 @@ public final class BundledModels {
     public BundledModels(MotionPlugin plugin) { this.plugin = plugin; }
 
     public void install() {
-        Path root = Objects.requireNonNull(Bukkit.getPluginManager().getPlugin("BetterModel")).getDataFolder().toPath();
+        var betterModel = Objects.requireNonNull(Bukkit.getPluginManager().getPlugin("BetterModel"));
+        Path root = betterModel.getDataFolder().toPath();
         boolean changed = false;
         try {
+            // A fresh BetterModel folder may not seed its examples after our
+            // namespaced player model creates players/. Keep the default roll usable.
+            Path steve = root.resolve("players/steve.bbmodel");
+            if (!Files.exists(steve) && plugin.catalog().motions().values().stream().anyMatch(d -> d.model().equals("steve"))) {
+                Files.createDirectories(steve.getParent());
+                try (InputStream source = Objects.requireNonNull(betterModel.getResource("steve.bbmodel"), "BetterModel steve.bbmodel")) {
+                    Files.copy(source, steve);
+                }
+                changed = true;
+            }
             for (String file : new String[]{"players/" + PLAYER + ".bbmodel", "models/" + ORB + ".bbmodel", "LICENSE-MotionRP-models.txt"}) {
                 Path target = root.resolve(file);
                 if (Files.exists(target)) continue;
