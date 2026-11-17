@@ -16,7 +16,8 @@ class RasenganAssetsTest {
     }
 
     @Test void allAnimatedBonesAndOutlinerEntriesResolveToRealModelParts() throws Exception {
-        for (String file : List.of("players/motionrp_rasengan.bbmodel", "models/motionrp_rasengan_orb.bbmodel")) {
+        for (String file : List.of("players/motionrp_rasengan.bbmodel", "models/motionrp_rasengan_orb.bbmodel",
+                "players/motionrp_rasenshuriken.bbmodel", "models/motionrp_rasenshuriken_orb.bbmodel")) {
             var model = read(file);
             Set<String> groups = new HashSet<>();
             Set<String> all = new HashSet<>();
@@ -40,6 +41,34 @@ class RasenganAssetsTest {
                 }
             }
         }
+    }
+
+    @Test void shurikenIsRaisedOverheadThenThrownAndHasFourWideBlades() throws Exception {
+        var model=read("players/motionrp_rasenshuriken.bbmodel");
+        var animations=model.getAsJsonArray("animations");
+        assertEquals("rasenshuriken",animations.get(0).getAsJsonObject().get("name").getAsString());
+        assertEquals(8,animations.get(0).getAsJsonObject().get("length").getAsDouble());
+        assertEquals((RasenshurikenTimeline.RAISE-RasenshurikenTimeline.CLONES)/20.0,
+                animations.get(1).getAsJsonObject().get("length").getAsDouble());
+        Map<String,JsonObject> groups=new HashMap<>();Map<String,String> parents=new HashMap<>();String wrist=null;
+        for (var g:model.getAsJsonArray("groups")) {
+            var group=g.getAsJsonObject();String id=group.get("uuid").getAsString();groups.put(id,group);
+            if (group.get("name").getAsString().equals("pri_right_item")) wrist=id;
+        }
+        parentTree(model.getAsJsonArray("outliner"),null,parents);
+        for (int tick=0;tick<RasenshurikenTimeline.END;tick++) {
+            var at=posedOrigin(wrist,tick/20.0,animations.get(0).getAsJsonObject(),groups,parents);
+            var path=RasenganHandPath.shurikenAt(tick);
+            assertEquals(at[0]/16,path.right(),1e-7);assertEquals(-at[2]/16+.05,path.forward(),1e-7);
+            assertEquals(at[1]/16+.03,path.height(),1e-7);
+        }
+        assertTrue(RasenganHandPath.shurikenAt(80).height()>1.9,"Weapon not overhead");
+        assertTrue(RasenganHandPath.shurikenAt(114).height()>1.9,"Weapon lowered before release");
+        assertTrue(RasenganHandPath.shurikenAt(119).forward()>.4,"Throw arm did not reach forward");
+        var orb=read("models/motionrp_rasenshuriken_orb.bbmodel");
+        assertEquals(5,orb.getAsJsonArray("groups").size());
+        var blades=orb.getAsJsonArray("outliner").get(4).getAsJsonObject().getAsJsonArray("children");
+        assertEquals(28,blades.size());
     }
 
     @Test void bodyAndHelperAnimationDurationsMatchSceneClockAndOrbLoops() throws Exception {

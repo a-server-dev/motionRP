@@ -15,7 +15,7 @@ import java.util.*;
 import java.util.logging.Level;
 
 /** Cosmetic only: the clone and orb are display packets, not damageable entities. */
-public final class RasenganScene implements AutoCloseable {
+public final class RasenganScene implements MotionScene {
     private final MotionPlugin plugin;
     private final Player owner;
     private final String playerModel;
@@ -88,7 +88,7 @@ public final class RasenganScene implements AutoCloseable {
                 orb.animate("spin", AnimationModifier.builder().type(AnimationIterator.Type.LOOP).build());
                 spawnForViewers(orb);
                 traceDisplays("orb", orb);
-                sound(ball, Sound.BLOCK_BEACON_POWER_SELECT, .5f, 1.8f);
+                sound(ball, Sound.ENTITY_BREEZE_CHARGE, .5f, 1.2f);
             }
             if (!frame.orbVisible() && orb != null) { orb.close(); orb = null; }
             if (orb != null) {
@@ -96,10 +96,12 @@ public final class RasenganScene implements AutoCloseable {
                 orb.scaler(ModelScaler.value((float) frame.scale()));
             }
             if (frame.orbVisible() && tick % 2 == 0) spiral(ball, frame.scale());
-            if (tick >= 20 && tick < 60 && tick % 12 == 0) sound(ball, Sound.BLOCK_BEACON_AMBIENT, .12f, 1.9f);
-            if (tick == RasenganTimeline.THRUST_START) sound(ball, Sound.ENTITY_PLAYER_ATTACK_SWEEP, .8f, 1.2f);
+            if (frame.orbVisible()) WindEffects.swirl(viewers.values(), anchor.clone().add(0, .8, 0), tick, .85);
+            if (tick >= 20 && tick < 60 && tick % 20 == 0) sound(ball, Sound.ENTITY_BREEZE_WHIRL, .2f, 1.2f);
+            if (tick == RasenganTimeline.THRUST_START) sound(ball, Sound.ENTITY_BREEZE_SHOOT, .8f, 1.1f);
             if (tick == RasenganTimeline.BURST) {
-                sound(ball, Sound.BLOCK_AMETHYST_BLOCK_RESONATE, .75f, .8f);
+                sound(ball, Sound.ENTITY_BREEZE_WIND_BURST, .75f, 1.1f);
+                WindEffects.burst(viewers.values(), ball);
                 for (Player viewer : viewers.values()) {
                     viewer.spawnParticle(Particle.DUST, ball, 24, .22, .22, .22, 0, CYAN);
                     viewer.spawnParticle(Particle.END_ROD, ball, 8, .16, .16, .16, .025);

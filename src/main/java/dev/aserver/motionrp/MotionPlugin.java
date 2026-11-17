@@ -21,15 +21,17 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
     @Override public void onEnable() {
         saveDefaultConfig();
         // Add only the new built-in definition during upgrade; keep user entries.
-        if (!getConfig().contains("assets.rasengan-definition-installed", true)) {
-            if (!getConfig().contains("motions.rasengan", true)) {
-                for (var entry : Objects.requireNonNull(getConfig().getDefaults())
-                        .getConfigurationSection("motions.rasengan").getValues(false).entrySet()) {
-                    getConfig().set("motions.rasengan." + entry.getKey(), entry.getValue());
+        for (String builtIn : java.util.List.of("rasengan", "rasenshuriken")) {
+            if (!getConfig().contains("assets." + builtIn + "-definition-installed", true)) {
+                if (!getConfig().contains("motions." + builtIn, true)) {
+                    for (var entry : Objects.requireNonNull(getConfig().getDefaults())
+                            .getConfigurationSection("motions." + builtIn).getValues(false).entrySet()) {
+                        getConfig().set("motions." + builtIn + "." + entry.getKey(), entry.getValue());
+                    }
                 }
+                getConfig().set("assets." + builtIn + "-definition-installed", true);
+                saveConfig();
             }
-            getConfig().set("assets.rasengan-definition-installed", true);
-            saveConfig();
         }
         catalog = MotionCatalog.read(getConfig());
         items = new MotionItems(this);

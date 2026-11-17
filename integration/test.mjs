@@ -21,6 +21,7 @@ const bots = [];
 let server;
 let output = '';
 let log;
+let heightSampler;
 
 function pass(name) { checks.push(name); console.log('PASS:', name); }
 async function waitFor(predicate, description, timeout = 20_000) {
@@ -140,6 +141,7 @@ try {
   fs.writeFileSync(path.join(run, 'plugins/MotionRP/config.yml'),
     fs.readFileSync(path.join(project, 'src/main/resources/config.yml'), 'utf8')
       .replace('debug-input: false', 'debug-input: true')
+      .replace(/  rasenshuriken:\n[\s\S]*?(?=  rasengan:)/, '')
       .replace(/  rasengan:\n[\s\S]*?(?=  roll:)/, ''));
   // Mineflayer currently supports 26.1. Official Via plugins adapt the test
   // clients to a real 26.3 server; MotionRP still runs against the 26.3 API.
@@ -349,6 +351,8 @@ generate-structures=false
   }
   let particles = 0;
   let sounds = 0;
+  const windSounds = [];
+  b.on('soundEffectHeard', name => windSounds.push(name));
   b._client.on('spawn_entity', packet => { if (packet.type === b.registry.entitiesByName.item_display.id) sceneDisplays.add(packet.entityId); });
   b._client.on('entity_destroy', packet => { for (const id of packet.entityIds) if (sceneDisplays.has(id)) sceneRemoved.add(id); });
   b._client.on('world_particles', () => particles++);
@@ -412,6 +416,9 @@ generate-structures=false
   assert.equal(lowestHealth, health, 'Cosmetic Rasengan temporarily damaged another player');
   b.off('health', trackHealth);
   pass('shadow clone, charging orb, thrust, particles/sounds and full cleanup reach another player without damage');
+  assert.ok(windSounds.some(name => name.includes('breeze')), 'No breeze sound was received: ' + windSounds);
+  assert.ok(!windSounds.some(name => /amethyst|bell|beacon/.test(name)), 'Old ringing sound remains: ' + windSounds);
+  pass('Rasengan uses breeze wind sounds instead of ringing amethyst/beacon sounds');
 
   sceneDisplays.clear(); sceneRemoved.clear();
   const cancelBegin = output.length;
@@ -477,6 +484,85 @@ generate-structures=false
   assert.ok(Math.abs(unlockedPosition[0] - cancelledAt.x - .2) < .01, 'Player remained frozen after cancellation');
   pass('ordinary movement is restored immediately after playback stops');
 
+  // Motion two: migration, real GUI selection, two assistants, actual jump and throw.
+  consoleCommand('fill -2 -64 -1 2 -61 9 minecraft:stone');
+  consoleCommand('tp MotionTesterA 0 -60 0 0 0');
+  consoleCommand('tp MotionTesterB 3 -60 0');
+  await sleep(600);
+  consoleCommand('motionrp status');
+  await waitFor(() => /rasenshuriken:.*利用可能/.test(output), 'migrated Rasenshuriken definition available');
+  const migratedConfig = fs.readFileSync(path.join(run, 'plugins/MotionRP/config.yml'), 'utf8');
+  assert.ok(migratedConfig.includes('rasenshuriken-definition-installed: true'));
+  consoleCommand('motionrp give motion rasenshuriken 64 MotionTesterA');
+  await waitFor(() => tokens(a) === 64, 'stack of shuriken tokens');
+  await menu(a); await deposit(a);
+  assert.equal(registered(a), 2);assert.equal(tokens(a), 63);
+  await closeMenu(a);
+  await a.equip(a.inventory.items().find(i => i.name === 'carrot_on_a_stick'), 'hand');
+  a.setControlState('sneak', true);await sleep(300);a._testLeftClick();
+  await waitFor(async () => (await readSaved('MotionTesterA')).loadout[6] === 1, 'motion two selected');
+  a.setControlState('sneak', false);await sleep(300);a._testLookUp();
+  pass('Rasenshuriken migrates into an old config, stacks to 64 and registers/selects as the second motion');
+  sceneDisplays.clear();sceneRemoved.clear();
+  const shurikenBegin=output.length;
+  const jumpOrigin=a.entity.position.clone();
+  let peak=jumpOrigin.y, minimumCasterHealth=a.health;
+  const casterHealth=a.health, observerHealth=b.health;
+  heightSampler=setInterval(() => { peak=Math.max(peak,a.entity.position.y);minimumCasterHealth=Math.min(minimumCasterHealth,a.health); },20);
+  a._testLeftClick();
+  await waitFor(() => output.slice(shurikenBegin).includes('Rasenshuriken phase: CHARGE'), 'two-clone formation');
+  await sleep(400);
+  const formation=output.slice(shurikenBegin);
+  const shurikenIds=kind => formation.match(new RegExp('Rasenshuriken displays '+kind+' ids=([0-9,]+)'))[1].split(',').map(Number);
+  const clone1=shurikenIds('clone1'),clone2=shurikenIds('clone2');
+  assert.ok(clone1.every(id => !clone2.includes(id)), 'Two clones reused display IDs');
+  for (const role of ['owner','observer']) for (const kind of ['clone1','clone2','weapon']) {
+    assert.ok(shurikenIds(kind).some(id => (visibleItems[role].get(id)?.itemCount || 0)>0), role+' has no renderable '+kind);
+  }
+  pass('caster and observer receive two separate skinned assistants and the renderable four-blade weapon');
+  await waitFor(() => output.slice(shurikenBegin).includes('Rasenshuriken phase: LAND'), 'shuriken landing',15000);
+  await waitFor(() => sceneDisplays.size>30 && sceneRemoved.size===sceneDisplays.size, 'all shuriken displays cleaned up');
+  clearInterval(heightSampler);heightSampler=null;
+  const shurikenTrace=output.slice(shurikenBegin);
+  for (const phase of ['SIGNS','ASSIST','CHARGE','RAISE','STEP','JUMP','THROW','IMPACT','LAND'])
+    assert.ok(shurikenTrace.includes('Rasenshuriken phase: '+phase), 'Missing shuriken phase '+phase);
+  assert.ok(Math.abs(peak-jumpOrigin.y-5)<.06, 'Real jump height is not five blocks: '+(peak-jumpOrigin.y));
+  assert.ok(Math.abs(a.entity.position.y-jumpOrigin.y)<.01, 'Caster did not land');
+  const burst=shurikenTrace.match(/Rasenshuriken burst x=([-\d.]+) y=([-\d.]+) z=([-\d.]+)/);
+  assert.ok(burst, 'No wind impact');
+  assert.ok(Math.abs(Number(burst[1])-jumpOrigin.x)<.01);
+  assert.ok(Math.abs(Number(burst[3])-jumpOrigin.z-.35-5)<.06, 'Impact was not five blocks beyond takeoff');
+  assert.ok(Math.abs(Number(burst[2])-jumpOrigin.y-.15)<.06, 'Impact was not at ground level');
+  assert.equal(minimumCasterHealth,casterHealth,'Jump caused damage');assert.equal(b.health,observerHealth,'Wind blast damaged observer');
+  const groundCheckBegin=output.length;
+  consoleCommand(`execute positioned ${Number(burst[1])} -61 ${Number(burst[3])} if block ~ ~ ~ minecraft:stone run say MOTIONRP_GROUND_UNCHANGED`);
+  await waitFor(() => output.slice(groundCheckBegin).includes('MOTIONRP_GROUND_UNCHANGED'), 'wind burst preserves impact block');
+  pass('weapon raises, player steps and jumps five blocks, throws to ground five blocks ahead, bursts and lands without damage');
+
+  sceneDisplays.clear();sceneRemoved.clear();
+  const airCancelBegin=output.length;a._testLeftClick();
+  await waitFor(() => output.slice(airCancelBegin).includes('Rasenshuriken phase: JUMP'), 'second jump before cancel');
+  await sleep(350);a._testLeftClick();
+  await waitFor(() => sceneRemoved.size===sceneDisplays.size && Math.abs(a.entity.position.y-jumpOrigin.y)<.01, 'midair cancel returns to takeoff and cleans up');
+  await sleep(1200);
+  assert.ok(!output.slice(airCancelBegin).includes('Rasenshuriken burst'), 'Cancelled shuriken exploded later');
+  assert.equal(a.health,casterHealth);
+  pass('midair cancellation restores safe footing, removes both clones/weapon and prevents later wind explosion');
+
+  consoleCommand('fill -1 -57 -1 1 -57 3 minecraft:stone');await sleep(300);
+  // The swing-only test helper must aim into air; a real client sends a dig
+  // packet when looking at this ceiling, which is already handled separately.
+  a._testLook(0,0);await sleep(150);
+  sceneDisplays.clear();sceneRemoved.clear();
+  const ceilingBegin=output.length;a._testLeftClick();
+  await waitFor(() => output.slice(ceilingBegin).includes('Rasenshuriken phase: JUMP'), 'jump under low ceiling');
+  await waitFor(() => sceneDisplays.size>30 && sceneRemoved.size===sceneDisplays.size, 'ceiling collision cleans up all displays');
+  assert.ok(Math.abs(a.entity.position.y-jumpOrigin.y)<.01, 'Ceiling abort did not restore footing');
+  assert.ok(!output.slice(ceilingBegin).includes('Rasenshuriken phase: THROW'), 'Jump tunneled through ceiling');
+  assert.equal(a.health,casterHealth);
+  pass('a low ceiling aborts the jump without tunneling, damage or leaving model displays');
+  assert.ok(!/Rasenshuriken scene failed|Rasengan scene failed/.test(output), 'Scene logged a runtime failure');
+
   await disconnect(b);
   await disconnect(a);
   await stopServer();
@@ -490,6 +576,7 @@ generate-structures=false
   fs.writeFileSync(resultFile, JSON.stringify({ passed: checks.length, checks, error: error.stack }, null, 2));
   process.exitCode = 1;
 } finally {
+  if (heightSampler) clearInterval(heightSampler);
   for (const bot of bots) { try { bot.quit(); bot._client.socket?.destroy(); } catch {} }
   try { await stopServer(); } catch (error) { console.error(error.message); server?.kill('SIGTERM'); process.exitCode = 1; }
   if (log) await new Promise(resolve => log.end(resolve));

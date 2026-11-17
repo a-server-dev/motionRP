@@ -121,7 +121,7 @@ def png_palette():
     return b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('!2I5B',4,4,8,6,0,0,0))+chunk(b'IDAT',zlib.compress(raw))+chunk(b'IEND',b'')
 
 
-def hand_path(model):
+def hand_path(model, duration=96):
     """Bake the palm attachment from the same hierarchy as the body animation."""
     groups = {g['uuid']: g for g in model['groups']}
     parents = {}
@@ -141,7 +141,7 @@ def hand_path(model):
         blend = (time-a['time'])/(b['time']-a['time']) if b['time'] != a['time'] else 0
         return [float(a['data_points'][0][axis])*(1-blend)+float(b['data_points'][0][axis])*blend for axis in 'xyz']
     rows = []
-    for tick in range(96):
+    for tick in range(duration):
         point = groups[wrist]['origin'][:]
         bone = wrist
         while bone is not None:
@@ -205,17 +205,81 @@ def orb_model():
     return m
 
 
+def shuriken_player(player):
+    model = copy.deepcopy(player)
+    model['name'] = model['model_identifier'] = 'motionrp_rasenshuriken'
+    groups = {g['name']: g for g in model['groups']}
+    main, helper = model['animations']
+    main.update(name='rasenshuriken', uuid=ident('rasenshuriken'), length=8.0)
+    # Keep formation poses, hold longer for two assistants, then raise overhead.
+    for track in main['animators'].values():
+        keys = [k for k in track['keyframes'] if k['time'] <= 2.9]
+        hold = copy.deepcopy(keys[-1]); hold['time'] = 3.5
+        hold['uuid'] = ident(track['name']+'/shuriken/hold')
+        track['keyframes'] = keys + [hold]
+    poses = {
+        'pra_right_arm': [(-175,0,-5),(-175,0,-5),(-175,0,-5),(-175,0,-5),(-80,0,-5),(15,0,-8),(0,0,0)],
+        'prfa_right_forearm': [(0,0,0)]*7,
+        'pla_left_arm': [(-125,0,25),(-110,0,35),(-60,0,-55),(-60,0,-55),(15,0,-55),(0,0,-20),(0,0,0)],
+        'plfa_left_forearm': [(-15,0,0),(-15,0,0),(-30,0,0),(-30,0,0),(-10,0,0),(0,0,0),(0,0,0)],
+        'pc_chest': [(-5,0,0),(-5,0,0),(8,-10,0),(-5,-15,0),(25,15,0),(15,0,0),(0,0,0)],
+        'h_ph_head': [(-20,0,0),(-20,0,0),(-15,0,0),(10,0,0),(25,0,0),(10,0,0),(0,0,0)],
+        'prl_right_leg': [(-25,0,12),(-50,0,12),(-65,0,8),(-65,0,8),(-35,0,8),(-45,0,12),(0,0,0)],
+        'prfl_right_foreleg': [(45,0,0),(90,0,0),(90,0,0),(90,0,0),(65,0,0),(90,0,0),(0,0,0)],
+        'pll_left_leg': [(-25,0,-12),(-50,0,-12),(20,0,-8),(20,0,-8),(-20,0,-8),(-45,0,-12),(0,0,0)],
+        'plfl_left_foreleg': [(45,0,0),(90,0,0),(40,0,0),(40,0,0),(65,0,0),(90,0,0),(0,0,0)]
+    }
+    times = [4.0, 4.3, 4.5, 5.7, 5.95, 7.5, 8.0]
+    for name, values in poses.items():
+        g=groups[name]
+        track=player_animator(g, list(zip(times, values)))
+        main['animators'][g['uuid']]['keyframes'] += track['keyframes']
+    root=groups['player_root']
+    main['animators'][root['uuid']]['keyframes'] += animator(root,
+        [(4,(0,-1,0)),(4.3,(0,-3,0)),(4.5,(0,0,0)),(5.7,(0,0,0)),(7.5,(0,-3,0)),(8,(0,0,0))], 'position')['keyframes']
+    helper['length']=3.1
+    for track in helper['animators'].values():
+        for key in track['keyframes']: key['time']=round(key['time']*3.1/2.6,6)
+    return model
+
+
+def shuriken_model():
+    model=orb_model()
+    model['name']=model['model_identifier']='motionrp_rasenshuriken_orb'
+    # Four tapered white-blue blades in the horizontal plane, rotating as one.
+    children=[]
+    for arm in range(4):
+        for segment in range(7):
+            distance=3.3+segment*.8
+            width=2.8*(1-segment/8)
+            x,z=(distance,0) if arm%2==0 else (0,distance)
+            if arm>=2: x,z=-x,-z
+            size=[.9,.22,width] if arm%2==0 else [width,.22,.9]
+            uid=ident(f'shuriken_blade_{arm}_{segment}');children.append(uid)
+            model['elements'].append(dict(name=f'blade_{arm}_{segment}',uuid=uid,type='cube',box_uv=False,
+                origin=[0,0,0], **{'from':[x-size[0]/2,-.11,z-size[2]/2], 'to':[x+size[0]/2,.11,z+size[2]/2]},
+                faces={f:dict(uv=[.05,.05,.95,.95],texture=0) for f in ['north','east','south','west','up','down']}))
+    g=dict(name='shuriken_blades',uuid=ident('shuriken_blades'),origin=[0,0,0],rotation=[0,0,0],export=True,isOpen=True)
+    model['groups'].append(g);model['outliner'].append(dict(uuid=g['uuid'],children=children))
+    model['animations'][0]['animators'][g['uuid']]=animator(g,[(i/8,(0,-i*90,0)) for i in range(9)])
+    return model
+
+
 def main():
     raw=Path(sys.argv[1]).read_bytes()
     if hashlib.sha256(raw).hexdigest()!=RIG_SHA: raise SystemExit('Input is not the pinned upstream BetterModel 3.6.0 rig')
     player = player_model(json.loads(raw))
+    shuriken = shuriken_player(player)
     for relative,model in [('players/motionrp_rasengan.bbmodel',player),
-                           ('models/motionrp_rasengan_orb.bbmodel',orb_model())]:
+                           ('models/motionrp_rasengan_orb.bbmodel',orb_model()),
+                           ('players/motionrp_rasenshuriken.bbmodel', shuriken),
+                           ('models/motionrp_rasenshuriken_orb.bbmodel', shuriken_model())]:
         path=ROOT/relative
         path.parent.mkdir(parents=True,exist_ok=True)
         path.write_text(json.dumps(model,ensure_ascii=False,indent=2)+'\n')
         print(path)
     (ROOT/'rasengan-hand-path.csv').write_text(hand_path(player))
+    (ROOT/'rasenshuriken-hand-path.csv').write_text(hand_path(shuriken, 160))
 
 
 if __name__=='__main__': main()

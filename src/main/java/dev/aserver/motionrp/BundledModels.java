@@ -14,6 +14,8 @@ import dev.aserver.motionrp.core.BundledAssetUpdater;
 public final class BundledModels {
     public static final String PLAYER = "motionrp_rasengan";
     public static final String ORB = "motionrp_rasengan_orb";
+    public static final String SHURIKEN_PLAYER = "motionrp_rasenshuriken";
+    public static final String SHURIKEN_ORB = "motionrp_rasenshuriken_orb";
     private static final String PLAYER_020_SHA = "5c6a2b0425861d8fd648dfeacc5b61592ca2ef1c46da3ae6dfa55d08e46916d6";
     private static final String PLAYER_021_SHA = "e62db71a5d780a4ae7a3a3771e281e90c3b0fa4795c121e331ebf616b56d4c5d";
     private static final String PLAYER_023_SHA = "2e2fba7179fb111f67963a2619896c7cca7a2f434d241a1679f3a50f93bafc2e";
@@ -35,7 +37,8 @@ public final class BundledModels {
                 }
                 changed = true;
             }
-            for (String file : new String[]{"players/" + PLAYER + ".bbmodel", "models/" + ORB + ".bbmodel", "LICENSE-MotionRP-models.txt"}) {
+            for (String file : new String[]{"players/" + PLAYER + ".bbmodel", "models/" + ORB + ".bbmodel",
+                    "players/" + SHURIKEN_PLAYER + ".bbmodel", "models/" + SHURIKEN_ORB + ".bbmodel", "LICENSE-MotionRP-models.txt"}) {
                 Path target = root.resolve(file);
                 String resource = file.startsWith("LICENSE") ? "bettermodel/LICENSE-BetterModel.txt" : "bettermodel/" + file;
                 try (InputStream source = Objects.requireNonNull(plugin.getResource(resource), resource)) {

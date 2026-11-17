@@ -12,7 +12,7 @@ import java.util.*;
 
 /** Owns only trackers created by MotionRP; never closes another plugin's model. */
 public final class MotionPlayback {
-    private record Playing(EntityTracker tracker, BukkitTask timeout, RasenganScene scene) {}
+    private record Playing(EntityTracker tracker, BukkitTask timeout, MotionScene scene) {}
     private final MotionPlugin plugin;
     private final Map<UUID, Playing> playing = new HashMap<>();
 
@@ -22,10 +22,10 @@ public final class MotionPlayback {
         var model = BetterModel.limbOrNull(definition.model());
         if (model == null) return "プレイヤーモデルが未読込: " + definition.model();
         if (model.animation(definition.animation()).isEmpty()) return "アニメーションが未登録: " + definition.animation();
-        if (definition.effect().equals("rasengan")) {
+        if (Set.of("rasengan", "rasenshuriken").contains(definition.effect())) {
             if (model.animation("rasengan_helper").isEmpty()) return "分身アニメーションが未登録: rasengan_helper";
-            var orb = BetterModel.modelOrNull(BundledModels.ORB);
-            if (orb == null || orb.animation("spin").isEmpty()) return "螺旋丸モデルが未読込。BetterModelを再読み込みしてください。";
+            var orb = BetterModel.modelOrNull(definition.effect().equals("rasenshuriken") ? BundledModels.SHURIKEN_ORB : BundledModels.ORB);
+            if (orb == null || orb.animation("spin").isEmpty()) return "演出モデルが未読込。BetterModelを再読み込みしてください。";
         }
         return null;
     }
@@ -60,7 +60,11 @@ public final class MotionPlayback {
             EntityTracker owned = tracker;
             UUID uuid = player.getUniqueId();
             var timeout = Bukkit.getScheduler().runTaskLater(plugin, () -> finish(uuid, owned), definition.maxTicks());
-            RasenganScene scene = definition.effect().equals("rasengan") ? new RasenganScene(plugin, player, definition.model()) : null;
+            MotionScene scene = switch (definition.effect()) {
+                case "rasengan" -> new RasenganScene(plugin, player, definition.model());
+                case "rasenshuriken" -> new RasenshurikenScene(plugin, player, definition.model());
+                default -> null;
+            };
             playing.put(uuid, new Playing(owned, timeout, scene));
             boolean started = owned.animate(definition.animation(), AnimationModifier.DEFAULT_WITH_PLAY_ONCE, () -> {
                 if (plugin.isEnabled()) Bukkit.getScheduler().runTask(plugin, () -> finish(uuid, owned));

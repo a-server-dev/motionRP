@@ -4,6 +4,12 @@ debug-input: false
 # BetterModel/players にあるプレイヤーモデルを指定します。
 # 標準の steve.bbmodel に含まれる roll を初期モーションとして使用します。
 motions:
+  rasenshuriken:
+    name: 螺旋手裏剣（影分身二人）
+    model: motionrp_rasenshuriken
+    animation: rasenshuriken
+    effect: rasenshuriken
+    max-ticks: 200
   rasengan:
     name: 螺旋丸（影分身）
     model: motionrp_rasengan
