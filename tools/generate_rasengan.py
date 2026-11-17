@@ -40,6 +40,12 @@ def animator(group, keys, channel='rotation'):
                            for t, values in keys])
 
 
+def player_animator(group, keys):
+    # The rig faces -Z in Blockbench. A downward arm raised with +X pitch
+    # moves toward -Z (forward); the authored pose table used the opposite sign.
+    return animator(group, [(t, (-x, y, z)) for t, (x, y, z) in keys])
+
+
 def player_model(rig):
     model = copy.deepcopy(rig)
     model['name'] = model['model_identifier'] = 'motionrp_rasengan'
@@ -67,7 +73,7 @@ def player_model(rig):
     main = animation('rasengan', 4.8, {})
     for name, keys in tracks.items():
         g = groups[name]
-        main['animators'][g['uuid']] = animator(g, keys)
+        main['animators'][g['uuid']] = player_animator(g, keys)
     helper = animation('rasengan_helper', 2.6, {})
     for name, side in [('pra_right_arm',-1),('pla_left_arm',1)]:
         g = groups[name]
@@ -77,12 +83,12 @@ def player_model(rig):
             keys.append((round(.4+i*.2,2),(-75+10*math.cos(angle),
                 side*(20+8*math.sin(angle)),side*(25+10*math.cos(angle)))))
         keys += [(2.6,(-75,side*15,side*20))]
-        helper['animators'][g['uuid']] = animator(g,keys)
+        helper['animators'][g['uuid']] = player_animator(g,keys)
     for name in ['prfa_right_forearm','plfa_left_forearm']:
         g=groups[name]
-        helper['animators'][g['uuid']]=animator(g,[(0,(0,0,0)),(.2,(-38,0,0)),(2.6,(-38,0,0))])
+        helper['animators'][g['uuid']]=player_animator(g,[(0,(0,0,0)),(.2,(-38,0,0)),(2.6,(-38,0,0))])
     g=groups['pc_chest']
-    helper['animators'][g['uuid']]=animator(g,[(0,(0,0,0)),(.3,(15,0,0)),(2.6,(15,0,0))])
+    helper['animators'][g['uuid']]=player_animator(g,[(0,(0,0,0)),(.3,(15,0,0)),(2.6,(15,0,0))])
     model['animations']=[main,helper]
     return model
 

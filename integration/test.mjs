@@ -10,6 +10,7 @@ import nbt from 'prismarine-nbt';
 // A disposable, loopback-only offline server. Published Velocity/Paper settings
 // and real player data are never edited. This does not test Mojang login or rendering.
 const project = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const version = fs.readFileSync(path.join(project, 'build.gradle'), 'utf8').match(/^version = '([^']+)'/m)[1];
 const fixture = process.env.MOTIONRP_PAPER_FIXTURE || '/workspace/runtime/paper';
 const run = path.join(project, 'build/integration-server');
 const resultFile = path.join(project, 'build/integration-result.json');
@@ -129,7 +130,7 @@ try {
     if (fs.existsSync(source)) fs.symlinkSync(source, path.join(run, directory), 'dir');
   }
   fs.copyFileSync(path.join(fixture, 'plugins/bettermodel-3.6.0-paper.jar'), path.join(run, 'plugins/BetterModel.jar'));
-  fs.copyFileSync(path.join(project, 'build/libs/motionRP-0.2.0.jar'), path.join(run, 'plugins/MotionRP.jar'));
+  fs.copyFileSync(path.join(project, `build/libs/motionRP-${version}.jar`), path.join(run, 'plugins/MotionRP.jar'));
   fs.mkdirSync(path.join(run, 'plugins/MotionRP'));
   fs.writeFileSync(path.join(run, 'plugins/MotionRP/config.yml'),
     fs.readFileSync(path.join(project, 'src/main/resources/config.yml'), 'utf8')
@@ -164,6 +165,16 @@ generate-structures=false
 `);
   fs.writeFileSync(path.join(run, 'ops.json'), JSON.stringify([{ uuid: uuid('MotionTesterA'), name: 'MotionTesterA', level: 4, bypassesPlayerLimit: true }]));
   await startServer();
+  const playerAsset = 'players/motionrp_rasengan.bbmodel';
+  assert.deepEqual(fs.readFileSync(path.join(run, 'plugins/BetterModel', playerAsset)),
+    fs.readFileSync(path.join(project, 'src/main/resources/bettermodel', playerAsset)));
+  const fixturePlayer = path.join(fixture, 'plugins/BetterModel', playerAsset);
+  const legacyHash = '5c6a2b0425861d8fd648dfeacc5b61592ca2ef1c46da3ae6dfa55d08e46916d6';
+  if (fs.existsSync(fixturePlayer) && createHash('sha256').update(fs.readFileSync(fixturePlayer)).digest('hex') === legacyHash) {
+    const backup = path.join(run, 'plugins/MotionRP/model-backups', 'motionrp_rasengan.bbmodel.' + legacyHash + '.bak');
+    assert.deepEqual(fs.readFileSync(backup), fs.readFileSync(fixturePlayer));
+  }
+  pass('installed player animation matches current bundle and an untouched legacy model is backed up during upgrade');
   let a = await connect('MotionTesterA');
   let b = await connect('MotionTesterB');
   consoleCommand('motionrp give controller MotionTesterA');
@@ -342,6 +353,16 @@ generate-structures=false
   assert.equal(particles, lastParticles, 'Particles continued after cancellation');
   assert.ok(!output.slice(cancelBegin).includes('Rasengan phase: THRUST'), 'Cancelled scene kept running');
   pass('repeat-click cancellation removes clone/orb/body and stops future particles and phases');
+
+  for (let replay = 0; replay < 2; replay++) {
+    sceneDisplays.clear(); sceneRemoved.clear();
+    const replayBegin = output.length;
+    a._testLeftClick();
+    await waitFor(() => output.slice(replayBegin).includes('Rasengan phase: DISSIPATE'), 'consecutive Rasengan replay ' + replay, 15_000);
+    await waitFor(() => sceneDisplays.size > 12 && sceneRemoved.size === sceneDisplays.size, 'consecutive replay cleanup');
+    await sleep(300);
+  }
+  pass('three complete Rasengan plays plus cancellation can replay without relogging or reopening the GUI');
 
   await disconnect(b);
   await disconnect(a);
