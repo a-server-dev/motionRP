@@ -48,7 +48,7 @@ public final class BundledModels {
             }
             var files=new java.util.ArrayList<>(java.util.List.of("players/" + PLAYER + ".bbmodel", "models/" + ORB + ".bbmodel",
                     "players/" + SHURIKEN_PLAYER + ".bbmodel", "models/" + SHURIKEN_ORB + ".bbmodel", "LICENSE-MotionRP-models.txt"));
-            for(String effect:java.util.List.of("gate_of_babylon","susanoo","senbonzakura")) {
+            for(String effect:java.util.List.of("gate_of_babylon","susanoo","senbonzakura","titan_transform")) {
                 files.add("players/motionrp_"+effect+".bbmodel");
                 for(String model:SummonAssets.models(effect)) files.add("models/"+model+".bbmodel");
             }

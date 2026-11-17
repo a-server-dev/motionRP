@@ -29,12 +29,14 @@ final class SenbonzakuraScene extends SummonScene {
         for(int i=0;i<SWORDS;i++) {
             var pose=blade(i);double right=pose.right(),forward=pose.forward();
             if(tick==swordAt(i)) {
-                swords[i]=model(SummonAssets.CHERRY_BLADE,at(right,forward,-4.5),1.35f,"blade"+i);
-                sound(at(right,forward,0),Sound.BLOCK_CHAIN_PLACE,.3f,1.4f);
+                Location standing=at(right,forward,-5);standing.setYaw(origin.getYaw()+pose.yawOffset());
+                swords[i]=model(SummonAssets.CHERRY_FIELD,standing,1.5f,"blade"+i);
+                if(i%4==0) sound(at(right,forward,0),Sound.BLOCK_CHAIN_PLACE,.3f,1.4f);
             }
             if(swords[i]!=null) {
                 double rise=Math.clamp((tick-swordAt(i))/(double)RISE_TICKS,0,1);
-                swords[i].location(BukkitAdapter.adapt(at(right,forward,-4.5+4.5*rise)));
+                Location standing=at(right,forward,-5+5*rise);standing.setYaw(origin.getYaw()+pose.yawOffset());
+                swords[i].location(BukkitAdapter.adapt(standing));
                 if(tick==BLOOM) {
                     dust(at(right,forward,1.1),ROSE,8,.5);dust(at(right,forward,3.2),ROSE,8,.5);
                     audience.hide(swords[i]);swords[i]=null;

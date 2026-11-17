@@ -107,6 +107,10 @@ public final class ControllerListener implements Listener {
         plugin.playback().stop(event.getPlayer().getUniqueId());
         lastInput.remove(event.getPlayer().getUniqueId());
     }
+    @EventHandler public void join(PlayerJoinEvent event) { TitanState.recover(plugin,event.getPlayer()); }
+    @EventHandler public void respawn(PlayerRespawnEvent event) {
+        Bukkit.getScheduler().runTask(plugin,()->TitanState.recover(plugin,event.getPlayer()));
+    }
     @EventHandler public void death(PlayerDeathEvent event) { plugin.playback().stop(event.getEntity().getUniqueId()); }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void teleport(PlayerTeleportEvent event) {

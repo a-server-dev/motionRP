@@ -22,7 +22,8 @@ class RasenganAssetsTest {
                 "models/motionrp_golden_gate.bbmodel", "models/motionrp_treasury_sword.bbmodel",
                 "models/motionrp_treasury_spear.bbmodel", "models/motionrp_treasury_axe.bbmodel",
                 "models/motionrp_susanoo_ribs.bbmodel", "models/motionrp_susanoo_armor.bbmodel", "models/motionrp_susanoo_slash.bbmodel",
-                "players/motionrp_senbonzakura.bbmodel","models/motionrp_senbonzakura_blade.bbmodel","models/motionrp_senbonzakura_petals.bbmodel")) {
+                "players/motionrp_senbonzakura.bbmodel","models/motionrp_senbonzakura_blade.bbmodel","models/motionrp_senbonzakura_petals.bbmodel",
+                "models/motionrp_senbonzakura_field_blade.bbmodel","players/motionrp_titan_transform.bbmodel","models/motionrp_titan_lightning.bbmodel")) {
             var model = read(file);
             Set<String> groups = new HashSet<>();
             Set<String> all = new HashSet<>();
@@ -49,7 +50,7 @@ class RasenganAssetsTest {
     }
 
     @Test void summonsContainEmbeddedTexturesDifferentWeaponsAndAnAnimatedGiantSword() throws Exception {
-        for(String id:List.of("golden_gate","treasury_sword","treasury_spear","treasury_axe","susanoo_ribs","susanoo_armor","susanoo_slash","senbonzakura_blade","senbonzakura_petals")) {
+        for(String id:List.of("golden_gate","treasury_sword","treasury_spear","treasury_axe","susanoo_ribs","susanoo_armor","susanoo_slash","senbonzakura_blade","senbonzakura_petals","senbonzakura_field_blade","titan_lightning")) {
             var model=read("models/motionrp_"+id+".bbmodel");
             String source=model.getAsJsonArray("textures").get(0).getAsJsonObject().get("source").getAsString();
             var image=ImageIO.read(new ByteArrayInputStream(Base64.getDecoder().decode(source.substring(source.indexOf(',')+1))));
@@ -74,10 +75,10 @@ class RasenganAssetsTest {
         double top=0;
         for(var element:armor.getAsJsonArray("elements")) top=Math.max(top,element.getAsJsonObject().getAsJsonArray("to").get(1).getAsDouble());
         assertTrue(top*2/16>5.5,"Upper-body guardian should tower over the caster");
-        for(String name:List.of("gate_of_babylon","susanoo","senbonzakura")) {
+        for(String name:List.of("gate_of_babylon","susanoo","senbonzakura","titan_transform")) {
             var motion=read("players/motionrp_"+name+".bbmodel").getAsJsonArray("animations").get(0).getAsJsonObject();
             assertEquals(name,motion.get("name").getAsString());
-            int duration=switch(name) {case "susanoo" -> SusanooTimeline.END;case "senbonzakura" -> SenbonzakuraTimeline.END;default -> GateTimeline.END;};
+            int duration=switch(name) {case "susanoo" -> SusanooTimeline.END;case "senbonzakura" -> SenbonzakuraTimeline.END;case "titan_transform" -> TitanTimeline.END;default -> GateTimeline.END;};
             assertEquals(duration/20.0,motion.get("length").getAsDouble());
         }
     }
@@ -119,6 +120,34 @@ class RasenganAssetsTest {
         var metal=new java.awt.Color(image.getRGB(3,0));var handle=new java.awt.Color(image.getRGB(2,0));
         assertTrue(Math.abs(metal.getRed()-metal.getGreen())<25 && Math.abs(metal.getGreen()-metal.getBlue())<25);
         assertTrue(handle.getRed()<50 && handle.getGreen()<50 && handle.getBlue()<50);
+    }
+
+    @Test void denseCherryFieldUsesOnlyOutwardCurvingBladeFacesWithoutAnyHilt() throws Exception {
+        var model=read("models/motionrp_senbonzakura_field_blade.bbmodel");double top=0,outerTip=0;
+        for(var raw:model.getAsJsonArray("elements")) {
+            var e=raw.getAsJsonObject();String name=e.get("name").getAsString();
+            assertFalse(name.contains("grip") || name.contains("guard") || name.contains("tsuba") || name.contains("pommel"));
+            double y=e.getAsJsonArray("to").get(1).getAsDouble();top=Math.max(top,y);
+            if(y>50) outerTip=Math.max(outerTip,e.getAsJsonArray("to").get(0).getAsDouble());
+        }
+        assertTrue(top*1.5/16>4.8);assertTrue(outerTip>5,"The upper blade should sweep toward its outer edge");
+    }
+
+    @Test void titanRaisesTheRightHandToTheMouthBeforeTransforming() throws Exception {
+        var model=read("players/motionrp_titan_transform.bbmodel");
+        Map<String,JsonObject> groups=new HashMap<>();Map<String,String> names=new HashMap<>(),parents=new HashMap<>();
+        for(var raw:model.getAsJsonArray("groups")) {
+            var g=raw.getAsJsonObject();String id=g.get("uuid").getAsString();groups.put(id,g);names.put(g.get("name").getAsString(),id);
+        }
+        parentTree(model.getAsJsonArray("outliner"),null,parents);
+        var animation=model.getAsJsonArray("animations").get(0).getAsJsonObject();
+        for(double time:new double[]{.6,1.2}) {
+            double[] hand=posedOrigin(names.get("pri_right_item"),time,animation,groups,parents);
+            double[] mouth=posedPoint(names.get("h_ph_head"),new double[]{0,25,-4},time,animation,groups,parents);
+            double squared=0;for(int i=0;i<3;i++) squared+=Math.pow(hand[i]-mouth[i],2);
+            assertTrue(squared<36,"Right hand missed the mouth: "+Arrays.toString(hand));
+        }
+        assertEquals("titan_idle",model.getAsJsonArray("animations").get(1).getAsJsonObject().get("name").getAsString());
     }
 
     @Test void shurikenIsRaisedOverheadThenThrownAndHasFourWideBlades() throws Exception {

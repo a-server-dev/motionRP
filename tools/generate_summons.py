@@ -203,6 +203,7 @@ def player(rig,name,length,poses):
     for bone,keys in poses.items():
         g=groups[bone];motion['animators'][g['uuid']]=player_animator(g,keys)
     model['animations']=[motion];save('players/motionrp_'+name+'.bbmodel',model)
+    return model
 
 
 def cherry_models():
@@ -228,6 +229,19 @@ def cherry_models():
         parts.append(blade.cube('hilt_wrap_'+str(j),[.65,39.2+j*1.5,0],[1.9,.5,1.85],5))
         parts.append(blade.cube('wrap_diamond_'+str(j),[.65,39.8+j*1.5,-.85],[.6,.65,.12],1))
     blade.group('cherry_katana',parts);blade.save()
+    field=Model('motionrp_senbonzakura_field_blade',colors=steel);parts=[]
+    # Blade-only standing sheets: mirrored yaw in the scene puts this +X edge
+    # and swept upper point on the OUTSIDE of each side of the avenue.
+    for j in range(24):
+        y=1.1+j*2.2;t=max(0,(j-13)/10);curve=6*t*t
+        width=2.8*(1-.85*max(0,(j-18)/5))
+        parts.append(field.cube('forged_face_'+str(j),[curve,y,0],[width,2.3,.85],3))
+        parts.append(field.cube('outer_cutting_edge_'+str(j),[curve+width/2,y,-.03],[.22,2.3,1],7))
+        parts.append(field.cube('inner_spine_'+str(j),[curve-width/2,y,.08],[.25,2.3,.95],4))
+        parts.append(field.cube('forging_ridge_'+str(j),[curve-.2,y,-.49],[.18,2.3,.12],1))
+        if j<12:
+            parts.append(field.cube('subtle_hamon_'+str(j),[curve+.55+(.12 if j%2 else -.12),y,-.51],[.12,1.3,.1],6))
+    field.group('naked_outward_blade',parts);field.save()
     petals=Model('motionrp_senbonzakura_petals',colors=colors);parts=[]
     for j in range(32):
         angle=j*math.pi*(3-math.sqrt(5));radius=4+(j%7)*1.25
@@ -237,6 +251,23 @@ def cherry_models():
     g=petals.group('petal_cloud',parts);spin=animation('swirl',1.5,{})
     spin['loop']='loop';spin['animators'][g['uuid']]=animator(g,[(i*.375,(i%2*15,i*90,i%2*12)) for i in range(5)])
     petals.data['animations']=[spin];petals.save()
+
+
+def titan_bolt():
+    colors=[(255,183,30,255),(255,255,222,255),(244,124,20,255),(255,236,112,255),
+            (196,221,255,255),(255,216,64,255),(230,150,24,255),(255,255,255,255)]
+    model=Model('motionrp_titan_lightning',colors=colors);parts=[]
+    x,y=0,0
+    for j in range(8):
+        sign=1 if j%2 else -1;angle=sign*22.5
+        length=24;dx=-math.sin(math.radians(angle))*length;dy=math.cos(math.radians(angle))*length
+        center=[x+dx/2,y+dy/2,0]
+        parts.append(model.cube('electric_halo_'+str(j),center,[2.1,length,.9],0,[0,0,angle]))
+        parts.append(model.cube('white_hot_core_'+str(j),[center[0],center[1],-.5],[.75,length,.45],7,[0,0,angle]))
+        if j in (2,4,6):
+            parts.append(model.cube('branch_'+str(j),[center[0]+sign*8,center[1]-7,.2],[1,27,.7],3,[0,0,-sign*45]))
+        x+=dx;y+=dy
+    model.group('lightning',parts);model.save()
 
 
 def main():
@@ -265,6 +296,21 @@ def main():
         'pla_left_arm':[(0,(0,0,0)),(3.2,(0,0,-12)),(8.8,(0,0,-12)),(10.6,(0,0,0))],
         'pc_chest':[(0,(0,0,0)),(.2,(0,-5,0)),(7.5,(0,-5,0)),(7.65,(5,10,0)),(10.6,(0,0,0))],
         'h_ph_head':[(0,(0,0,0)),(.2,(8,0,0)),(3.2,(0,0,0)),(10.6,(0,0,0))]})
+    titan=player(rig,'titan_transform',10.3,{
+        'pra_right_arm':[(0,(0,0,0)),(.4,(-70,30,-10)),(1.45,(-70,30,-10)),(2.1,(-30,0,20)),(9,(0,0,0)),(10.3,(0,0,0))],
+        'prfa_right_forearm':[(0,(0,0,0)),(.4,(-100,0,0)),(.8,(-106,0,0)),(1.1,(-98,0,0)),(1.45,(-104,0,0)),(2.1,(-25,0,0)),(9,(0,0,0)),(10.3,(0,0,0))],
+        'h_ph_head':[(0,(0,0,0)),(.4,(15,-5,0)),(1.45,(15,-5,0)),(2.1,(-15,0,0)),(10.3,(0,0,0))],
+        'pla_left_arm':[(0,(0,0,0)),(1.5,(0,0,-15)),(2.1,(15,0,-25)),(10.3,(0,0,0))]})
+    groups={g['name']:g for g in titan['groups']};idle=animation('titan_idle',2,{})
+    idle['loop']='loop'
+    for name,keys in {
+        'pc_chest':[(0,(0,0,0)),(1,(-4,0,0)),(2,(0,0,0))],
+        'h_ph_head':[(0,(-10,0,0)),(1,(-15,0,0)),(2,(-10,0,0))],
+        'pra_right_arm':[(0,(5,0,15)),(1,(8,0,18)),(2,(5,0,15))],
+        'pla_left_arm':[(0,(5,0,-15)),(1,(8,0,-18)),(2,(5,0,-15))]}.items():
+        g=groups[name];idle['animators'][g['uuid']]=player_animator(g,keys)
+    titan['animations'].append(idle);save('players/motionrp_titan_transform.bbmodel',titan)
+    titan_bolt()
     cherry_models()
     gate()
     for kind in ['sword','spear','axe']: weapon(kind)

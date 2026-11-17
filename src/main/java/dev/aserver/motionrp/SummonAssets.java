@@ -8,11 +8,13 @@ final class SummonAssets {
             SPEAR="motionrp_treasury_spear", AXE="motionrp_treasury_axe",
             RIBS="motionrp_susanoo_ribs", ARMOR="motionrp_susanoo_armor", SLASH="motionrp_susanoo_slash";
     static final String CHERRY_BLADE="motionrp_senbonzakura_blade",CHERRY_PETALS="motionrp_senbonzakura_petals";
+    static final String CHERRY_FIELD="motionrp_senbonzakura_field_blade",TITAN_BOLT="motionrp_titan_lightning";
     static List<String> models(String effect) {
         return switch(effect) {
             case "gate_of_babylon" -> List.of(GATE,SWORD,SPEAR,AXE);
             case "susanoo" -> List.of(RIBS,ARMOR,SLASH);
-            case "senbonzakura" -> List.of(CHERRY_BLADE,CHERRY_PETALS);
+            case "senbonzakura" -> List.of(CHERRY_BLADE,CHERRY_FIELD,CHERRY_PETALS);
+            case "titan_transform" -> List.of(TITAN_BOLT);
             default -> List.of();
         };
     }

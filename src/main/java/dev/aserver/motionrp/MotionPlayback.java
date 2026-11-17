@@ -31,6 +31,7 @@ public final class MotionPlayback {
             return "黄金の門の回転アニメーションが未登録";
         if(definition.effect().equals("senbonzakura") && BetterModel.modelOrNull(SummonAssets.CHERRY_PETALS).animation("swirl").isEmpty())
             return "千本桜の旋回アニメーションが未登録";
+        if(definition.effect().equals("titan_transform") && model.animation("titan_idle").isEmpty()) return "巨人化の待機アニメーションが未登録";
         if (Set.of("rasengan", "rasenshuriken").contains(definition.effect())) {
             if (model.animation("rasengan_helper").isEmpty()) return "分身アニメーションが未登録: rasengan_helper";
             var orb = BetterModel.modelOrNull(definition.effect().equals("rasenshuriken") ? BundledModels.SHURIKEN_ORB : BundledModels.ORB);
@@ -62,6 +63,7 @@ public final class MotionPlayback {
         }
         EntityTracker tracker = null;
         try {
+            TitanState titan=definition.effect().equals("titan_transform") ? new TitanState(plugin,player) : null;
             // Same player-limb path used by BetterModel's own /bm play command.
             // No per-viewer filter: BetterModel manages visibility for nearby players.
             tracker = Objects.requireNonNull(BetterModel.limbOrNull(definition.model()))
@@ -75,6 +77,7 @@ public final class MotionPlayback {
                 case "gate_of_babylon" -> new GateOfBabylonScene(plugin,player);
                 case "susanoo" -> new SusanooScene(plugin,player);
                 case "senbonzakura" -> new SenbonzakuraScene(plugin,player);
+                case "titan_transform" -> new TitanScene(plugin,player,definition.model(),owned,Objects.requireNonNull(titan));
                 default -> null;
             };
             playing.put(uuid, new Playing(owned, timeout, scene));

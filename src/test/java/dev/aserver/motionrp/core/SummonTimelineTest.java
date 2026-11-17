@@ -12,16 +12,18 @@ class SummonTimelineTest {
             assertEquals(0,GateTimeline.opening(GateTimeline.openAt(gate),gate));
             assertEquals(1,GateTimeline.opening(GateTimeline.fireAt(gate),gate));
             assertTrue(GateTimeline.fireAt(gate)+GateTimeline.FLIGHT_TICKS<GateTimeline.FADE);
-            if(gate<15) sequential.add(GateTimeline.fireAt(gate));
-            else assertEquals(GateTimeline.VOLLEY,GateTimeline.fireAt(gate));
+            sequential.add(GateTimeline.fireAt(gate));
             if(GateTimeline.shoots(GateTimeline.VOLLEY,gate)) volley++;
             heights.add(GateTimeline.portal(gate).up());depths.add(GateTimeline.portal(gate).forward());
         }
-        assertEquals(15,sequential.size());assertEquals("FINISHED",GateTimeline.phase(GateTimeline.END));
+        assertEquals(20,sequential.size());assertEquals("FINISHED",GateTimeline.phase(GateTimeline.END));
+        int rapid=0;
+        for(int tick=0;tick<GateTimeline.VOLLEY;tick++) for(int gate=0;gate<20;gate++) if(GateTimeline.shoots(tick,gate)) rapid++;
+        assertEquals(30,rapid);
         assertEquals(20,volley);assertTrue(heights.size()>16);assertTrue(depths.size()>12);
-        assertEquals(116,GateTimeline.END);assertEquals(12,GateTimeline.FLIGHT_TICKS);
+        assertEquals(116,GateTimeline.END);assertEquals(2,GateTimeline.FLIGHT_TICKS);
         assertTrue(GateTimeline.portal(17).right()-GateTimeline.portal(10).right()>16);
-        for(int i=1;i<15;i++) assertEquals(2,GateTimeline.fireAt(i)-GateTimeline.fireAt(i-1));
+        for(int i=1;i<20;i++) assertEquals(1,GateTimeline.fireAt(i)-GateTimeline.fireAt(i-1));
         assertThrows(IllegalArgumentException.class,()->GateTimeline.fireAt(-1));
         assertThrows(IllegalArgumentException.class,()->GateTimeline.fireAt(GateTimeline.COUNT));
     }
@@ -30,17 +32,31 @@ class SummonTimelineTest {
             assertTrue(SenbonzakuraTimeline.swordAt(i)>=SenbonzakuraTimeline.RISE);
             assertTrue(SenbonzakuraTimeline.swordAt(i)+SenbonzakuraTimeline.RISE_TICKS<=SenbonzakuraTimeline.BLOOM);
             var pose=SenbonzakuraTimeline.blade(i);
-            assertEquals(2.4,Math.abs(pose.right()));
+            assertEquals(2.6,Math.abs(pose.right()));
+            assertEquals(i%2==0?180:0,pose.yawOffset());
             if(i%2==1) assertEquals(SenbonzakuraTimeline.blade(i-1).forward(),pose.forward());
             if(i>=2) assertTrue(pose.forward()>SenbonzakuraTimeline.blade(i-2).forward());
         }
-        assertTrue(SenbonzakuraTimeline.blade(0).forward()<0 && SenbonzakuraTimeline.blade(11).forward()>0);
+        assertEquals(48,SenbonzakuraTimeline.SWORDS);
+        assertTrue(SenbonzakuraTimeline.blade(0).forward()<0 && SenbonzakuraTimeline.blade(47).forward()>0);
+        assertTrue(SenbonzakuraTimeline.blade(2).forward()-SenbonzakuraTimeline.blade(0).forward()<.7);
         assertTrue(SenbonzakuraTimeline.SURGE-SenbonzakuraTimeline.ORBIT>=76);
         assertEquals("BLOOM",SenbonzakuraTimeline.phase(SenbonzakuraTimeline.BLOOM));
         assertEquals("ORBIT",SenbonzakuraTimeline.phase(SenbonzakuraTimeline.ORBIT));
         assertEquals("SURGE",SenbonzakuraTimeline.phase(SenbonzakuraTimeline.SURGE));
         assertEquals("IMPACT",SenbonzakuraTimeline.phase(SenbonzakuraTimeline.IMPACT));
         assertEquals("FINISHED",SenbonzakuraTimeline.phase(SenbonzakuraTimeline.END));
+    }
+    @Test void titanGrowthReachesTenAndReturnsToThePlayersPreviousScale() {
+        for(double original:new double[]{.75,1,1.25,2}) {
+            assertEquals(original,TitanTimeline.scale(0,original));
+            assertEquals(10,TitanTimeline.scale(TitanTimeline.GROWN,original));
+            assertEquals(original,TitanTimeline.scale(TitanTimeline.END,original));
+            assertTrue(TitanTimeline.scale(TitanTimeline.SHRINK+10,original)<10);
+        }
+        assertEquals("FLASH",TitanTimeline.phase(TitanTimeline.FLASH));
+        assertEquals("GIANT",TitanTimeline.phase(TitanTimeline.GROWN));
+        assertEquals("FINISHED",TitanTimeline.phase(TitanTimeline.END));
     }
     @Test void guardianFormsBeforeWindingUpAndLeavesTimeForImpactAndDissolve() {
         int[] moments={SusanooTimeline.RIBS,SusanooTimeline.ARMOR,SusanooTimeline.READY,SusanooTimeline.SLASH,

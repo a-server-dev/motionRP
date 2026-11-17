@@ -4,6 +4,12 @@ debug-input: false
 # BetterModel/players にあるプレイヤーモデルを指定します。
 # 標準の steve.bbmodel に含まれる roll を初期モーションとして使用します。
 motions:
+  titan_transform:
+    name: 巨人化
+    model: motionrp_titan_transform
+    animation: titan_transform
+    effect: titan_transform
+    max-ticks: 260
   senbonzakura:
     name: 千本桜景厳
     model: motionrp_senbonzakura
@@ -46,3 +52,7 @@ motions:
 controller:
   name: モーションセット
   # item-model: motionrp:controller
+
+# 仮スキン: 公開プロフィール MHF_Golem。Mojang textures のURLで差し替え可能。
+titan:
+  skin-url: https://textures.minecraft.net/texture/1c6cd7202c34e78f3073090349f7d973b288af5e5b7334dd249010b3f27078f9

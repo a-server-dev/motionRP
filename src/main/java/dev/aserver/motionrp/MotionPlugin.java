@@ -21,7 +21,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
     @Override public void onEnable() {
         saveDefaultConfig();
         // Add only the new built-in definition during upgrade; keep user entries.
-        for (String builtIn : java.util.List.of("rasengan", "rasenshuriken", "gate_of_babylon", "susanoo", "senbonzakura")) {
+        for (String builtIn : java.util.List.of("rasengan", "rasenshuriken", "gate_of_babylon", "susanoo", "senbonzakura","titan_transform")) {
             if (!getConfig().contains("assets." + builtIn + "-definition-installed", true)) {
                 if (!getConfig().contains("motions." + builtIn, true)) {
                     for (var entry : Objects.requireNonNull(getConfig().getDefaults())
@@ -46,6 +46,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
         playback = new MotionPlayback(this);
         Bukkit.getPluginManager().registerEvents(menu, this);
         Bukkit.getPluginManager().registerEvents(new ControllerListener(this), this);
+        for(Player player:Bukkit.getOnlinePlayers()) TitanState.recover(this,player);
         var command = Objects.requireNonNull(getCommand("motionrp"));
         command.setExecutor(this);
         command.setTabCompleter(this);

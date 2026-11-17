@@ -73,10 +73,13 @@ final class GateOfBabylonScene extends SummonScene {
             if(hit!=null || progress>=1) {
                 audience.hide(shot.model());iterator.remove();particle(next,Particle.ELECTRIC_SPARK,12,.14,.03);
                 if(shot.fired()==VOLLEY) {
-                    particle(next,Particle.EXPLOSION,1,0,0);particle(next,Particle.CLOUD,10,.35,.04);
-                    dust(next,GOLD,8,.25);trace("explosion index="+shot.gate()+" tick="+tick);
+                    particle(next,Particle.EXPLOSION,2,.15,0);particle(next,Particle.CLOUD,18,.55,.06);
+                    particle(next,Particle.FLAME,8,.3,.025);dust(next,GOLD,14,.4);
+                    if(shot.gate()%4==0) particle(next,Particle.EXPLOSION_EMITTER,1,0,0);
+                    trace("explosion index="+shot.gate()+" tick="+tick);
                     if(!volleyBoom) {
-                        volleyBoom=true;sound(next,Sound.ENTITY_GENERIC_EXPLODE,1.5f,.7f);
+                        volleyBoom=true;sound(next,Sound.ENTITY_GENERIC_EXPLODE,2,.55f);
+                        sound(next,Sound.ENTITY_DRAGON_FIREBALL_EXPLODE,1.2f,.8f);
                         sound(next,Sound.ENTITY_BREEZE_WIND_BURST,1,.9f);
                     }
                 } else sound(next,Sound.ENTITY_ARROW_HIT,.65f,1.3f);

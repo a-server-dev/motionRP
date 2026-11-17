@@ -83,6 +83,7 @@ abstract class SummonScene implements MotionScene {
     @Override public final void close() {
         if(closed) return;closed=true;
         if(task!=null) task.cancel();
-        audience.close();
+        try { audience.close(); } finally { onClose(); }
     }
+    void onClose() {}
 }

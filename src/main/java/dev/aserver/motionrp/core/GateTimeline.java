@@ -1,8 +1,8 @@
 package dev.aserver.motionrp.core;
 
 public final class GateTimeline {
-    public static final int COUNT=20, BURST_COUNT=15, OPEN=6, DRAW=34, SEQUENTIAL=42, VOLLEY=84, FADE=102, END=116;
-    public static final int OPEN_TICKS=8, EMERGE_TICKS=6, FLIGHT_TICKS=12;
+    public static final int COUNT=20, BURST_COUNT=30, OPEN=6, DRAW=34, SEQUENTIAL=42, VOLLEY=84, FADE=102, END=116;
+    public static final int OPEN_TICKS=8, EMERGE_TICKS=6, FLIGHT_TICKS=2;
     public record Portal(double right,double forward,double up,double scale) {}
     private static final Portal[] PORTALS={
         new Portal(-3.3,-1.8,2.25,.95),new Portal(-1.8,-2.5,3.15,1.05),
@@ -16,11 +16,14 @@ public final class GateTimeline {
         new Portal(-5,-2.8,1.65,.8),new Portal(4.8,-2.2,1.45,.95)};
     private GateTimeline() {}
     public static int openAt(int gate) { check(gate);return OPEN+gate; }
-    public static int fireAt(int gate) { check(gate);return gate<BURST_COUNT ? SEQUENTIAL+gate*2 : VOLLEY; }
+    public static int fireAt(int gate) { check(gate);return SEQUENTIAL+gate; }
     public static Portal portal(int gate) {
         check(gate);Portal p=PORTALS[gate];return new Portal(p.right()*1.45,p.forward(),p.up(),p.scale());
     }
-    public static boolean shoots(int tick,int gate) { check(gate);return tick==VOLLEY || (gate<BURST_COUNT && tick==fireAt(gate)); }
+    public static boolean shoots(int tick,int gate) {
+        check(gate);int shot=tick-SEQUENTIAL;
+        return tick==VOLLEY || (shot>=0 && shot<BURST_COUNT && shot%COUNT==gate);
+    }
     public static double opening(int tick,int gate) { return Math.clamp((tick-openAt(gate))/(double)OPEN_TICKS,0,1); }
     private static void check(int gate) { if(gate<0 || gate>=COUNT) throw new IllegalArgumentException("Invalid gate"); }
     public static String phase(int tick) {
