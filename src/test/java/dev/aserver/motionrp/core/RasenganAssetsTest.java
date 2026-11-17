@@ -47,7 +47,7 @@ class RasenganAssetsTest {
         var model=read("players/motionrp_rasenshuriken.bbmodel");
         var animations=model.getAsJsonArray("animations");
         assertEquals("rasenshuriken",animations.get(0).getAsJsonObject().get("name").getAsString());
-        assertEquals(8,animations.get(0).getAsJsonObject().get("length").getAsDouble());
+        assertEquals(7.6,animations.get(0).getAsJsonObject().get("length").getAsDouble());
         assertEquals((RasenshurikenTimeline.RAISE-RasenshurikenTimeline.CLONES)/20.0,
                 animations.get(1).getAsJsonObject().get("length").getAsDouble());
         Map<String,JsonObject> groups=new HashMap<>();Map<String,String> parents=new HashMap<>();String wrist=null;
@@ -63,8 +63,8 @@ class RasenganAssetsTest {
             assertEquals(at[1]/16+.03,path.height(),1e-7);
         }
         assertTrue(RasenganHandPath.shurikenAt(80).height()>1.9,"Weapon not overhead");
-        assertTrue(RasenganHandPath.shurikenAt(114).height()>1.9,"Weapon lowered before release");
-        assertTrue(RasenganHandPath.shurikenAt(119).forward()>.4,"Throw arm did not reach forward");
+        assertTrue(RasenganHandPath.shurikenAt(RasenshurikenTimeline.THROW).height()>1.9,"Weapon lowered before release");
+        assertTrue(RasenganHandPath.shurikenAt(111).forward()>.4,"Throw arm did not reach forward");
         var orb=read("models/motionrp_rasenshuriken_orb.bbmodel");
         assertEquals(5,orb.getAsJsonArray("groups").size());
         var blades=orb.getAsJsonArray("outliner").get(4).getAsJsonObject().getAsJsonArray("children");

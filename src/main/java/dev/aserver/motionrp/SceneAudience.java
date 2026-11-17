@@ -12,7 +12,9 @@ import java.util.*;
 final class SceneAudience implements AutoCloseable {
     private final Player owner;
     private final Map<UUID, Player> viewers = new LinkedHashMap<>();
-    private final Set<DummyTracker> trackers = new LinkedHashSet<>();
+    // BetterModel Tracker.equals/hashCode use only the model name. Two clones
+    // of the same model must still be owned and closed independently.
+    private final Set<DummyTracker> trackers = Collections.newSetFromMap(new IdentityHashMap<>());
     SceneAudience(Player owner) { this.owner = owner; }
     Collection<Player> players() { return viewers.values(); }
     void refresh() {

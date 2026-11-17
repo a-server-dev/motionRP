@@ -240,6 +240,12 @@ def shuriken_player(player):
     helper['length']=3.1
     for track in helper['animators'].values():
         for key in track['keyframes']: key['time']=round(key['time']*3.1/2.6,6)
+    # Compress jump-to-release from 1.2s to 0.8s; keep later phases' speeds.
+    for track in main['animators'].values():
+        for key in track['keyframes']:
+            time=key['time']
+            key['time']=round(4.5+(time-4.5)/1.5 if 4.5<=time<=5.7 else time-.4 if time>5.7 else time,6)
+    main['length']=7.6
     return model
 
 
@@ -279,7 +285,7 @@ def main():
         path.write_text(json.dumps(model,ensure_ascii=False,indent=2)+'\n')
         print(path)
     (ROOT/'rasengan-hand-path.csv').write_text(hand_path(player))
-    (ROOT/'rasenshuriken-hand-path.csv').write_text(hand_path(shuriken, 160))
+    (ROOT/'rasenshuriken-hand-path.csv').write_text(hand_path(shuriken, 152))
 
 
 if __name__=='__main__': main()

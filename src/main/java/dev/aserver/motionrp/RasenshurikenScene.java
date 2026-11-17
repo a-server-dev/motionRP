@@ -85,7 +85,6 @@ final class RasenshurikenScene implements MotionScene {
                         });
                 weapon.animate("spin",AnimationModifier.builder().type(AnimationIterator.Type.LOOP).build());
                 audience.show(weapon,plugin,"weapon");
-                sound(ball,Sound.ENTITY_BREEZE_CHARGE,.7f,.9f);
             }
             if (tick >= ORB && tick < THROW) {
                 float scale=(float)(.15+1.35*Math.clamp((tick-ORB)/(double)(RAISE-ORB),0,1));
@@ -94,6 +93,9 @@ final class RasenshurikenScene implements MotionScene {
                 WindEffects.swirl(audience.players(),anchor.clone().add(0,.8,0),tick,1.1);
                 if (tick % 24 == 0) sound(ball,Sound.ENTITY_BREEZE_WHIRL,.3f,1.1f);
             }
+            if (tick >= ORB && tick < RAISE && (tick-ORB)%12 == 0)
+                sound(ball,Sound.ENTITY_BREEZE_CHARGE,.7f,.9f);
+            if (tick == RAISE) stopChargeSound();
             if (tick == JUMP) sound(anchor,Sound.ENTITY_BREEZE_JUMP,.8f,1);
             if (tick == THROW) {
                 throwFrom=ball.clone();projectile=ball.clone();
@@ -117,7 +119,9 @@ final class RasenshurikenScene implements MotionScene {
                 if (hit != null || tick == IMPACT) {
                     burst=true;audience.hide(weapon);weapon=null;
                     WindEffects.burst(audience.players(),next);
-                    sound(next,Sound.ENTITY_BREEZE_WIND_BURST,1,.8f);
+                    sound(next,Sound.ENTITY_BREEZE_WIND_BURST,1.4f,.7f);
+                    sound(next,Sound.ENTITY_GENERIC_EXPLODE,1.4f,.75f);
+                    sound(next,Sound.ENTITY_WIND_CHARGE_WIND_BURST,1.1f,1.15f);
                     trace("burst x="+next.getX()+" y="+next.getY()+" z="+next.getZ());
                 }
             }
@@ -161,21 +165,26 @@ final class RasenshurikenScene implements MotionScene {
     private void sound(Location at,Sound sound,float volume,float pitch) {
         for (Player p:audience.players()) p.playSound(at,sound,SoundCategory.PLAYERS,volume,pitch);
     }
+    private void stopChargeSound() {
+        for (Player p:audience.players()) p.stopSound(Sound.ENTITY_BREEZE_CHARGE,SoundCategory.PLAYERS);
+    }
     private void smoke(Location at) { for (Player p:audience.players()) p.spawnParticle(Particle.POOF,at,20,.3,.5,.3,.03); }
     private void trace(String message) { if (plugin.getConfig().getBoolean("debug-input",false)) plugin.getLogger().info("Rasenshuriken "+message); }
     @Override public void close() {
         if (closed) return;closed=true;
         if (task!=null) task.cancel();
-        try { audience.close(); }
+        try { stopChargeSound(); }
         finally {
-            // A cancelled cinematic jump must not leave the player suspended.
-            if (launch!=null && lastOwned!=null && owner.isOnline() && !owner.isDead()
-                    && owner.getWorld()==launch.getWorld() && owner.getLocation().distanceSquared(lastOwned)<.01
-                    && owner.getLocation().getY()>launch.getY()+.05
-                    && !owner.collidesAt(launch)) {
-                owner.teleport(launch,org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.PLUGIN);
+            try { audience.close(); }
+            finally {
+                // A cancelled cinematic jump must not leave the player suspended.
+                if (launch!=null && lastOwned!=null && owner.isOnline() && !owner.isDead()
+                        && owner.getWorld()==launch.getWorld() && owner.getLocation().distanceSquared(lastOwned)<.01
+                        && owner.getLocation().getY()>launch.getY()+.05 && !owner.collidesAt(launch)) {
+                    owner.teleport(launch,org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.PLUGIN);
+                }
+                owner.setFallDistance(0);
             }
-            owner.setFallDistance(0);
         }
     }
 }

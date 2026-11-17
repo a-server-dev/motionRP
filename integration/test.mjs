@@ -6,6 +6,7 @@ import { createHash } from 'node:crypto';
 import { spawn, execFileSync } from 'node:child_process';
 import mineflayer from 'mineflayer';
 import nbt from 'prismarine-nbt';
+import { gunzipSync } from 'node:zlib';
 
 // A disposable, loopback-only offline server. Published Velocity/Paper settings
 // and real player data are never edited. This does not test Mojang login or rendering.
@@ -155,6 +156,9 @@ try {
     assert.equal(createHash('sha256').update(fs.readFileSync(target)).digest('hex'), checksum, name + ' checksum');
   }
   fs.cpSync(path.join(fixture, 'plugins/BetterModel'), path.join(run, 'plugins/BetterModel'), { recursive: true });
+  const oldShuriken=gunzipSync(fs.readFileSync(path.join(project,'src/test/resources/motionrp_rasenshuriken-0.3.0.bbmodel.gz')));
+  fs.mkdirSync(path.join(run,'plugins/BetterModel/players'),{recursive:true});
+  fs.writeFileSync(path.join(run,'plugins/BetterModel/players/motionrp_rasenshuriken.bbmodel'),oldShuriken);
   fs.writeFileSync(path.join(run, 'eula.txt'), 'eula=true\n');
   fs.writeFileSync(path.join(run, 'server.properties'), `server-ip=127.0.0.1
 server-port=${port}
@@ -185,6 +189,10 @@ generate-structures=false
     assert.deepEqual(fs.readFileSync(backup), fs.readFileSync(fixturePlayer));
   }
   pass('installed player animation matches current bundle and an untouched legacy model is backed up during upgrade');
+  assert.deepEqual(fs.readFileSync(path.join(run,'plugins/BetterModel/players/motionrp_rasenshuriken.bbmodel')),
+    fs.readFileSync(path.join(project,'src/main/resources/bettermodel/players/motionrp_rasenshuriken.bbmodel')));
+  assert.deepEqual(fs.readFileSync(path.join(run,'plugins/MotionRP/model-backups/motionrp_rasenshuriken.bbmodel.497bcb980eef3288e8ece86779fa8651c6fb97f40ef49cde598b78232c30dce1.bak')),oldShuriken);
+  pass('untouched 0.3.0 shuriken animation is backed up and replaced with the faster body motion');
   let a = await connect('MotionTesterA');
   let b = await connect('MotionTesterB');
   consoleCommand('motionrp give controller MotionTesterA');
@@ -341,8 +349,10 @@ generate-structures=false
   const sceneDisplays = new Set();
   const sceneRemoved = new Set();
   const visibleItems = { owner: new Map(), observer: new Map() };
+  const removedByRole = { owner: new Set(), observer: new Set() };
   const itemMetadataIndex = b.registry.entitiesByName.item_display.metadataKeys.indexOf('item_stack');
   for (const [client, role] of [[a, 'owner'], [b, 'observer']]) {
+    client._client.on('entity_destroy', packet => { for (const id of packet.entityIds) removedByRole[role].add(id); });
     client._client.on('entity_metadata', packet => {
       for (const entry of packet.metadata) {
         if (entry.key === itemMetadataIndex) visibleItems[role].set(packet.entityId, entry.value);
@@ -352,7 +362,13 @@ generate-structures=false
   let particles = 0;
   let sounds = 0;
   const windSounds = [];
-  b.on('soundEffectHeard', name => windSounds.push(name));
+  b._client.on('sound_effect', packet => {
+    // Protocol registry holders are zero-based after decoding; minecraft-data's
+    // sound table is one-based. Mineflayer's event misses this +1 in 26.1.
+    const holder=packet.sound;
+    const name=holder?.data?.soundName ?? b.registry.sounds[holder ? holder.soundId+1 : packet.soundId]?.name;
+    if (name) windSounds.push(name);
+  });
   b._client.on('spawn_entity', packet => { if (packet.type === b.registry.entitiesByName.item_display.id) sceneDisplays.add(packet.entityId); });
   b._client.on('entity_destroy', packet => { for (const id of packet.entityIds) if (sceneDisplays.has(id)) sceneRemoved.add(id); });
   b._client.on('world_particles', () => particles++);
@@ -503,8 +519,23 @@ generate-structures=false
   await waitFor(async () => (await readSaved('MotionTesterA')).loadout[6] === 1, 'motion two selected');
   a.setControlState('sneak', false);await sleep(300);a._testLookUp();
   pass('Rasenshuriken migrates into an old config, stacks to 64 and registers/selects as the second motion');
+  // Cancel while BOTH helpers still exist (midair cancellation is too late to
+  // detect Tracker.equals collapsing two instances of the same player model).
+  const formationCancelBegin=output.length;
+  a._testLeftClick();
+  await waitFor(() => output.slice(formationCancelBegin).includes('Rasenshuriken phase: CHARGE'), 'formation before cancellation');
+  await sleep(300);
+  const cancelTrace=output.slice(formationCancelBegin);
+  const cancelledIds=['clone1','clone2','weapon'].flatMap(kind =>
+    cancelTrace.match(new RegExp('Rasenshuriken displays '+kind+' ids=([0-9,]+)'))[1].split(',').map(Number));
+  a._testLeftClick();
+  await waitFor(() => ['owner','observer'].every(role => cancelledIds.every(id => removedByRole[role].has(id))),
+    'both helpers and weapon removed from BOTH clients on formation cancel');
+  await sleep(300);
+  pass('cancelling during formation destroys every display of both same-model clones and weapon for caster and observer');
   sceneDisplays.clear();sceneRemoved.clear();
   const shurikenBegin=output.length;
+  const shurikenSoundBegin=windSounds.length;
   const jumpOrigin=a.entity.position.clone();
   let peak=jumpOrigin.y, minimumCasterHealth=a.health;
   const casterHealth=a.health, observerHealth=b.health;
@@ -526,18 +557,23 @@ generate-structures=false
   const shurikenTrace=output.slice(shurikenBegin);
   for (const phase of ['SIGNS','ASSIST','CHARGE','RAISE','STEP','JUMP','THROW','IMPACT','LAND'])
     assert.ok(shurikenTrace.includes('Rasenshuriken phase: '+phase), 'Missing shuriken phase '+phase);
-  assert.ok(Math.abs(peak-jumpOrigin.y-5)<.06, 'Real jump height is not five blocks: '+(peak-jumpOrigin.y));
+  assert.ok(Math.abs(peak-jumpOrigin.y-8)<.06, 'Real jump height is not eight blocks: '+(peak-jumpOrigin.y));
   assert.ok(Math.abs(a.entity.position.y-jumpOrigin.y)<.01, 'Caster did not land');
   const burst=shurikenTrace.match(/Rasenshuriken burst x=([-\d.]+) y=([-\d.]+) z=([-\d.]+)/);
   assert.ok(burst, 'No wind impact');
   assert.ok(Math.abs(Number(burst[1])-jumpOrigin.x)<.01);
-  assert.ok(Math.abs(Number(burst[3])-jumpOrigin.z-.35-5)<.06, 'Impact was not five blocks beyond takeoff');
+  assert.ok(Math.abs(Number(burst[3])-jumpOrigin.z-.35-8)<.06, 'Impact was not eight blocks beyond takeoff');
   assert.ok(Math.abs(Number(burst[2])-jumpOrigin.y-.15)<.06, 'Impact was not at ground level');
   assert.equal(minimumCasterHealth,casterHealth,'Jump caused damage');assert.equal(b.health,observerHealth,'Wind blast damaged observer');
   const groundCheckBegin=output.length;
   consoleCommand(`execute positioned ${Number(burst[1])} -61 ${Number(burst[3])} if block ~ ~ ~ minecraft:stone run say MOTIONRP_GROUND_UNCHANGED`);
   await waitFor(() => output.slice(groundCheckBegin).includes('MOTIONRP_GROUND_UNCHANGED'), 'wind burst preserves impact block');
-  pass('weapon raises, player steps and jumps five blocks, throws to ground five blocks ahead, bursts and lands without damage');
+  assert.ok(shurikenTrace.includes('phase: JUMP tick=90') && shurikenTrace.includes('phase: THROW tick=106'), 'Jump-to-release duration is not 16 ticks');
+  pass('weapon raises, player jumps eight blocks and releases in 16 ticks, hits ground eight blocks ahead and lands without damage');
+  const shurikenSounds=windSounds.slice(shurikenSoundBegin);
+  assert.ok(shurikenSounds.filter(name => name.includes('breeze.charge')).length>=4,'Charge did not repeat: '+shurikenSounds);
+  assert.ok(shurikenSounds.some(name => name.includes('generic.explode')),'Layered explosion sound missing: '+shurikenSounds);
+  pass('charge sound repeats through formation and a generic explosion sound layers with the wind impact');
 
   sceneDisplays.clear();sceneRemoved.clear();
   const airCancelBegin=output.length;a._testLeftClick();
