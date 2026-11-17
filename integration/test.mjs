@@ -75,6 +75,10 @@ async function connect(name) {
     flags: { onGround: true, hasHorizontalCollision: false } });
   bot._testLookUp = () => bot._testLook(0, -60);
   bot._testLeftClick = () => write('arm_animation', { hand: 'main_hand' });
+  bot._testStep = (dx, dy, dz) => write('position_look', {
+    x: bot.entity.position.x + dx, y: bot.entity.position.y + dy, z: bot.entity.position.z + dz,
+    yaw: 0, pitch: -60, flags: { onGround: dy === 0, hasHorizontalCollision: false }
+  });
   bots.push(bot);
   bot.on('error', error => console.error(name, error.message));
   bot.on('kicked', reason => console.error(name, 'kicked', JSON.stringify(reason)));
@@ -173,7 +177,8 @@ generate-structures=false
   const fixturePlayer = path.join(fixture, 'plugins/BetterModel', playerAsset);
   const legacyHash = fs.existsSync(fixturePlayer) ? createHash('sha256').update(fs.readFileSync(fixturePlayer)).digest('hex') : '';
   if (['5c6a2b0425861d8fd648dfeacc5b61592ca2ef1c46da3ae6dfa55d08e46916d6',
-    'e62db71a5d780a4ae7a3a3771e281e90c3b0fa4795c121e331ebf616b56d4c5d'].includes(legacyHash)) {
+    'e62db71a5d780a4ae7a3a3771e281e90c3b0fa4795c121e331ebf616b56d4c5d',
+    '2e2fba7179fb111f67963a2619896c7cca7a2f434d241a1679f3a50f93bafc2e'].includes(legacyHash)) {
     const backup = path.join(run, 'plugins/MotionRP/model-backups', 'motionrp_rasengan.bbmodel.' + legacyHash + '.bak');
     assert.deepEqual(fs.readFileSync(backup), fs.readFileSync(fixturePlayer));
   }
@@ -359,6 +364,18 @@ generate-structures=false
   await sleep(400);
   const chargeTrace = output.slice(begin);
   assert.ok(a.entity.position.distanceTo(dashOrigin) < .01, 'Player moved before thrust');
+  for (const offset of [[.2, 0, 0], [0, .2, .1], [0, 0, -.2]]) {
+    a._testStep(...offset);
+    await sleep(150);
+  }
+  const lockedBegin = output.length;
+  consoleCommand('data get entity MotionTesterA Pos');
+  await waitFor(() => output.slice(lockedBegin).includes('has the following entity data:'), 'server position while frozen');
+  const lockedPosition = output.slice(lockedBegin).replace(/\u001b\[[0-9;]*m/g, '').match(/has the following entity data: \[([^\]]+)\]/)[1]
+    .split(',').map(v => Number(v.trim().replace(/d$/, '')));
+  assert.ok(Math.abs(lockedPosition[0] - dashOrigin.x) < .01
+    && Math.abs(lockedPosition[1] - dashOrigin.y) < .01
+    && Math.abs(lockedPosition[2] - dashOrigin.z) < .01, 'Movement input changed actual server position: ' + lockedPosition);
   for (const role of ['owner', 'observer']) for (const kind of ['clone', 'orb']) {
     const ids = chargeTrace.match(new RegExp('Rasengan displays ' + kind + ' ids=([0-9,]+)'))[1].split(',').map(Number);
     assert.ok(ids.some(id => (visibleItems[role].get(id)?.itemCount || 0) > 0), role + '/' + kind + ' was empty while charging');
@@ -371,6 +388,7 @@ generate-structures=false
   await sleep(300);
   assert.ok(a.entity.position.distanceTo(dashEnd) < .01, 'Player drifted after scene ended');
   pass('real player stays still during charge, dashes four blocks during thrust and stops without drift');
+  pass('walking and jumping inputs stay at the server anchor without cancelling playback or the scripted dash');
   const trace = output.slice(begin);
   const idsFor = kind => trace.match(new RegExp('Rasengan displays ' + kind + ' ids=([0-9,]+)'))[1].split(',').map(Number);
   fs.writeFileSync(path.join(project, 'build/visual-metadata.json'), JSON.stringify({
@@ -449,6 +467,15 @@ generate-structures=false
   await sleep(700);
   assert.ok(a.entity.position.distanceTo(cancelledAt) < .01, 'Dash kept moving after cancellation');
   pass('cancelling during the dash immediately ends travel and removes displays');
+  a._testStep(.2, 0, 0);
+  await sleep(250);
+  const unlockedBegin = output.length;
+  consoleCommand('data get entity MotionTesterA Pos');
+  await waitFor(() => output.slice(unlockedBegin).includes('has the following entity data:'), 'server position after cancellation');
+  const unlockedPosition = output.slice(unlockedBegin).replace(/\u001b\[[0-9;]*m/g, '').match(/has the following entity data: \[([^\]]+)\]/)[1]
+    .split(',').map(v => Number(v.trim().replace(/d$/, '')));
+  assert.ok(Math.abs(unlockedPosition[0] - cancelledAt.x - .2) < .01, 'Player remained frozen after cancellation');
+  pass('ordinary movement is restored immediately after playback stops');
 
   await disconnect(b);
   await disconnect(a);

@@ -21,7 +21,7 @@ public final class RasenganTimeline {
     }
 
     public static double orbHeight(int tick) {
-        return 1.12 + .16 * smooth((tick - THRUST_START) / 6.0);
+        return RasenganHandPath.at(tick).height();
     }
 
     public static Frame at(int tick) {
@@ -31,9 +31,7 @@ public final class RasenganTimeline {
                 : tick < BURST ? Phase.THRUST : Phase.DISSIPATE;
         double scale = .12 + .88 * smooth((tick - ORB_START) / 32.0);
         if (tick >= BURST) scale = Math.max(.02, 1 - smooth((tick - BURST) / 12.0));
-        double forward = tick < CLONE_END ? .64 : tick < THRUST_START
-                ? .64 - .35 * smooth((tick - CLONE_END) / 12.0)
-                : .29 + .76 * smooth((tick - THRUST_START) / 8.0);
+        double forward = RasenganHandPath.at(tick).forward();
         return new Frame(phase, tick >= CLONE_START && tick < CLONE_END,
                 tick >= ORB_START && tick < ORB_END, scale, forward);
     }

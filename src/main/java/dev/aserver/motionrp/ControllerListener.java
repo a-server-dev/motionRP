@@ -83,10 +83,21 @@ public final class ControllerListener implements Listener {
         } catch (RuntimeException invalid) { plugin.dataError(player, invalid); }
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void move(PlayerMoveEvent event) {
-        if (event.hasChangedPosition() && !plugin.playback().ownsMove(event.getPlayer(), event.getFrom(), event.getTo()))
-            plugin.playback().stop(event.getPlayer().getUniqueId());
+        if (event instanceof PlayerTeleportEvent || !event.hasChangedPosition()
+                || !plugin.playback().active(event.getPlayer().getUniqueId())
+                || plugin.playback().ownsMove(event.getPlayer(), event.getFrom(), event.getTo())) return;
+        // Keep camera rotation, but reject walking/jumping without ending playback.
+        var locked = event.getFrom().clone();
+        locked.setYaw(event.getTo().getYaw());
+        locked.setPitch(event.getTo().getPitch());
+        // setTo would make Paper perform a Bukkit teleport, which would then
+        // trigger the external-teleport cancellation handler. Cancelled movement
+        // uses Paper's direct correction path instead.
+        event.setFrom(locked);
+        event.setCancelled(true);
+        event.getPlayer().setVelocity(new org.bukkit.util.Vector());
     }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void damage(EntityDamageEvent event) {

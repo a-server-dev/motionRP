@@ -81,6 +81,20 @@ class RasenganAssetsTest {
         var animations = model.getAsJsonArray("animations");
         // This rig faces -Z. Forward wrist position is an observable geometry
         // property, independent of whether any particular keyframe sign is used.
+        for (double time : new double[]{3.4, 3.55, 3.6}) {
+            var right = posedOrigin(names.get("pri_right_item"), time, animations.get(0).getAsJsonObject(), groups, parents);
+            var left = posedOrigin(names.get("pli_left_item"), time, animations.get(0).getAsJsonObject(), groups, parents);
+            assertTrue(right[2] > 3, "Windup hand must be behind torso: " + Arrays.toString(right));
+            assertTrue(left[0] < -8, "Left guard must extend to the side: " + Arrays.toString(left));
+        }
+        for (int tick = 0; tick < RasenganTimeline.END; tick++) {
+            var wrist = posedOrigin(names.get("pri_right_item"), tick / 20.0,
+                    animations.get(0).getAsJsonObject(), groups, parents);
+            var hand = RasenganHandPath.at(tick);
+            assertEquals(wrist[0] / 16, hand.right(), 1e-7);
+            assertEquals(-wrist[2] / 16 + .05, hand.forward(), 1e-7);
+            assertEquals(wrist[1] / 16 + .03, hand.height(), 1e-7);
+        }
         for (double time : new double[]{1.0, 2.0, 3.8, 4.1}) {
             double[] hand = posedOrigin(names.get("pri_right_item"), time,
                     animations.get(0).getAsJsonObject(), groups, parents);

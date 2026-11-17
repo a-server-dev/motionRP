@@ -44,7 +44,7 @@ class RasenganTimelineTest {
         for (int tick = 0; tick < 96; tick++) {
             var frame = RasenganTimeline.at(tick);
             assertTrue(Double.isFinite(frame.scale()) && frame.scale() > 0 && frame.scale() <= 1);
-            assertTrue(Double.isFinite(frame.forward()) && frame.forward() > 0 && frame.forward() <= 1.05);
+            assertTrue(Double.isFinite(frame.forward()) && Math.abs(frame.forward()) < 1.5);
         }
         assertFalse(RasenganTimeline.at(94).orbVisible());
     }

@@ -1,6 +1,7 @@
 package dev.aserver.motionrp;
 
 import dev.aserver.motionrp.core.RasenganTimeline;
+import dev.aserver.motionrp.core.RasenganHandPath;
 import kr.toxicity.model.api.BetterModel;
 import kr.toxicity.model.api.animation.*;
 import kr.toxicity.model.api.bukkit.platform.BukkitAdapter;
@@ -58,7 +59,8 @@ public final class RasenganScene implements AutoCloseable {
             if (tick % 5 == 0) refreshViewers();
             Location anchor = owner.getLocation().clone();
             anchor.setPitch(0);
-            Location ball = relative(anchor, .34, frame.forward(), RasenganTimeline.orbHeight(tick));
+            var hand = RasenganHandPath.at(tick);
+            Location ball = relative(anchor, hand.right(), hand.forward(), hand.height());
             Location assistant = relative(anchor, 1.04, .55, 0);
             var toward = ball.toVector().subtract(assistant.toVector());
             assistant.setYaw((float) Math.toDegrees(Math.atan2(-toward.getX(), toward.getZ())));
