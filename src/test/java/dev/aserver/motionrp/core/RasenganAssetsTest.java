@@ -95,6 +95,36 @@ class RasenganAssetsTest {
         }
     }
 
+    @Test void crouchedStanceLowersHipsBendsKneesBackAndKeepsFeetOutsideHips() throws Exception {
+        var model = read("players/motionrp_rasengan.bbmodel");
+        Map<String, JsonObject> groups = new HashMap<>();
+        Map<String, String> names = new HashMap<>(), parents = new HashMap<>();
+        for (var node : model.getAsJsonArray("groups")) {
+            var group = node.getAsJsonObject();
+            String id = group.get("uuid").getAsString();
+            groups.put(id, group); names.put(group.get("name").getAsString(), id);
+        }
+        parentTree(model.getAsJsonArray("outliner"), null, parents);
+        for (var raw : model.getAsJsonArray("animations")) {
+            var animation = raw.getAsJsonObject();
+            for (double time : new double[]{.8, 2.0}) {
+                var hip = posedOrigin(names.get("phip_hip"), time, animation, groups, parents);
+                assertTrue(hip[1] < 10, "Hips were not lowered");
+                for (boolean right : new boolean[]{true, false}) {
+                    String thigh = names.get(right ? "prl_right_leg" : "pll_left_leg");
+                    String shin = names.get(right ? "prfl_right_foreleg" : "plfl_left_foreleg");
+                    double[] thighOrigin = vector(groups.get(thigh).getAsJsonArray("origin"));
+                    var knee = posedOrigin(shin, time, animation, groups, parents);
+                    var foot = posedPoint(shin, new double[]{thighOrigin[0], 0, 0}, time, animation, groups, parents);
+                    assertTrue(knee[2] < hip[2] - 2, "Knee did not bend forward");
+                    assertTrue(foot[2] > knee[2] + 2, "Lower leg bent the wrong way");
+                    assertTrue(right ? foot[0] > thighOrigin[0] : foot[0] < thighOrigin[0], "Foot turned inward");
+                    assertTrue(foot[1] > -.6 && foot[1] < 1, "Foot off ground: " + Arrays.toString(foot));
+                }
+            }
+        }
+    }
+
     private void parentTree(JsonArray nodes, String parent, Map<String, String> parents) {
         for (var node : nodes) if (node.isJsonObject()) {
             var group = node.getAsJsonObject();
@@ -105,36 +135,48 @@ class RasenganAssetsTest {
     }
 
     private double[] posedOrigin(String id, double time, JsonObject animation, Map<String, JsonObject> groups, Map<String, String> parents) {
-        double[] point = vector(groups.get(id).getAsJsonArray("origin"));
+        return posedPoint(id, vector(groups.get(id).getAsJsonArray("origin")), time, animation, groups, parents);
+    }
+
+    private double[] posedPoint(String id, double[] point, double time, JsonObject animation, Map<String, JsonObject> groups, Map<String, String> parents) {
         for (String bone = id; bone != null; bone = parents.get(bone)) {
             double[] origin = vector(groups.get(bone).getAsJsonArray("origin"));
-            JsonElement animator = animation.getAsJsonObject("animators").get(bone);
-            if (animator == null) continue;
-            var frames = animator.getAsJsonObject().getAsJsonArray("keyframes");
-            JsonObject before = frames.get(0).getAsJsonObject(), after = before;
-            for (var frame : frames) {
-                var value = frame.getAsJsonObject();
-                if (!value.get("channel").getAsString().equals("rotation")) continue;
-                if (value.get("time").getAsDouble() <= time) before = value;
-                after = value;
-                if (value.get("time").getAsDouble() >= time) break;
-            }
-            double t0 = before.get("time").getAsDouble(), t1 = after.get("time").getAsDouble();
-            double blend = t1 == t0 ? 0 : Math.clamp((time - t0) / (t1 - t0), 0, 1);
-            var a = before.getAsJsonArray("data_points").get(0).getAsJsonObject();
-            var b = after.getAsJsonArray("data_points").get(0).getAsJsonObject();
-            double[] angle = new double[3];
-            String[] axes = {"x", "y", "z"};
-            for (int i = 0; i < 3; i++) angle[i] = Math.toRadians(a.get(axes[i]).getAsDouble() * (1 - blend) + b.get(axes[i]).getAsDouble() * blend);
+            double[] angle = sample(animation, bone, "rotation", time);
+            for (int i = 0; i < 3; i++) angle[i] = Math.toRadians(angle[i]);
+            double[] translation = sample(animation, bone, "position", time);
             double x = point[0] - origin[0], y = point[1] - origin[1], z = point[2] - origin[2];
             double y1 = y * Math.cos(angle[0]) - z * Math.sin(angle[0]);
             double z1 = y * Math.sin(angle[0]) + z * Math.cos(angle[0]);
             double x2 = x * Math.cos(angle[1]) + z1 * Math.sin(angle[1]);
             double z2 = -x * Math.sin(angle[1]) + z1 * Math.cos(angle[1]);
-            point = new double[]{origin[0] + x2 * Math.cos(angle[2]) - y1 * Math.sin(angle[2]),
-                    origin[1] + x2 * Math.sin(angle[2]) + y1 * Math.cos(angle[2]), origin[2] + z2};
+            point = new double[]{translation[0] + origin[0] + x2 * Math.cos(angle[2]) - y1 * Math.sin(angle[2]),
+                    translation[1] + origin[1] + x2 * Math.sin(angle[2]) + y1 * Math.cos(angle[2]), translation[2] + origin[2] + z2};
         }
         return point;
+    }
+
+    private double[] sample(JsonObject animation, String bone, String channel, double time) {
+        var raw = animation.getAsJsonObject("animators").get(bone);
+        if (raw == null) return new double[3];
+        var frames = new ArrayList<JsonObject>();
+        for (var frame : raw.getAsJsonObject().getAsJsonArray("keyframes")) {
+            var value = frame.getAsJsonObject();
+            if (value.get("channel").getAsString().equals(channel)) frames.add(value);
+        }
+        if (frames.isEmpty()) return new double[3];
+        JsonObject before = frames.getFirst(), after = frames.getLast();
+        for (var frame : frames) {
+            if (frame.get("time").getAsDouble() <= time) before = frame;
+            if (frame.get("time").getAsDouble() >= time) { after = frame; break; }
+        }
+        double t0 = before.get("time").getAsDouble(), t1 = after.get("time").getAsDouble();
+        double blend = t1 == t0 ? 0 : Math.clamp((time - t0) / (t1 - t0), 0, 1);
+        var a = before.getAsJsonArray("data_points").get(0).getAsJsonObject();
+        var b = after.getAsJsonArray("data_points").get(0).getAsJsonObject();
+        double[] value = new double[3];
+        String[] axes = {"x", "y", "z"};
+        for (int i = 0; i < 3; i++) value[i] = a.get(axes[i]).getAsDouble() * (1 - blend) + b.get(axes[i]).getAsDouble() * blend;
+        return value;
     }
 
     private double[] vector(JsonArray values) {

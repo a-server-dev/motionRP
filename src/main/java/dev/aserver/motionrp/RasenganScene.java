@@ -24,6 +24,10 @@ public final class RasenganScene implements AutoCloseable {
     private BukkitTask task;
     private int tick;
     private boolean closed;
+    private boolean dashBlocked;
+    private org.bukkit.util.Vector dashDirection;
+    private Location movingFrom;
+    private Location movingTo;
     private RasenganTimeline.Phase lastPhase;
     // Scene viewers are already bounded by distance/world/vanish visibility.
     // Generic model culling uses player facing, which need not match an F5 camera.
@@ -49,10 +53,12 @@ public final class RasenganScene implements AutoCloseable {
                 return;
             }
             var frame = RasenganTimeline.at(tick);
+            advanceDash();
+            if (closed) return;
             if (tick % 5 == 0) refreshViewers();
             Location anchor = owner.getLocation().clone();
             anchor.setPitch(0);
-            Location ball = relative(anchor, .34, frame.forward(), 1.28);
+            Location ball = relative(anchor, .34, frame.forward(), RasenganTimeline.orbHeight(tick));
             Location assistant = relative(anchor, 1.04, .55, 0);
             var toward = ball.toVector().subtract(assistant.toVector());
             assistant.setYaw((float) Math.toDegrees(Math.atan2(-toward.getX(), toward.getZ())));
@@ -112,6 +118,52 @@ public final class RasenganScene implements AutoCloseable {
     }
 
     private Location cloneLocation(Location anchor) { return relative(anchor, 1.04, .55, .85); }
+
+    /** Exempt only this scene's exact synchronous teleport from cancel-on-move. */
+    public boolean ownsMove(Location from, Location to) {
+        return movingFrom != null && movingTo != null && movingFrom.equals(from) && movingTo.equals(to);
+    }
+
+    private void advanceDash() {
+        if (tick < RasenganTimeline.THRUST_START || tick >= RasenganTimeline.BURST || dashBlocked) return;
+        Location from = owner.getLocation();
+        if (dashDirection == null) {
+            double yaw = Math.toRadians(from.getYaw());
+            dashDirection = new org.bukkit.util.Vector(-Math.sin(yaw), 0, Math.cos(yaw));
+        }
+        double distance = RasenganTimeline.dashDistance(tick) - RasenganTimeline.dashDistance(tick - 1);
+        Location destination = from.clone();
+        // Sweep in <= 0.1 block steps: do not tunnel through thin collision
+        // shapes or cross a cliff, unloaded chunk, or world border.
+        int steps = (int) Math.ceil(distance / .1);
+        for (int i = 0; i < steps; i++) {
+            Location next = destination.clone().add(dashDirection.clone().multiply(distance / steps));
+            var world = next.getWorld();
+            boolean loaded = true;
+            for (double x : new double[]{-.4, .4}) for (double z : new double[]{-.4, .4}) {
+                if (!world.isChunkLoaded((int) Math.floor(next.getX() + x) >> 4,
+                        (int) Math.floor(next.getZ() + z) >> 4)) loaded = false;
+            }
+            var offset = next.toVector().subtract(from.toVector());
+            if (!loaded || !world.getWorldBorder().isInside(next)
+                    || owner.wouldCollideUsing(owner.getBoundingBox().shift(offset))
+                    || world.rayTraceBlocks(next.clone().add(0, .05, 0), new org.bukkit.util.Vector(0, -1, 0),
+                            .3, FluidCollisionMode.NEVER, true) == null) {
+                dashBlocked = true;
+                break;
+            }
+            destination = next;
+        }
+        if (destination.distanceSquared(from) < 1.0e-10) return;
+        movingFrom = from;
+        movingTo = destination;
+        try {
+            if (!owner.teleport(destination, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.PLUGIN)) dashBlocked = true;
+        } finally {
+            movingFrom = null;
+            movingTo = null;
+        }
+    }
 
     private static Location relative(Location origin, double right, double forward, double up) {
         double yaw = Math.toRadians(origin.getYaw());

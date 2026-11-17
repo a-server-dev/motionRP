@@ -35,6 +35,11 @@ public final class MotionPlayback {
         return current != null && !current.tracker.isClosed();
     }
 
+    public boolean ownsMove(Player player, org.bukkit.Location from, org.bukkit.Location to) {
+        var current = playing.get(player.getUniqueId());
+        return current != null && current.scene != null && current.scene.ownsMove(from, to);
+    }
+
     public void play(Player player, MotionCatalog.Definition definition) {
         String error = unavailable(definition);
         if (error != null) { plugin.tell(player, error); return; }

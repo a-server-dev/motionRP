@@ -4,6 +4,15 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class RasenganTimelineTest {
+    @Test void dashTravelsFourBlocksOnlyDuringThrustWithBoundedSteps() {
+        assertEquals(0, RasenganTimeline.dashDistance(71));
+        assertEquals(4, RasenganTimeline.dashDistance(81));
+        for (int tick = 0; tick < RasenganTimeline.END; tick++) {
+            double step = RasenganTimeline.dashDistance(tick) - RasenganTimeline.dashDistance(tick - 1);
+            assertTrue(step >= 0 && step <= .6);
+            if (tick < 72 || tick >= 82) assertEquals(0, step);
+        }
+    }
     @Test void cloneAppearsBeforeOrbAndDisappearsBeforeThrust() {
         assertFalse(RasenganTimeline.at(7).cloneVisible());
         assertTrue(RasenganTimeline.at(8).cloneVisible());

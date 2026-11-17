@@ -9,10 +9,20 @@ public final class RasenganTimeline {
     public static final int BURST = 82;
     public static final int ORB_END = 94;
     public static final int END = 96;
+    public static final double DASH_DISTANCE = 4.0;
     public enum Phase { SIGNS, ASSIST, CHARGE, WINDUP, THRUST, DISSIPATE, FINISHED }
     public record Frame(Phase phase, boolean cloneVisible, boolean orbVisible, double scale, double forward) {}
 
     private RasenganTimeline() {}
+
+    /** Cumulative horizontal travel; zero before the thrust, no post-cast drift. */
+    public static double dashDistance(int tick) {
+        return DASH_DISTANCE * smooth((tick - THRUST_START + 1) / (double) (BURST - THRUST_START));
+    }
+
+    public static double orbHeight(int tick) {
+        return 1.12 + .16 * smooth((tick - THRUST_START) / 6.0);
+    }
 
     public static Frame at(int tick) {
         if (tick < 0 || tick >= END) return new Frame(Phase.FINISHED, false, false, 0, .64);

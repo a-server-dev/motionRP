@@ -85,7 +85,8 @@ public final class ControllerListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void move(PlayerMoveEvent event) {
-        if (event.hasChangedPosition()) plugin.playback().stop(event.getPlayer().getUniqueId());
+        if (event.hasChangedPosition() && !plugin.playback().ownsMove(event.getPlayer(), event.getFrom(), event.getTo()))
+            plugin.playback().stop(event.getPlayer().getUniqueId());
     }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void damage(EntityDamageEvent event) {
@@ -97,7 +98,10 @@ public final class ControllerListener implements Listener {
     }
     @EventHandler public void death(PlayerDeathEvent event) { plugin.playback().stop(event.getEntity().getUniqueId()); }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void teleport(PlayerTeleportEvent event) { plugin.playback().stop(event.getPlayer().getUniqueId()); }
+    public void teleport(PlayerTeleportEvent event) {
+        if (!plugin.playback().ownsMove(event.getPlayer(), event.getFrom(), event.getTo()))
+            plugin.playback().stop(event.getPlayer().getUniqueId());
+    }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void held(PlayerItemHeldEvent event) { plugin.playback().stop(event.getPlayer().getUniqueId()); }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)

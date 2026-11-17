@@ -15,6 +15,7 @@ public final class BundledModels {
     public static final String PLAYER = "motionrp_rasengan";
     public static final String ORB = "motionrp_rasengan_orb";
     private static final String PLAYER_020_SHA = "5c6a2b0425861d8fd648dfeacc5b61592ca2ef1c46da3ae6dfa55d08e46916d6";
+    private static final String PLAYER_021_SHA = "e62db71a5d780a4ae7a3a3771e281e90c3b0fa4795c121e331ebf616b56d4c5d";
     private final MotionPlugin plugin;
     public BundledModels(MotionPlugin plugin) { this.plugin = plugin; }
 
@@ -38,7 +39,7 @@ public final class BundledModels {
                 String resource = file.startsWith("LICENSE") ? "bettermodel/LICENSE-BetterModel.txt" : "bettermodel/" + file;
                 try (InputStream source = Objects.requireNonNull(plugin.getResource(resource), resource)) {
                     var result = new BundledAssetUpdater().install(target, source.readAllBytes(),
-                            file.equals("players/" + PLAYER + ".bbmodel") ? Set.of(PLAYER_020_SHA) : Set.of(),
+                            file.equals("players/" + PLAYER + ".bbmodel") ? Set.of(PLAYER_020_SHA, PLAYER_021_SHA) : Set.of(),
                             plugin.getDataFolder().toPath().resolve("model-backups"),
                             plugin.getDataFolder().toPath().resolve("model-updates"));
                     if (result == BundledAssetUpdater.Result.INSTALLED || result == BundledAssetUpdater.Result.UPDATED) changed = true;

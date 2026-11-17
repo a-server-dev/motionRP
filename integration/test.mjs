@@ -171,8 +171,9 @@ generate-structures=false
   assert.deepEqual(fs.readFileSync(path.join(run, 'plugins/BetterModel', playerAsset)),
     fs.readFileSync(path.join(project, 'src/main/resources/bettermodel', playerAsset)));
   const fixturePlayer = path.join(fixture, 'plugins/BetterModel', playerAsset);
-  const legacyHash = '5c6a2b0425861d8fd648dfeacc5b61592ca2ef1c46da3ae6dfa55d08e46916d6';
-  if (fs.existsSync(fixturePlayer) && createHash('sha256').update(fs.readFileSync(fixturePlayer)).digest('hex') === legacyHash) {
+  const legacyHash = fs.existsSync(fixturePlayer) ? createHash('sha256').update(fs.readFileSync(fixturePlayer)).digest('hex') : '';
+  if (['5c6a2b0425861d8fd648dfeacc5b61592ca2ef1c46da3ae6dfa55d08e46916d6',
+    'e62db71a5d780a4ae7a3a3771e281e90c3b0fa4795c121e331ebf616b56d4c5d'].includes(legacyHash)) {
     const backup = path.join(run, 'plugins/MotionRP/model-backups', 'motionrp_rasengan.bbmodel.' + legacyHash + '.bak');
     assert.deepEqual(fs.readFileSync(backup), fs.readFileSync(fixturePlayer));
   }
@@ -352,16 +353,24 @@ generate-structures=false
   const trackHealth = () => { lowestHealth = Math.min(lowestHealth, b.health); };
   b.on('health', trackHealth);
   const begin = output.length;
+  const dashOrigin = a.entity.position.clone();
   a._testLeftClick();
   await waitFor(() => output.slice(begin).includes('Rasengan phase: CHARGE'), 'charge item metadata sample');
   await sleep(400);
   const chargeTrace = output.slice(begin);
+  assert.ok(a.entity.position.distanceTo(dashOrigin) < .01, 'Player moved before thrust');
   for (const role of ['owner', 'observer']) for (const kind of ['clone', 'orb']) {
     const ids = chargeTrace.match(new RegExp('Rasengan displays ' + kind + ' ids=([0-9,]+)'))[1].split(',').map(Number);
     assert.ok(ids.some(id => (visibleItems[role].get(id)?.itemCount || 0) > 0), role + '/' + kind + ' was empty while charging');
   }
   await waitFor(() => output.slice(begin).includes('Rasengan phase: DISSIPATE'), 'complete Rasengan choreography', 15_000);
   await waitFor(() => sceneDisplays.size > 12 && sceneRemoved.size === sceneDisplays.size, 'clone, orb and body cleanup', 10_000);
+  assert.ok(Math.abs(a.entity.position.z - dashOrigin.z - 4) < .05, 'Thrust did not move the real player four blocks: ' + a.entity.position);
+  assert.ok(Math.abs(a.entity.position.x - dashOrigin.x) < .01, 'Dash moved sideways');
+  const dashEnd = a.entity.position.clone();
+  await sleep(300);
+  assert.ok(a.entity.position.distanceTo(dashEnd) < .01, 'Player drifted after scene ended');
+  pass('real player stays still during charge, dashes four blocks during thrust and stops without drift');
   const trace = output.slice(begin);
   const idsFor = kind => trace.match(new RegExp('Rasengan displays ' + kind + ' ids=([0-9,]+)'))[1].split(',').map(Number);
   fs.writeFileSync(path.join(project, 'build/visual-metadata.json'), JSON.stringify({
@@ -400,14 +409,46 @@ generate-structures=false
   pass('repeat-click cancellation removes clone/orb/body and stops future particles and phases');
 
   for (let replay = 0; replay < 2; replay++) {
+    consoleCommand('tp MotionTesterA 0 -60 0 0 0');
+    if (replay === 0) consoleCommand('fill -1 -60 2 1 -58 2 minecraft:stone');
+    else {
+      consoleCommand('fill -1 -60 2 1 -58 2 minecraft:air');
+      consoleCommand('fill -1 -64 2 1 -61 6 minecraft:air');
+    }
+    await waitFor(() => a.entity.position.distanceTo(dashOrigin) < .01, 'reset before obstruction test');
+    await sleep(300);
+    a._testLookUp();
     sceneDisplays.clear(); sceneRemoved.clear();
     const replayBegin = output.length;
     a._testLeftClick();
     await waitFor(() => output.slice(replayBegin).includes('Rasengan phase: DISSIPATE'), 'consecutive Rasengan replay ' + replay, 15_000);
     await waitFor(() => sceneDisplays.size > 12 && sceneRemoved.size === sceneDisplays.size, 'consecutive replay cleanup');
+    assert.ok(a.entity.position.z > 1 && a.entity.position.z < 2, 'Dash failed to stop before ' + (replay === 0 ? 'wall' : 'cliff') + ': ' + a.entity.position);
+    assert.ok(Math.abs(a.entity.position.y + 60) < .01, 'Dash fell or climbed');
     await sleep(300);
   }
   pass('three complete Rasengan plays plus cancellation can replay without relogging or reopening the GUI');
+  pass('wall collision and missing ground stop real travel while the animation finishes');
+
+  const teleportBegin = output.length;
+  a._testLeftClick();
+  await waitFor(() => output.slice(teleportBegin).includes('Rasengan phase: CHARGE'), 'charge before external teleport');
+  consoleCommand('tp MotionTesterA 0 -60 0');
+  await sleep(1600);
+  assert.ok(!output.slice(teleportBegin).includes('Rasengan phase: THRUST'), 'External teleport failed to cancel scene');
+  assert.ok(a.entity.position.distanceTo(dashOrigin) < .01, 'Cancelled dash moved player');
+  pass('external teleport still cancels playback and prevents future dash movement');
+
+  sceneDisplays.clear(); sceneRemoved.clear();
+  const dashCancelBegin = output.length;
+  a._testLeftClick();
+  await waitFor(() => output.slice(dashCancelBegin).includes('Rasengan phase: THRUST'), 'dash before cancellation');
+  a._testLeftClick();
+  await waitFor(() => sceneRemoved.size === sceneDisplays.size, 'cancel during dash removes displays');
+  const cancelledAt = a.entity.position.clone();
+  await sleep(700);
+  assert.ok(a.entity.position.distanceTo(cancelledAt) < .01, 'Dash kept moving after cancellation');
+  pass('cancelling during the dash immediately ends travel and removes displays');
 
   await disconnect(b);
   await disconnect(a);
