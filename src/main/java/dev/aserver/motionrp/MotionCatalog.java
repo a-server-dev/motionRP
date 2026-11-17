@@ -5,6 +5,8 @@ import org.bukkit.configuration.file.FileConfiguration;
 import java.util.*;
 import dev.aserver.motionrp.core.RasenganTimeline;
 import dev.aserver.motionrp.core.RasenshurikenTimeline;
+import dev.aserver.motionrp.core.GateTimeline;
+import dev.aserver.motionrp.core.SusanooTimeline;
 
 public record MotionCatalog(Map<String, Definition> motions, String controllerName, NamespacedKey controllerModel) {
     public record Definition(String id, String name, String model, String animation, int maxTicks, NamespacedKey itemModel, String effect) {}
@@ -21,9 +23,11 @@ public record MotionCatalog(Map<String, Definition> motions, String controllerNa
             int ticks = config.getInt(base + "max-ticks", 200);
             if (ticks < 1 || ticks > 12_000) throw new IllegalArgumentException(base + "max-ticks must be 1..12000");
             String effect = config.getString(base + "effect", "none");
-            if (!Set.of("none", "rasengan", "rasenshuriken").contains(effect)) throw new IllegalArgumentException("Unknown effect: " + effect);
+            if (!Set.of("none", "rasengan", "rasenshuriken", "gate_of_babylon", "susanoo").contains(effect)) throw new IllegalArgumentException("Unknown effect: " + effect);
             if (effect.equals("rasengan") && ticks < RasenganTimeline.END) throw new IllegalArgumentException("Rasengan max-ticks must be at least " + RasenganTimeline.END);
             if (effect.equals("rasenshuriken") && ticks < RasenshurikenTimeline.END) throw new IllegalArgumentException("Rasenshuriken max-ticks must be at least " + RasenshurikenTimeline.END);
+            if (effect.equals("gate_of_babylon") && ticks < GateTimeline.END) throw new IllegalArgumentException("Gate max-ticks must be at least " + GateTimeline.END);
+            if (effect.equals("susanoo") && ticks < SusanooTimeline.END) throw new IllegalArgumentException("Susanoo max-ticks must be at least " + SusanooTimeline.END);
             definitions.put(id, new Definition(id, config.getString(base + "name", id), model, animation, ticks, key(config, base + "item-model"), effect));
         }
         return new MotionCatalog(Collections.unmodifiableMap(definitions), config.getString("controller.name", "モーションセット"), key(config, "controller.item-model"));

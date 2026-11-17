@@ -4,6 +4,18 @@ debug-input: false
 # BetterModel/players にあるプレイヤーモデルを指定します。
 # 標準の steve.bbmodel に含まれる roll を初期モーションとして使用します。
 motions:
+  gate_of_babylon:
+    name: 王の財宝
+    model: motionrp_gate_of_babylon
+    animation: gate_of_babylon
+    effect: gate_of_babylon
+    max-ticks: 200
+  susanoo:
+    name: 須佐能乎（上半身）
+    model: motionrp_susanoo
+    animation: susanoo
+    effect: susanoo
+    max-ticks: 180
   rasenshuriken:
     name: 螺旋手裏剣（影分身二人）
     model: motionrp_rasenshuriken

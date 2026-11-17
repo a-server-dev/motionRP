@@ -34,9 +34,12 @@ final class SceneAudience implements AutoCloseable {
         for (var t : trackers) for (var p : viewers.values()) spawn(t, p);
     }
     void show(DummyTracker tracker, MotionPlugin plugin, String kind) {
+        show(tracker,plugin,"Rasenshuriken",kind);
+    }
+    void show(DummyTracker tracker, MotionPlugin plugin, String prefix, String kind) {
         trackers.add(tracker);
         for (var p : viewers.values()) spawn(tracker, p);
-        if (plugin.getConfig().getBoolean("debug-input", false)) plugin.getLogger().info("Rasenshuriken displays " + kind + " ids="
+        if (plugin.getConfig().getBoolean("debug-input", false)) plugin.getLogger().info(prefix + " displays " + kind + " ids="
                 + tracker.getPipeline().stream().filter(b -> b.getDisplay() != null)
                 .map(b -> Integer.toString(b.getDisplay().id())).collect(java.util.stream.Collectors.joining(",")));
     }

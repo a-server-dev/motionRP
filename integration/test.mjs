@@ -142,6 +142,8 @@ try {
   fs.writeFileSync(path.join(run, 'plugins/MotionRP/config.yml'),
     fs.readFileSync(path.join(project, 'src/main/resources/config.yml'), 'utf8')
       .replace('debug-input: false', 'debug-input: true')
+      .replace(/  gate_of_babylon:\n[\s\S]*?(?=  susanoo:)/, '')
+      .replace(/  susanoo:\n[\s\S]*?(?=  rasenshuriken:)/, '')
       .replace(/  rasenshuriken:\n[\s\S]*?(?=  rasengan:)/, '')
       .replace(/  rasengan:\n[\s\S]*?(?=  roll:)/, ''));
   // Mineflayer currently supports 26.1. Official Via plugins adapt the test
@@ -349,6 +351,7 @@ generate-structures=false
   const sceneDisplays = new Set();
   const sceneRemoved = new Set();
   const visibleItems = { owner: new Map(), observer: new Map() };
+  const rotations = new Map();
   const removedByRole = { owner: new Set(), observer: new Set() };
   const itemMetadataIndex = b.registry.entitiesByName.item_display.metadataKeys.indexOf('item_stack');
   for (const [client, role] of [[a, 'owner'], [b, 'observer']]) {
@@ -356,6 +359,10 @@ generate-structures=false
     client._client.on('entity_metadata', packet => {
       for (const entry of packet.metadata) {
         if (entry.key === itemMetadataIndex) visibleItems[role].set(packet.entityId, entry.value);
+        if (role==='observer' && entry.key===b.registry.entitiesByName.item_display.metadataKeys.indexOf('left_rotation')) {
+          if(!rotations.has(packet.entityId)) rotations.set(packet.entityId,new Set());
+          rotations.get(packet.entityId).add(JSON.stringify(entry.value));
+        }
       }
     });
   }
@@ -598,6 +605,81 @@ generate-structures=false
   assert.equal(a.health,casterHealth);
   pass('a low ceiling aborts the jump without tunneling, damage or leaving model displays');
   assert.ok(!/Rasenshuriken scene failed|Rasengan scene failed/.test(output), 'Scene logged a runtime failure');
+
+  consoleCommand('fill -1 -57 -1 1 -57 3 minecraft:air');
+  consoleCommand('tp MotionTesterA 0 -60 0 0 0');consoleCommand('tp MotionTesterB 5 -60 0');
+  await sleep(500);a._testLook(0,0);
+  const summonTrace=(prefix,begin) => [...output.slice(begin).matchAll(new RegExp(prefix+' displays (\\w+) ids=([0-9,]+)','g'))]
+    .map(match => ({kind:match[1],ids:match[2].split(',').map(Number)}));
+  const removedForBoth=entries => ['owner','observer'].every(role => entries.every(e => e.ids.every(id => removedByRole[role].has(id))));
+  const renderedForBoth=entries => ['owner','observer'].every(role => entries.every(e => e.ids.some(id => (visibleItems[role].get(id)?.itemCount||0)>0)));
+  async function addSummon(id,selected) {
+    consoleCommand('clear MotionTesterA minecraft:paper');await waitFor(() => tokens(a)===0,'free token slots');
+    consoleCommand(`motionrp give motion ${id} 64 MotionTesterA`);await waitFor(() => tokens(a)===64,id+' stack');
+    await menu(a);await deposit(a);assert.equal(registered(a),selected+1);assert.equal(tokens(a),63);await closeMenu(a);
+    await a.equip(a.inventory.items().find(i => i.name==='carrot_on_a_stick'),'hand');
+    a.setControlState('sneak',true);await sleep(300);a._testLeftClick();
+    await waitFor(async () => (await readSaved('MotionTesterA')).loadout[6]===selected,id+' selected');
+    a.setControlState('sneak',false);await sleep(300);a._testLook(0,0);
+  }
+  const newConfig=fs.readFileSync(path.join(run,'plugins/MotionRP/config.yml'),'utf8');
+  assert.ok(newConfig.includes('gate_of_babylon-definition-installed: true'));
+  assert.ok(newConfig.includes('susanoo-definition-installed: true'));
+  consoleCommand('motionrp status');
+  await waitFor(() => /gate_of_babylon:.*利用可能/.test(output) && /susanoo:.*利用可能/.test(output),'both summoned motion catalogs available');
+  pass('both new definitions migrate into an old config and every summon model loads in BetterModel');
+
+  await addSummon('gate_of_babylon',2);
+  pass('Gate of Babylon stacks to 64 and registers/selects in the same per-player GUI');
+  sceneDisplays.clear();sceneRemoved.clear();
+  const gateBegin=output.length,gateOrigin=a.entity.position.clone();
+  const gateHealth=[a.health,b.health];let gateLowest=[...gateHealth];
+  heightSampler=setInterval(() => {gateLowest=[Math.min(gateLowest[0],a.health),Math.min(gateLowest[1],b.health)];},20);
+  a._testLeftClick();await waitFor(() => output.slice(gateBegin).includes('Gate phase: DRAW'),'all portals open');await sleep(300);
+  const gateEntries=summonTrace('Gate',gateBegin);
+  assert.equal(gateEntries.filter(e => e.kind.startsWith('portal')).length,10);
+  assert.equal(gateEntries.filter(e => e.kind.startsWith('weapon')).length,10);
+  assert.ok(renderedForBoth(gateEntries),'Some portal or weapon has empty render metadata');
+  a._testStep(.2,0,.2);await sleep(150);
+  pass('caster and observer receive all ten golden portals and all ten swords/spears/axes');
+  await waitFor(() => output.slice(gateBegin).includes('Gate phase: FADE'),'final gate volley',15000);
+  await waitFor(() => sceneDisplays.size>25 && sceneRemoved.size===sceneDisplays.size && removedForBoth(gateEntries),'all gate models cleaned up');
+  clearInterval(heightSampler);heightSampler=null;
+  const gateTrace=output.slice(gateBegin);
+  const fired=[...gateTrace.matchAll(/Gate fire index=(\d+) tick=(\d+)/g)].map(m => [Number(m[1]),Number(m[2])]);
+  assert.deepEqual(fired,[[0,64],[1,70],[2,76],[3,82],[4,88],[5,94],[6,110],[7,110],[8,110],[9,110]]);
+  assert.equal([...gateTrace.matchAll(/Gate impact index=/g)].length,10);
+  assert.ok(a.entity.position.distanceTo(gateOrigin)<.01);assert.deepEqual(gateLowest,gateHealth);
+  pass('six sequential shots precede four simultaneous shots, ten cosmetic impacts and complete cleanup without movement or damage');
+  sceneDisplays.clear();sceneRemoved.clear();const gateCancel=output.length;a._testLeftClick();
+  await waitFor(() => output.slice(gateCancel).includes('Gate phase: DRAW'),'gate cancellation before firing');
+  const cancelGates=summonTrace('Gate',gateCancel);assert.equal(cancelGates.length,20);
+  a._testLeftClick();await waitFor(() => removedForBoth(cancelGates) && sceneRemoved.size===sceneDisplays.size,'cancel removes all same-model gates and weapons');
+  await sleep(500);assert.ok(!output.slice(gateCancel).includes('Gate fire index='));
+  pass('cancelling Gate of Babylon removes all twenty portal/weapon trackers for both clients and prevents later shots');
+
+  await addSummon('susanoo',3);pass('Susanoo stacks to 64 and registers/selects as a separate GUI motion');
+  sceneDisplays.clear();sceneRemoved.clear();const susanooBegin=output.length;
+  const guardianOrigin=a.entity.position.clone(),guardianHealth=[a.health,b.health];
+  a._testLeftClick();await waitFor(() => output.slice(susanooBegin).includes('Susanoo phase: WINDUP'),'guardian armor ready');
+  await waitFor(() => output.slice(susanooBegin).includes('Susanoo phase: FADE'),'guardian slash completed',15000);
+  const guardianEntries=summonTrace('Susanoo',susanooBegin);
+  assert.deepEqual(guardianEntries.map(e => e.kind),['ribs','armor','slash']);
+  assert.ok(renderedForBoth(guardianEntries));
+  const armorIds=guardianEntries.find(e => e.kind==='armor').ids;
+  assert.ok(armorIds.some(id => (rotations.get(id)?.size||0)>2),'Giant sword arm sent no changing rotations');
+  await waitFor(() => sceneRemoved.size===sceneDisplays.size && removedForBoth(guardianEntries),'guardian cleanup for both viewers');
+  for(const phase of ['SIGNS','RIBS','ARMOR','WINDUP','SLASH','IMPACT','FADE'])
+    assert.ok(output.slice(susanooBegin).includes('Susanoo phase: '+phase));
+  assert.ok(a.entity.position.distanceTo(guardianOrigin)<.01);assert.deepEqual([a.health,b.health],guardianHealth);
+  pass('ribs form into giant samurai armor, its sword arm animates, a slash travels outward and every model disappears without damage');
+  sceneDisplays.clear();sceneRemoved.clear();const guardianCancel=output.length;a._testLeftClick();
+  await waitFor(() => output.slice(guardianCancel).includes('Susanoo phase: ARMOR'),'guardian cancellation during formation');
+  const cancelGuardian=summonTrace('Susanoo',guardianCancel);a._testLeftClick();
+  await waitFor(() => removedForBoth(cancelGuardian) && sceneRemoved.size===sceneDisplays.size,'cancel guardian ribs and armor');
+  await sleep(700);assert.ok(!output.slice(guardianCancel).includes('Susanoo phase: SLASH'));
+  pass('cancelling Susanoo during formation clears both ribs and armor and prevents the slash');
+  assert.ok(!/Gate scene failed|Susanoo scene failed/.test(output),'A summon scene logged a runtime failure');
 
   await disconnect(b);
   await disconnect(a);

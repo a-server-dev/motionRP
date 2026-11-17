@@ -21,7 +21,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
     @Override public void onEnable() {
         saveDefaultConfig();
         // Add only the new built-in definition during upgrade; keep user entries.
-        for (String builtIn : java.util.List.of("rasengan", "rasenshuriken")) {
+        for (String builtIn : java.util.List.of("rasengan", "rasenshuriken", "gate_of_babylon", "susanoo")) {
             if (!getConfig().contains("assets." + builtIn + "-definition-installed", true)) {
                 if (!getConfig().contains("motions." + builtIn, true)) {
                     for (var entry : Objects.requireNonNull(getConfig().getDefaults())

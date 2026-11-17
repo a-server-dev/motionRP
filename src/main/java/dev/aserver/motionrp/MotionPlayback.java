@@ -22,6 +22,13 @@ public final class MotionPlayback {
         var model = BetterModel.limbOrNull(definition.model());
         if (model == null) return "プレイヤーモデルが未読込: " + definition.model();
         if (model.animation(definition.animation()).isEmpty()) return "アニメーションが未登録: " + definition.animation();
+        for(String required:SummonAssets.models(definition.effect())) {
+            if(BetterModel.modelOrNull(required)==null) return "演出モデルが未読込: "+required;
+        }
+        if(definition.effect().equals("susanoo") && BetterModel.modelOrNull(SummonAssets.ARMOR).animation("slash").isEmpty())
+            return "須佐能乎の斬撃アニメーションが未登録";
+        if(definition.effect().equals("gate_of_babylon") && BetterModel.modelOrNull(SummonAssets.GATE).animation("spin").isEmpty())
+            return "黄金の門の回転アニメーションが未登録";
         if (Set.of("rasengan", "rasenshuriken").contains(definition.effect())) {
             if (model.animation("rasengan_helper").isEmpty()) return "分身アニメーションが未登録: rasengan_helper";
             var orb = BetterModel.modelOrNull(definition.effect().equals("rasenshuriken") ? BundledModels.SHURIKEN_ORB : BundledModels.ORB);
@@ -63,6 +70,8 @@ public final class MotionPlayback {
             MotionScene scene = switch (definition.effect()) {
                 case "rasengan" -> new RasenganScene(plugin, player, definition.model());
                 case "rasenshuriken" -> new RasenshurikenScene(plugin, player, definition.model());
+                case "gate_of_babylon" -> new GateOfBabylonScene(plugin,player);
+                case "susanoo" -> new SusanooScene(plugin,player);
                 default -> null;
             };
             playing.put(uuid, new Playing(owned, timeout, scene));

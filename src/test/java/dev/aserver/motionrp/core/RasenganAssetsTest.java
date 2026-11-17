@@ -17,7 +17,11 @@ class RasenganAssetsTest {
 
     @Test void allAnimatedBonesAndOutlinerEntriesResolveToRealModelParts() throws Exception {
         for (String file : List.of("players/motionrp_rasengan.bbmodel", "models/motionrp_rasengan_orb.bbmodel",
-                "players/motionrp_rasenshuriken.bbmodel", "models/motionrp_rasenshuriken_orb.bbmodel")) {
+                "players/motionrp_rasenshuriken.bbmodel", "models/motionrp_rasenshuriken_orb.bbmodel",
+                "players/motionrp_gate_of_babylon.bbmodel", "players/motionrp_susanoo.bbmodel",
+                "models/motionrp_golden_gate.bbmodel", "models/motionrp_treasury_sword.bbmodel",
+                "models/motionrp_treasury_spear.bbmodel", "models/motionrp_treasury_axe.bbmodel",
+                "models/motionrp_susanoo_ribs.bbmodel", "models/motionrp_susanoo_armor.bbmodel", "models/motionrp_susanoo_slash.bbmodel")) {
             var model = read(file);
             Set<String> groups = new HashSet<>();
             Set<String> all = new HashSet<>();
@@ -40,6 +44,30 @@ class RasenganAssetsTest {
                     }
                 }
             }
+        }
+    }
+
+    @Test void summonsContainEmbeddedTexturesDifferentWeaponsAndAnAnimatedGiantSword() throws Exception {
+        for(String id:List.of("golden_gate","treasury_sword","treasury_spear","treasury_axe","susanoo_ribs","susanoo_armor","susanoo_slash")) {
+            var model=read("models/motionrp_"+id+".bbmodel");
+            String source=model.getAsJsonArray("textures").get(0).getAsJsonObject().get("source").getAsString();
+            var image=ImageIO.read(new ByteArrayInputStream(Base64.getDecoder().decode(source.substring(source.indexOf(',')+1))));
+            assertNotNull(image);assertEquals(8,image.getWidth());assertEquals(1,image.getHeight());
+        }
+        Set<Integer> counts=new HashSet<>();
+        for(String kind:List.of("sword","spear","axe")) counts.add(read("models/motionrp_treasury_"+kind+".bbmodel").getAsJsonArray("elements").size());
+        assertEquals(3,counts.size(),"Weapons should have different geometry");
+        var armor=read("models/motionrp_susanoo_armor.bbmodel");
+        assertEquals("slash",armor.getAsJsonArray("animations").get(0).getAsJsonObject().get("name").getAsString());
+        assertEquals((SusanooTimeline.FADE-SusanooTimeline.READY)/20.0,
+                armor.getAsJsonArray("animations").get(0).getAsJsonObject().get("length").getAsDouble());
+        double top=0;
+        for(var element:armor.getAsJsonArray("elements")) top=Math.max(top,element.getAsJsonObject().getAsJsonArray("to").get(1).getAsDouble());
+        assertTrue(top*2/16>5.5,"Upper-body guardian should tower over the caster");
+        for(String name:List.of("gate_of_babylon","susanoo")) {
+            var motion=read("players/motionrp_"+name+".bbmodel").getAsJsonArray("animations").get(0).getAsJsonObject();
+            assertEquals(name,motion.get("name").getAsString());
+            assertEquals((name.equals("susanoo") ? SusanooTimeline.END : GateTimeline.END)/20.0,motion.get("length").getAsDouble());
         }
     }
 

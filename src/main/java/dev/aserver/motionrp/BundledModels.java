@@ -38,8 +38,13 @@ public final class BundledModels {
                 }
                 changed = true;
             }
-            for (String file : new String[]{"players/" + PLAYER + ".bbmodel", "models/" + ORB + ".bbmodel",
-                    "players/" + SHURIKEN_PLAYER + ".bbmodel", "models/" + SHURIKEN_ORB + ".bbmodel", "LICENSE-MotionRP-models.txt"}) {
+            var files=new java.util.ArrayList<>(java.util.List.of("players/" + PLAYER + ".bbmodel", "models/" + ORB + ".bbmodel",
+                    "players/" + SHURIKEN_PLAYER + ".bbmodel", "models/" + SHURIKEN_ORB + ".bbmodel", "LICENSE-MotionRP-models.txt"));
+            for(String effect:java.util.List.of("gate_of_babylon","susanoo")) {
+                files.add("players/motionrp_"+effect+".bbmodel");
+                for(String model:SummonAssets.models(effect)) files.add("models/"+model+".bbmodel");
+            }
+            for (String file : files) {
                 Path target = root.resolve(file);
                 String resource = file.startsWith("LICENSE") ? "bettermodel/LICENSE-BetterModel.txt" : "bettermodel/" + file;
                 try (InputStream source = Objects.requireNonNull(plugin.getResource(resource), resource)) {
