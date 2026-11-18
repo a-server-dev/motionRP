@@ -11,7 +11,7 @@ motions:
     effect: excalibur
     max-ticks: 220
   gae_bolg:
-    name: 刺し穿つ死棘の槍（ゲイ・ボルク）
+    name: 突き穿つ死翔の槍（ゲイ・ボルク）
     model: motionrp_gae_bolg
     animation: gae_bolg
     effect: gae_bolg

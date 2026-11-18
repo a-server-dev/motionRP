@@ -35,6 +35,9 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
                 saveConfig();
             }
         }
+        if("刺し穿つ死棘の槍（ゲイ・ボルク）".equals(getConfig().getString("motions.gae_bolg.name"))) {
+            getConfig().set("motions.gae_bolg.name","突き穿つ死翔の槍（ゲイ・ボルク）");saveConfig();
+        }
         if("motionrp_gate_of_babylon_enuma".equals(getConfig().getString("motions.gate_of_babylon_enuma.model"))
                 && "gate_of_babylon_enuma".equals(getConfig().getString("motions.gate_of_babylon_enuma.effect"))
                 && (getConfig().getInt("motions.gate_of_babylon_enuma.max-ticks",0)==280

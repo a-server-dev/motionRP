@@ -16,7 +16,7 @@ final class SummonAssets {
     static List<String> models(String effect) {
         return switch(effect) {
             case "excalibur" -> List.of(EXCALIBUR,EXCALIBUR_LIGHT);
-            case "gae_bolg" -> List.of(GAE_BOLG,GAE_TRAIL,GAE_THORNS);
+            case "gae_bolg" -> List.of(GAE_BOLG);
             case "zangetsu_bankai" -> List.of(ZANGETSU,TENSA,BANKAI_COCOON,BANKAI_WAVE);
             case "gate_of_babylon_100" -> List.of(MASS_GATE,SWORD,SPEAR,AXE);
             case "gate_of_babylon_enuma" -> List.of(MASS_GATE,SWORD,SPEAR,AXE,BAB_ILU,EA,ENUMA,ENUMA_RING);

@@ -33,6 +33,7 @@ final class AerialAnchor {
         boolean returnToGround=last==null || (player.getWorld()==last.getWorld() && player.getLocation().distanceSquared(last)<.04);
         restore(plugin,player,returnToGround,this);active=player.getPersistentDataContainer().has(key(plugin));
     }
+    void finishAtCurrent() {if(active) {restore(plugin,player,false,this);active=player.getPersistentDataContainer().has(key(plugin));}}
     static void recover(MotionPlugin plugin,Player player) {restore(plugin,player,true,null);}
     private static void restore(MotionPlugin plugin,Player player,boolean returnToGround,AerialAnchor anchor) {
         byte[] bytes=player.getPersistentDataContainer().get(key(plugin),PersistentDataType.BYTE_ARRAY);if(bytes==null)return;

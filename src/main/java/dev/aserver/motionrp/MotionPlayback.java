@@ -28,7 +28,7 @@ public final class MotionPlayback {
         if(definition.effect().startsWith("gate_of_babylon_") && BetterModel.modelOrNull(SummonAssets.MASS_GATE).animation("spin").isEmpty()) return "大規模門の回転が未登録";
         if(definition.effect().equals("gate_of_babylon_enuma") && (BetterModel.modelOrNull(SummonAssets.ENUMA_RING).animation("spin").isEmpty() || BetterModel.modelOrNull(SummonAssets.EA).animation("spin").isEmpty() || BetterModel.modelOrNull(SummonAssets.EA).animation("level").isEmpty() || BetterModel.modelOrNull(SummonAssets.ENUMA).animation("vortex").isEmpty())) return "エアの回転・射出が未登録";
         if(definition.effect().equals("excalibur") && (BetterModel.modelOrNull(SummonAssets.EXCALIBUR).animation("release").isEmpty() || BetterModel.modelOrNull(SummonAssets.EXCALIBUR_LIGHT).animation("flow").isEmpty())) return "聖剣の解放が未登録";
-        if(definition.effect().equals("gae_bolg") && (BetterModel.modelOrNull(SummonAssets.GAE_BOLG).animation("thrust").isEmpty() || BetterModel.modelOrNull(SummonAssets.GAE_TRAIL).animation("flow").isEmpty())) return "魔槍の刺突が未登録";
+        if(definition.effect().equals("gae_bolg") && BetterModel.modelOrNull(SummonAssets.GAE_BOLG).animation("throw_sequence").isEmpty()) return "魔槍の刺突が未登録";
         if(definition.effect().equals("zangetsu_bankai") && (BetterModel.modelOrNull(SummonAssets.ZANGETSU).animation("point").isEmpty() || BetterModel.modelOrNull(SummonAssets.TENSA).animation("reveal").isEmpty() || BetterModel.modelOrNull(SummonAssets.BANKAI_COCOON).animation("swirl").isEmpty())) return "卍解の変形アニメーションが未登録";
         if(definition.effect().equals("susanoo") && (BetterModel.modelOrNull(SummonAssets.ARMOR).animation("slash").isEmpty() || BetterModel.modelOrNull(SummonAssets.ARMOR).animation("unfurl").isEmpty()))
             return "須佐能乎の斬撃アニメーションが未登録";
@@ -80,7 +80,7 @@ public final class MotionPlayback {
                 case "rasengan" -> new RasenganScene(plugin, player, definition.model());
                 case "rasenshuriken" -> new RasenshurikenScene(plugin, player, definition.model());
                 case "excalibur" -> new NobleScene(plugin,player,owned,true);
-                case "gae_bolg" -> new NobleScene(plugin,player,owned,false);
+                case "gae_bolg" -> new GaeBolgScene(plugin,player,owned);
                 case "zangetsu_bankai" -> new BankaiScene(plugin,player,owned);
                 case "gate_of_babylon_100" -> new TreasuryScene(plugin,player,owned,false);
                 case "gate_of_babylon_enuma" -> new TreasuryScene(plugin,player,owned,true);

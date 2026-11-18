@@ -5,7 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public final class NobleHandPath {
-    private static final RasenganHandPath.Hand[] EXCALIBUR=read("excalibur",176),GAE=read("gae_bolg",132);
+    private static final RasenganHandPath.Hand[] EXCALIBUR=read("excalibur",176),GAE=read("gae_bolg",GaeBolgTimeline.END);
     private NobleHandPath() {}
     private static RasenganHandPath.Hand[] read(String name,int length) {
         try(var in=Objects.requireNonNull(NobleHandPath.class.getResourceAsStream("/bettermodel/"+name+"-hand-path.csv"));var r=new BufferedReader(new InputStreamReader(in,StandardCharsets.UTF_8))) {

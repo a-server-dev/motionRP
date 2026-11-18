@@ -69,11 +69,14 @@ public final class BundledModels {
                                     : file.equals("players/motionrp_zangetsu_bankai.bbmodel") ? Set.of("909515f7393027b9c35aee34ab05e89d04c718bb67e5645e3667198eb4261c33","1eef505842f410eca1b28c82c6707903c016e247f5ac4ffdd537a3b68207d822")
                                     : file.equals("models/motionrp_tensa_zangetsu.bbmodel") ? Set.of("cf68b92b1a7cde04d8b7b0c4a5f435b621d9c9760e1102675d969416c7068806")
                                     : file.equals("models/motionrp_bankai_cocoon.bbmodel") ? Set.of("d6f38cfd0592d3ce2dd6fa5154269bc340f9f4eb8f6fe528f79b04f761faa127")
-                                    : file.equals("models/motionrp_zangetsu_cleaver.bbmodel") ? Set.of("de065d3da7442d5a4c74c7d1cfadaaf1352e32e294b216d28d6f91be7dc5335d","397b60c008232307f099443b633a46a4643e7ac58422441e55ca67ed7d9c6385")
-                                    : file.equals("models/motionrp_susanoo_armor.bbmodel") ? Set.of(SUMMON_040_SHA.get(file),"1868e0e239fee4b7470332ba21007cbde29a12c4938a146ea08af4e00e23c098","add67777e2a776ae9b7e2344b66ffabeba44ca41baa29a6fad5b415fbdb060ee")
+                                    : file.equals("models/motionrp_zangetsu_cleaver.bbmodel") ? Set.of("de065d3da7442d5a4c74c7d1cfadaaf1352e32e294b216d28d6f91be7dc5335d","397b60c008232307f099443b633a46a4643e7ac58422441e55ca67ed7d9c6385","2b9a0b0bfc733d1fb25e099e3a0c1c795f66f129ece7971cecb80000e724b794")
+                                    : file.equals("models/motionrp_susanoo_armor.bbmodel") ? Set.of(SUMMON_040_SHA.get(file),"1868e0e239fee4b7470332ba21007cbde29a12c4938a146ea08af4e00e23c098","add67777e2a776ae9b7e2344b66ffabeba44ca41baa29a6fad5b415fbdb060ee","7edbd7f936024d0c1b5d47c618d2ef04e08f59f7a435a2e6f2edf65372a0466c")
                                     : file.equals("players/motionrp_susanoo.bbmodel") ? Set.of("435fb48bd71a7c2b7357b4070ff3084a351d4884ac7810cedd4accacc7c155d9")
                                     : file.equals("models/motionrp_susanoo_ribs.bbmodel") ? Set.of(SUMMON_040_SHA.get(file),"ef9b07b05a0000b5a0f9d908a621e4543d71db9081d1bb61b06b97fa2a0cf62b")
                                     : file.equals("models/motionrp_susanoo_slash.bbmodel") ? Set.of("6255e3d0879d4442415cf00594cb7ed59928179965e7ad7d2b9ae2388a24dbf6")
+                                    : file.equals("players/motionrp_gae_bolg.bbmodel") ? Set.of("233b327d4b95091c583e1d2c432ae12ef26782a51d8829eb66dc1654c23c14e4")
+                                    : file.equals("models/motionrp_excalibur_blade.bbmodel") ? Set.of("f52925ae4aaa05a189851ba32a820f8ddf49888c1444d3540999d9153841b219")
+                                    : file.equals("models/motionrp_gae_bolg_spear.bbmodel") ? Set.of("79a465c56e8e1599bd4e95eaffcf70427af5a5bbcffdf1cbeabf08ade160db92")
                                     : SUMMON_050_SHA.containsKey(file) ? Set.of(SUMMON_050_SHA.get(file))
                                     : SUMMON_040_SHA.containsKey(file) ? Set.of(SUMMON_040_SHA.get(file)) : Set.of(),
                             plugin.getDataFolder().toPath().resolve("model-backups"),

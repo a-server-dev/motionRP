@@ -77,29 +77,63 @@ def complete():
     c('belt',[0,54,0],[25,4,16],0);c('belt_crest',[0,54,-8.5],[7,5,1.5],7)
     for side in [-1,1]:
         for j in range(4):c(f'collar_{side}_{j}',[side*(3+j*3.3),82-j*1.1,-5],[4.5,3,6],7,[0,0,-side*22.5])
-    a.joint('azure_breastplate',(0,55,0))
-    # Tengu mask: layered cheeks, luminous eye slits, long pointed nose and swept horns.
-    for j,w in enumerate([8,12,16,19,18,15]):c(f'tengu_face_contour_{j}',[0,88+j*2.3,-1],[w,2.5,12],6)
     for side in [-1,1]:
-        c(f'temple_{side}',[side*9,99,1],[4,14,13],5)
-        c(f'eye_slit_{side}',[side*4.6,99,-7.3],[6,.9,.8],3,[0,0,side*22.5])
-        c(f'angry_brow_{side}',[side*4.6,101,-7.4],[7,1.5,1],7,[0,0,side*22.5])
-        for j in range(4):c(f'swept_cheek_{side}_{j}',[side*(5.5+j*1.3),90+j*1.5,-6.5],[2.5,5.5,2],4,[0,0,-side*22.5])
-        c(f'fang_{side}',[side*3.5,88,-7.8],[1.5,4,1.4],3)
+        for j in range(10):
+            t=j/9
+            c(f'crossed_chest_lapel_{side}_{j}',[side*(12*(1-t)),80-24*t,-9],[4.4,3.5,1.5],5,[0,0,-side*22.5])
+            c(f'lapel_seam_{side}_{j}',[side*(12*(1-t)+1.1),80-24*t,-9.9],[.5,3.6,.3],0,[0,0,-side*22.5])
+    a.joint('azure_breastplate',(0,55,0))
+    # Sculpted menpo: recessed eyes, overhanging brows, fangs and a tapered long nose.
+    for j,w in enumerate([8,11,14,17,17,15]):
+        c(f'tengu_face_contour_{j}',[0,89+j*2.4,-.5],[w,2.7,11.5],0)
+    for side in [-1,1]:
+        c(f'temple_{side}',[side*8.7,99,1.5],[3.5,12,12],4)
+        c(f'recessed_eye_{side}',[side*4.5,99,-6.6],[6.2,2.3,1],2,[0,0,side*22.5])
+        c(f'eye_slit_{side}',[side*4.5,99,-7.25],[3.1,.6,.35],1,[0,0,side*22.5])
+        c(f'eye_pupil_{side}',[side*4.4,99,-7.5],[.65,1.0,.25],3)
         for j in range(5):
-            c(f'helmet_horn_{side}_{j}',[side*(9+j*1.7),105+j*2.7,1+j*.7],[4-j*.55,4.4,4-j*.5],7,[0,0,-side*22.5])
-        for j in range(4):c(f'helmet_neck_guard_{side}_{j}',[side*(8+j*.5),87+j*2.6,5],[4.5,3,11],6)
-    for j in range(8):
-        c(f'tengu_long_nose_{j}',[0,97-j*.8,-7.8-j*1.45],[4.5-j*.48,2.2,2.3],7 if j%2 else 4)
-    c('helmet_crown',[0,105,1],[15,4,11],6)
-    c('forehead_pilot_gem',[0,103,-6.5],[4.3,5.4,1.5],3,[0,0,45])
-    for tooth in range(5):c(f'mask_tooth_{tooth}',[-4+tooth*2,88.8,-7.8],[1,1.5,.9],7)
+            t=j/4
+            c(f'overhanging_brow_{side}_{j}',[side*(1.5+j*1.4),100.1+1.4*math.sin(t*math.pi),-7.4],[2.1,1.5,1.8],4,[0,0,side*22.5])
+            c(f'brow_ridge_{side}_{j}',[side*(1.5+j*1.4),100.8+1.4*math.sin(t*math.pi),-8.1],[1.8,.4,.4],4)
+        for j in range(9):
+            t=j/8;x=side*(6+5*math.sin(t*math.pi*.7));y=97-8*t+2*t*t
+            c(f'flame_cheek_{side}_{j}',[x,y,-5.9+2*t],[2.5*(1-.6*t),2.4,2.3],4,[0,0,-side*22.5])
+            c(f'cheek_cut_{side}_{j}',[x-side*.5,y,-7.15+2*t],[.55,2.3,.4],0,[0,0,-side*22.5])
+        for j in range(5):
+            c(f'mandible_{side}_{j}',[side*(3+j*.8),88.8+j*.7,-5.7],[2.4,2.3,3.8],0,[0,0,side*22.5])
+        for j in range(4):
+            c(f'curved_fang_{side}_{j}',[side*(3.9-j*.25),91-j*.95,-8-j*.25],[1.3-j*.2,1.4,1.2],7)
+        for j in range(11):
+            t=j/10;x=side*(9+9*t-3*t*t);y=104+14*math.sin(t*math.pi/2);z=1+4*t
+            c(f'swept_helmet_horn_{side}_{j}',[x,y,z],[max(.3,4.2*(1-t)),2.3,max(.35,4*(1-t))],4,[0,0,-side*22.5])
+            c(f'horn_bevel_{side}_{j}',[x-side*.4,y,z-1.1*(1-t)],[.45,2.2,.5],4)
+        for tuft in range(3):
+            for j in range(6):
+                t=j/5
+                c(f'flame_crown_{side}_{tuft}_{j}',[side*(3+tuft*2.6+6*math.sin(t*math.pi/2)-4*t*t),103+tuft*.8+(6+tuft*1.4)*math.sin(t*math.pi*.8),-3+4*t],
+                  [max(.3,4.6*(1-t)),1.9,2.8*(1-t)+.3],4,[0,0,-side*22.5])
+                c(f'crown_carved_edge_{side}_{tuft}_{j}',[side*(2.6+tuft*2.6+6*math.sin(t*math.pi/2)-4*t*t),103+tuft*.8+(6+tuft*1.4)*math.sin(t*math.pi*.8),-4.2+4*t],[.25,1.5,.3],0)
+        for j in range(4):c(f'helmet_neck_guard_{side}_{j}',[side*(8+j*.5),89+j*2.8,5],[4.5,3.2,11],6)
+    for j in range(15):
+        t=j/14
+        c(f'tengu_long_nose_{j}',[0,97.6-5*t,-7.5-13*t],[max(.3,4.2*(1-t)),1.6,1.9],4)
+        c(f'nose_carved_keel_{j}',[0,98.1-5*t,-8-13*t],[.45,1.1,1.7],0)
+    c('mouth_shadow',[0,91,-6.6],[8,3,1.2],2)
+    for j in range(7):
+        x=-4.2+j*1.4
+        c(f'upper_lip_{j}',[x,92.5+abs(x)*.13,-7.5],[1.6,1,1.2],4)
+        c(f'lower_jaw_{j}',[x,88.6+abs(x)*.1,-6.8],[1.6,1.7,2],4)
+        if j%2==0:c(f'mask_tooth_{j}',[x,91.7,-7.3],[.7,1.1,.65],7)
+    c('helmet_crown',[0,105,2],[14,4,10],0)
+    c('forehead_gem_frame',[0,103,-6.3],[4.2,5.3,1],0,[0,0,45])
+    c('forehead_diamond_plate',[0,103,-7.1],[2.4,3.6,.6],4,[0,0,45])
+    c('forehead_carved_line',[0,103,-7.5],[.3,3.2,.2],0)
     a.joint('tengu_helmet',(0,85,0))
     arm_joints=[]
     for side in [-1,1]:
         x=side*28
         for j in range(5):
-            c(f'shoulder_scale_{side}_{j}',[side*(21+j*.7),83-j*2.1,1],[15+j*.7,2.4,19-j*.5],6 if j%2 else 5,[0,0,-side*22.5])
+            c(f'shoulder_scale_{side}_{j}',[side*(21+j*.7),83-j*2.1,1],[17+j*.9,3.1,20-j*.4],6 if j%2 else 5,[0,0,-side*22.5])
             c(f'shoulder_trim_{side}_{j}',[side*(21+j*.7),83.8-j*2.1,-8.5+j*.25],[15+j*.7,.6,.9],7,[0,0,-side*22.5])
         c(f'upper_arm_{side}',[x,69,0],[8,19,9],5)
         for j in range(5):
