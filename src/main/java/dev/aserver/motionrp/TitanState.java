@@ -37,6 +37,7 @@ final class TitanState {
         if(!"textures.minecraft.net".equalsIgnoreCase(skin.getHost()) || !Set.of("http","https").contains(skin.getScheme())
                 || !skin.getPath().matches("/texture/[0-9a-fA-F]{64}")) throw new IllegalArgumentException("Invalid titan.skin-url");
     }
+    boolean bundledSkin() { return plugin.getConfig().getBoolean("titan.use-bundled-skin",true); }
     URI skin() { return skin; }
     double originalScale() { return originalScale; }
     private static NamespacedKey key(MotionPlugin plugin,String name) { return new NamespacedKey(plugin,"titan_"+name+"_v1"); }
@@ -51,6 +52,7 @@ final class TitanState {
             data.set(key(plugin,"invisible"),PersistentDataType.BYTE,(byte)(originalInvisible?1:0));
             player.saveData();began=true;
             player.setInvisible(true);
+            if(bundledSkin()) return;
             var changed=player.getPlayerProfile().clone();
             if(skin.toString().equals(DEFAULT_SKIN)) {
                 changed.removeProperty("textures");

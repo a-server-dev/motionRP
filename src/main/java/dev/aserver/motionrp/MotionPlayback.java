@@ -25,13 +25,15 @@ public final class MotionPlayback {
         for(String required:SummonAssets.models(definition.effect())) {
             if(BetterModel.modelOrNull(required)==null) return "演出モデルが未読込: "+required;
         }
+        if(definition.effect().startsWith("gate_of_babylon_") && BetterModel.modelOrNull(SummonAssets.MASS_GATE).animation("spin").isEmpty()) return "大規模門の回転が未登録";
+        if(definition.effect().equals("gate_of_babylon_enuma") && (BetterModel.modelOrNull(SummonAssets.EA).animation("spin").isEmpty() || BetterModel.modelOrNull(SummonAssets.EA).animation("level").isEmpty() || BetterModel.modelOrNull(SummonAssets.ENUMA).animation("vortex").isEmpty())) return "エアの回転・射出が未登録";
         if(definition.effect().equals("susanoo") && BetterModel.modelOrNull(SummonAssets.ARMOR).animation("slash").isEmpty())
             return "須佐能乎の斬撃アニメーションが未登録";
         if(definition.effect().equals("gate_of_babylon") && BetterModel.modelOrNull(SummonAssets.GATE).animation("spin").isEmpty())
             return "黄金の門の回転アニメーションが未登録";
         if(definition.effect().equals("senbonzakura") && BetterModel.modelOrNull(SummonAssets.CHERRY_PETALS).animation("swirl").isEmpty())
             return "千本桜の旋回アニメーションが未登録";
-        if(definition.effect().equals("titan_transform") && model.animation("titan_idle").isEmpty()) return "巨人化の待機アニメーションが未登録";
+        if(definition.effect().equals("titan_transform") && (model.animation("titan_idle").isEmpty() || BetterModel.modelOrNull(SummonAssets.TITAN_BODY).animation("titan_idle").isEmpty())) return "巨人化の待機アニメーションが未登録";
         if (Set.of("rasengan", "rasenshuriken").contains(definition.effect())) {
             if (model.animation("rasengan_helper").isEmpty()) return "分身アニメーションが未登録: rasengan_helper";
             var orb = BetterModel.modelOrNull(definition.effect().equals("rasenshuriken") ? BundledModels.SHURIKEN_ORB : BundledModels.ORB);
@@ -74,6 +76,8 @@ public final class MotionPlayback {
             MotionScene scene = switch (definition.effect()) {
                 case "rasengan" -> new RasenganScene(plugin, player, definition.model());
                 case "rasenshuriken" -> new RasenshurikenScene(plugin, player, definition.model());
+                case "gate_of_babylon_100" -> new TreasuryScene(plugin,player,owned,false);
+                case "gate_of_babylon_enuma" -> new TreasuryScene(plugin,player,owned,true);
                 case "gate_of_babylon" -> new GateOfBabylonScene(plugin,player);
                 case "susanoo" -> new SusanooScene(plugin,player);
                 case "senbonzakura" -> new SenbonzakuraScene(plugin,player);

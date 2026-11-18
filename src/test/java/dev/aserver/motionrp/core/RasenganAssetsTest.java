@@ -23,7 +23,9 @@ class RasenganAssetsTest {
                 "models/motionrp_treasury_spear.bbmodel", "models/motionrp_treasury_axe.bbmodel",
                 "models/motionrp_susanoo_ribs.bbmodel", "models/motionrp_susanoo_armor.bbmodel", "models/motionrp_susanoo_slash.bbmodel",
                 "players/motionrp_senbonzakura.bbmodel","models/motionrp_senbonzakura_blade.bbmodel","models/motionrp_senbonzakura_petals.bbmodel",
-                "models/motionrp_senbonzakura_field_blade.bbmodel","players/motionrp_titan_transform.bbmodel","models/motionrp_titan_lightning.bbmodel")) {
+                "models/motionrp_senbonzakura_field_blade.bbmodel","players/motionrp_titan_transform.bbmodel","models/motionrp_titan_lightning.bbmodel","models/motionrp_titan_body.bbmodel",
+                "players/motionrp_gate_of_babylon_100.bbmodel","players/motionrp_gate_of_babylon_enuma.bbmodel",
+                "models/motionrp_golden_gate_mass.bbmodel","models/motionrp_bab_ilu.bbmodel","models/motionrp_ea.bbmodel","models/motionrp_enuma_vortex.bbmodel")) {
             var model = read(file);
             Set<String> groups = new HashSet<>();
             Set<String> all = new HashSet<>();

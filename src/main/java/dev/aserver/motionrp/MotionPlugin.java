@@ -22,7 +22,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
     @Override public void onEnable() {
         saveDefaultConfig();
         // Add only the new built-in definition during upgrade; keep user entries.
-        for (String builtIn : java.util.List.of("rasengan", "rasenshuriken", "gate_of_babylon", "susanoo", "senbonzakura","titan_transform")) {
+        for (String builtIn : java.util.List.of("rasengan", "rasenshuriken", "gate_of_babylon", "susanoo", "senbonzakura","titan_transform","gate_of_babylon_100","gate_of_babylon_enuma")) {
             if (!getConfig().contains("assets." + builtIn + "-definition-installed", true)) {
                 if (!getConfig().contains("motions." + builtIn, true)) {
                     for (var entry : Objects.requireNonNull(getConfig().getDefaults())
@@ -44,6 +44,9 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
             for(var entry:Objects.requireNonNull(getConfig().getDefaults()).getConfigurationSection("resource-pack").getValues(false).entrySet())
                 getConfig().set("resource-pack."+entry.getKey(),entry.getValue());
             saveConfig();
+        }
+        if(!getConfig().contains("titan.use-bundled-skin",true)) {
+            getConfig().set("titan.use-bundled-skin",true);saveConfig();
         }
         catalog = MotionCatalog.read(getConfig());
         items = new MotionItems(this);

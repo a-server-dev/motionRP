@@ -4,6 +4,18 @@ debug-input: false
 # BetterModel/players にあるプレイヤーモデルを指定します。
 # 標準の steve.bbmodel に含まれる roll を初期モーションとして使用します。
 motions:
+  gate_of_babylon_100:
+    name: 王の財宝・百門
+    model: motionrp_gate_of_babylon_100
+    animation: gate_of_babylon_100
+    effect: gate_of_babylon_100
+    max-ticks: 160
+  gate_of_babylon_enuma:
+    name: 王の財宝・本気（エヌマエリシュ）
+    model: motionrp_gate_of_babylon_enuma
+    animation: gate_of_babylon_enuma
+    effect: gate_of_babylon_enuma
+    max-ticks: 280
   titan_transform:
     name: 巨人化
     model: motionrp_titan_transform
@@ -53,8 +65,10 @@ controller:
   name: モーションセット
   # item-model: motionrp:controller
 
-# 仮スキン: 公開プロフィール MHF_Golem。Mojang textures のURLで差し替え可能。
+# URL方式の仮スキン: MHF_Golem。標準は添付PNGを埋め込んだ巨人体です。
 titan:
+  # 添付PNGを埋め込んだ巨人体。falseなら従来のskin-url方式。
+  use-bundled-skin: true
   skin-url: https://textures.minecraft.net/texture/1c6cd7202c34e78f3073090349f7d973b288af5e5b7334dd249010b3f27078f9
 
 # 追加ポート不要。生成した実パックを公開GitHub Releasesへ自動配布します。

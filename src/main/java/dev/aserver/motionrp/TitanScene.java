@@ -36,6 +36,10 @@ final class TitanScene extends SummonScene {
         if(tick==TRANSFORM) {
             body.update(TrackerUpdateAction.togglePart(false));
             state.begin();
+            if(state.bundledSkin()) {
+                giant=model(SummonAssets.TITAN_BODY,origin,(float)state.originalScale(),"giant");
+                loop(giant,"titan_idle");
+            } else {
             String url=state.skin().toString();
             String raw=Base64.getEncoder().encodeToString(("{\"textures\":{\"SKIN\":{\"url\":\""+url+"\"}}}").getBytes(StandardCharsets.UTF_8));
             var profile=ModelProfile.of(new ModelProfileInfo(UUID.nameUUIDFromBytes(url.getBytes(StandardCharsets.UTF_8)),"MotionRP_Titan"),
@@ -44,6 +48,7 @@ final class TitanScene extends SummonScene {
                     t->t.scaler(ModelScaler.value((float)state.originalScale())));
             giant.animate("titan_idle",AnimationModifier.builder().type(AnimationIterator.Type.LOOP).build());
             audience.show(giant,plugin,prefix,"giant");
+            }
             sound(origin,Sound.ENTITY_GENERIC_EXPLODE,1.5f,.6f);
         }
         if(giant!=null && tick<EXIT) {
@@ -51,7 +56,7 @@ final class TitanScene extends SummonScene {
             double value=TitanTimeline.scale(tick,state.originalScale());state.scale(value);
             giant.scaler(ModelScaler.value((float)Objects.requireNonNull(owner.getAttribute(org.bukkit.attribute.Attribute.SCALE)).getValue()));
             Location current=owner.getLocation();current.setPitch(0);giant.location(BukkitAdapter.adapt(current));
-            if(tick==GROWN) trace("scale="+owner.getAttribute(org.bukkit.attribute.Attribute.SCALE).getBaseValue()+" skin="+state.skin().getPath());
+            if(tick==GROWN) trace("scale="+owner.getAttribute(org.bukkit.attribute.Attribute.SCALE).getBaseValue()+" skin="+(state.bundledSkin()?"bundled:titan.png":state.skin().getPath()));
         }
         if(tick>=FLASH && tick<GROWN+8 && tick%4==2) {
             double a=(tick-FLASH)*.9;Location location=at(Math.cos(a)*2.8,Math.sin(a)*2.8,0);

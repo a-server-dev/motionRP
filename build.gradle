@@ -1,7 +1,7 @@
 plugins { id 'java' }
 
 group = 'dev.aserver.motionrp'
-version = '0.7.0'
+version = '0.8.0'
 
 repositories {
     mavenCentral()
@@ -35,6 +35,7 @@ tasks.register('distributionZip', Zip) {
     from('README.md')
     from('src/main/resources/config.yml') { into 'example-config' }
     from('src/main/resources/bettermodel') { into 'bbmodels' }
+    from('src/main/resources/skins') { into 'skins' }
     preserveFileTimestamps = false
     reproducibleFileOrder = true
 }

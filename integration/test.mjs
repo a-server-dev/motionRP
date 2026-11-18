@@ -142,6 +142,7 @@ try {
   fs.writeFileSync(path.join(run, 'plugins/MotionRP/config.yml'),
     fs.readFileSync(path.join(project, 'src/main/resources/config.yml'), 'utf8')
       .replace('debug-input: false', 'debug-input: true')
+      .replace(/  gate_of_babylon_100:\n[\s\S]*?(?=  titan_transform:)/, '')
       .replace(/  titan_transform:\n[\s\S]*?(?=  senbonzakura:)/, '')
       .replace(/  senbonzakura:\n[\s\S]*?(?=  gate_of_babylon:)/, '')
       .replace(/  gate_of_babylon:\n[\s\S]*?(?=  susanoo:)/, '')
@@ -770,6 +771,75 @@ generate-structures=false
   await addSummon('titan_transform',5);
   consoleCommand('motionrp status');await waitFor(()=>/titan_transform:.*利用可能/.test(output),'sixth motion available');
   pass('Titan transformation migrates into the old config and stacks/registers/selects as the sixth custom motion');
+  await addSummon('gate_of_babylon_100',6);
+  consoleCommand('motionrp status');await waitFor(()=>/gate_of_babylon_100:.*利用可能/.test(output),'hundred gate availability');
+  pass('hundred-gate motion migrates, stacks to 64 and registers/selects in the seventh custom slot');
+  sceneDisplays.clear();sceneRemoved.clear();const hundredBegin=output.length,hundredOrigin=a.entity.position.clone(),hundredHealth=[a.health,b.health];
+  a._testLeftClick();await waitFor(()=>output.slice(hundredBegin).includes('Treasury100 phase: DRAW'),'hundred gates loaded',20000);
+  await sleep(350);const hundredInitial=summonTrace('Treasury100',hundredBegin);
+  assert.equal(hundredInitial.filter(e=>e.kind.startsWith('portal')).length,100);
+  assert.equal(hundredInitial.filter(e=>/^weapon\d+$/.test(e.kind)).length,100);
+  await waitFor(()=>renderedForBoth(hundredInitial),'all hundred gates/weapons rendered');
+  a._testStep(.2,.1,.1);
+  await waitFor(()=>output.slice(hundredBegin).includes('Treasury100 phase: FADE'),'hundred gate volley',25000);
+  await waitFor(()=>sceneRemoved.size===sceneDisplays.size,'hundred gates cleanup');
+  const hundredTrace=output.slice(hundredBegin),hundredEntries=summonTrace('Treasury100',hundredBegin);
+  const hundredFires=[...hundredTrace.matchAll(/Treasury100 fire index=(\d+) tick=(\d+)/g)].map(m=>[Number(m[1]),Number(m[2])]);
+  assert.deepEqual(hundredFires,[...Array.from({length:100},(_,i)=>[i,42+Math.floor(i*30/100)]),...Array.from({length:100},(_,i)=>[i,84])]);
+  assert.equal([...hundredTrace.matchAll(/Treasury100 impact index=/g)].length,200);
+  assert.ok(hundredTrace.includes('volley blast tick=86'));assert.ok(removedForBoth(hundredEntries));
+  assert.ok(a.entity.position.distanceTo(hundredOrigin)<.01);assert.deepEqual([a.health,b.health],hundredHealth);
+  pass('all hundred gates shoot in thirty rapid ticks then join one hundred-shot volley with a sand/dust blast and full cleanup');
+  sceneDisplays.clear();sceneRemoved.clear();const hundredCancel=output.length;a._testLeftClick();
+  await waitFor(()=>output.slice(hundredCancel).includes('Treasury100 fire index=0'),'hundred gate rapid before cancel',20000);
+  const hundredCancelled=summonTrace('Treasury100',hundredCancel);a._testLeftClick();
+  await waitFor(()=>removedForBoth(hundredCancelled) && sceneRemoved.size===sceneDisplays.size,'hundred gate rapid cancel');
+  const stoppedHundred=particles;await sleep(700);assert.equal(particles,stoppedHundred);assert.ok(!output.slice(hundredCancel).includes('volley blast'));
+  pass('cancelling the hundred-gate rapid pass removes all flying and loaded weapons and prevents the final blast');
+
+  await addSummon('gate_of_babylon_enuma',7);
+  consoleCommand(`summon minecraft:cow ${hundredOrigin.x} ${hundredOrigin.y} ${hundredOrigin.z+20} {NoAI:1b,NoGravity:1b,Silent:1b,Tags:["motionrp_target"]}`);await sleep(500);
+  sceneDisplays.clear();sceneRemoved.clear();const enumaBegin=output.length,enumaHealth=[a.health,b.health];
+  a._testLeftClick();await waitFor(()=>output.slice(enumaBegin).includes('TreasuryEnuma phase: DRAW'),'two hundred gates loaded',25000);
+  await sleep(300);const enumaInitial=summonTrace('TreasuryEnuma',enumaBegin);
+  assert.equal(enumaInitial.filter(e=>e.kind.startsWith('portal')).length,200);
+  assert.equal(enumaInitial.filter(e=>/^weapon\d+$/.test(e.kind)).length,200);
+  await waitFor(()=>renderedForBoth(enumaInitial),'two hundred gates/weapons visible',20000);
+  const cage=[...output.slice(enumaBegin).matchAll(/TreasuryEnuma position index=(\d+) x=([-\d.]+) y=([-\d.]+) z=([-\d.]+)/g)].filter(m=>Number(m[1])>=100);
+  assert.equal(cage.length,100);
+  assert.ok(cage.every(m=>Math.abs(Math.hypot(Number(m[2])-hundredOrigin.x,Number(m[4])-(hundredOrigin.z+20))-6)<.05));
+  pass('serious treasury shows one hundred rear gates and one hundred gates enclosing the living target twenty blocks ahead');
+  await waitFor(()=>output.slice(enumaBegin).includes('TreasuryEnuma phase: FADE'),'Enuma Elish and impact',30000);
+  await waitFor(()=>sceneRemoved.size===sceneDisplays.size,'Ea/beam/gates cleanup',15000);
+  const enumaTrace=output.slice(enumaBegin),enumaEntries=summonTrace('TreasuryEnuma',enumaBegin);
+  const enumaFires=[...enumaTrace.matchAll(/TreasuryEnuma fire index=(\d+) tick=(\d+)/g)].map(m=>[Number(m[1]),Number(m[2])]);
+  assert.deepEqual(enumaFires,[...Array.from({length:200},(_,i)=>[i,42+Math.floor(i*30/200)]),...Array.from({length:200},(_,i)=>[i,84])]);
+  assert.equal([...enumaTrace.matchAll(/TreasuryEnuma impact index=/g)].length,400);
+  for(const kind of ['bab_ilu','hand_vault','ea']) assert.ok(enumaEntries.some(e=>e.kind===kind));
+  assert.equal(enumaEntries.filter(e=>e.kind.startsWith('beam')).length,16);
+  assert.ok(enumaTrace.includes('enuma impact tick=176'));assert.ok(renderedForBoth(enumaEntries));assert.ok(removedForBoth(enumaEntries));
+  assert.deepEqual([a.health,b.health],enumaHealth);assert.ok(a.entity.position.distanceTo(hundredOrigin)<.01);
+  const healthCheck=output.length;consoleCommand('execute if entity @e[tag=motionrp_target,nbt={Health:10.0f}] run say TREASURY_TARGET_UNHARMED');
+  await waitFor(()=>output.slice(healthCheck).includes('TREASURY_TARGET_UNHARMED'),'target stays unharmed');
+  pass('two hundred gates fire four hundred cosmetic shots as Bab-ilu and spinning Ea lead into a sixteen-part Enuma Elish vortex without damaging its target');
+  sceneDisplays.clear();sceneRemoved.clear();const chargeCancel=output.length;a._testLeftClick();
+  await waitFor(()=>output.slice(chargeCancel).includes('TreasuryEnuma phase: EA_CHARGE'),'Ea charge before cancel',20000);
+  const cancelledCharge=summonTrace('TreasuryEnuma',chargeCancel);a._testLeftClick();
+  await waitFor(()=>removedForBoth(cancelledCharge) && sceneRemoved.size===sceneDisplays.size,'Ea charge cancel cleanup');
+  const stoppedCharge=particles;await sleep(1200);assert.equal(particles,stoppedCharge);assert.ok(!output.slice(chargeCancel).includes('phase: ENUMA_ELISH'));
+  pass('cancelling during Ea charging removes the key/weapon and every gate and prevents the beam');
+  sceneDisplays.clear();sceneRemoved.clear();const beamCancel=output.length;a._testLeftClick();
+  await waitFor(()=>output.slice(beamCancel).includes('TreasuryEnuma displays beam3'),'Enuma beam before cancel',25000);
+  const cancelledBeam=summonTrace('TreasuryEnuma',beamCancel);a._testLeftClick();
+  await waitFor(()=>removedForBoth(cancelledBeam) && sceneRemoved.size===sceneDisplays.size,'Enuma beam cancel cleanup');
+  const stoppedBeam=particles;await sleep(1000);assert.equal(particles,stoppedBeam);assert.ok(!output.slice(beamCancel).includes('enuma impact'));
+  pass('cancelling the emitted Enuma vortex removes every segment and stops later impacts and particles');
+  consoleCommand('kill @e[tag=motionrp_target]');
+  assert.ok(!/Treasury100 scene failed|TreasuryEnuma scene failed/.test(output));
+  a.setControlState('sneak',true);await sleep(300);
+  for(let i=0;i<6;i++) {a._testLeftClick();await sleep(300);}
+  a.setControlState('sneak',false);await sleep(300);
+  assert.equal((await readSaved('MotionTesterA')).loadout[6],5);a._testLook(0,0);
   function skinUrls(value) {
     if(typeof value==='string') {
       try {const decoded=JSON.parse(Buffer.from(value,'base64').toString('utf8'));return decoded?.textures?.SKIN?.url?[decoded.textures.SKIN.url]:[];} catch {return [];}
@@ -799,13 +869,14 @@ generate-structures=false
   assert.ok(titanEntries.some(e=>e.kind==='giant'));assert.ok(titanEntries.filter(e=>e.kind.startsWith('lightning')).length>=6);
   assert.ok(renderedForBoth(titanEntries),'Lightning or replacement skin model was not sent');
   assert.ok(scaleUpdates.some(v=>Math.abs(v-10)<.001),'Observer received no real scale-10 attribute: '+scaleUpdates);
-  assert.ok(profileUpdates.some(urls=>urls.some(url=>url.includes('1c6cd7202c34e78f'))),'Temporary Mojang skin missing from player profile packets');
+  assert.ok(output.slice(titanBegin).includes('skin=bundled:titan.png'),'Uploaded embedded skin is not selected');
+  assert.ok(profileUpdates.every(urls=>urls.length===0),'Bundled giant must preserve the original player profile');
   const pending=await readSaved('MotionTesterA');assert.equal(pending.data.BukkitValues['motionrp:titan_scale_v1'],1.25);
   assert.ok(nativeLightning.size>=4,'No vanilla lightning entities reached the observer');
-  pass('hand bite triggers native lightning/flash, a giant skin model, real scale 10 and temporary signed player skin');
+  pass('hand bite triggers native lightning/flash, a giant skin model, real scale 10 and the exact embedded user skin');
   await waitFor(()=>output.slice(titanBegin).includes('Titan phase: EXIT'),'human exits the nape',20000);
   assert.ok(a.entity.position.y>titanOrigin.y+13,'The real player did not emerge at the nape');
-  assert.ok(Math.abs(scaleUpdates.at(-1)-1.25)<.001);assert.equal(profileUpdates.at(-1).length,0);
+  assert.ok(Math.abs(scaleUpdates.at(-1)-1.25)<.001);assert.equal((profileUpdates.at(-1)?.length??0),0);
   await sleep(300);assert.equal(playerFlags.at(-1)&0x20,0,'The real player remains hidden after leaving its model');
   a._testStep(.2,.1,.2); // Inputs cannot cancel the owned dive.
   pass('original skinned real player emerges at the nape while the giant stays full size');
@@ -813,7 +884,7 @@ generate-structures=false
   await waitFor(()=>removedForBoth(titanEntries) && sceneRemoved.size===sceneDisplays.size,'giant and lightning cleanup',15000);
   await waitFor(noTitanJournal,'titan state journal cleared');
   assert.ok(Math.abs(scaleUpdates.at(-1)-1.25)<.001,'Scale did not restore: '+scaleUpdates.at(-1));
-  assert.ok(profileUpdates.length>=2 && profileUpdates.at(-1).length===0,'Original empty test-player texture properties did not restore');
+  assert.ok(profileUpdates.every(urls=>urls.length===0),'Original empty test-player texture properties did not restore');
   assert.ok(Math.abs(a.entity.position.y-titanOrigin.y)<.01);
   assert.ok(Math.abs(a.entity.position.z-(titanOrigin.z-5))<.01);assert.deepEqual([a.health,b.health],titanHealth);
   assert.ok([...nativeLightning].every(id=>removedByRole.observer.has(id)));
@@ -824,7 +895,7 @@ generate-structures=false
   const cancelledGiant=summonTrace('Titan',titanCancel);a._testLeftClick();
   await waitFor(()=>removedForBoth(cancelledGiant) && sceneRemoved.size===sceneDisplays.size,'cancel clears giant and lightning');
   await waitFor(noTitanJournal,'cancel restores saved state');
-  assert.ok(Math.abs(scaleUpdates.at(-1)-1.25)<.001);assert.equal(profileUpdates.at(-1).length,0);
+  assert.ok(Math.abs(scaleUpdates.at(-1)-1.25)<.001);assert.equal((profileUpdates.at(-1)?.length??0),0);
   pass('cancelling at scale 10 restores the original skin/scale and removes every replacement display');
 
   await sleep(300); // Controller inputs intentionally debounce for four ticks.
