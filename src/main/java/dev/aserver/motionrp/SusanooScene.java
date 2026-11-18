@@ -9,7 +9,7 @@ import org.bukkit.entity.Player;
 import static dev.aserver.motionrp.core.SusanooTimeline.*;
 
 final class SusanooScene extends SummonScene {
-    private static final Particle.DustOptions VIOLET=new Particle.DustOptions(Color.fromRGB(163,95,255),1.1f);
+    private static final Particle.DustOptions VIOLET=new Particle.DustOptions(Color.fromRGB(84,193,255),1.5f);
     private DummyTracker ribs,armor,slash;
     SusanooScene(MotionPlugin plugin,Player owner) { super(plugin,owner,"Susanoo",END); }
     @Override String phase() { return SusanooTimeline.phase(tick); }
@@ -21,25 +21,26 @@ final class SusanooScene extends SummonScene {
         if(ribs!=null) ribs.scaler(ModelScaler.value((float)(.1+1.9*Math.clamp((tick-RIBS)/18.0,0,1))));
         if(tick==ARMOR) {
             armor=model(SummonAssets.ARMOR,origin,.1f,"armor");
+            armor.animate("unfurl",AnimationModifier.DEFAULT_WITH_PLAY_ONCE);
             sound(at(0,0,3),Sound.ENTITY_ENDER_DRAGON_GROWL,.45f,.8f);
         }
         if(armor!=null) {
-            float scale=(float)(.1+1.9*Math.clamp((tick-ARMOR)/20.0,0,1));
+            float scale=(float)(.1+1.9*Math.clamp((tick-ARMOR)/44.0,0,1));
             if(tick>=FADE) scale*=Math.max(.02f,(END-tick)/(float)(END-FADE));
             armor.scaler(ModelScaler.value(scale));
         }
-        if(tick==ARMOR+20) { audience.hide(ribs);ribs=null; }
+        if(tick==ARMOR+44) { audience.hide(ribs);ribs=null;trace("complete armor and wings formed tick="+tick); }
         if(tick==READY) armor.animate("slash",AnimationModifier.DEFAULT_WITH_PLAY_ONCE);
         if(tick==SLASH) {
-            slash=model(SummonAssets.SLASH,at(0,2.5,2.5),.5f,"slash");
+            slash=model(SummonAssets.SLASH,at(0,4,7),2.2f,"slash");
             sound(at(0,2,3),Sound.ENTITY_IRON_GOLEM_ATTACK,1,.6f);
             sound(at(0,2,3),Sound.ENTITY_PLAYER_ATTACK_SWEEP,1.1f,.7f);
         }
         if(slash!=null) {
-            double progress=Math.clamp((tick-SLASH)/20.0,0,1);
-            slash.location(BukkitAdapter.adapt(at(0,2.5+4*progress,2.5-.9*progress)));
-            slash.scaler(ModelScaler.value((float)(2*(1-.75*progress))));
-            if(tick==SLASH+20) { audience.hide(slash);slash=null; }
+            double progress=Math.clamp((tick-SLASH)/(double)(IMPACT-SLASH),0,1);
+            slash.location(BukkitAdapter.adapt(at(0,4+10*progress,7-5.5*progress)));
+            slash.scaler(ModelScaler.value((float)(2.2*(1-.6*progress))));
+            if(tick==IMPACT) { audience.hide(slash);slash=null; }
         }
         if(tick>=RIBS && tick<FADE && tick%3==0) {
             for(int strand=0;strand<4;strand++) {
@@ -48,9 +49,10 @@ final class SusanooScene extends SummonScene {
             }
         }
         if(tick==IMPACT) {
-            Location point=ground(at(0,6,0));if(point==null) point=at(0,6,.2);
-            particle(point,Particle.POOF,28,.7,.05);dust(point,VIOLET,32,.8);
-            sound(point,Sound.ENTITY_GENERIC_EXPLODE,1,.65f);trace("impact tick="+tick);
+            Location point=ground(at(0,14,0));if(point==null) point=at(0,14,.2);
+            particle(point,Particle.EXPLOSION_EMITTER,3,2,0);particle(point,Particle.DUST_PLUME,55,4,.08);
+            particle(point,Particle.CLOUD,80,4,.08);dust(point,VIOLET,65,3);
+            sound(point,Sound.ENTITY_GENERIC_EXPLODE,2,.5f);sound(point,Sound.ENTITY_BREEZE_WIND_BURST,2,.6f);trace("impact tick="+tick);
         }
     }
 }

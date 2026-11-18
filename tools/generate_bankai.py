@@ -91,20 +91,18 @@ def main():
       'plfa_left_forearm':[(0,(0,0,0)),(2,(0,0,0)),(3.4,(-48.56,0,0)),(9.2,(-48.56,0,0)),(10.4,(-5,0,0)),(12,(-5,0,0)),(12.8,(0,0,0))],
       'pc_chest':[(0,(0,0,0)),(1.2,(0,8,0)),(9.2,(0,8,0)),(10.4,(0,0,0)),(12,(0,0,0)),(12.8,(0,0,0))],
       'h_ph_head':[(0,(0,0,0)),(1.2,(2,12,0)),(5.2,(6,12,0)),(9.2,(6,12,0)),(10.4,(-4,10,0)),(12,(-4,10,0)),(12.8,(0,0,0))],
-      'prl_right_leg':[(0,(0,0,0)),(1.2,(-50,12,0)),(9.2,(-50,12,0)),(10.4,(0,12,0)),(12,(0,12,0)),(12.8,(0,0,0))],
+      'prl_right_leg':[(0,(0,0,0)),(1.2,(-50,12,12)),(9.2,(-50,12,12)),(10.4,(0,12,8)),(12,(0,12,8)),(12.8,(0,0,0))],
       'prfl_right_foreleg':[(0,(0,0,0)),(1.2,(100,0,0)),(9.2,(100,0,0)),(10.4,(0,0,0)),(12.8,(0,0,0))],
-      'pll_left_leg':[(0,(0,0,0)),(1.2,(-50,-12,0)),(9.2,(-50,-12,0)),(10.4,(0,-12,0)),(12,(0,-12,0)),(12.8,(0,0,0))],
+      'pll_left_leg':[(0,(0,0,0)),(1.2,(-50,-12,-12)),(9.2,(-50,-12,-12)),(10.4,(0,-12,-8)),(12,(0,-12,-8)),(12.8,(0,0,0))],
       'plfl_left_foreleg':[(0,(0,0,0)),(1.2,(100,0,0)),(9.2,(100,0,0)),(10.4,(0,0,0)),(12.8,(0,0,0))]}
     model=player(rig,'zangetsu_bankai',12.8,poses)
     groups={g['name']:g for g in model['groups']}
-    for name,side in [('prl_right_leg',1),('pll_left_leg',-1)]:
-        g=groups[name];keys=[(0,(0,0,0)),(1.2,(side*1.3,0,side*2)),(12,(side*1.3,0,side*2)),(12.8,(0,0,0))]
-        model['animations'][0]['animators'][g['uuid']]['keyframes']+=animator(g,keys,'position')['keyframes']
-        model['animations'][0]['animators'][g['uuid']]['keyframes'].sort(key=lambda frame:frame['time'])
-    # Hip drop follows the bent thigh/shin chain, keeping both feet on the floor.
-    root=groups['player_root'];drop=11.25*(1-math.cos(math.radians(50)))
-    keys=[(i/10,(0,-11.25*(1-math.cos(math.radians(50*min(1,i/12)))),0)) for i in range(13)]
-    keys += [(9.2,(0,-drop,0))]+[(9.2+i/10,(0,-11.25*(1-math.cos(math.radians(50*(1-i/12)))),0)) for i in range(1,13)]+[(12.8,(0,0,0))]
+    # Fixed hip sockets; splay the thighs instead of translating them out of the pelvis.
+    root=groups['player_root']
+    def drop(knee,spread):return 11.25*(1-math.cos(math.radians(knee))*math.cos(math.radians(spread)))
+    keys=[(i/10,(0,-drop(50*i/12,12*i/12),0)) for i in range(13)]
+    keys += [(9.2,(0,-drop(50,12),0))]+[(9.2+i/10,(0,-drop(50*(1-i/12),12-4*i/12),0)) for i in range(1,13)]
+    keys += [(12,(0,-drop(0,8),0))]+[(12+i/10,(0,-drop(0,8*(1-i/8)),0)) for i in range(1,9)]
     model['animations'][0]['animators'][root['uuid']]['keyframes']+=animator(root,keys,'position')['keyframes']
     model['animations'][0]['animators'][root['uuid']]['keyframes'].sort(key=lambda frame:frame['time'])
     save('players/motionrp_zangetsu_bankai.bbmodel',model)

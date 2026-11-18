@@ -14,7 +14,7 @@ final class SummonAssets {
     static final String ZANGETSU="motionrp_zangetsu_cleaver",TENSA="motionrp_tensa_zangetsu",BANKAI_COCOON="motionrp_bankai_cocoon",BANKAI_WAVE="motionrp_bankai_wave",BANKAI_COAT="motionrp_bankai_coat";
     static List<String> models(String effect) {
         return switch(effect) {
-            case "zangetsu_bankai" -> List.of(ZANGETSU,TENSA,BANKAI_COCOON,BANKAI_WAVE,BANKAI_COAT);
+            case "zangetsu_bankai" -> List.of(ZANGETSU,TENSA,BANKAI_COCOON,BANKAI_WAVE);
             case "gate_of_babylon_100" -> List.of(MASS_GATE,SWORD,SPEAR,AXE);
             case "gate_of_babylon_enuma" -> List.of(MASS_GATE,SWORD,SPEAR,AXE,BAB_ILU,EA,ENUMA,ENUMA_RING);
             case "gate_of_babylon" -> List.of(GATE,SWORD,SPEAR,AXE);

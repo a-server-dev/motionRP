@@ -319,7 +319,8 @@ def main():
     cherry_models()
     gate()
     for kind in ['sword','spear','axe']: weapon(kind)
-    ribs();armor();slash()
+    from generate_perfect_susanoo import generate
+    generate(rig)
 
 
 if __name__=='__main__': main()

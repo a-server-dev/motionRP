@@ -100,8 +100,8 @@ def key_and_ea():
     spin=animation('spin',1,{})
     spin['loop']='loop'
     for j,g in enumerate(cylinder_groups):spin['animators'][g['uuid']]=animator(g,[(0,(0,0,0)),(1,(0,360 if j%2==0 else -360,0))])
-    level=animation('level',10,{})
-    level['animators'][root['uuid']]=animator(root,[(0,(0,0,0)),(5.2,(0,0,0)),(5.8,(-90,0,0)),(10,(-90,0,0))])
+    level=animation('level',11,{})
+    level['animators'][root['uuid']]=animator(root,[(0,(0,0,0)),(5.6,(0,0,0)),(6.2,(-90,0,0)),(11,(-90,0,0))])
     m.data['animations']=[spin,level];m.save()
     m=Model('motionrp_enuma_vortex',colors=colors);parts=[]
     parts.append(m.cube('white_energy_core',[0,0,0],[2.8,2.8,31],7))
@@ -171,25 +171,28 @@ def main():
       'h_ph_head':[(0,(0,0,0)),(.4,(-14,10,0)),(5.3,(-14,10,0)),(5.8,(0,0,0))]}
     player(rig,'gate_of_babylon_100',5.8,spread)
     poses={
-      'player_root':[(0,(0,0,0)),(7.2,(0,0,0)),(7.9,(0,-15,0)),(14.8,(0,-15,0)),(16.6,(0,0,0))],
-      'pra_right_arm':[(0,(0,0,0)),(1.9,(0,0,0)),(2.4,(-65,0,5)),(7.2,(-65,0,5)),(7.9,(-42,8,8)),(11.6,(-42,8,8)),(12.2,(-90,0,4)),(14,(-90,0,4)),(16.6,(0,0,0))],
-      'prfa_right_forearm':[(0,(0,0,0)),(1.9,(0,0,0)),(2.4,(-25,0,0)),(7.2,(-25,0,0)),(7.9,(-108,0,0)),(11.6,(-108,0,0)),(12.2,(0,0,0)),(14,(0,0,0)),(16.6,(0,0,0))],
-      'pla_left_arm':[(0,(0,0,0)),(7.2,(0,0,0)),(7.9,(0,0,-5)),(11.6,(0,0,-5)),(12.2,(8,0,-12)),(14,(8,0,-12)),(16.6,(0,0,0))],
-      'plfa_left_forearm':[(0,(0,0,0)),(7.2,(0,0,0)),(7.9,(-8,0,0)),(14,(-8,0,0)),(16.6,(0,0,0))],
-      'h_ph_head':[(0,(0,0,0)),(7.2,(0,0,0)),(7.9,(-8,15,0)),(11.6,(-8,15,0)),(12.2,(-4,-2,0)),(14,(-4,-2,0)),(16.6,(0,0,0))],
-      'pc_chest':[(0,(0,0,0)),(7.2,(0,0,0)),(7.9,(-2,-6,0)),(11.6,(-2,-6,0)),(12.2,(4,15,0)),(14,(4,15,0)),(16.6,(0,0,0))],
-      'prl_right_leg':[(0,(0,0,0)),(7.2,(0,0,0)),(7.9,(0,12,0)),(14.8,(0,12,0)),(16.6,(0,0,0))],
-      'prfl_right_foreleg':[(0,(0,0,0)),(16.6,(0,0,0))],
-      'pll_left_leg':[(0,(0,0,0)),(7.2,(0,0,0)),(7.9,(0,-12,0)),(14.8,(0,-12,0)),(16.6,(0,0,0))],
-      'plfl_left_foreleg':[(0,(0,0,0)),(16.6,(0,0,0))]}
-    model=player(rig,'gate_of_babylon_enuma',16.6,poses)
+      'player_root':[(0,(0,0,0)),(11.6,(0,0,0)),(12.3,(0,-15,0)),(19.2,(0,-15,0)),(21.0,(0,0,0))],
+      'pra_right_arm':[(0,(0,0,0)),(1.9,(0,0,0)),(2.4,(-65,0,5)),(11.6,(-65,0,5)),(12.3,(-42,8,8)),(16.0,(-42,8,8)),(16.6,(-90,0,4)),(18.4,(-90,0,4)),(21.0,(0,0,0))],
+      'prfa_right_forearm':[(0,(0,0,0)),(1.9,(0,0,0)),(2.4,(-25,0,0)),(11.6,(-25,0,0)),(12.3,(-108,0,0)),(16.0,(-108,0,0)),(16.6,(0,0,0)),(18.4,(0,0,0)),(21.0,(0,0,0))],
+      'pla_left_arm':[(0,(0,0,0)),(11.6,(0,0,0)),(12.3,(0,0,-5)),(16.0,(0,0,-5)),(16.6,(8,0,-12)),(18.4,(8,0,-12)),(21.0,(0,0,0))],
+      'plfa_left_forearm':[(0,(0,0,0)),(11.6,(0,0,0)),(12.3,(-8,0,0)),(18.4,(-8,0,0)),(21.0,(0,0,0))],
+      'h_ph_head':[(0,(0,0,0)),(11.6,(0,0,0)),(12.3,(-8,15,0)),(16.0,(-8,15,0)),(16.6,(-4,-2,0)),(18.4,(-4,-2,0)),(21.0,(0,0,0))],
+      'pc_chest':[(0,(0,0,0)),(11.6,(0,0,0)),(12.3,(-2,-6,0)),(16.0,(-2,-6,0)),(16.6,(4,15,0)),(18.4,(4,15,0)),(21.0,(0,0,0))],
+      'prl_right_leg':[(0,(0,0,0)),(11.6,(0,0,0)),(12.3,(14,12,0)),(19.2,(14,12,0)),(21.0,(0,0,0))],
+      'prfl_right_foreleg':[(0,(0,0,0)),(21.0,(0,0,0))],
+      'pll_left_leg':[(0,(0,0,0)),(11.6,(0,0,0)),(12.3,(-14,-12,0)),(19.2,(-14,-12,0)),(21.0,(0,0,0))],
+      'plfl_left_foreleg':[(0,(0,0,0)),(21.0,(0,0,0))]}
+    model=player(rig,'gate_of_babylon_enuma',21.0,poses)
     groups={g['name']:g for g in model['groups']}
-    for name,side in [('prl_right_leg',1),('pll_left_leg',-1)]:
-        g=groups[name];keys=[(0,(0,0,0)),(7.2,(0,0,0)),(7.9,(side,0,2.5 if side==1 else -2)),(11.6,(side,0,2.5 if side==1 else -2)),(12.2,(side,0,2.5 if side==1 else -3.5)),(14.8,(side,0,2.5 if side==1 else -3.5)),(16.6,(0,0,0))]
-        model['animations'][0]['animators'][g['uuid']]['keyframes']+=animator(g,keys,'position')['keyframes']
-        model['animations'][0]['animators'][g['uuid']]['keyframes'].sort(key=lambda frame:frame['time'])
+    # Keep the hip sockets fixed; stride comes from rotation, not detached thighs.
+    root=groups['player_root'];keys=[(0,(0,0,0)),(11.6,(0,0,0))]
+    keys += [(11.6+i/10,(0,-11.25*(1-math.cos(math.radians(14*i/7))),0)) for i in range(1,8)]
+    drop=11.25*(1-math.cos(math.radians(14)));keys += [(19.2,(0,-drop,0))]
+    keys += [(19.2+i/10,(0,-11.25*(1-math.cos(math.radians(14*(1-i/18)))),0)) for i in range(1,19)]
+    model['animations'][0]['animators'][root['uuid']]['keyframes']+=animator(root,keys,'position')['keyframes']
+    model['animations'][0]['animators'][root['uuid']]['keyframes'].sort(key=lambda frame:frame['time'])
     save('players/motionrp_gate_of_babylon_enuma.bbmodel',model)
-    (ROOT/'gate_of_babylon_enuma-hand-path.csv').write_text(hand_path(model,332))
+    (ROOT/'gate_of_babylon_enuma-hand-path.csv').write_text(hand_path(model,420))
     charge_models()
     dense_gate();key_and_ea();titan_skin(rig)
 if __name__=='__main__':main()

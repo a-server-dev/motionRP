@@ -48,8 +48,8 @@ class TreasuryTest {
         Map<String,JsonObject> groups=new HashMap<>();Map<String,String> names=new HashMap<>(),parents=new HashMap<>();
         for(var raw:pose.getAsJsonArray("groups")) { var g=raw.getAsJsonObject();String id=g.get("uuid").getAsString();groups.put(id,g);names.put(g.get("name").getAsString(),id); }
         math.parentTree(pose.getAsJsonArray("outliner"),null,parents);var animation=pose.getAsJsonArray("animations").get(0).getAsJsonObject();
-        assertEquals(16.6,animation.get("length").getAsDouble());
-        for(double time:new double[]{8,10,12.3}) {
+        assertEquals(21.0,animation.get("length").getAsDouble());
+        for(double time:new double[]{12.3,15,17}) {
             var right=math.posedPoint(names.get("prfl_right_foreleg"),new double[]{1.875,0,0},time,animation,groups,parents);
             var left=math.posedPoint(names.get("plfl_left_foreleg"),new double[]{-1.875,0,0},time,animation,groups,parents);
             assertTrue(Math.abs(right[1])<.5 && Math.abs(left[1])<.5,"Feet must stay planted");
@@ -63,11 +63,11 @@ class TreasuryTest {
         }
         for(String name:List.of("player_root","pc_chest","pla_left_arm","h_ph_head")) {
             double[] initial=math.posedOrigin(names.get(name),0,animation,groups,parents);
-            for(double time:new double[]{1,3,7.2}) assertArrayEquals(initial,math.posedOrigin(names.get(name),time,animation,groups,parents),1e-7,"Neutral upper body until Ea is complete: "+name);
+            for(double time:new double[]{1,3,11.6}) assertArrayEquals(initial,math.posedOrigin(names.get(name),time,animation,groups,parents),1e-7,"Neutral upper body until Ea is complete: "+name);
         }
         var held=TreasuryHandPath.at(48);
-        for(int tick:new int[]{76,112,128,144}) assertEquals(held,TreasuryHandPath.at(tick),"The palm and gate must stay in place through formation");
-        var charge=TreasuryHandPath.at(200);var fire=TreasuryHandPath.at(TreasuryTimeline.FIRE);
+        for(int tick:new int[]{76,172,208,232}) assertEquals(held,TreasuryHandPath.at(tick),"The palm and gate must stay in place through formation");
+        var charge=TreasuryHandPath.at(280);var fire=TreasuryHandPath.at(TreasuryTimeline.FIRE);
         assertTrue(charge.height()>1.3 && charge.height()<1.9,"Charging hand should be beside the face: "+charge);
         assertTrue(fire.forward()>charge.forward()+.4,"The hand must thrust toward the target");
     }

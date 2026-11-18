@@ -88,6 +88,8 @@ final class TreasuryScene extends SummonScene {
             shot.previous().setX(next.getX());shot.previous().setY(next.getY());shot.previous().setZ(next.getZ());
             if(hit!=null || p>=1) {
                 audience.hide(shot.model());iterator.remove();
+                projectileImpact(next,shot.fired()==VOLLEY);
+                trace("explosion index="+shot.index()+" tick="+tick);
                 if(shot.index()%4==0) { dust(next,GOLD,3,.12);particle(next,Particle.ELECTRIC_SPARK,3,.15,.04); }
                 trace("impact index="+shot.index()+" tick="+tick);
             }

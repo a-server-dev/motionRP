@@ -3,7 +3,7 @@ package dev.aserver.motionrp.core;
 /** One rapid pass in thirty ticks, one full volley, then optional Ea. */
 public final class TreasuryTimeline {
     public static final int OPEN=6,DRAW=34,RAPID=42,RAPID_TICKS=30,VOLLEY=84,FLIGHT=2;
-    public static final int KEY=48,KEY_READY=76,BRANCH=76,CONVERGE=112,EA=128,EA_READY=144,STANCE=158,CHARGE=164,THRUST=232,FIRE=244,IMPACT=264,RECOVER=296,SERIOUS_END=332;
+    public static final int KEY=48,KEY_READY=76,BRANCH=76,CONVERGE=172,EA=208,EA_READY=232,STANCE=246,CHARGE=252,THRUST=320,FIRE=332,IMPACT=352,RECOVER=384,SERIOUS_END=420;
     public record Portal(double right,double forward,double height,double scale,boolean surroundsTarget) {}
     private TreasuryTimeline() {}
     public static int count(boolean serious) { return serious?200:100; }

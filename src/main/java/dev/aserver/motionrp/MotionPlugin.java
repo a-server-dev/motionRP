@@ -39,12 +39,20 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
                 && "gate_of_babylon_enuma".equals(getConfig().getString("motions.gate_of_babylon_enuma.effect"))
                 && (getConfig().getInt("motions.gate_of_babylon_enuma.max-ticks",0)==280
                 || getConfig().getInt("motions.gate_of_babylon_enuma.max-ticks",0)<dev.aserver.motionrp.core.TreasuryTimeline.SERIOUS_END)) {
-            getConfig().set("motions.gate_of_babylon_enuma.max-ticks",380);saveConfig();
+            getConfig().set("motions.gate_of_babylon_enuma.max-ticks",480);saveConfig();
         }
         if("motionrp_zangetsu_bankai".equals(getConfig().getString("motions.zangetsu_bankai.model"))
                 && "zangetsu_bankai".equals(getConfig().getString("motions.zangetsu_bankai.effect"))
                 && getConfig().getInt("motions.zangetsu_bankai.max-ticks",0)<dev.aserver.motionrp.core.BankaiTimeline.END) {
             getConfig().set("motions.zangetsu_bankai.max-ticks",280);saveConfig();
+        }
+        if("motionrp_susanoo".equals(getConfig().getString("motions.susanoo.model"))
+                && "susanoo".equals(getConfig().getString("motions.susanoo.effect"))) {
+            if(getConfig().getInt("motions.susanoo.max-ticks",0)<dev.aserver.motionrp.core.SusanooTimeline.END)
+                getConfig().set("motions.susanoo.max-ticks",280);
+            if("須佐能乎（上半身）".equals(getConfig().getString("motions.susanoo.name")))
+                getConfig().set("motions.susanoo.name","完全体須佐能乎（マダラ）");
+            saveConfig();
         }
         // Extend only this bundled scene's old timeout when upgrading its longer orbit.
         if("motionrp_senbonzakura".equals(getConfig().getString("motions.senbonzakura.model"))

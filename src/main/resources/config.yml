@@ -21,7 +21,7 @@ motions:
     model: motionrp_gate_of_babylon_enuma
     animation: gate_of_babylon_enuma
     effect: gate_of_babylon_enuma
-    max-ticks: 380
+    max-ticks: 480
   titan_transform:
     name: 巨人化
     model: motionrp_titan_transform
@@ -41,11 +41,11 @@ motions:
     effect: gate_of_babylon
     max-ticks: 200
   susanoo:
-    name: 須佐能乎（上半身）
+    name: 完全体須佐能乎（マダラ）
     model: motionrp_susanoo
     animation: susanoo
     effect: susanoo
-    max-ticks: 180
+    max-ticks: 280
   rasenshuriken:
     name: 螺旋手裏剣（影分身二人）
     model: motionrp_rasenshuriken

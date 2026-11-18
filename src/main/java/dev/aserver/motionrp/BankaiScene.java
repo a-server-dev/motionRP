@@ -16,7 +16,7 @@ final class BankaiScene extends SummonScene {
     private final org.bukkit.block.data.BlockData sand=Material.SAND.createBlockData();
     private final EntityTracker body;
     private final Set<Player> heard=new HashSet<>();
-    private DummyTracker cleaver,cocoon,wave,tensa,coat;
+    private DummyTracker cleaver,cocoon,wave,tensa;
     BankaiScene(MotionPlugin plugin,Player owner,EntityTracker body) {
         super(plugin,owner,"Bankai",END);this.body=body;body.rotation(()->new ModelRotation(0,origin.getYaw()));
     }
@@ -52,7 +52,6 @@ final class BankaiScene extends SummonScene {
         if(tick==REVEAL) {
             audience.hide(cocoon);cocoon=null;
             tensa=model(SummonAssets.TENSA,palm,.6f,"tensa_zangetsu");tensa.animate("reveal",AnimationModifier.DEFAULT_WITH_PLAY_ONCE);
-            coat=model(SummonAssets.BANKAI_COAT,origin,1,"black_coat");loop(coat,"flutter");
             trace("dust clears; Tensa revealed tick="+tick);sound(palm,Sound.ENTITY_PLAYER_ATTACK_SWEEP,1.1f,1.3f);
         }
         if(tensa!=null) tensa.location(BukkitAdapter.adapt(palm));

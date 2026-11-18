@@ -15,12 +15,12 @@ public final class EaFormation {
         var result=new ArrayList<Segment>();
         for(int i=0;i<10;i++) {
             double angle=i*Math.PI*(3-Math.sqrt(5));
-            branch(result,new Point(0,.04,0),angle,.8+(i%4)*.22,0,i);
+            branch(result,new Point(0,.04,0),angle,1.0+(i%4)*.28,0,i);
         }
         return List.copyOf(result);
     }
     private static void branch(List<Segment> result,Point start,double angle,double rise,int depth,int seed) {
-        double length=depth==0?1.15:depth==1?.85:.65;
+        double length=depth==0?1.65:depth==1?1.2:.9;
         Point end=new Point(start.right+Math.cos(angle)*length,start.up+rise,start.forward+Math.sin(angle)*length);
         result.add(new Segment(start,end,depth));
         if(depth<2) for(int side:new int[]{-1,1}) branch(result,end,angle+side*(.65+(seed%3)*.12),rise*.55,depth+1,seed+side+3);
@@ -36,7 +36,7 @@ public final class EaFormation {
             double visible=Math.clamp(growth*3-segment.depth,0,1);if(visible==0) continue;
             Point end=segment.from.toward(segment.to,visible);
             double distance=Math.sqrt(Math.pow(end.right-segment.from.right,2)+Math.pow(end.up-segment.from.up,2)+Math.pow(end.forward-segment.from.forward,2));
-            int samples=Math.max(1,(int)Math.ceil(distance/.22));
+            int samples=Math.max(1,(int)Math.ceil(distance/.26));
             for(int j=0;j<=samples;j++) {
                 Point p=segment.from.toward(end,j/(double)samples);
                 // Compress the entire branching structure onto the blade, never a sphere.

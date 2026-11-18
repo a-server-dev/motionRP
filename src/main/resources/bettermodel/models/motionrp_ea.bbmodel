@@ -15655,7 +15655,7 @@
       "name": "level",
       "loop": "once",
       "override": false,
-      "length": 10,
+      "length": 11,
       "snapping": 20,
       "selected": false,
       "animators": {
@@ -15680,10 +15680,10 @@
             },
             {
               "channel": "rotation",
-              "time": 5.2,
+              "time": 5.6,
               "interpolation": "linear",
               "color": -1,
-              "uuid": "d76f77d9-d368-5f48-ba08-1ad3d588bc59",
+              "uuid": "b4d153e8-adfb-5166-9843-13bac575afeb",
               "data_points": [
                 {
                   "x": "0",
@@ -15694,10 +15694,10 @@
             },
             {
               "channel": "rotation",
-              "time": 5.8,
+              "time": 6.2,
               "interpolation": "linear",
               "color": -1,
-              "uuid": "11bd003b-874b-5310-9cac-a7656e0629c0",
+              "uuid": "64f2183c-db1e-54a2-a146-dbfd3b10fcf9",
               "data_points": [
                 {
                   "x": "-90",
@@ -15708,10 +15708,10 @@
             },
             {
               "channel": "rotation",
-              "time": 10,
+              "time": 11,
               "interpolation": "linear",
               "color": -1,
-              "uuid": "ff328a01-edd6-52ce-980c-31d6a8a923ba",
+              "uuid": "26c14ef9-bc36-58e4-a325-74262375808e",
               "data_points": [
                 {
                   "x": "-90",

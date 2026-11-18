@@ -165,11 +165,11 @@ try {
   const oldShuriken=gunzipSync(fs.readFileSync(path.join(project,'src/test/resources/motionrp_rasenshuriken-0.3.0.bbmodel.gz')));
   fs.mkdirSync(path.join(run,'plugins/BetterModel/players'),{recursive:true});
   fs.writeFileSync(path.join(run,'plugins/BetterModel/players/motionrp_rasenshuriken.bbmodel'),oldShuriken);
-  const oldSummons=[['models/motionrp_zangetsu_cleaver','de065d3da7442d5a4c74c7d1cfadaaf1352e32e294b216d28d6f91be7dc5335d','0.9.0'],['models/motionrp_bankai_cocoon','d6f38cfd0592d3ce2dd6fa5154269bc340f9f4eb8f6fe528f79b04f761faa127','0.9.0'],['models/motionrp_tensa_zangetsu','cf68b92b1a7cde04d8b7b0c4a5f435b621d9c9760e1102675d969416c7068806','0.9.0'],['players/motionrp_zangetsu_bankai','909515f7393027b9c35aee34ab05e89d04c718bb67e5645e3667198eb4261c33','0.9.0'],['models/motionrp_bab_ilu','545322bab257c47b88f2b4a96cdbe67adece3bc641c07c06ce4b16cf4a656039','0.9.0'],['players/motionrp_gate_of_babylon_enuma','39e048a07961c553550c992bddf749f24df784690b9a68afcbf861d69c911700','0.9.0'],['models/motionrp_ea','c2b2bc17eaa70b0acf1a66d5682d5f469df9e7f1ca70fa47e703083f248857ec','0.9.0'],['models/motionrp_enuma_vortex','9ddebc5469047326fbff87242a29e64723952d0147512c4cf6339643042ecb0e','0.8.0'],['players/motionrp_titan_transform','bfbc83f290b4252a4088fd825e0fca0bed7a4a019e74f4305d33a791d3f20857','0.6.0'],['players/motionrp_gate_of_babylon','2e0bae16f4570116a383ccaa91e09319564665870b34c7cc03a9c156c34c2272','0.5.0'],
+  const oldSummons=[['models/motionrp_susanoo_slash','6255e3d0879d4442415cf00594cb7ed59928179965e7ad7d2b9ae2388a24dbf6','0.10.0'],['players/motionrp_susanoo','435fb48bd71a7c2b7357b4070ff3084a351d4884ac7810cedd4accacc7c155d9','0.10.0'],['models/motionrp_zangetsu_cleaver','de065d3da7442d5a4c74c7d1cfadaaf1352e32e294b216d28d6f91be7dc5335d','0.9.0'],['models/motionrp_bankai_cocoon','d6f38cfd0592d3ce2dd6fa5154269bc340f9f4eb8f6fe528f79b04f761faa127','0.9.0'],['models/motionrp_tensa_zangetsu','cf68b92b1a7cde04d8b7b0c4a5f435b621d9c9760e1102675d969416c7068806','0.9.0'],['players/motionrp_zangetsu_bankai','1eef505842f410eca1b28c82c6707903c016e247f5ac4ffdd537a3b68207d822','0.10.0'],['models/motionrp_bab_ilu','545322bab257c47b88f2b4a96cdbe67adece3bc641c07c06ce4b16cf4a656039','0.9.0'],['players/motionrp_gate_of_babylon_enuma','4be25d52494f9f97b56693808dc9aef769e205679b4fed7bc7c77e5c0131c7b5','0.10.0'],['models/motionrp_ea','97161bc3d6a447a255f60c5f42e54c15ea58007c0f28e3270f10581fbaf5dad0','0.10.0'],['models/motionrp_enuma_vortex','9ddebc5469047326fbff87242a29e64723952d0147512c4cf6339643042ecb0e','0.8.0'],['players/motionrp_titan_transform','bfbc83f290b4252a4088fd825e0fca0bed7a4a019e74f4305d33a791d3f20857','0.6.0'],['players/motionrp_gate_of_babylon','2e0bae16f4570116a383ccaa91e09319564665870b34c7cc03a9c156c34c2272','0.5.0'],
     ['players/motionrp_senbonzakura','7a38d287afad202d93644f1d54ba0267baa33eff01315860675bd940c5944afe','0.5.0'],
     ['models/motionrp_senbonzakura_blade','aebce2d6a72045a193e54ebaad4e7cf8fd579ccc19aba3182b659c5f5ed44d70','0.5.0'],
-    ['models/motionrp_susanoo_armor','d054d6147211c1cc72e6281ee5b9cc1a3ddcda8d9da6548e4472affedb16040c'],
-    ['models/motionrp_susanoo_ribs','74993bf47a065b5da8cb50a3ceccfbfc6bf6fa5c13d6bd14c2c804773e1db912']];
+    ['models/motionrp_susanoo_armor','1868e0e239fee4b7470332ba21007cbde29a12c4938a146ea08af4e00e23c098','0.10.0'],
+    ['models/motionrp_susanoo_ribs','ef9b07b05a0000b5a0f9d908a621e4543d71db9081d1bb61b06b97fa2a0cf62b','0.10.0']];
   for(const [relative,,version='0.4.0'] of oldSummons) {
     const base=path.basename(relative);
     fs.writeFileSync(path.join(run,'plugins/BetterModel',relative+'.bbmodel'),
@@ -306,10 +306,10 @@ generate-structures=false
   saved = await readSaved('MotionTesterA');
   assert.equal(saved.loadout[6], 1);
   const priorConfig=path.join(run,'plugins/MotionRP/config.yml');
-  fs.writeFileSync(priorConfig,fs.readFileSync(priorConfig,'utf8').replace(/(  senbonzakura:\n[\s\S]*?max-ticks:) \d+/, '$1 180').replace(/(  gate_of_babylon_enuma:\n[\s\S]*?max-ticks:) \d+/, '$1 320').replace(/(  zangetsu_bankai:\n[\s\S]*?max-ticks:) \d+/, '$1 220'));
+  fs.writeFileSync(priorConfig,fs.readFileSync(priorConfig,'utf8').replace(/(  senbonzakura:\n[\s\S]*?max-ticks:) \d+/, '$1 180').replace(/(  gate_of_babylon_enuma:\n[\s\S]*?max-ticks:) \d+/, '$1 380').replace(/(  zangetsu_bankai:\n[\s\S]*?max-ticks:) \d+/, '$1 220').replace(/(  susanoo:\n[\s\S]*?max-ticks:) \d+/, '$1 180'));
   await startServer();
   assert.ok(/senbonzakura:\n[\s\S]*?max-ticks: 260/.test(fs.readFileSync(priorConfig,'utf8')));
-  assert.ok(/gate_of_babylon_enuma:\n[\s\S]*?max-ticks: 380/.test(fs.readFileSync(priorConfig,'utf8')));
+  assert.ok(/gate_of_babylon_enuma:\n[\s\S]*?max-ticks: 480/.test(fs.readFileSync(priorConfig,'utf8')));
   assert.ok(/zangetsu_bankai:\n[\s\S]*?max-ticks: 280/.test(fs.readFileSync(priorConfig,'utf8')));
   pass('Enuma and Bankai old timeouts upgrade to fit the held declaration and branching Ea formation');
   pass('old bundled Senbonzakura timeout is extended automatically for the longer petal orbit');
@@ -693,11 +693,11 @@ generate-structures=false
   assert.ok(a.entity.position.distanceTo(gateOrigin)<.01);assert.deepEqual(gateLowest,gateHealth);
   pass('thirty shots fire every tick with two-tick flights, followed by the twenty-gate volley and fifty impacts');
   const blastTimes=[...gateTrace.matchAll(/Gate explosion index=(\d+) tick=(\d+)/g)].map(m=>Number(m[2]));
-  assert.equal(blastTimes.length,20);assert.ok(blastTimes.every(t=>t>=84));
+  assert.equal(blastTimes.length,50);assert.equal(blastTimes.filter(t=>t<84).length,30);assert.equal(blastTimes.filter(t=>t>=84).length,20);
   const gateBlockBegin=output.length;
   consoleCommand(`execute positioned ${gateOrigin.x} ${gateOrigin.y-1} ${gateOrigin.z+20} if block ~ ~ ~ minecraft:stone run say GATE_GROUND_UNCHANGED`);
   await waitFor(()=>output.slice(gateBlockBegin).includes('GATE_GROUND_UNCHANGED'),'explosive volley keeps the impact floor');
-  pass('only the final volley makes twenty cosmetic explosions and leaves the impact blocks intact');
+  pass('all thirty rapid hits and twenty volley hits make cosmetic explosions while the impact blocks stay intact');
   sceneDisplays.clear();sceneRemoved.clear();const gateCancel=output.length;a._testLeftClick();
   await waitFor(() => output.slice(gateCancel).includes('Gate phase: DRAW'),'gate cancellation before firing');
   const cancelGates=summonTrace('Gate',gateCancel);assert.equal(cancelGates.length,40);
@@ -721,12 +721,14 @@ generate-structures=false
   assert.deepEqual(guardianEntries.map(e => e.kind),['ribs','armor','slash']);
   assert.ok(renderedForBoth(guardianEntries));
   const armorIds=guardianEntries.find(e => e.kind==='armor').ids;
+  assert.ok(armorIds.length>80,'Complete armor must include wings, full legs, mask and paired weapons');
+  assert.ok(output.slice(susanooBegin).includes('complete armor and wings formed tick=76'));
   assert.ok(armorIds.some(id => (rotations.get(id)?.size||0)>2),'Giant sword arm sent no changing rotations');
   await waitFor(() => sceneRemoved.size===sceneDisplays.size && removedForBoth(guardianEntries),'guardian cleanup for both viewers');
   for(const phase of ['SIGNS','RIBS','ARMOR','WINDUP','SLASH','IMPACT','FADE'])
     assert.ok(output.slice(susanooBegin).includes('Susanoo phase: '+phase));
   assert.ok(a.entity.position.distanceTo(guardianOrigin)<.01);assert.deepEqual([a.health,b.health],guardianHealth);
-  pass('ribs form into giant samurai armor, its sword arm animates, a slash travels outward and every model disappears without damage');
+  pass('blue ribs form into the full winged samurai with paired blades; its wings and sword arms animate and the large slash cleans up without damage');
   sceneDisplays.clear();sceneRemoved.clear();const guardianCancel=output.length;a._testLeftClick();
   await waitFor(() => output.slice(guardianCancel).includes('Susanoo phase: ARMOR'),'guardian cancellation during formation');
   const cancelGuardian=summonTrace('Susanoo',guardianCancel);a._testLeftClick();
@@ -798,6 +800,7 @@ generate-structures=false
   assert.equal([...hundredTrace.matchAll(/Treasury100 impact index=/g)].length,200);
   assert.ok(hundredTrace.includes('volley blast tick=86'));assert.ok(removedForBoth(hundredEntries));
   assert.ok(a.entity.position.distanceTo(hundredOrigin)<.01);assert.deepEqual([a.health,b.health],hundredHealth);
+  assert.equal([...output.slice(hundredBegin).matchAll(/Treasury100 explosion index=/g)].length,200);
   pass('all hundred gates shoot in thirty rapid ticks then join one hundred-shot volley with a sand/dust blast and full cleanup');
   sceneDisplays.clear();sceneRemoved.clear();const hundredCancel=output.length;a._testLeftClick();
   await waitFor(()=>output.slice(hundredCancel).includes('Treasury100 fire index=0'),'hundred gate rapid before cancel',20000);
@@ -835,20 +838,21 @@ generate-structures=false
   const enumaFires=[...enumaTrace.matchAll(/TreasuryEnuma fire index=(\d+) tick=(\d+)/g)].map(m=>[Number(m[1]),Number(m[2])]);
   assert.deepEqual(enumaFires,[...Array.from({length:200},(_,i)=>[i,42+Math.floor(i*30/200)]),...Array.from({length:200},(_,i)=>[i,84])]);
   assert.equal([...enumaTrace.matchAll(/TreasuryEnuma impact index=/g)].length,400);
+  assert.equal([...enumaTrace.matchAll(/TreasuryEnuma explosion index=/g)].length,400);
   for(const kind of ['bab_ilu','hand_vault','ea']) assert.ok(enumaEntries.some(e=>e.kind===kind));
   assert.equal(enumaEntries.filter(e=>e.kind.startsWith('beam')).length,16);
   assert.equal(enumaEntries.filter(e=>e.kind.startsWith('charge_ring')).length,2);
   assert.equal(enumaEntries.filter(e=>e.kind.startsWith('shock_ring')).length,3);
   assert.equal(enumaEntries.filter(e=>e.kind.startsWith('rift')).length,0);
   assert.ok(!enumaEntries.some(e=>e.kind==='charge_core' || e.kind==='impact_core'));
-  assert.ok(enumaTrace.includes('ea ready tick=144'));
+  assert.ok(enumaTrace.includes('ea ready tick=232'));
   assert.ok(enumaTrace.includes('hand vault anchored tick=40'));
-  assert.ok(enumaTrace.includes('red branches begin tick=76') && enumaTrace.includes('red branches converge tick=112'));
+  assert.ok(enumaTrace.includes('red branches begin tick=76') && enumaTrace.includes('red branches converge tick=172'));
   assert.ok(enumaTrace.includes('hand vault anchored tick=40'));
   assert.equal(enumaEntries.find(e=>e.kind==='bab_ilu').ids.length,16,'Key has sixteen independently revealed bands');
-  assert.ok(enumaTrace.includes('red branches begin tick=76') && enumaTrace.includes('red branches converge tick=112'));
+  assert.ok(enumaTrace.includes('red branches begin tick=76') && enumaTrace.includes('red branches converge tick=172'));
   pass('Ea is fully drawn before the stance; rings and vortex reach both clients without spheres or flat ground marks');
-  assert.ok(enumaTrace.includes('enuma impact tick=264'));assert.ok(renderedForBoth(enumaEntries));assert.ok(removedForBoth(enumaEntries));
+  assert.ok(enumaTrace.includes('enuma impact tick=352'));assert.ok(renderedForBoth(enumaEntries));assert.ok(removedForBoth(enumaEntries));
   assert.deepEqual([a.health,b.health],enumaHealth);assert.ok(a.entity.position.distanceTo(hundredOrigin)<.01);
   const healthCheck=output.length;consoleCommand('execute if entity @e[tag=motionrp_target,nbt={Health:10.0f}] run say TREASURY_TARGET_UNHARMED');
   await waitFor(()=>output.slice(healthCheck).includes('TREASURY_TARGET_UNHARMED'),'target stays unharmed');
@@ -874,7 +878,8 @@ generate-structures=false
   sceneDisplays.clear();sceneRemoved.clear();const bankaiStart=output.length;observeBankai=true;
   a._testLeftClick();await waitFor(()=>output.slice(bankaiStart).includes('Bankai phase: TENSA_ZANGETSU'),'Tensa Zangetsu reveal',20000);
   const bankaiEntries=summonTrace('Bankai',bankaiStart);
-  for(const kind of ['zangetsu','cocoon','pressure_wave','tensa_zangetsu','black_coat']) assert.ok(bankaiEntries.some(e=>e.kind===kind));
+  assert.ok(!bankaiEntries.some(e=>e.kind==='black_coat'));
+  for(const kind of ['zangetsu','cocoon','pressure_wave','tensa_zangetsu']) assert.ok(bankaiEntries.some(e=>e.kind===kind));
   await waitFor(()=>renderedForBoth(bankaiEntries) && removedForBoth(bankaiEntries) && sceneRemoved.size===sceneDisplays.size,'Bankai natural cleanup',12000);
   observeBankai=false;
   for(const role of ['owner','observer']) {
