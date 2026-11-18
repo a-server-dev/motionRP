@@ -24,6 +24,43 @@ Windowsでは `gradlew.bat` を使用できます。ビルドにクラウド環�
 
 ## 螺旋丸（影分身）
 
+### 0.7.0：GitHub Releases経由のリソースパック自動配布
+
+追加のTCPポートを開かずに、**導入先サーバーで生成した実際のパック**をGitHub Releasesへ公開し、参加者へ送信できるようにしました。公開名とローカルの配布用コピー名は、ご指定の **`mortionRP.zip`** です。BetterModel側の生成元 `build.zip` はそのまま監視します。
+
+一度だけ、次の設定を行ってください。
+
+1. 公開設定にした既存の `a-server-dev/motionRP` を配布先に使います。別の公開リポジトリを使う場合は下の `repository` へ指定します。
+2. GitHubの [Fine-grained personal access token作成画面](https://github.com/settings/personal-access-tokens/new) で、公開リポジトリ `a-server-dev/motionRP` のみを対象にし、Repository permissions の **Contents: Read and write** を許可します。組織の設定によっては承認が必要です。
+3. トークンを導入先の `plugins/MotionRP/github-token.txt` へ1行で保存します。チャットやGit、`config.yml` へ貼らないでください。Linuxではファイルをサーバーの実行ユーザーだけが読める権限（600）にします。代わりにサーバープロセスの環境変数 `MOTIONRP_GITHUB_TOKEN` でも指定できます。
+4. `plugins/MotionRP/config.yml` の `resource-pack.enabled` を `true` にして `/motionrp reload` を実行します。
+
+```yaml
+resource-pack:
+  enabled: true
+  repository: a-server-dev/motionRP
+  source-file: plugins/BetterModel/build.zip
+  required: false
+  prompt: MotionRPのモーション表示用リソースパックです。
+```
+
+これで、生成済みZIPを通常約5〜10秒で検知し、アップロード・公開ダウンロードのハッシュ確認後に、オンラインの参加者へ送信します。新規参加者にも自動送信します。更新ごとにSHA-256を含む別のURLを使い、PaperへSHA-1も渡します。内容が同じなら再アップロードも定期的な再送信もしません。GitHubへのアップロード・検証はサーバーのメインスレッド外で実行します。
+
+初回はクライアントでサーバーリソースパックを許可してください。必須にする場合は `required: true` にします。既存の `server.properties` や他プラグインのパックは保持し、MotionRP自身のパックIDだけを置き換えます。ダウンロード失敗・拒否時にはプレイヤーへ案内を表示します。
+
+```text
+/motionrp pack status
+/motionrp pack publish
+```
+
+`publish` は再確認・公開・再送信を予約する管理者コマンドです。同じ内容でも公開先を再確認できるため、Releaseを復旧したい場合にも使えます。通常のモデル追加・BetterModel再読み込み・再起動では実行不要です。生成途中・壊れたZIPは公開しません。アップロードが失敗した場合は再試行し、前回検証したパックを保持します。公開済みのハッシュ付きReleaseを削除すると、そのURLでのダウンロードはできなくなります。
+
+Releaseは `motionrp-pack-<SHA-256>` タグの専用プレリリースとして作成し、通常のLatest Releaseには設定しません。ファイル名は常に `mortionRP.zip` です。公開先リポジトリは認証なしでパックを取得できる必要があり、非公開リポジトリは使用できません。トークンが期限切れになった場合は差し替えてください。秘密情報はプレイヤー向けURL・保存する公開情報・ログに含めません。
+
+再起動後に前回のパックを利用するため、検証済みコピーを `plugins/MotionRP/mortionRP.zip`、公開情報を `pack-publication.properties` に保存します。認証未設定時でも、この検証済みキャッシュがあれば以前の公開パックを案内できます。初回の認証設定前はGitHubへの公開・更新は行いません。BetterModelの出力先を変更している場合は `source-file` も合わせてください。
+
+ZIPの上限は100MiB、展開後の合計は512MiBです。
+
 ### 0.6.1：遠距離掃射・刀身の花びら化・うなじからの離脱
 
 王の財宝の狙いを前方約20〜21.2ブロックの地面へ移しました。横の散らばり、毎tickの30連射、全20門の最終掃射、爆発演出は維持しています。途中に壁がある場合はそこで着弾します。
@@ -219,8 +256,8 @@ GUIを開いた状態で、**下の所持品のモーションアイテムをク
 ## 導入
 
 1. Java 25で `./gradlew build` を実行します。
-2. `build/libs/motionRP-0.5.1.jar` とBetterModel 3.6.0のPaper版をPaperの `plugins/` に置き、再起動します。旧MotionRP JARは同時に置かないでください。
-3. `/motionrp status` で `roll`・`rasengan`・`rasenshuriken`・`gate_of_babylon`・`susanoo`・`senbonzakura` が利用可能であることを確認します。前転はBetterModel標準の `players/steve.bbmodel` を使い、専用モデルは自動配置されます。
+2. `build/libs/motionRP-0.7.0.jar` とBetterModel 3.6.0のPaper版をPaperの `plugins/` に置き、再起動します。旧MotionRP JARは同時に置かないでください。
+3. `/motionrp status` で `roll`・`rasengan`・`rasenshuriken`・`gate_of_babylon`・`susanoo`・`senbonzakura`・`titan_transform` が利用可能であることを確認します。前転はBetterModel標準の `players/steve.bbmodel` を使い、専用モデルは自動配置されます。
 4. 管理者が `/motionrp give controller` と `/motionrp give motion roll 64` を実行します。
 5. 専用セットアイテムを右クリックし、所持品のモーションアイテムをクリックして登録します。
 
@@ -232,7 +269,7 @@ BetterModelが生成する `plugins/BetterModel/build.zip` をプレイヤーに
 
 配布例は、生成ZIPをHTTPSで配信し、Paperの `server.properties` の `resource-pack` にそのURL、`resource-pack-sha1` にZIPのSHA1を設定する方法です。全員への適用を必須にする場合は `require-resource-pack=true` を設定します。既存パックがある場合はBetterModel側のパック結合設定を使ってください。
 
-MotionRPはBetterModel APIで周囲のプレイヤーにもモデルを表示しますが、リソースパックのホスティングやURLの自動設定は行いません。パックが未適用なら正しい見た目にはなりません。
+0.7.0以降は上記「GitHub Releases経由のリソースパック自動配布」を有効にすれば、モデル追加後の手動配布は不要です。無効の場合は従来どおりZIPの配布・適用が必要です。
 
 ## コマンドと権限
 
@@ -344,3 +381,7 @@ MOTIONRP_PAPER_FIXTURE="$(cd ../build/paper-fixture && pwd)" npm test
 0.6.0では単体テスト35件・結合確認56項目が成功しました。30発の毎tick連射・2tickの飛翔・全20門の最終掃射と計50回の着弾、48枚の刀身のみのモデル送信を確認しています。巨人化では本人・観測者への雷と巨人体、実スケール10と仮スキンの送信、元のスケール1.25・スキンへの復元、キャンセル・ログアウト時の片付け、巨人化中にサーバーを強制終了した後のログイン時復元を確認しました。生成パックでも新しい刀身・雷モデルのPNG参照とキューブ座標が有効です。実Minecraftクライアントの画面での最終的な見た目は別途確認が必要です。
 
 0.6.1では単体テスト36件・結合確認60項目が成功しました。全50発の約20〜21.2ブロック先への着弾、刀身48枚の奥から手前への15tickの花びら化と各位置からの刃モデル送信、標準雷の送信・削除、元のスキンとスケールでの実プレイヤーのうなじ離脱・表示・無傷の着地を確認しています。飛び降り中の移動入力で再生が止まらないこと、空中キャンセル時の地上復帰、飛び降り中のサーバー強制終了後も再ログインで地上へ復帰することを確認しました。実Minecraftクライアントでの閃光の見え方・最終的な造形は別途目視確認が必要です。
+
+自動配布のPaper実機テストは、通常の結合テストで隔離fixtureを作成した後に `npm --prefix integration run test:pack` で実行できます。GitHubのアップロード・下書きからの再開・公開URLのハッシュ検証・認証情報の非流出は単体テストのローカルHTTPサーバーで確認します。実機テストの公開済みキャッシュはfixtureであり、実際のGitHub公開やMinecraftでのZIP描画を行うテストではありません。
+
+0.7.0では単体テスト48件・自動配布のPaper結合確認7項目が成功しました。アップロードと匿名ダウンロードのハッシュ検証、途中の下書き・失敗したアップロードの再試行、非公開リポジトリと不一致ファイルの拒否、認証情報をダウンロード先へ渡さないことをローカルHTTPテストで確認しています。Paper 26.3では参加時のURL・SHA-1送信、既存パックの保持、変更のないパックの再送抑止、接続中プレイヤーへの更新、適用失敗時の案内、認証・設定エラー時にもモーション機能が継続することを確認しました。GitHubへの実公開は導入先の専用トークン設定後に確認してください。

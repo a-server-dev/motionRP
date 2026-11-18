@@ -2,6 +2,6 @@
   "name": "motionrp-integration",
   "private": true,
   "type": "module",
-  "scripts": { "test": "node test.mjs" },
+  "scripts": { "test": "node test.mjs", "test:pack": "node pack-test.mjs" },
   "devDependencies": { "mineflayer": "4.39.0", "prismarine-nbt": "2.8.0" }
 }

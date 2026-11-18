@@ -17,6 +17,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
     private PlayerLoadouts loadouts;
     private LoadoutMenu menu;
     private MotionPlayback playback;
+    private AutomaticResourcePack resourcePack;
 
     @Override public void onEnable() {
         saveDefaultConfig();
@@ -39,6 +40,11 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
                 && getConfig().getInt("motions.senbonzakura.max-ticks",0)<dev.aserver.motionrp.core.SenbonzakuraTimeline.END) {
             getConfig().set("motions.senbonzakura.max-ticks",260);saveConfig();
         }
+        if(!getConfig().contains("resource-pack",true)) {
+            for(var entry:Objects.requireNonNull(getConfig().getDefaults()).getConfigurationSection("resource-pack").getValues(false).entrySet())
+                getConfig().set("resource-pack."+entry.getKey(),entry.getValue());
+            saveConfig();
+        }
         catalog = MotionCatalog.read(getConfig());
         items = new MotionItems(this);
         loadouts = new PlayerLoadouts(this, items);
@@ -52,14 +58,24 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
         command.setTabCompleter(this);
         getLogger().info("MotionRP enabled: " + catalog.motions().size() + " motion(s), 9 slots per player.");
         new BundledModels(this).install();
+        configureResourcePack();
     }
 
     @Override public void onDisable() {
+        if(resourcePack!=null) resourcePack.close();
         if (playback != null) playback.stopAll();
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (player.getOpenInventory().getTopInventory().getHolder() instanceof LoadoutMenu.Holder) player.closeInventory();
         }
     }
+
+    private void configureResourcePack() {
+        if(resourcePack!=null) resourcePack.close();
+        resourcePack=null;
+        try { resourcePack=new AutomaticResourcePack(this); }
+        catch(IllegalArgumentException invalid) { getLogger().warning("Resource pack settings are invalid; automatic delivery is disabled. Check resource-pack in config.yml."); }
+    }
+    private String packStatus() { return resourcePack==null ? "設定が不正です。resource-pack を確認してください。" : resourcePack.status(); }
 
     public MotionCatalog catalog() { return catalog; }
     public MotionItems items() { return items; }
@@ -89,11 +105,13 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
                     MotionCatalog updated = MotionCatalog.read(getConfig());
                     playback.stopAll();
                     catalog = updated;
+                    configureResourcePack();
                     tell(sender, "設定を再読み込みしました。既存アイテムと登録内容は保持されます。");
                 }
                 case "status" -> {
                     tell(sender, "MotionRP " + getPluginMeta().getVersion() + " / BetterModel "
                             + Objects.requireNonNull(Bukkit.getPluginManager().getPlugin("BetterModel")).getPluginMeta().getVersion());
+                    tell(sender,"リソースパック: "+packStatus());
                     tell(sender, "BetterModel sight-trace=" + BetterModel.config().sightTrace()
                             + " min=" + BetterModel.config().minSight() + " max=" + BetterModel.config().maxSight());
                     tell(sender, "BetterModel プレイヤーモデル: " + String.join(", ", BetterModel.limbKeys()));
@@ -101,6 +119,11 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
                         String problem = playback.unavailable(definition);
                         tell(sender, definition.id() + ": " + (problem == null ? "利用可能" : problem) + " [effect=" + definition.effect() + "]");
                     }
+                }
+                case "pack" -> {
+                    if(args.length==2 && args[1].equalsIgnoreCase("publish")) {
+                        tell(sender,resourcePack!=null && resourcePack.publishNow()?"パックの確認と公開を予約しました。/motionrp pack status で確認できます。":"resource-pack.enabled を有効にしてください。");
+                    } else tell(sender,"リソースパック: "+packStatus());
                 }
                 case "give" -> give(sender, args);
                 default -> usage(sender);
@@ -137,7 +160,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
     }
 
     private void usage(CommandSender sender) {
-        tell(sender, "/motionrp gui | status | reload");
+        tell(sender, "/motionrp gui | status | reload | pack status | pack publish");
         tell(sender, "/motionrp give controller [プレイヤー]");
         tell(sender, "/motionrp give motion <ID> [個数1〜64] [プレイヤー]");
     }
@@ -146,7 +169,9 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
         List<String> choices = new ArrayList<>();
         if (args.length == 1) {
             choices.add("gui");
-            if (sender.hasPermission("motionrp.admin")) choices.addAll(List.of("give", "reload", "status"));
+            if (sender.hasPermission("motionrp.admin")) choices.addAll(List.of("give", "reload", "status", "pack"));
+        } else if(sender.hasPermission("motionrp.admin") && args[0].equalsIgnoreCase("pack") && args.length==2) {
+            choices.addAll(List.of("status","publish"));
         } else if (sender.hasPermission("motionrp.admin") && args[0].equalsIgnoreCase("give")) {
             if (args.length == 2) choices.addAll(List.of("controller", "motion"));
             else if (args.length == 3 && args[1].equalsIgnoreCase("motion")) choices.addAll(catalog.motions().keySet());

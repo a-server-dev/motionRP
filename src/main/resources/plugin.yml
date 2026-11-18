@@ -8,7 +8,7 @@ commands:
   motionrp:
     description: モーションの登録・管理
     aliases: [mrp]
-    usage: /motionrp [gui|give|reload|status]
+    usage: /motionrp [gui|give|reload|status|pack]
 permissions:
   motionrp.use:
     description: モーションの登録・再生

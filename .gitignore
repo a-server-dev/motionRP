@@ -4,3 +4,6 @@ build/
 *.iml
 node_modules/
 .DS_Store
+
+# Server-local GitHub credential; never commit.
+**/github-token.txt

@@ -56,3 +56,13 @@ controller:
 # 仮スキン: 公開プロフィール MHF_Golem。Mojang textures のURLで差し替え可能。
 titan:
   skin-url: https://textures.minecraft.net/texture/1c6cd7202c34e78f3073090349f7d973b288af5e5b7334dd249010b3f27078f9
+
+# 追加ポート不要。生成した実パックを公開GitHub Releasesへ自動配布します。
+resource-pack:
+  enabled: false
+  repository: a-server-dev/motionRP
+  source-file: plugins/BetterModel/build.zip
+  required: false
+  prompt: MotionRPのモーション表示用リソースパックです。
+# 認証: 環境変数 MOTIONRP_GITHUB_TOKEN または plugins/MotionRP/github-token.txt
+# 公開するファイル名は mortionRP.zip。認証情報をこの設定へ書かないでください。
