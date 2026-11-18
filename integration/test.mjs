@@ -165,7 +165,7 @@ try {
   const oldShuriken=gunzipSync(fs.readFileSync(path.join(project,'src/test/resources/motionrp_rasenshuriken-0.3.0.bbmodel.gz')));
   fs.mkdirSync(path.join(run,'plugins/BetterModel/players'),{recursive:true});
   fs.writeFileSync(path.join(run,'plugins/BetterModel/players/motionrp_rasenshuriken.bbmodel'),oldShuriken);
-  const oldSummons=[['models/motionrp_bab_ilu','72e48d5765f3f3cd4a196ad42bdac6594cc4a19e3c5c19901b531b859124bbb2','0.8.1'],['players/motionrp_gate_of_babylon_enuma','6d4400edfb1decb0b5a01e2068d1769e94c22e2fe0e95a95a3fbec3be816e5ab','0.8.1'],['models/motionrp_ea','dcf8d64c65ccf7b3c50e28ccc063048368bc9bfcc88c0d2e4e8c4109496dd69d','0.8.1'],['models/motionrp_enuma_vortex','9ddebc5469047326fbff87242a29e64723952d0147512c4cf6339643042ecb0e','0.8.0'],['players/motionrp_titan_transform','bfbc83f290b4252a4088fd825e0fca0bed7a4a019e74f4305d33a791d3f20857','0.6.0'],['players/motionrp_gate_of_babylon','2e0bae16f4570116a383ccaa91e09319564665870b34c7cc03a9c156c34c2272','0.5.0'],
+  const oldSummons=[['models/motionrp_zangetsu_cleaver','de065d3da7442d5a4c74c7d1cfadaaf1352e32e294b216d28d6f91be7dc5335d','0.9.0'],['models/motionrp_bankai_cocoon','d6f38cfd0592d3ce2dd6fa5154269bc340f9f4eb8f6fe528f79b04f761faa127','0.9.0'],['models/motionrp_tensa_zangetsu','cf68b92b1a7cde04d8b7b0c4a5f435b621d9c9760e1102675d969416c7068806','0.9.0'],['players/motionrp_zangetsu_bankai','909515f7393027b9c35aee34ab05e89d04c718bb67e5645e3667198eb4261c33','0.9.0'],['models/motionrp_bab_ilu','545322bab257c47b88f2b4a96cdbe67adece3bc641c07c06ce4b16cf4a656039','0.9.0'],['players/motionrp_gate_of_babylon_enuma','39e048a07961c553550c992bddf749f24df784690b9a68afcbf861d69c911700','0.9.0'],['models/motionrp_ea','c2b2bc17eaa70b0acf1a66d5682d5f469df9e7f1ca70fa47e703083f248857ec','0.9.0'],['models/motionrp_enuma_vortex','9ddebc5469047326fbff87242a29e64723952d0147512c4cf6339643042ecb0e','0.8.0'],['players/motionrp_titan_transform','bfbc83f290b4252a4088fd825e0fca0bed7a4a019e74f4305d33a791d3f20857','0.6.0'],['players/motionrp_gate_of_babylon','2e0bae16f4570116a383ccaa91e09319564665870b34c7cc03a9c156c34c2272','0.5.0'],
     ['players/motionrp_senbonzakura','7a38d287afad202d93644f1d54ba0267baa33eff01315860675bd940c5944afe','0.5.0'],
     ['models/motionrp_senbonzakura_blade','aebce2d6a72045a193e54ebaad4e7cf8fd579ccc19aba3182b659c5f5ed44d70','0.5.0'],
     ['models/motionrp_susanoo_armor','d054d6147211c1cc72e6281ee5b9cc1a3ddcda8d9da6548e4472affedb16040c'],
@@ -306,11 +306,12 @@ generate-structures=false
   saved = await readSaved('MotionTesterA');
   assert.equal(saved.loadout[6], 1);
   const priorConfig=path.join(run,'plugins/MotionRP/config.yml');
-  fs.writeFileSync(priorConfig,fs.readFileSync(priorConfig,'utf8').replace(/(  senbonzakura:\n[\s\S]*?max-ticks:) \d+/, '$1 180').replace(/(  gate_of_babylon_enuma:\n[\s\S]*?max-ticks:) \d+/, '$1 280'));
+  fs.writeFileSync(priorConfig,fs.readFileSync(priorConfig,'utf8').replace(/(  senbonzakura:\n[\s\S]*?max-ticks:) \d+/, '$1 180').replace(/(  gate_of_babylon_enuma:\n[\s\S]*?max-ticks:) \d+/, '$1 320').replace(/(  zangetsu_bankai:\n[\s\S]*?max-ticks:) \d+/, '$1 220'));
   await startServer();
   assert.ok(/senbonzakura:\n[\s\S]*?max-ticks: 260/.test(fs.readFileSync(priorConfig,'utf8')));
-  assert.ok(/gate_of_babylon_enuma:\n[\s\S]*?max-ticks: 320/.test(fs.readFileSync(priorConfig,'utf8')));
-  pass('Enuma old timeout upgrades to fit the longer charging performance');
+  assert.ok(/gate_of_babylon_enuma:\n[\s\S]*?max-ticks: 380/.test(fs.readFileSync(priorConfig,'utf8')));
+  assert.ok(/zangetsu_bankai:\n[\s\S]*?max-ticks: 280/.test(fs.readFileSync(priorConfig,'utf8')));
+  pass('Enuma and Bankai old timeouts upgrade to fit the held declaration and branching Ea formation');
   pass('old bundled Senbonzakura timeout is extended automatically for the longer petal orbit');
   a = await connect('MotionTesterA');
   assert.equal(tokens(a), 62);
@@ -379,9 +380,14 @@ generate-structures=false
   const visibleItems = { owner: new Map(), observer: new Map() };
   const rotations = new Map();
   const removedByRole = { owner: new Set(), observer: new Set() };
+  let observeBankai=false,observeFormation=false;const bankaiParticles={owner:[],observer:[]};let branchDust=0,branchSparks=0;
   const itemMetadataIndex = b.registry.entitiesByName.item_display.metadataKeys.indexOf('item_stack');
   for (const [client, role] of [[a, 'owner'], [b, 'observer']]) {
     client._client.on('entity_destroy', packet => { for (const id of packet.entityIds) removedByRole[role].add(id); });
+    client._client.on('world_particles',packet=>{
+      if(observeBankai) bankaiParticles[role].push({type:packet.particle.type,amount:packet.amount,z:packet.z});
+      if(observeFormation && role==='observer') {if(packet.particle.type==='dust') branchDust++;if(packet.particle.type==='electric_spark') branchSparks++;}
+    });
     client._client.on('entity_metadata', packet => {
       for (const entry of packet.metadata) {
         if (entry.key === itemMetadataIndex) visibleItems[role].set(packet.entityId, entry.value);
@@ -816,6 +822,10 @@ generate-structures=false
   assert.equal(cage.length,100);
   assert.ok(cage.every(m=>Math.abs(Math.hypot(Number(m[2])-hundredOrigin.x,Number(m[4])-(hundredOrigin.z+20))-6)<.05));
   pass('serious treasury shows one hundred rear gates and one hundred gates enclosing the living target twenty blocks ahead');
+  await waitFor(()=>output.slice(enumaBegin).includes('TreasuryEnuma phase: RED_BRANCHES'),'red branching formation');observeFormation=true;
+  await waitFor(()=>output.slice(enumaBegin).includes('TreasuryEnuma phase: CONVERGENCE'),'red branches converge');observeFormation=false;
+  assert.ok(branchDust>1000 && branchSparks>20,'Branching red paths and sparks reach the observer before Ea materializes');
+  pass('fixed hand gate reveals sixteen key bands, then thousands of red path particles branch and converge before Ea appears');
   await waitFor(()=>sampleType(a)==='air' && sampleType(b)==='air','excavated ground visible to both clients',30000);
   const worldCheck=output.length;consoleCommand(`execute if block ${cutSample.x} ${cutSample.y} ${cutSample.z} minecraft:stone run say ENUMA_WORLD_UNCHANGED`);
   await waitFor(()=>output.slice(worldCheck).includes('ENUMA_WORLD_UNCHANGED'),'actual floor preserved');
@@ -831,9 +841,14 @@ generate-structures=false
   assert.equal(enumaEntries.filter(e=>e.kind.startsWith('shock_ring')).length,3);
   assert.equal(enumaEntries.filter(e=>e.kind.startsWith('rift')).length,0);
   assert.ok(!enumaEntries.some(e=>e.kind==='charge_core' || e.kind==='impact_core'));
-  assert.ok(enumaTrace.includes('ea ready tick=94'));
+  assert.ok(enumaTrace.includes('ea ready tick=144'));
+  assert.ok(enumaTrace.includes('hand vault anchored tick=40'));
+  assert.ok(enumaTrace.includes('red branches begin tick=76') && enumaTrace.includes('red branches converge tick=112'));
+  assert.ok(enumaTrace.includes('hand vault anchored tick=40'));
+  assert.equal(enumaEntries.find(e=>e.kind==='bab_ilu').ids.length,16,'Key has sixteen independently revealed bands');
+  assert.ok(enumaTrace.includes('red branches begin tick=76') && enumaTrace.includes('red branches converge tick=112'));
   pass('Ea is fully drawn before the stance; rings and vortex reach both clients without spheres or flat ground marks');
-  assert.ok(enumaTrace.includes('enuma impact tick=204'));assert.ok(renderedForBoth(enumaEntries));assert.ok(removedForBoth(enumaEntries));
+  assert.ok(enumaTrace.includes('enuma impact tick=264'));assert.ok(renderedForBoth(enumaEntries));assert.ok(removedForBoth(enumaEntries));
   assert.deepEqual([a.health,b.health],enumaHealth);assert.ok(a.entity.position.distanceTo(hundredOrigin)<.01);
   const healthCheck=output.length;consoleCommand('execute if entity @e[tag=motionrp_target,nbt={Health:10.0f}] run say TREASURY_TARGET_UNHARMED');
   await waitFor(()=>output.slice(healthCheck).includes('TREASURY_TARGET_UNHARMED'),'target stays unharmed');
@@ -856,12 +871,21 @@ generate-structures=false
   consoleCommand('kill @e[tag=motionrp_target]');
   assert.ok(!/Treasury100 scene failed|TreasuryEnuma scene failed/.test(output));
   await addSummon('zangetsu_bankai',8);
-  sceneDisplays.clear();sceneRemoved.clear();const bankaiStart=output.length;
+  sceneDisplays.clear();sceneRemoved.clear();const bankaiStart=output.length;observeBankai=true;
   a._testLeftClick();await waitFor(()=>output.slice(bankaiStart).includes('Bankai phase: TENSA_ZANGETSU'),'Tensa Zangetsu reveal',20000);
   const bankaiEntries=summonTrace('Bankai',bankaiStart);
   for(const kind of ['zangetsu','cocoon','pressure_wave','tensa_zangetsu','black_coat']) assert.ok(bankaiEntries.some(e=>e.kind===kind));
   await waitFor(()=>renderedForBoth(bankaiEntries) && removedForBoth(bankaiEntries) && sceneRemoved.size===sceneDisplays.size,'Bankai natural cleanup',12000);
-  pass('first Bankai reveals broad Zangetsu, compressing black pressure and Tensa Zangetsu with a fluttering coat on both clients');
+  observeBankai=false;
+  for(const role of ['owner','observer']) {
+    const packets=bankaiParticles[role],sum=type=>packets.filter(p=>p.type===type).reduce((n,p)=>n+p.amount,0);
+    assert.ok(sum('dust_plume')>2000 && sum('cloud')>3000 && sum('block')>4000 && sum('flash')>=3,'Dense whiteout/dust reaches '+role);
+    assert.ok(packets.some(p=>p.type==='dust_plume' && p.z>hundredOrigin.z+8),'Dust covers the forward area too');
+  }
+  const bankaiTrace=output.slice(bankaiStart);
+  assert.ok(bankaiTrace.includes('whiteout and dust begin tick=104') && bankaiTrace.includes('dust clears; Tensa revealed tick=184'));
+  assert.deepEqual([a.health,b.health],enumaHealth);
+  pass('first Bankai braces the edge-down blade, whites out the caster and forward area with dense dust, then reveals Tensa Zangetsu on both clients');
   for(const phase of ['BANKAI','REVEAL']) {
     sceneDisplays.clear();sceneRemoved.clear();const start=output.length;a._testLeftClick();
     await waitFor(()=>output.slice(start).includes('Bankai phase: '+phase),'Bankai cancel phase '+phase,15000);

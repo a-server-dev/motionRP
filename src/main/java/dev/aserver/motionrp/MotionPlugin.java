@@ -39,7 +39,12 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
                 && "gate_of_babylon_enuma".equals(getConfig().getString("motions.gate_of_babylon_enuma.effect"))
                 && (getConfig().getInt("motions.gate_of_babylon_enuma.max-ticks",0)==280
                 || getConfig().getInt("motions.gate_of_babylon_enuma.max-ticks",0)<dev.aserver.motionrp.core.TreasuryTimeline.SERIOUS_END)) {
-            getConfig().set("motions.gate_of_babylon_enuma.max-ticks",320);saveConfig();
+            getConfig().set("motions.gate_of_babylon_enuma.max-ticks",380);saveConfig();
+        }
+        if("motionrp_zangetsu_bankai".equals(getConfig().getString("motions.zangetsu_bankai.model"))
+                && "zangetsu_bankai".equals(getConfig().getString("motions.zangetsu_bankai.effect"))
+                && getConfig().getInt("motions.zangetsu_bankai.max-ticks",0)<dev.aserver.motionrp.core.BankaiTimeline.END) {
+            getConfig().set("motions.zangetsu_bankai.max-ticks",280);saveConfig();
         }
         // Extend only this bundled scene's old timeout when upgrading its longer orbit.
         if("motionrp_senbonzakura".equals(getConfig().getString("motions.senbonzakura.model"))

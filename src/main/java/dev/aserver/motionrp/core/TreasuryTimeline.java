@@ -3,7 +3,7 @@ package dev.aserver.motionrp.core;
 /** One rapid pass in thirty ticks, one full volley, then optional Ea. */
 public final class TreasuryTimeline {
     public static final int OPEN=6,DRAW=34,RAPID=42,RAPID_TICKS=30,VOLLEY=84,FLIGHT=2;
-    public static final int KEY=48,EA=70,EA_READY=94,STANCE=108,CHARGE=104,THRUST=172,FIRE=184,IMPACT=204,RECOVER=236,SERIOUS_END=272;
+    public static final int KEY=48,KEY_READY=76,BRANCH=76,CONVERGE=112,EA=128,EA_READY=144,STANCE=158,CHARGE=164,THRUST=232,FIRE=244,IMPACT=264,RECOVER=296,SERIOUS_END=332;
     public record Portal(double right,double forward,double height,double scale,boolean surroundsTarget) {}
     private TreasuryTimeline() {}
     public static int count(boolean serious) { return serious?200:100; }
@@ -29,7 +29,7 @@ public final class TreasuryTimeline {
         if(tick<0 || tick>=end(serious)) return "FINISHED";
         if(tick<OPEN) return "POSE";if(tick<DRAW) return "OPEN";if(tick<RAPID) return "DRAW";
         if(!serious) return tick<VOLLEY?"RAPID":tick<102?"VOLLEY":"FADE";
-        return tick<KEY?"RAPID":tick<EA?"KEY":tick<VOLLEY?"EA_DRAW":tick<CHARGE?"VOLLEY"
+        return tick<KEY?"RAPID":tick<BRANCH?"KEY":tick<CONVERGE?"RED_BRANCHES":tick<EA?"CONVERGENCE":tick<CHARGE?"EA_DRAW"
                 :tick<FIRE?"EA_CHARGE":tick<IMPACT?"ENUMA_ELISH":tick<RECOVER?"IMPACT":"FADE";
     }
 }

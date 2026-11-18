@@ -4188,6 +4188,22 @@
       "isOpen": true
     },
     {
+      "name": "edge_down_roll",
+      "uuid": "e0cb5a51-86e2-5e47-80e3-270e67f7d537",
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "export": true,
+      "isOpen": true
+    },
+    {
       "name": "sword_socket",
       "uuid": "93c5bb31-f6a2-5e21-86d0-ea0a3fba2063",
       "origin": [
@@ -4209,62 +4225,67 @@
       "uuid": "93c5bb31-f6a2-5e21-86d0-ea0a3fba2063",
       "children": [
         {
-          "uuid": "2d7933a4-b985-5277-b7cb-ef36b0f2c920",
+          "uuid": "e0cb5a51-86e2-5e47-80e3-270e67f7d537",
           "children": [
-            "d6511a5c-74a6-536a-a02c-2ee1e6666e53",
-            "11cc800c-c078-5d41-9091-83c1ab1019e4",
-            "949b7777-5cef-5c7e-b4e8-0dcf49cc449b",
-            "36dd50ef-6189-5da3-ab63-802ec8641a1b",
-            "a7e11cf9-b2b7-568b-8d5e-5467a819bc67",
-            "4b18f01a-bcab-5424-a459-34b9ba67885a",
-            "854bc8a2-b982-523e-b1b0-b874de34e5b3",
-            "d6773c68-2dc4-5e2c-a04e-004921db0cf3",
-            "bf5337d7-3369-5810-a2f1-f129376935f7",
-            "07670fe9-4bef-5de4-8c3c-b17d843169c3",
-            "d6da286e-d664-5891-92a4-c2ef3c2c1059",
-            "1629c115-afff-5e8a-81e6-cfd2f296ada2",
-            "2b7fe691-94e0-5b2d-9524-13247da81357",
-            "b3bb31a0-3051-5c46-b704-07992a2bdc0c",
-            "314f31c7-f60b-54de-b847-19c8dd08fc7a",
-            "1c1b7f06-2fe2-5901-8505-4704bc068bd4",
-            "8ca43f5f-00d2-54db-8a00-9092b73149ba",
-            "f1f888fc-1347-53d9-866d-88420203bafb",
-            "426fd6e3-3857-52a3-9cf0-fe09ba3cd490",
-            "e8ccdaa9-a16c-5629-b9db-a4c13f891f4b",
-            "7c377a3a-c57b-5ed5-8468-0f1d654c723f",
-            "ae26a8e9-b90f-56e1-85a2-79eea41962b3",
-            "0e8a84ed-0e08-59d1-a11b-67eefd59bc80",
-            "65a5cefa-9fe3-5e94-a8f1-491876e0aaa1",
-            "990f44ec-060c-5dd1-b00c-265cedea5580",
-            "59f846b7-10da-5b17-a7fa-5d8e414d1c4a",
-            "b3f0a531-32cb-5b54-96e2-322c3e071e46",
-            "e48cd56f-7a0f-5f52-92e4-b9420d82455c",
-            "6ad39435-de44-5e6e-929f-9274445718a1",
-            "56852b7d-24c9-5be5-9e83-c9d179d1e8ad",
-            "f8ce187a-e037-5564-ad49-1af38c4980bb",
-            "188751f0-3d9a-5da4-a402-3f764f1e6009",
-            "9fe23f67-ebd0-5cae-bfe2-a80e30299fdc",
-            "7ba392bc-53ec-5aea-842d-978817717581",
-            "8d6de00d-ed00-5cd4-89cc-96d2c7680801",
-            "1ec01a71-e38d-5934-b1b8-6178f9f82d34",
-            "f65e9844-40d4-53e0-bf09-15355eaf4443",
-            "640182ef-cd86-5734-8fb4-4c9f07dbf7ac",
-            "cf380b08-57cc-5861-bdd4-556de3b4c108",
-            "691e2039-0c1b-5350-aa43-68c90ad991c1",
-            "322e2ac6-5761-58c6-9883-8d5a59eef794",
-            "1bd5d058-a6fd-5301-9fc2-73598750cb71",
-            "0fa79150-12fd-59a1-ae2c-bc41dcc5bd93",
-            "fad0afa4-648d-535a-bf12-d74c18744787",
-            "3132eb95-b134-50de-b613-66568b43770a",
-            "5a4f1bbd-6fdf-5d24-8c5a-68359ee55fbf",
-            "bc2f7ea5-5772-5aa9-8bd1-39ecf12ff0e6",
-            "10a3d2c1-3b08-5dc4-b239-b2bcef53f61b",
-            "61866cf1-e630-5843-b21b-a9a95cdf3a00",
-            "bc21cd61-fac3-5c78-9e62-761573f36638",
-            "f4636fad-56c5-5500-b4aa-a92f51aa8369",
-            "8ef61ded-5746-5b8d-983f-5545d229f357",
-            "d1896599-13c7-50bf-bb3d-3cd6bf52e747",
-            "978fc11a-f9e3-59db-b8ca-d89819bc7009"
+            {
+              "uuid": "2d7933a4-b985-5277-b7cb-ef36b0f2c920",
+              "children": [
+                "d6511a5c-74a6-536a-a02c-2ee1e6666e53",
+                "11cc800c-c078-5d41-9091-83c1ab1019e4",
+                "949b7777-5cef-5c7e-b4e8-0dcf49cc449b",
+                "36dd50ef-6189-5da3-ab63-802ec8641a1b",
+                "a7e11cf9-b2b7-568b-8d5e-5467a819bc67",
+                "4b18f01a-bcab-5424-a459-34b9ba67885a",
+                "854bc8a2-b982-523e-b1b0-b874de34e5b3",
+                "d6773c68-2dc4-5e2c-a04e-004921db0cf3",
+                "bf5337d7-3369-5810-a2f1-f129376935f7",
+                "07670fe9-4bef-5de4-8c3c-b17d843169c3",
+                "d6da286e-d664-5891-92a4-c2ef3c2c1059",
+                "1629c115-afff-5e8a-81e6-cfd2f296ada2",
+                "2b7fe691-94e0-5b2d-9524-13247da81357",
+                "b3bb31a0-3051-5c46-b704-07992a2bdc0c",
+                "314f31c7-f60b-54de-b847-19c8dd08fc7a",
+                "1c1b7f06-2fe2-5901-8505-4704bc068bd4",
+                "8ca43f5f-00d2-54db-8a00-9092b73149ba",
+                "f1f888fc-1347-53d9-866d-88420203bafb",
+                "426fd6e3-3857-52a3-9cf0-fe09ba3cd490",
+                "e8ccdaa9-a16c-5629-b9db-a4c13f891f4b",
+                "7c377a3a-c57b-5ed5-8468-0f1d654c723f",
+                "ae26a8e9-b90f-56e1-85a2-79eea41962b3",
+                "0e8a84ed-0e08-59d1-a11b-67eefd59bc80",
+                "65a5cefa-9fe3-5e94-a8f1-491876e0aaa1",
+                "990f44ec-060c-5dd1-b00c-265cedea5580",
+                "59f846b7-10da-5b17-a7fa-5d8e414d1c4a",
+                "b3f0a531-32cb-5b54-96e2-322c3e071e46",
+                "e48cd56f-7a0f-5f52-92e4-b9420d82455c",
+                "6ad39435-de44-5e6e-929f-9274445718a1",
+                "56852b7d-24c9-5be5-9e83-c9d179d1e8ad",
+                "f8ce187a-e037-5564-ad49-1af38c4980bb",
+                "188751f0-3d9a-5da4-a402-3f764f1e6009",
+                "9fe23f67-ebd0-5cae-bfe2-a80e30299fdc",
+                "7ba392bc-53ec-5aea-842d-978817717581",
+                "8d6de00d-ed00-5cd4-89cc-96d2c7680801",
+                "1ec01a71-e38d-5934-b1b8-6178f9f82d34",
+                "f65e9844-40d4-53e0-bf09-15355eaf4443",
+                "640182ef-cd86-5734-8fb4-4c9f07dbf7ac",
+                "cf380b08-57cc-5861-bdd4-556de3b4c108",
+                "691e2039-0c1b-5350-aa43-68c90ad991c1",
+                "322e2ac6-5761-58c6-9883-8d5a59eef794",
+                "1bd5d058-a6fd-5301-9fc2-73598750cb71",
+                "0fa79150-12fd-59a1-ae2c-bc41dcc5bd93",
+                "fad0afa4-648d-535a-bf12-d74c18744787",
+                "3132eb95-b134-50de-b613-66568b43770a",
+                "5a4f1bbd-6fdf-5d24-8c5a-68359ee55fbf",
+                "bc2f7ea5-5772-5aa9-8bd1-39ecf12ff0e6",
+                "10a3d2c1-3b08-5dc4-b239-b2bcef53f61b",
+                "61866cf1-e630-5843-b21b-a9a95cdf3a00",
+                "bc21cd61-fac3-5c78-9e62-761573f36638",
+                "f4636fad-56c5-5500-b4aa-a92f51aa8369",
+                "8ef61ded-5746-5b8d-983f-5545d229f357",
+                "d1896599-13c7-50bf-bb3d-3cd6bf52e747",
+                "978fc11a-f9e3-59db-b8ca-d89819bc7009"
+              ]
+            }
           ]
         }
       ]
@@ -4309,6 +4330,136 @@
                 {
                   "x": "-90",
                   "y": "0",
+                  "z": "0"
+                }
+              ]
+            }
+          ]
+        },
+        "e0cb5a51-86e2-5e47-80e3-270e67f7d537": {
+          "name": "edge_down_roll",
+          "type": "bone",
+          "rotation_global": false,
+          "keyframes": [
+            {
+              "channel": "rotation",
+              "time": 0,
+              "interpolation": "linear",
+              "color": -1,
+              "uuid": "c278e0d5-291c-513f-b0b3-8161b262e033",
+              "data_points": [
+                {
+                  "x": "0",
+                  "y": "-90",
+                  "z": "0"
+                }
+              ]
+            },
+            {
+              "channel": "rotation",
+              "time": 1,
+              "interpolation": "linear",
+              "color": -1,
+              "uuid": "3440f1e4-7773-5da7-b3b4-bddfec70a4c4",
+              "data_points": [
+                {
+                  "x": "0",
+                  "y": "-90",
+                  "z": "0"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "uuid": "c5867ba4-b1f4-5386-b378-89cb450aa520",
+      "name": "reveal",
+      "loop": "once",
+      "override": false,
+      "length": 4,
+      "snapping": 20,
+      "selected": false,
+      "animators": {
+        "93c5bb31-f6a2-5e21-86d0-ea0a3fba2063": {
+          "name": "sword_socket",
+          "type": "bone",
+          "rotation_global": false,
+          "keyframes": [
+            {
+              "channel": "rotation",
+              "time": 0,
+              "interpolation": "linear",
+              "color": -1,
+              "uuid": "50a9cc6c-e4e7-5db9-a710-b77d5ae893b9",
+              "data_points": [
+                {
+                  "x": "-75",
+                  "y": "0",
+                  "z": "0"
+                }
+              ]
+            },
+            {
+              "channel": "rotation",
+              "time": 1.2,
+              "interpolation": "linear",
+              "color": -1,
+              "uuid": "b62c4208-b799-5c5e-adc8-0d1c0b86be28",
+              "data_points": [
+                {
+                  "x": "-125",
+                  "y": "0",
+                  "z": "0"
+                }
+              ]
+            },
+            {
+              "channel": "rotation",
+              "time": 4,
+              "interpolation": "linear",
+              "color": -1,
+              "uuid": "96a62580-580b-5586-98fb-c69c11cdac6c",
+              "data_points": [
+                {
+                  "x": "-125",
+                  "y": "0",
+                  "z": "0"
+                }
+              ]
+            }
+          ]
+        },
+        "e0cb5a51-86e2-5e47-80e3-270e67f7d537": {
+          "name": "edge_down_roll",
+          "type": "bone",
+          "rotation_global": false,
+          "keyframes": [
+            {
+              "channel": "rotation",
+              "time": 0,
+              "interpolation": "linear",
+              "color": -1,
+              "uuid": "c278e0d5-291c-513f-b0b3-8161b262e033",
+              "data_points": [
+                {
+                  "x": "0",
+                  "y": "-90",
+                  "z": "0"
+                }
+              ]
+            },
+            {
+              "channel": "rotation",
+              "time": 4,
+              "interpolation": "linear",
+              "color": -1,
+              "uuid": "eb0ea021-0ab3-53fe-8e01-a8da47b796c4",
+              "data_points": [
+                {
+                  "x": "0",
+                  "y": "-90",
                   "z": "0"
                 }
               ]

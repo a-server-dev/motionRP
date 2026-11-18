@@ -110,25 +110,48 @@ final class TreasuryScene extends SummonScene {
     private Location palm() { var p=TreasuryHandPath.at(tick);return at(p.right(),p.forward(),p.height()); }
     private void eaPerformance() {
         Location hand=palm();
-        if(tick==KEY) { key=model(SummonAssets.BAB_ILU,hand.clone().add(0,-.85,0),.6f,"bab_ilu");sound(hand,Sound.BLOCK_END_PORTAL_FRAME_FILL,.8f,.7f); }
-        if(key!=null) {
-            double rise=Math.clamp((tick-KEY)/14.0,0,1);Location turned=hand.clone().add(0,-.85*(1-rise),0);
-            turned.setYaw((float)(origin.getYaw()+60*Math.clamp((tick-KEY-14)/8.0,0,1)));key.location(BukkitAdapter.adapt(turned));
+        if(tick==KEY-8) {
+            vault=model(SummonAssets.MASS_GATE,hand,.7f,"hand_vault");loop(vault,"spin");
+            trace("hand vault anchored tick="+tick+" y="+hand.getY());
         }
-        if(tick==KEY-8) { vault=model(SummonAssets.MASS_GATE,at(.3,.5,.1),.25f,"hand_vault");loop(vault,"spin"); }
         if(vault!=null) {
-            double rise=Math.clamp((tick-(KEY-8))/24.0,0,1);Location gate=hand.clone();
-            gate.setY(origin.getY()+.1+(hand.getY()-origin.getY()-.1)*rise);gate.setPitch(-90);
-            vault.location(BukkitAdapter.adapt(gate));point(vault,gate);vault.scaler(ModelScaler.value((float)(.25+.45*rise)));
+            Location gate=hand.clone();gate.setPitch(-90);
+            vault.location(BukkitAdapter.adapt(gate));point(vault,gate);
+        }
+        if(tick==KEY) {
+            key=model(SummonAssets.BAB_ILU,hand.clone().add(0,-1.3,0),.6f,"bab_ilu");
+            key.update(TrackerUpdateAction.togglePart(false),bone->bone.name().rawName().startsWith("key_slice_"));
+            sound(hand,Sound.BLOCK_END_PORTAL_FRAME_FILL,.8f,.7f);
+        }
+        if(key!=null) {
+            double rise=Math.clamp((tick-KEY)/(double)(KEY_READY-KEY),0,1);
+            Location turned=hand.clone().add(0,-1.3*(1-rise),0);
+            turned.setYaw((float)(origin.getYaw()+60*Math.clamp((tick-KEY_READY+6)/6.0,0,1)));
+            key.location(BukkitAdapter.adapt(turned));
+            for(int band=0;band<16;band++) {
+                String part=String.format(java.util.Locale.ROOT,"key_slice_%02d",band);
+                key.update(TrackerUpdateAction.togglePart(EaFormation.keyBandVisible(band,tick)),bone->bone.name().rawName().equals(part));
+            }
+        }
+        if(tick==BRANCH) {audience.hide(key);key=null;trace("red branches begin tick="+tick);}
+        if(tick==KEY_READY+4) {audience.hide(vault);vault=null;}
+        if(tick>=BRANCH && tick<EA_READY && tick%2==0) {
+            var points=EaFormation.points(tick);int index=0;
+            for(var p:points) {
+                Location at=at(p.right(),p.forward(),p.up()).add(hand.toVector().subtract(origin.toVector()));
+                dust(at,RED,1,.015);
+                if(index++%35==0) particle(at,Particle.ELECTRIC_SPARK,1,.025,.01);
+            }
+            if((tick-BRANCH)%12==0) {chargeListeners.addAll(audience.players());sound(hand,Sound.ENTITY_BREEZE_CHARGE,.55f,1.4f);}
+            if(tick==CONVERGE) trace("red branches converge tick="+tick);
         }
         if(tick==EA) {
-            audience.hide(key);key=null;ea=model(SummonAssets.EA,hand,.05f,"ea");loop(ea,"spin");
+            ea=model(SummonAssets.EA,hand,.05f,"ea");loop(ea,"spin");
             ea.animate("level",AnimationModifier.DEFAULT_WITH_PLAY_ONCE);sound(hand,Sound.BLOCK_RESPAWN_ANCHOR_CHARGE,.8f,.6f);
         }
-        if(tick==EA_READY+4) { audience.hide(vault);vault=null; }
         if(ea!=null) {
-            double drawn=Math.clamp((tick-EA)/(double)(EA_READY-EA),0,1);
-            ea.location(BukkitAdapter.adapt(hand.clone().add(0,-.55*(1-drawn),0)));ea.scaler(ModelScaler.value((float)(.05+.67*drawn)));
+            double formed=Math.clamp((tick-EA)/(double)(EA_READY-EA),0,1);
+            ea.location(BukkitAdapter.adapt(hand));ea.scaler(ModelScaler.value((float)(.05+.67*formed)));
             if(tick==EA_READY) trace("ea ready tick="+tick);
         }
         if(tick>=CHARGE && tick<FIRE) {

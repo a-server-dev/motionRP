@@ -15680,10 +15680,10 @@
             },
             {
               "channel": "rotation",
-              "time": 5.1,
+              "time": 5.2,
               "interpolation": "linear",
               "color": -1,
-              "uuid": "36ac96f8-7965-5676-a4ab-c04c7d633b4a",
+              "uuid": "d76f77d9-d368-5f48-ba08-1ad3d588bc59",
               "data_points": [
                 {
                   "x": "0",
@@ -15694,10 +15694,10 @@
             },
             {
               "channel": "rotation",
-              "time": 5.7,
+              "time": 5.8,
               "interpolation": "linear",
               "color": -1,
-              "uuid": "af3797d0-a364-5b74-9e70-0c6bfa092392",
+              "uuid": "11bd003b-874b-5310-9cac-a7656e0629c0",
               "data_points": [
                 {
                   "x": "-90",

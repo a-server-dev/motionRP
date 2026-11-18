@@ -9,7 +9,7 @@ motions:
     model: motionrp_zangetsu_bankai
     animation: zangetsu_bankai
     effect: zangetsu_bankai
-    max-ticks: 220
+    max-ticks: 280
   gate_of_babylon_100:
     name: 王の財宝・百門
     model: motionrp_gate_of_babylon_100
@@ -21,7 +21,7 @@ motions:
     model: motionrp_gate_of_babylon_enuma
     animation: gate_of_babylon_enuma
     effect: gate_of_babylon_enuma
-    max-ticks: 320
+    max-ticks: 380
   titan_transform:
     name: 巨人化
     model: motionrp_titan_transform

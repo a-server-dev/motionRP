@@ -29,9 +29,9 @@ class TreasuryTest {
             assertEquals(serious?400:200,Arrays.stream(waves).sum()+TreasuryTimeline.count(serious));
         }
         assertEquals("KEY",TreasuryTimeline.phase(TreasuryTimeline.KEY,true));
-        assertTrue(TreasuryTimeline.KEY<72 && TreasuryTimeline.EA<72);
+        assertTrue(TreasuryTimeline.KEY<72 && TreasuryTimeline.EA>TreasuryTimeline.CONVERGE);
         assertEquals("ENUMA_ELISH",TreasuryTimeline.phase(TreasuryTimeline.FIRE,true));
-        assertEquals("FINISHED",TreasuryTimeline.phase(272,true));
+        assertEquals("FINISHED",TreasuryTimeline.phase(TreasuryTimeline.SERIOUS_END,true));
     }
     @Test void theHundredGatePoseKeepsTheWristsSpreadAndStandingStill() throws Exception {
         var pose=model("players/motionrp_gate_of_babylon_100");
@@ -48,8 +48,8 @@ class TreasuryTest {
         Map<String,JsonObject> groups=new HashMap<>();Map<String,String> names=new HashMap<>(),parents=new HashMap<>();
         for(var raw:pose.getAsJsonArray("groups")) { var g=raw.getAsJsonObject();String id=g.get("uuid").getAsString();groups.put(id,g);names.put(g.get("name").getAsString(),id); }
         math.parentTree(pose.getAsJsonArray("outliner"),null,parents);var animation=pose.getAsJsonArray("animations").get(0).getAsJsonObject();
-        assertEquals(13.6,animation.get("length").getAsDouble());
-        for(double time:new double[]{6,8,9.3}) {
+        assertEquals(16.6,animation.get("length").getAsDouble());
+        for(double time:new double[]{8,10,12.3}) {
             var right=math.posedPoint(names.get("prfl_right_foreleg"),new double[]{1.875,0,0},time,animation,groups,parents);
             var left=math.posedPoint(names.get("plfl_left_foreleg"),new double[]{-1.875,0,0},time,animation,groups,parents);
             assertTrue(Math.abs(right[1])<.5 && Math.abs(left[1])<.5,"Feet must stay planted");
@@ -61,7 +61,13 @@ class TreasuryTest {
             var left=math.posedPoint(names.get("plfl_left_foreleg"),new double[]{-1.875,0,0},time,animation,groups,parents);
             assertEquals(0,right[2]-left[2],.01,"Feet stay neutral until Ea is fully drawn");
         }
-        var charge=TreasuryHandPath.at(140);var fire=TreasuryHandPath.at(TreasuryTimeline.FIRE);
+        for(String name:List.of("player_root","pc_chest","pla_left_arm","h_ph_head")) {
+            double[] initial=math.posedOrigin(names.get(name),0,animation,groups,parents);
+            for(double time:new double[]{1,3,7.2}) assertArrayEquals(initial,math.posedOrigin(names.get(name),time,animation,groups,parents),1e-7,"Neutral upper body until Ea is complete: "+name);
+        }
+        var held=TreasuryHandPath.at(48);
+        for(int tick:new int[]{76,112,128,144}) assertEquals(held,TreasuryHandPath.at(tick),"The palm and gate must stay in place through formation");
+        var charge=TreasuryHandPath.at(200);var fire=TreasuryHandPath.at(TreasuryTimeline.FIRE);
         assertTrue(charge.height()>1.3 && charge.height()<1.9,"Charging hand should be beside the face: "+charge);
         assertTrue(fire.forward()>charge.forward()+.4,"The hand must thrust toward the target");
     }

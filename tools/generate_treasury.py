@@ -58,7 +58,17 @@ def key_and_ea():
     for side in [-1,1]:
         parts.append(m.cube('mechanical_fork_'+str(side),[side*2,-1.4,0],[1.1,5.5,1.5],0))
         parts.append(m.cube('fork_end_'+str(side),[side*2,-4.4,0],[2,1.1,2],1))
-    m.group('bab_ilu',parts,origin=(0,12,0));m.save()
+    # Slice at the gate plane so the key emerges instead of floating up fully visible.
+    original=m.data['elements'][:];m.data['elements']=[]
+    for band in range(16):
+        lo=-5+band*2.5;hi=lo+2.5;pieces=[]
+        for e in original:
+            a=max(lo,e['from'][1]);b=min(hi,e['to'][1])
+            if b<=a:continue
+            piece=copy.deepcopy(e);piece['uuid']=ident(e['name']+f'_band_{band}');piece['name']+=f'_band_{band}'
+            piece['from'][1]=a;piece['to'][1]=b;m.data['elements'].append(piece);pieces.append(piece['uuid'])
+        m.group(f'key_slice_{band:02d}',pieces,origin=(0,12,0))
+    m.save()
     ea_colors=colors[:];ea_colors[5]=(35,62,145,255)
     m=Model('motionrp_ea',colors=ea_colors);parts=[]
     parts.append(m.cube('wrapped_grip',[0,2.2,0],[1.35,7,1.35],6))
@@ -91,7 +101,7 @@ def key_and_ea():
     spin['loop']='loop'
     for j,g in enumerate(cylinder_groups):spin['animators'][g['uuid']]=animator(g,[(0,(0,0,0)),(1,(0,360 if j%2==0 else -360,0))])
     level=animation('level',10,{})
-    level['animators'][root['uuid']]=animator(root,[(0,(0,0,0)),(5.1,(0,0,0)),(5.7,(-90,0,0)),(10,(-90,0,0))])
+    level['animators'][root['uuid']]=animator(root,[(0,(0,0,0)),(5.2,(0,0,0)),(5.8,(-90,0,0)),(10,(-90,0,0))])
     m.data['animations']=[spin,level];m.save()
     m=Model('motionrp_enuma_vortex',colors=colors);parts=[]
     parts.append(m.cube('white_energy_core',[0,0,0],[2.8,2.8,31],7))
@@ -161,25 +171,25 @@ def main():
       'h_ph_head':[(0,(0,0,0)),(.4,(-14,10,0)),(5.3,(-14,10,0)),(5.8,(0,0,0))]}
     player(rig,'gate_of_babylon_100',5.8,spread)
     poses={
-      'player_root':[(0,(0,0,0)),(4.7,(0,0,0)),(5.4,(0,-18,0)),(11.8,(0,-18,0)),(13.6,(0,0,0))],
-      'pra_right_arm':[(0,(0,0,0)),(.5,(-5,0,12)),(1.8,(-5,0,12)),(2.4,(-65,5,10)),(3.5,(-50,0,8)),(8.6,(-50,0,8)),(9.2,(-90,0,5)),(11,(-90,0,5)),(13.6,(0,0,0))],
-      'prfa_right_forearm':[(0,(0,0,0)),(.5,(-12,0,0)),(1.8,(-12,0,0)),(2.4,(-35,0,0)),(3.5,(-100,0,0)),(8.6,(-100,0,0)),(9.2,(0,0,0)),(11,(0,0,0)),(13.6,(0,0,0))],
-      'pla_left_arm':[(0,(0,0,0)),(.5,(-45,0,-28)),(2.8,(-45,0,-28)),(5.2,(3,0,-6)),(8.6,(3,0,-6)),(9.2,(10,0,-12)),(11,(10,0,-12)),(13.6,(0,0,0))],
-      'plfa_left_forearm':[(0,(0,0,0)),(.5,(-10,0,0)),(5.2,(-15,0,0)),(11,(-15,0,0)),(13.6,(0,0,0))],
-      'h_ph_head':[(0,(0,0,0)),(.5,(-10,15,0)),(3.5,(-10,15,0)),(5.2,(-8,12,0)),(8.6,(-8,12,0)),(9.2,(-4,-2,0)),(11,(-4,-2,0)),(13.6,(0,0,0))],
-      'pc_chest':[(0,(0,0,0)),(.5,(0,8,0)),(3.5,(0,8,0)),(5.2,(-3,-8,0)),(8.6,(-3,-8,0)),(9.2,(6,20,0)),(11,(6,20,0)),(13.6,(0,0,0))],
-      'prl_right_leg':[(0,(0,0,0)),(4.7,(0,0,0)),(5.4,(3,12,0)),(11.8,(3,12,0)),(13.6,(0,0,0))],
-      'prfl_right_foreleg':[(0,(0,0,0)),(4.7,(0,0,0)),(5.4,(-3,0,0)),(11.8,(-3,0,0)),(13.6,(0,0,0))],
-      'pll_left_leg':[(0,(0,0,0)),(4.7,(0,0,0)),(5.4,(-9,-12,0)),(11.8,(-9,-12,0)),(13.6,(0,0,0))],
-      'plfl_left_foreleg':[(0,(0,0,0)),(4.7,(0,0,0)),(5.4,(9,0,0)),(11.8,(9,0,0)),(13.6,(0,0,0))]}
-    model=player(rig,'gate_of_babylon_enuma',13.6,poses)
+      'player_root':[(0,(0,0,0)),(7.2,(0,0,0)),(7.9,(0,-15,0)),(14.8,(0,-15,0)),(16.6,(0,0,0))],
+      'pra_right_arm':[(0,(0,0,0)),(1.9,(0,0,0)),(2.4,(-65,0,5)),(7.2,(-65,0,5)),(7.9,(-42,8,8)),(11.6,(-42,8,8)),(12.2,(-90,0,4)),(14,(-90,0,4)),(16.6,(0,0,0))],
+      'prfa_right_forearm':[(0,(0,0,0)),(1.9,(0,0,0)),(2.4,(-25,0,0)),(7.2,(-25,0,0)),(7.9,(-108,0,0)),(11.6,(-108,0,0)),(12.2,(0,0,0)),(14,(0,0,0)),(16.6,(0,0,0))],
+      'pla_left_arm':[(0,(0,0,0)),(7.2,(0,0,0)),(7.9,(0,0,-5)),(11.6,(0,0,-5)),(12.2,(8,0,-12)),(14,(8,0,-12)),(16.6,(0,0,0))],
+      'plfa_left_forearm':[(0,(0,0,0)),(7.2,(0,0,0)),(7.9,(-8,0,0)),(14,(-8,0,0)),(16.6,(0,0,0))],
+      'h_ph_head':[(0,(0,0,0)),(7.2,(0,0,0)),(7.9,(-8,15,0)),(11.6,(-8,15,0)),(12.2,(-4,-2,0)),(14,(-4,-2,0)),(16.6,(0,0,0))],
+      'pc_chest':[(0,(0,0,0)),(7.2,(0,0,0)),(7.9,(-2,-6,0)),(11.6,(-2,-6,0)),(12.2,(4,15,0)),(14,(4,15,0)),(16.6,(0,0,0))],
+      'prl_right_leg':[(0,(0,0,0)),(7.2,(0,0,0)),(7.9,(0,12,0)),(14.8,(0,12,0)),(16.6,(0,0,0))],
+      'prfl_right_foreleg':[(0,(0,0,0)),(16.6,(0,0,0))],
+      'pll_left_leg':[(0,(0,0,0)),(7.2,(0,0,0)),(7.9,(0,-12,0)),(14.8,(0,-12,0)),(16.6,(0,0,0))],
+      'plfl_left_foreleg':[(0,(0,0,0)),(16.6,(0,0,0))]}
+    model=player(rig,'gate_of_babylon_enuma',16.6,poses)
     groups={g['name']:g for g in model['groups']}
     for name,side in [('prl_right_leg',1),('pll_left_leg',-1)]:
-        g=groups[name];keys=[(0,(0,0,0)),(4.7,(0,0,0)),(5.4,(side,0,2.5 if side==1 else -2)),(8.6,(side,0,2.5 if side==1 else -2)),(9.2,(side,0,2.5 if side==1 else -3.5)),(11.8,(side,0,2.5 if side==1 else -3.5)),(13.6,(0,0,0))]
+        g=groups[name];keys=[(0,(0,0,0)),(7.2,(0,0,0)),(7.9,(side,0,2.5 if side==1 else -2)),(11.6,(side,0,2.5 if side==1 else -2)),(12.2,(side,0,2.5 if side==1 else -3.5)),(14.8,(side,0,2.5 if side==1 else -3.5)),(16.6,(0,0,0))]
         model['animations'][0]['animators'][g['uuid']]['keyframes']+=animator(g,keys,'position')['keyframes']
         model['animations'][0]['animators'][g['uuid']]['keyframes'].sort(key=lambda frame:frame['time'])
     save('players/motionrp_gate_of_babylon_enuma.bbmodel',model)
-    (ROOT/'gate_of_babylon_enuma-hand-path.csv').write_text(hand_path(model,272))
+    (ROOT/'gate_of_babylon_enuma-hand-path.csv').write_text(hand_path(model,332))
     charge_models()
     dense_gate();key_and_ea();titan_skin(rig)
 if __name__=='__main__':main()
