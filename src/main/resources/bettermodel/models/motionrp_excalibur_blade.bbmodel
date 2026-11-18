@@ -7384,10 +7384,10 @@
             },
             {
               "channel": "rotation",
-              "time": 4.4,
+              "time": 4.15,
               "interpolation": "linear",
               "color": -1,
-              "uuid": "518fb036-a5af-5b0a-a8d4-03ad0d08507a",
+              "uuid": "2404cbda-c336-53d9-8d71-0dbdf873c726",
               "data_points": [
                 {
                   "x": "-95",

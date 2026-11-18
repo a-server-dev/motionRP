@@ -79,6 +79,8 @@ public final class MotionPlayback {
             MotionScene scene = switch (definition.effect()) {
                 case "rasengan" -> new RasenganScene(plugin, player, definition.model());
                 case "rasenshuriken" -> new RasenshurikenScene(plugin, player, definition.model());
+                case "kamehameha" -> new DragonBallScene(plugin,player,owned,false);
+                case "genki_dama" -> new DragonBallScene(plugin,player,owned,true);
                 case "excalibur" -> new NobleScene(plugin,player,owned,true);
                 case "gae_bolg" -> new GaeBolgScene(plugin,player,owned);
                 case "zangetsu_bankai" -> new BankaiScene(plugin,player,owned);

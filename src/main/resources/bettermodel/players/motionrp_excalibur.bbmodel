@@ -2949,10 +2949,10 @@
             },
             {
               "channel": "rotation",
-              "time": 5,
+              "time": 4.75,
               "interpolation": "linear",
               "color": -1,
-              "uuid": "bd0810ff-85d5-5293-9de5-4208fb6a6f94",
+              "uuid": "7dec403b-e703-539a-952f-29d4a92c3ccd",
               "data_points": [
                 {
                   "x": "72.89",
@@ -3068,10 +3068,10 @@
             },
             {
               "channel": "rotation",
-              "time": 5,
+              "time": 4.75,
               "interpolation": "linear",
               "color": -1,
-              "uuid": "27934bab-cd2b-53fa-8562-b2442f56a9c2",
+              "uuid": "e70b37f4-797e-5d21-af96-b0d3fd326741",
               "data_points": [
                 {
                   "x": "13.33",
@@ -3187,10 +3187,10 @@
             },
             {
               "channel": "rotation",
-              "time": 5,
+              "time": 4.75,
               "interpolation": "linear",
               "color": -1,
-              "uuid": "663fdc73-5f69-5570-8fde-6d453c38df7c",
+              "uuid": "f947d39c-d552-54b9-8bd0-d6b8144d1348",
               "data_points": [
                 {
                   "x": "71.94",
@@ -3306,10 +3306,10 @@
             },
             {
               "channel": "rotation",
-              "time": 5,
+              "time": 4.75,
               "interpolation": "linear",
               "color": -1,
-              "uuid": "3f4c34f5-6bf3-5bb2-ba73-e9f548e69d36",
+              "uuid": "a1a3b419-022d-5bdc-834d-5bfbc2c8af40",
               "data_points": [
                 {
                   "x": "0",
@@ -3383,10 +3383,10 @@
             },
             {
               "channel": "rotation",
-              "time": 5,
+              "time": 4.75,
               "interpolation": "linear",
               "color": -1,
-              "uuid": "08363466-bb82-5512-896a-cb2bb05adceb",
+              "uuid": "bb0c7023-7aee-5d66-8241-906c532f90fc",
               "data_points": [
                 {
                   "x": "-3",

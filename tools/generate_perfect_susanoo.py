@@ -36,7 +36,7 @@ class Armor:
         g=self.m.group(name,[],origin=pivot);self.m.data['outliner'][-1]['children']=children;self.parts=[];return g
 
 def complete():
-    a=Armor('motionrp_susanoo_armor');c=a.cube
+    a=Armor('motionrp_susanoo_armor',False);c=a.cube
     # Full boots, articulated greaves and thigh armor.
     for side in [-1,1]:
         x=side*9
@@ -64,6 +64,10 @@ def complete():
             c(f'side_tasset_{side}_{j}',[side*(15+(5-j)*.4),y,2],[3.5,3.4,12],5)
             c(f'back_tasset_{side}_{j}',[side*8,y,7],[11,3.3,3],6)
         for j in range(4):c(f'tasset_lacing_{side}_{j}',[side*6,44+j*3,-8.2],[1.2,.7,.5],1)
+    for side in [-1,1]:
+        for fold in range(3):
+            c(f'hakama_long_fold_{side}_{fold}',[side*(5+fold*4),43,-8.1],[2.5,17,1.1],0 if fold%2 else 4)
+        c(f'waist_knot_{side}',[side*3,53,-10],[5,3,3],0,[0,0,side*22.5])
     a.joint('hakama_and_tassets',(0,55,0))
     for j in range(8):
         y=57+j*3.2;w=20+min(j,5)*2.1
@@ -135,6 +139,10 @@ def complete():
         for j in range(5):
             c(f'shoulder_scale_{side}_{j}',[side*(21+j*.7),83-j*2.1,1],[17+j*.9,3.1,20-j*.4],6 if j%2 else 5,[0,0,-side*22.5])
             c(f'shoulder_trim_{side}_{j}',[side*(21+j*.7),83.8-j*2.1,-8.5+j*.25],[15+j*.7,.6,.9],7,[0,0,-side*22.5])
+        for j in range(3):
+            c(f'pauldron_crest_{side}_{j}',[side*(19+j*4),86+j*.8,-1],[5.5,5-j*.7,15],0,[0,0,-side*22.5])
+        c(f'bracer_center_plate_{side}',[x,57,-7.2],[6,13,1.8],0)
+        c(f'bracer_inlaid_diamond_{side}',[x,58,-8.3],[3.5,5,.6],4,[0,0,45])
         c(f'upper_arm_{side}',[x,69,0],[8,19,9],5)
         for j in range(5):
             c(f'forearm_lamella_{side}_{j}',[x,50+j*3.2,-1],[10,3.5,11],6 if j%2 else 5)
@@ -173,7 +181,8 @@ def complete():
         wings.append(a.joint('right_wing' if side==1 else 'left_wing',(side*17,82,10)))
     slash=animation('slash',5.2,{})
     for side,g in zip([-1,1],arm_joints):
-        keys=[(0,(0,0,0)),(1.5,(55,-side*15,-side*12)),(2,(55,-side*15,-side*12)),(2.6,(-10,side*25,side*12)),(3.5,(-10,side*25,side*12)),(5.2,(0,0,0))]
+        keys=([(0,(0,0,0)),(1.4,(0,-65,-12)),(2.2,(0,65,12)),(3.2,(0,65,12)),(5.2,(0,0,0))] if side==-1 else
+              [(0,(0,0,0)),(2.2,(0,0,0)),(3.2,(70,-20,-35)),(4.2,(-35,25,25)),(5.2,(0,0,0))])
         slash['animators'][g['uuid']]=animator(g,keys)
     unfold=animation('unfurl',3.4,{})
     for side,g in zip([-1,1],wings):unfold['animators'][g['uuid']]=animator(g,[(0,(0,side*65,side*28)),(1,(0,side*35,side*15)),(3.4,(0,0,0))])
@@ -191,7 +200,10 @@ def scaffold():
         theta=math.radians(-85+j*170/35);r=23
         a.cube(f'azure_crescent_{j}',[r*math.cos(theta),r*math.sin(theta),0],[2.2,3.2,.8],7)
         a.cube(f'white_crescent_edge_{j}',[(r+1.2)*math.cos(theta),(r+1.2)*math.sin(theta),-.5],[.8,2.8,.5],3)
-    a.joint('crescent',(0,0,0));a.m.save()
+    g=a.joint('crescent',(0,0,0))
+    for name,rot in [('sweep',(90,0,0)),('kesa',(0,0,-45))]:
+        an=animation(name,1,{});an['animators'][g['uuid']]=animator(g,[(0,rot),(1,rot)]);a.m.data['animations'].append(an)
+    a.m.save()
 
 def generate(rig):
     player(rig,'susanoo',11.8,{

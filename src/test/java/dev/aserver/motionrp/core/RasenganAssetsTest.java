@@ -57,7 +57,7 @@ class RasenganAssetsTest {
             String source=model.getAsJsonArray("textures").get(0).getAsJsonObject().get("source").getAsString();
             var image=ImageIO.read(new ByteArrayInputStream(Base64.getDecoder().decode(source.substring(source.indexOf(',')+1))));
             assertNotNull(image);
-            if(id.equals("susanoo_ribs") || id.equals("susanoo_armor")) {
+            if(id.equals("susanoo_ribs")) {
                 assertEquals(128,image.getWidth());assertEquals(16,image.getHeight());
                 int holes=0,solid=0;
                 for(int y=0;y<16;y++) for(int x=0;x<128;x++) {

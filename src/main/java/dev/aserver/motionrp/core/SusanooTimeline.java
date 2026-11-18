@@ -1,7 +1,7 @@
 package dev.aserver.motionrp.core;
 
 public final class SusanooTimeline {
-    public static final int RIBS=8, ARMOR=32, READY=100, SLASH=140, IMPACT=164, FADE=204, END=236;
+    public static final int RIBS=8, ARMOR=32, READY=100, SLASH=128, LEFT_IMPACT=144, RIGHT_SLASH=164, IMPACT=184, FADE=204, END=236;
     private SusanooTimeline() {}
     public static String phase(int tick) {
         return tick<0 || tick>=END ? "FINISHED" : tick<RIBS ? "SIGNS" : tick<ARMOR ? "RIBS"

@@ -2,7 +2,7 @@ package dev.aserver.motionrp.core;
 
 public final class GaeBolgTimeline {
     public static final int DRAW=8,DASH=24,DASH_END=34,APEX=50,THROW=54,IMPACT=60,LAND=62,RETURN=74,CATCH=86,FADE=100,END=116;
-    public static final double RUN=20,HEIGHT=15,ANGLE=60,TIP_LENGTH=1.84;
+    public static final double RUN=20,HEIGHT=15,ANGLE=120,PITCH=30,TIP_LENGTH=1.84;
     private GaeBolgTimeline() {}
     public static double distance(int tick) {double t=Math.clamp((tick-DASH)/10.0,0,1);return RUN*t*t;}
     public static double height(int tick) {

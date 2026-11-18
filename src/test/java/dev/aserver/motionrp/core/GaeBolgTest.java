@@ -19,7 +19,7 @@ class GaeBolgTest {
         var shoulder=math.posedOrigin(names.get("pra_right_arm"),THROW/20.0,anim,groups,parents);
         var palm=math.posedOrigin(names.get("pri_right_item"),THROW/20.0,anim,groups,parents);
         double angle=Math.toDegrees(Math.atan2(shoulder[1]-palm[1],Math.hypot(shoulder[0]-palm[0],shoulder[2]-palm[2])));
-        assertEquals(60,angle,5,"Throwing arm follows the downward launch angle");
+        assertEquals(30,angle,5,"Throwing arm follows the downward launch angle");
         for(int tick=0;tick<END;tick++) for(boolean r:new boolean[]{true,false}) {
             String thigh=names.get(r?"prl_right_leg":"pll_left_leg");double x=r?1.875:-1.875,t=tick/20.0;
             var socket=math.posedPoint(parents.get(thigh),new double[]{x,11.25,0},t,anim,groups,parents);
@@ -35,7 +35,7 @@ class GaeBolgTest {
         assertEquals(10,DASH_END-DASH);assertEquals(0,distance(DASH));assertEquals(20,distance(DASH_END));
         double previous=0;for(int i=DASH+1;i<=DASH_END;i++) {double step=distance(i)-distance(i-1);assertTrue(step>previous);previous=step;}
         assertEquals(15,height(APEX));assertEquals(15,height(THROW));assertEquals(0,height(LAND));
-        assertEquals(60,ANGLE);assertTrue(IMPACT<LAND && LAND<RETURN && RETURN<CATCH && CATCH<END);
+        assertEquals(120,ANGLE);assertEquals(30,PITCH);assertTrue(IMPACT<LAND && LAND<RETURN && RETURN<CATCH && CATCH<END);
         assertTrue(LAND-THROW<=8);assertEquals("RETURN",phase(RETURN));assertEquals("CATCH",phase(CATCH));
         for(int tick=0;tick<END;tick++)assertTrue(height(tick)>=0 && height(tick)<=15);
     }

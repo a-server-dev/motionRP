@@ -22,7 +22,7 @@ class PerfectSusanooTest {
         var animations=model.getAsJsonArray("animations");assertEquals("unfurl",animations.get(1).getAsJsonObject().get("name").getAsString());
         assertEquals((SusanooTimeline.READY-SusanooTimeline.ARMOR)/20.0,animations.get(1).getAsJsonObject().get("length").getAsDouble());
         byte[] png=Base64.getDecoder().decode(model.getAsJsonArray("textures").get(0).getAsJsonObject().get("source").getAsString().split(",")[1]);
-        var image=javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(png));int rgb=image.getRGB(5*16+1,1);
+        var image=javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(png));int rgb=image.getRGB(5,0);
         assertTrue((rgb&255)>((rgb>>16)&255),"Chakra armor must be blue");
     }
 }

@@ -2952,10 +2952,10 @@
               "time": 2.7,
               "interpolation": "linear",
               "color": -1,
-              "uuid": "a64271be-08d8-56da-8361-3215a3f5151f",
+              "uuid": "2adfd4aa-a93a-5906-af9b-14515905a66f",
               "data_points": [
                 {
-                  "x": "35",
+                  "x": "65",
                   "y": "0",
                   "z": "5"
                 }

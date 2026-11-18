@@ -33,7 +33,7 @@ def blade(tensa=False):
     else:
         # Classic long asymmetric cleaver: straight black spine, broad silver cutting bevel.
         for j in range(18):
-            t=j/17;y=1.2+j*2.45;width=max(.35,9.5*(1-t*.97));x=3.8-width/2
+            t=j/17;y=1.5+j*2.45;width=max(.35,9.5*(1-t*.97));x=-width/2
             parts.append(m.cube('cleaver_spine_'+str(j),[x,y,0],[width,2.65,1.05],0))
             edge=max(.25,width*.23)
             parts.append(m.cube('broad_white_edge_'+str(j),[x-width/2+edge/2,y,-.09],[edge,2.7,1.22],4))

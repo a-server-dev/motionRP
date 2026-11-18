@@ -146,9 +146,9 @@ if(process.env.MOTIONRP_NOBLE_ONLY==='1') {
   try {
     assert.ok(fs.existsSync(path.join(run,'world/players/data',uuid('MotionTesterA')+'.dat')),'Run the full integration suite first');
     fs.copyFileSync(path.join(project,`build/libs/motionRP-${version}.jar`),path.join(run,'plugins/MotionRP.jar'));
-    for(const file of ['motionrp_excalibur_blade','motionrp_excalibur_light','motionrp_gae_bolg_spear','motionrp_gae_bolg_trail','motionrp_gae_bolg_thorns','motionrp_susanoo_armor','motionrp_zangetsu_cleaver'])
+    for(const file of ['motionrp_excalibur_pillar','motionrp_susanoo_slash','motionrp_kamehameha_orb','motionrp_kamehameha_beam','motionrp_genki_dama_orb','motionrp_excalibur_blade','motionrp_excalibur_light','motionrp_gae_bolg_spear','motionrp_gae_bolg_trail','motionrp_gae_bolg_thorns','motionrp_susanoo_armor','motionrp_zangetsu_cleaver'])
       fs.copyFileSync(path.join(project,'src/main/resources/bettermodel/models',file+'.bbmodel'),path.join(run,'plugins/BetterModel/models',file+'.bbmodel'));
-    for(const id of ['excalibur','gae_bolg'])fs.copyFileSync(path.join(project,'src/main/resources/bettermodel/players','motionrp_'+id+'.bbmodel'),path.join(run,'plugins/BetterModel/players','motionrp_'+id+'.bbmodel'));
+    for(const id of ['excalibur','gae_bolg','kamehameha','genki_dama'])fs.copyFileSync(path.join(project,'src/main/resources/bettermodel/players','motionrp_'+id+'.bbmodel'),path.join(run,'plugins/BetterModel/players','motionrp_'+id+'.bbmodel'));
     log=fs.createWriteStream(path.join(project,'build/noble-smoke.log'));await startServer();
     const a=await connect('MotionTesterA'),b=await connect('MotionTesterB');
     const items={owner:new Map(),observer:new Map()},removed={owner:new Set(),observer:new Set()},spawned={owner:new Set(),observer:new Set()};
@@ -171,6 +171,25 @@ if(process.env.MOTIONRP_NOBLE_ONLY==='1') {
       for(const role of ['owner','observer']) assert.ok(entries.every(e=>e.ids.some(id=>(items[role].get(id)?.itemCount||0)>0)));
       await waitFor(()=>['owner','observer'].every(role=>[...spawned[role]].every(id=>removed[role].has(id))),prefix+' smoke cleanup');
       assert.deepEqual([a.health,b.health],health);pass(prefix+' final model reload, release, both-client display and cleanup');
+    }
+    for(const [slot,id,prefix] of [[11,'kamehameha','Kamehameha'],[12,'genki_dama','GenkiDama']]) {
+      consoleCommand('clear MotionTesterA minecraft:paper');await waitFor(()=>tokens(a)===0,'clear spare tokens');
+      consoleCommand(`motionrp give motion ${id} 1 MotionTesterA`);await waitFor(()=>tokens(a)===1,'Dragon Ball token');
+      await menu(a);await deposit(a);await closeMenu(a);
+      a.setControlState('sneak',true);await sleep(300);
+      for(let i=0;(await readSaved('MotionTesterA')).loadout[6]!==slot && i<18;i++){a._testLeftClick();await sleep(300);}
+      a.setControlState('sneak',false);await sleep(300);const base=a.entity.position.clone(),begin=output.length,dragonHealth=[a.health,b.health];
+      for(const role of ['owner','observer'])spawned[role].clear();a._testLeftClick();
+      if(id==='genki_dama') {await waitFor(()=>output.slice(begin).includes('rise complete height=50.0 ticks=40 diameter=80'),'Spirit Bomb 50-block ascent');await waitFor(()=>Math.abs(a.entity.position.y-base.y-50)<.1,'client follows full ascent');}
+      await waitFor(()=>output.slice(begin).includes(prefix+' phase: FADE'),prefix+' complete',20000);
+      assert.ok(a.entity.position.distanceTo(base)<.01);
+      const entries=[...output.slice(begin).matchAll(new RegExp(prefix+' displays (\\w+) ids=([0-9,]+)','g'))].map(m=>({kind:m[1],ids:m[2].split(',').map(Number)}));
+      assert.ok(entries.some(e=>e.kind==='charge_orb'));
+      assert.equal(entries.filter(e=>e.kind.startsWith('beam')).length,id==='kamehameha'?20:0);
+      for(const role of ['owner','observer'])assert.ok(entries.every(e=>e.ids.some(id=>(items[role].get(id)?.itemCount||0)>0)),prefix+' renderable models reach '+role);
+      await waitFor(()=>['owner','observer'].every(role=>[...spawned[role]].every(e=>removed[role].has(e))),prefix+' cleanup');
+      assert.deepEqual([a.health,b.health],dragonHealth);pass(prefix+' both-client rendering, complete release and clean recovery without damage');
+      if(id==='genki_dama'){const beginCancel=output.length;a._testLeftClick();await waitFor(()=>a.entity.position.y>base.y+8,'Spirit Bomb airborne cancel');a._testLeftClick();await waitFor(()=>a.entity.position.distanceTo(base)<.01,'Spirit Bomb cancelled ground return');await sleep(1000);assert.ok(!output.slice(beginCancel).includes('GenkiDama impact'));pass('Spirit Bomb cancellation restores grounded player before later impact');}
     }
     a.setControlState('sneak',true);await sleep(300);
     for(let i=0;(await readSaved('MotionTesterA')).loadout[6]!==3 && i<18;i++) {a._testLeftClick();await sleep(300);}
@@ -785,7 +804,7 @@ generate-structures=false
   await waitFor(() => output.slice(susanooBegin).includes('Susanoo phase: FADE'),'guardian slash completed',15000);
   assert.ok(a.entity.position.distanceTo(guardianOrigin)<.01,'Pilot returns before giant starts dissolving');
   const guardianEntries=summonTrace('Susanoo',susanooBegin);
-  assert.deepEqual(guardianEntries.map(e => e.kind),['ribs','armor','slash']);
+  assert.deepEqual(guardianEntries.map(e => e.kind),['ribs','armor','slash_left','slash_right']);
   assert.ok(renderedForBoth(guardianEntries));
   const armorIds=guardianEntries.find(e => e.kind==='armor').ids;
   assert.ok(armorIds.length>80,'Complete armor must include wings, full legs, mask and paired weapons');
@@ -795,7 +814,7 @@ generate-structures=false
   for(const phase of ['SIGNS','RIBS','ARMOR','WINDUP','SLASH','IMPACT','FADE'])
     assert.ok(output.slice(susanooBegin).includes('Susanoo phase: '+phase));
   assert.ok(a.entity.position.distanceTo(guardianOrigin)<.01);assert.deepEqual([a.health,b.health],guardianHealth);
-  pass('blue ribs form into the full winged samurai with paired blades; its wings and sword arms animate and the large slash cleans up without damage');
+  pass('blue ribs form into the full winged samurai; left sweep and right diagonal slash animate and clean up without damage');
   sceneDisplays.clear();sceneRemoved.clear();const guardianCancel=output.length;a._testLeftClick();
   await waitFor(() => output.slice(guardianCancel).includes('Susanoo phase: ARMOR'),'guardian cancellation during formation');
   const cancelGuardian=summonTrace('Susanoo',guardianCancel);a._testLeftClick();
@@ -973,7 +992,7 @@ generate-structures=false
     const entries=summonTrace(prefix,begin);assert.ok(entries.some(e=>e.kind==='weapon'));assert.equal(entries.filter(e=>e.kind.startsWith('beam')).length,segments);
     if(id==='gae_bolg') {
       assert.ok(!entries.some(e=>e.kind==='heart_thorns'));
-      const t=output.slice(begin);for(const line of ['dash complete distance=20','apex height=15','throw angle=60.0','impact spear explosion tick=60','landed forward=20','spear caught tick=86'])assert.ok(t.includes(line),line);
+      const t=output.slice(begin);for(const line of ['dash complete distance=20','apex height=15','throw angle=120.0','impact spear explosion tick=60','landed forward=20','spear caught tick=86'])assert.ok(t.includes(line),line);
     }
     assert.ok(renderedForBoth(entries));await waitFor(()=>removedForBoth(entries) && sceneRemoved.size===sceneDisplays.size,prefix+' full cleanup');
     if(id==='excalibur')assert.ok(output.slice(begin).includes(prefix+' impact reach='));

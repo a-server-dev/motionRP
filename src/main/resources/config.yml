@@ -4,6 +4,18 @@ debug-input: false
 # BetterModel/players にあるプレイヤーモデルを指定します。
 # 標準の steve.bbmodel に含まれる roll を初期モーションとして使用します。
 motions:
+  kamehameha:
+    name: かめはめ波
+    model: motionrp_kamehameha
+    animation: kamehameha
+    effect: kamehameha
+    max-ticks: 140
+  genki_dama:
+    name: 元気玉
+    model: motionrp_genki_dama
+    animation: genki_dama
+    effect: genki_dama
+    max-ticks: 190
   excalibur:
     name: 約束された勝利の剣（エクスカリバー）
     model: motionrp_excalibur

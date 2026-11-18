@@ -38,16 +38,19 @@ final class SusanooScene extends SummonScene {
             trace("pilot seated scale="+SCALE+" y="+owner.getY()); }
         if(tick==FADE) {pilot.close();trace("pilot returned before fade tick="+tick);}
         if(tick==READY) armor.animate("slash",AnimationModifier.DEFAULT_WITH_PLAY_ONCE);
-        if(tick==SLASH) {
-            slash=model(SummonAssets.SLASH,at(0,20,35),11f,"slash");
+        if(tick==SLASH || tick==RIGHT_SLASH) {
+            slash=model(SummonAssets.SLASH,at(0,20,35),11f,tick==SLASH?"slash_left":"slash_right");
+            slash.update(TrackerUpdateAction.viewRange(3));
+            slash.animate(tick==SLASH?"sweep":"kesa",AnimationModifier.DEFAULT_WITH_PLAY_ONCE);
             sound(at(0,2,3),Sound.ENTITY_IRON_GOLEM_ATTACK,4,.6f);
             sound(at(0,2,3),Sound.ENTITY_PLAYER_ATTACK_SWEEP,4,.7f);
         }
         if(slash!=null) {
-            double progress=Math.clamp((tick-SLASH)/(double)(IMPACT-SLASH),0,1);
+            int begin=tick<RIGHT_SLASH?SLASH:RIGHT_SLASH,end=tick<RIGHT_SLASH?LEFT_IMPACT:IMPACT;
+            double progress=Math.clamp((tick-begin)/(double)(end-begin),0,1);
             slash.location(BukkitAdapter.adapt(at(0,20+50*progress,35-27.5*progress)));
             slash.scaler(ModelScaler.value((float)(11*(1-.6*progress))));
-            if(tick==IMPACT) { audience.hide(slash);slash=null; }
+            if(tick==LEFT_IMPACT || tick==IMPACT) { audience.hide(slash);slash=null; }
         }
         if(tick>=RIBS && tick<FADE && tick%3==0) {
             for(int strand=0;strand<4;strand++) {
@@ -55,7 +58,7 @@ final class SusanooScene extends SummonScene {
                 dust(at(Math.cos(a)*1.4,Math.sin(a)*.8,1+(tick%24)/8.0),VIOLET,2,.04);
             }
         }
-        if(tick==IMPACT) {
+        if(tick==LEFT_IMPACT || tick==IMPACT) {
             Location point=ground(at(0,70,0));if(point==null) point=at(0,70,.2);
             particle(point,Particle.EXPLOSION_EMITTER,3,2,0);particle(point,Particle.DUST_PLUME,55,4,.08);
             particle(point,Particle.CLOUD,80,4,.08);dust(point,VIOLET,65,3);

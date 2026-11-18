@@ -5863,7 +5863,100 @@
       ]
     }
   ],
-  "animations": [],
+  "animations": [
+    {
+      "uuid": "fa26ce69-ef68-56eb-b8a9-b24f6acfb0e8",
+      "name": "sweep",
+      "loop": "once",
+      "override": false,
+      "length": 1,
+      "snapping": 20,
+      "selected": false,
+      "animators": {
+        "0a7583ee-b999-5039-9c5b-e2bb98344b3d": {
+          "name": "crescent",
+          "type": "bone",
+          "rotation_global": false,
+          "keyframes": [
+            {
+              "channel": "rotation",
+              "time": 0,
+              "interpolation": "linear",
+              "color": -1,
+              "uuid": "96c9f0f3-e4b4-54ec-8669-0a38f38ee2a3",
+              "data_points": [
+                {
+                  "x": "90",
+                  "y": "0",
+                  "z": "0"
+                }
+              ]
+            },
+            {
+              "channel": "rotation",
+              "time": 1,
+              "interpolation": "linear",
+              "color": -1,
+              "uuid": "55435cb8-e6bf-583f-8332-19f98ce4425f",
+              "data_points": [
+                {
+                  "x": "90",
+                  "y": "0",
+                  "z": "0"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "uuid": "27028435-167d-5b9d-bd53-b38b82c82494",
+      "name": "kesa",
+      "loop": "once",
+      "override": false,
+      "length": 1,
+      "snapping": 20,
+      "selected": false,
+      "animators": {
+        "0a7583ee-b999-5039-9c5b-e2bb98344b3d": {
+          "name": "crescent",
+          "type": "bone",
+          "rotation_global": false,
+          "keyframes": [
+            {
+              "channel": "rotation",
+              "time": 0,
+              "interpolation": "linear",
+              "color": -1,
+              "uuid": "19713f0e-227e-5fec-940a-bac51b5de7fc",
+              "data_points": [
+                {
+                  "x": "0",
+                  "y": "0",
+                  "z": "-45"
+                }
+              ]
+            },
+            {
+              "channel": "rotation",
+              "time": 1,
+              "interpolation": "linear",
+              "color": -1,
+              "uuid": "2cac6977-0f3c-57f7-8f0f-eff21454b049",
+              "data_points": [
+                {
+                  "x": "0",
+                  "y": "0",
+                  "z": "-45"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
   "textures": [
     {
       "name": "summon_palette.png",

@@ -48,7 +48,7 @@ public final class BundledModels {
             }
             var files=new java.util.ArrayList<>(java.util.List.of("players/" + PLAYER + ".bbmodel", "models/" + ORB + ".bbmodel",
                     "players/" + SHURIKEN_PLAYER + ".bbmodel", "models/" + SHURIKEN_ORB + ".bbmodel", "LICENSE-MotionRP-models.txt"));
-            for(String effect:java.util.List.of("gate_of_babylon","susanoo","senbonzakura","titan_transform","gate_of_babylon_100","gate_of_babylon_enuma","zangetsu_bankai","excalibur","gae_bolg")) {
+            for(String effect:java.util.List.of("gate_of_babylon","susanoo","senbonzakura","titan_transform","gate_of_babylon_100","gate_of_babylon_enuma","zangetsu_bankai","excalibur","gae_bolg","kamehameha","genki_dama")) {
                 files.add("players/motionrp_"+effect+".bbmodel");
                 for(String model:SummonAssets.models(effect)) files.add("models/"+model+".bbmodel");
             }
@@ -57,7 +57,7 @@ public final class BundledModels {
                 String resource = file.startsWith("LICENSE") ? "bettermodel/LICENSE-BetterModel.txt" : "bettermodel/" + file;
                 try (InputStream source = Objects.requireNonNull(plugin.getResource(resource), resource)) {
                     var result = new BundledAssetUpdater().install(target, source.readAllBytes(),
-                            file.equals("players/" + PLAYER + ".bbmodel") ? Set.of(PLAYER_020_SHA, PLAYER_021_SHA, PLAYER_023_SHA)
+                            dev.aserver.motionrp.core.BundledAssetVersions.knownHashes(file,file.equals("players/" + PLAYER + ".bbmodel") ? Set.of(PLAYER_020_SHA, PLAYER_021_SHA, PLAYER_023_SHA)
                                     : file.equals("players/" + SHURIKEN_PLAYER + ".bbmodel") ? Set.of(SHURIKEN_030_SHA)
                                     : file.equals("players/motionrp_gate_of_babylon.bbmodel") ? Set.of(SUMMON_040_SHA.get(file),"308b4f2762d09705d8c7852b215092556d1a36e46e9aa99b7956ea7fd780ea7d",SUMMON_050_SHA.get(file))
                                     : file.equals("players/motionrp_senbonzakura.bbmodel") ? Set.of(SUMMON_050_SHA.get(file),"cfa5f6ce32f52c32fa3a6d1a75de6371f5b013883445afc29c6bae6add12ded5")
@@ -78,7 +78,7 @@ public final class BundledModels {
                                     : file.equals("models/motionrp_excalibur_blade.bbmodel") ? Set.of("f52925ae4aaa05a189851ba32a820f8ddf49888c1444d3540999d9153841b219")
                                     : file.equals("models/motionrp_gae_bolg_spear.bbmodel") ? Set.of("79a465c56e8e1599bd4e95eaffcf70427af5a5bbcffdf1cbeabf08ade160db92")
                                     : SUMMON_050_SHA.containsKey(file) ? Set.of(SUMMON_050_SHA.get(file))
-                                    : SUMMON_040_SHA.containsKey(file) ? Set.of(SUMMON_040_SHA.get(file)) : Set.of(),
+                                    : SUMMON_040_SHA.containsKey(file) ? Set.of(SUMMON_040_SHA.get(file)) : Set.of()),
                             plugin.getDataFolder().toPath().resolve("model-backups"),
                             plugin.getDataFolder().toPath().resolve("model-updates"));
                     if (result == BundledAssetUpdater.Result.INSTALLED || result == BundledAssetUpdater.Result.UPDATED) changed = true;

@@ -17,6 +17,7 @@ final class GaeBolgScene extends SummonScene {
     GaeBolgScene(MotionPlugin plugin,Player owner,EntityTracker body) {
         super(plugin,owner,"GaeBolg",END);this.body=body;travel=new AerialAnchor(plugin,owner);
         body.rotation(()->new ModelRotation(0,origin.getYaw()));
+        body.update(TrackerUpdateAction.moveDuration(0));
     }
     @Override String phase() {return GaeBolgTimeline.phase(tick);}
     @Override public boolean ownsMove(Location from,Location to) {return travel.owns(from,to);}
@@ -29,22 +30,23 @@ final class GaeBolgScene extends SummonScene {
         if(tick>=DASH && tick<=LAND && !moveActor()) {plugin.playback().stop(owner.getUniqueId());return;}
         if(tick==DRAW) {
             spear=model(SummonAssets.GAE_BOLG,hand(tick),.7f,"weapon");
+            spear.update(TrackerUpdateAction.moveDuration(0));
             spear.animate("throw_sequence",AnimationModifier.DEFAULT_WITH_PLAY_ONCE);
         }
         if(spear==null)return;
         if(tick<THROW || tick>=CATCH) {
-            Location palm=hand(tick);spear.location(BukkitAdapter.adapt(palm));
+            Location palm=hand(tick);spear.location(BukkitAdapter.adapt(palm));spear.forceUpdate(true);
             spear.rotation(()->new ModelRotation(0,origin.getYaw()));
         }
         if(tick==DASH) sound(origin,Sound.ENTITY_BREEZE_SHOOT,1.2f,1.3f);
         if(tick==DASH_END) {trace("dash complete distance="+owner.getLocation().distance(origin));sound(owner.getLocation(),Sound.ENTITY_BREEZE_WIND_BURST,1.4f,1.2f);}
         if(tick==APEX) trace("apex height="+(owner.getY()-landing.getY()));
         if(tick==THROW) {
-            launch=hand(tick);Location direction=origin.clone();direction.setPitch((float)ANGLE);
+            launch=hand(tick);Location direction=origin.clone();direction.setPitch((float)PITCH);
             var hit=origin.getWorld().rayTraceBlocks(launch,direction.getDirection(),64,FluidCollisionMode.NEVER,true);
             if(hit==null) {plugin.tell(owner,"投擲先の地面が見つからなかったため終了します。");plugin.playback().stop(owner.getUniqueId());return;}
             impact=hit.getHitPosition().toLocation(origin.getWorld());
-            gripImpact=impact.clone().subtract(direction.getDirection().multiply(TIP_LENGTH));trace("throw angle=60.0 fromY="+launch.getY()+" targetY="+impact.getY());
+            gripImpact=impact.clone().subtract(direction.getDirection().multiply(TIP_LENGTH));trace("throw angle=120.0 pitch=30.0 fromY="+launch.getY()+" targetY="+impact.getY());
             sound(launch,Sound.ITEM_TRIDENT_THROW,1.7f,.7f);
         }
         if(tick>=THROW && tick<=IMPACT) {

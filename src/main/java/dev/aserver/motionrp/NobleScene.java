@@ -12,7 +12,7 @@ import java.util.*;
 /** Cosmetic Noble Phantasms; no damage, terrain edits, targeting packets or real projectiles. */
 final class NobleScene extends SummonScene {
     private final boolean gold;private final EntityTracker body;private final Location focus;
-    private final DummyTracker[] beam;private DummyTracker weapon,thorns;private Location start;
+    private final DummyTracker[] beam;private DummyTracker weapon,thorns,pillar;private Location start;
     private final Set<Player> heard=new HashSet<>();
     private final Particle.DustOptions energy;
     NobleScene(MotionPlugin plugin,Player owner,EntityTracker body,boolean excalibur) {
@@ -72,6 +72,7 @@ final class NobleScene extends SummonScene {
         }
         if(tick==NobleTimeline.impact(gold)) {
             flash(focus);trace("impact reach="+String.format(Locale.ROOT,"%.2f",focus.distance(origin)));
+            if(gold) {pillar=model(SummonAssets.EXCALIBUR_PILLAR,focus,20,"light_pillar");pillar.update(TrackerUpdateAction.viewRange(4));}
             if(!gold) thorns=model(SummonAssets.GAE_THORNS,focus,2,"heart_thorns");
             particle(focus,Particle.EXPLOSION_EMITTER,gold?5:1,gold?3:.2,0);particle(focus,Particle.DUST_PLUME,gold?60:12,gold?4:1,.06);
             particle(focus,Particle.CLOUD,gold?90:15,gold?4:1,.08);dust(focus,energy,gold?80:40,gold?3:.7);
@@ -80,7 +81,7 @@ final class NobleScene extends SummonScene {
         if(thorns!=null) thorns.scaler(ModelScaler.value((float)(2+.25*Math.sin(tick*.6))));
         if(tick==NobleTimeline.fade(gold)) {
             for(int i=0;i<beam.length;i++) {audience.hide(beam[i]);beam[i]=null;}
-            audience.hide(thorns);thorns=null;audience.hide(weapon);weapon=null;
+            audience.hide(pillar);pillar=null;audience.hide(thorns);thorns=null;audience.hide(weapon);weapon=null;
         }
     }
     private void flash(Location at) {for(Player p:audience.players())p.spawnParticle(Particle.FLASH,at,1,0,0,0,0,gold?Color.fromRGB(255,245,211):Color.fromRGB(255,180,185));}
