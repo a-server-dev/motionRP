@@ -110,16 +110,27 @@ final class TreasuryScene extends SummonScene {
     private Location palm() { var p=TreasuryHandPath.at(tick);return at(p.right(),p.forward(),p.height()); }
     private void eaPerformance() {
         Location hand=palm();
-        if(tick==KEY) { key=model(SummonAssets.BAB_ILU,hand,.8f,"bab_ilu");sound(hand,Sound.BLOCK_END_PORTAL_FRAME_FILL,.8f,.7f); }
-        if(key!=null) { Location turned=hand.clone();turned.setYaw(origin.getYaw()+(tick-KEY)*9);key.location(BukkitAdapter.adapt(turned)); }
-        if(tick==EA-8) { vault=model(SummonAssets.MASS_GATE,hand.clone().add(0,.2,0),.7f,"hand_vault");loop(vault,"spin"); }
-        if(vault!=null) vault.location(BukkitAdapter.adapt(hand.clone().add(0,.2,0)));
+        if(tick==KEY) { key=model(SummonAssets.BAB_ILU,hand.clone().add(0,-.85,0),.6f,"bab_ilu");sound(hand,Sound.BLOCK_END_PORTAL_FRAME_FILL,.8f,.7f); }
+        if(key!=null) {
+            double rise=Math.clamp((tick-KEY)/14.0,0,1);Location turned=hand.clone().add(0,-.85*(1-rise),0);
+            turned.setYaw((float)(origin.getYaw()+60*Math.clamp((tick-KEY-14)/8.0,0,1)));key.location(BukkitAdapter.adapt(turned));
+        }
+        if(tick==KEY-8) { vault=model(SummonAssets.MASS_GATE,at(.3,.5,.1),.25f,"hand_vault");loop(vault,"spin"); }
+        if(vault!=null) {
+            double rise=Math.clamp((tick-(KEY-8))/24.0,0,1);Location gate=hand.clone();
+            gate.setY(origin.getY()+.1+(hand.getY()-origin.getY()-.1)*rise);gate.setPitch(-90);
+            vault.location(BukkitAdapter.adapt(gate));point(vault,gate);vault.scaler(ModelScaler.value((float)(.25+.45*rise)));
+        }
         if(tick==EA) {
-            audience.hide(key);key=null;ea=model(SummonAssets.EA,hand,.85f,"ea");loop(ea,"spin");
+            audience.hide(key);key=null;ea=model(SummonAssets.EA,hand,.05f,"ea");loop(ea,"spin");
             ea.animate("level",AnimationModifier.DEFAULT_WITH_PLAY_ONCE);sound(hand,Sound.BLOCK_RESPAWN_ANCHOR_CHARGE,.8f,.6f);
         }
-        if(tick==EA+8) { audience.hide(vault);vault=null; }
-        if(ea!=null) ea.location(BukkitAdapter.adapt(hand));
+        if(tick==EA_READY+4) { audience.hide(vault);vault=null; }
+        if(ea!=null) {
+            double drawn=Math.clamp((tick-EA)/(double)(EA_READY-EA),0,1);
+            ea.location(BukkitAdapter.adapt(hand.clone().add(0,-.55*(1-drawn),0)));ea.scaler(ModelScaler.value((float)(.05+.67*drawn)));
+            if(tick==EA_READY) trace("ea ready tick="+tick);
+        }
         if(tick>=CHARGE && tick<FIRE) {
             if((tick-CHARGE)%12==0) {
                 chargeListeners.addAll(audience.players());sound(hand,Sound.ENTITY_BREEZE_CHARGE,.8f,(float)(.6+(tick-CHARGE)*.008));
@@ -147,6 +158,7 @@ final class TreasuryScene extends SummonScene {
         if(radius>=9) sound(center,Sound.ENTITY_WARDEN_SONIC_BOOM,2,.6f);
     }
     @Override void onClose() {
+        if(enumaEffects!=null) enumaEffects.close();
         if(serious) for(Player player:chargeListeners) {
             player.stopSound(Sound.ENTITY_BREEZE_CHARGE,SoundCategory.PLAYERS);
             player.stopSound(Sound.ENTITY_WARDEN_HEARTBEAT,SoundCategory.PLAYERS);

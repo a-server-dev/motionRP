@@ -26,27 +26,65 @@ def dense_gate():
 
 def key_and_ea():
     colors=[(244,190,44,255),(255,241,158,255),(26,20,29,255),(180,13,34,255),(255,45,65,255),(91,5,19,255),(235,220,182,255),(255,251,242,255)]
-    m=Model('motionrp_bab_ilu',colors=colors);parts=[]
-    parts.append(m.cube('key_shaft',[0,5,0],[1.8,12,1.8],0))
+    key_colors=[(235,178,34,255),(255,241,164,255),(146,90,16,255),(193,127,22,255),(255,211,69,255),(35,62,145,255),(216,177,95,255),(255,251,225,255)]
+    m=Model('motionrp_bab_ilu',colors=key_colors);parts=[]
+    # A flat gold key with open slots/notches, not a conventional ring key.
+    step=.55;rows=[]
+    def filled(x,y):
+        if not (-4.4<x<4.4 and 8<y<34):return False
+        if (x-4.2)**2+(y-27)**2<2.15**2 or (x-4.2)**2+(y-17.8)**2<2.0**2:return False
+        if -1.8<x<3.0 and (22<y<23.4 or 18.6<y<20):return False
+        if x<-1.4 and 24.5<y<26.2:return False
+        if x<.2 and 14.1<y<15.3:return False
+        if x<-.8 and 11.8<y<13:return False
+        if y>30 and (abs(x-(-2.6+(y-30)*.55))<.55 or abs(x-(-.3+(y-30)*.55))<.55):return False
+        return True
+    for row in range(48):
+        y=8+(row+.5)*step;run=[]
+        for col in range(17):
+            x=-4.675+(col+.5)*step
+            if filled(x,y):run.append((col,x))
+            elif run:rows.append((row,run));run=[]
+        if run:rows.append((row,run))
+    for index,(row,run) in enumerate(rows):
+        y=8+(row+.5)*step;x=(run[0][1]+run[-1][1])/2
+        parts.append(m.cube('gold_key_plate_'+str(index),[x,y,0],[len(run)*step,step+.015,1.05],0))
+        for side in [run[0][1],run[-1][1]]:parts.append(m.cube(f'plate_bevel_{index}_{side}',[side,y,-.58],[.11,step+.015,.12],1))
     for i in range(12):
-        a=math.tau*i/12;parts.append(m.cube('crown_'+str(i),[4*math.cos(a),15+4*math.sin(a),0],[1.8,1.8,1],0))
-    parts.append(m.cube('ruby',[0,15,0],[2.8,2.8,1.5],3))
-    for i in range(3):parts.append(m.cube('key_tooth_'+str(i),[2.4,1+i*2.6,0],[4,1.2,1.6],1))
-    m.group('bab_ilu',parts);m.save()
-    m=Model('motionrp_ea',colors=colors);parts=[]
-    parts.append(m.cube('black_grip',[0,3,0],[1.5,7,1.5],2));parts.append(m.cube('gold_pommel',[0,-1,0],[3,2,3],0))
-    for y in [0,2,4,6]:parts.append(m.cube('grip_inlay_'+str(y),[0,y,-.8],[.8,.5,.15],0))
+        a=math.tau*i/12
+        parts.append(m.cube('oval_guard_'+str(i),[5*math.cos(a),6.7,2*math.sin(a)],[2,1.2,1.5],0))
+    parts.append(m.cube('gold_hilt',[0,.8,0],[1.9,10,1.9],0))
+    for y in [-3,0,3]:parts.append(m.cube('hilt_ring_'+str(y),[0,y,0],[2.8,.8,2.8],2))
     for side in [-1,1]:
-        for j in range(3):parts.append(m.cube('guard_'+str(side)+'_'+str(j),[side*(2+j*1.7),7+j*.8,0],[2.2,2.1,3-j*.6],0,[0,0,-side*22.5]))
+        parts.append(m.cube('mechanical_fork_'+str(side),[side*2,-1.4,0],[1.1,5.5,1.5],0))
+        parts.append(m.cube('fork_end_'+str(side),[side*2,-4.4,0],[2,1.1,2],1))
+    m.group('bab_ilu',parts,origin=(0,12,0));m.save()
+    ea_colors=colors[:];ea_colors[5]=(35,62,145,255)
+    m=Model('motionrp_ea',colors=ea_colors);parts=[]
+    parts.append(m.cube('wrapped_grip',[0,2.2,0],[1.35,7,1.35],6))
+    parts.append(m.cube('gold_pommel',[0,-1.6,0],[2.1,1.3,2.1],0))
+    for y in [0,2.2,4.4,6.6]:parts.append(m.cube('grip_band_'+str(y),[0,y,0],[1.7,.5,1.7],0))
+    # Flared gold/blue cage at the base, as in the supplied reference.
+    for layer in range(4):
+        y=7.8+layer*2.0;radius=3.8-layer*.5
+        for i in range(8):
+            a=math.tau*i/8;x,z=radius*math.cos(a),radius*math.sin(a)
+            parts.append(m.cube(f'gold_guard_facet_{layer}_{i}',[x,y,z],[1.9,2.3,1.9],0,[0,(i%2)*45,0]))
+            if i%2==0:
+                parts.append(m.cube(f'blue_guard_inlay_{layer}_{i}',[x*1.12,y+.25,z*1.12],[.75,1.9,.75],5))
+    for i in range(12):
+        a=math.tau*i/12;parts.append(m.cube('guard_rim_'+str(i),[3.9*math.cos(a),7,3.9*math.sin(a)],[1.6,.7,1.6],1))
     m.group('ea_grip',parts)
     cylinder_groups=[]
     for j in range(3):
-        parts=[];y=12+j*7.5
+        parts=[];y=18+j*7
         for i in range(8):
-            a=math.tau*i/8;x,z=2.4*math.cos(a),2.4*math.sin(a)
-            parts.append(m.cube(f'cylinder_{j}_{i}',[x,y,z],[1.7,6.8,1.7],2,[0,(i%2)*45,0]))
-            parts.append(m.cube(f'red_rune_{j}_{i}',[x*1.17,y,z*1.17],[.55,4.8,.55],4 if i%2==0 else 3,[0,(i%2)*45,0]))
-            parts.append(m.cube(f'gold_ring_{j}_{i}',[x,y+3.2,z],[1.9,.65,1.9],0,[0,(i%2)*45,0]))
+            a=math.tau*i/8;x,z=1.25*math.cos(a),1.25*math.sin(a)
+            parts.append(m.cube(f'black_cylinder_{j}_{i}',[x,y,z],[1.0,6.5,1.0],2,[0,(i%2)*45,0]))
+            for k in range(4):
+                angle=a+(.18 if k%2 else -.18)
+                parts.append(m.cube(f'red_zigzag_{j}_{i}_{k}',[1.65*math.cos(angle),y-2.5+k*1.65,1.65*math.sin(angle)],[.5,1.9,.5],4 if i%2 else 3))
+            if j==2:parts.append(m.cube('gold_tip_'+str(i),[1.4*math.cos(a),35.7,1.4*math.sin(a)],[1.0,1.2,1.0],0))
         cylinder_groups.append(m.group('rotating_cylinder_'+str(j),parts,origin=(0,y,0)))
     children=m.data['outliner'][:];root=m.group('ea_root',[]);m.data['outliner']=[dict(uuid=root['uuid'],children=children)]
     spin=animation('spin',1,{})
@@ -123,21 +161,21 @@ def main():
       'h_ph_head':[(0,(0,0,0)),(.4,(-14,10,0)),(5.3,(-14,10,0)),(5.8,(0,0,0))]}
     player(rig,'gate_of_babylon_100',5.8,spread)
     poses={
-      'player_root':[(0,(0,0,0)),(.5,(0,-18,0)),(11.8,(0,-18,0)),(13.6,(0,0,0))],
+      'player_root':[(0,(0,0,0)),(4.7,(0,0,0)),(5.4,(0,-18,0)),(11.8,(0,-18,0)),(13.6,(0,0,0))],
       'pra_right_arm':[(0,(0,0,0)),(.5,(-5,0,12)),(1.8,(-5,0,12)),(2.4,(-65,5,10)),(3.5,(-50,0,8)),(8.6,(-50,0,8)),(9.2,(-90,0,5)),(11,(-90,0,5)),(13.6,(0,0,0))],
       'prfa_right_forearm':[(0,(0,0,0)),(.5,(-12,0,0)),(1.8,(-12,0,0)),(2.4,(-35,0,0)),(3.5,(-100,0,0)),(8.6,(-100,0,0)),(9.2,(0,0,0)),(11,(0,0,0)),(13.6,(0,0,0))],
       'pla_left_arm':[(0,(0,0,0)),(.5,(-45,0,-28)),(2.8,(-45,0,-28)),(5.2,(3,0,-6)),(8.6,(3,0,-6)),(9.2,(10,0,-12)),(11,(10,0,-12)),(13.6,(0,0,0))],
       'plfa_left_forearm':[(0,(0,0,0)),(.5,(-10,0,0)),(5.2,(-15,0,0)),(11,(-15,0,0)),(13.6,(0,0,0))],
       'h_ph_head':[(0,(0,0,0)),(.5,(-10,15,0)),(3.5,(-10,15,0)),(5.2,(-8,12,0)),(8.6,(-8,12,0)),(9.2,(-4,-2,0)),(11,(-4,-2,0)),(13.6,(0,0,0))],
       'pc_chest':[(0,(0,0,0)),(.5,(0,8,0)),(3.5,(0,8,0)),(5.2,(-3,-8,0)),(8.6,(-3,-8,0)),(9.2,(6,20,0)),(11,(6,20,0)),(13.6,(0,0,0))],
-      'prl_right_leg':[(0,(0,0,0)),(.5,(3,12,0)),(11.8,(3,12,0)),(13.6,(0,0,0))],
-      'prfl_right_foreleg':[(0,(0,0,0)),(.5,(-3,0,0)),(11.8,(-3,0,0)),(13.6,(0,0,0))],
-      'pll_left_leg':[(0,(0,0,0)),(.5,(-9,-12,0)),(11.8,(-9,-12,0)),(13.6,(0,0,0))],
-      'plfl_left_foreleg':[(0,(0,0,0)),(.5,(9,0,0)),(11.8,(9,0,0)),(13.6,(0,0,0))]}
+      'prl_right_leg':[(0,(0,0,0)),(4.7,(0,0,0)),(5.4,(3,12,0)),(11.8,(3,12,0)),(13.6,(0,0,0))],
+      'prfl_right_foreleg':[(0,(0,0,0)),(4.7,(0,0,0)),(5.4,(-3,0,0)),(11.8,(-3,0,0)),(13.6,(0,0,0))],
+      'pll_left_leg':[(0,(0,0,0)),(4.7,(0,0,0)),(5.4,(-9,-12,0)),(11.8,(-9,-12,0)),(13.6,(0,0,0))],
+      'plfl_left_foreleg':[(0,(0,0,0)),(4.7,(0,0,0)),(5.4,(9,0,0)),(11.8,(9,0,0)),(13.6,(0,0,0))]}
     model=player(rig,'gate_of_babylon_enuma',13.6,poses)
     groups={g['name']:g for g in model['groups']}
     for name,side in [('prl_right_leg',1),('pll_left_leg',-1)]:
-        g=groups[name];keys=[(0,(0,0,0)),(.5,(side,0,2.5 if side==1 else -2)),(8.6,(side,0,2.5 if side==1 else -2)),(9.2,(side,0,2.5 if side==1 else -3.5)),(11.8,(side,0,2.5 if side==1 else -3.5)),(13.6,(0,0,0))]
+        g=groups[name];keys=[(0,(0,0,0)),(4.7,(0,0,0)),(5.4,(side,0,2.5 if side==1 else -2)),(8.6,(side,0,2.5 if side==1 else -2)),(9.2,(side,0,2.5 if side==1 else -3.5)),(11.8,(side,0,2.5 if side==1 else -3.5)),(13.6,(0,0,0))]
         model['animations'][0]['animators'][g['uuid']]['keyframes']+=animator(g,keys,'position')['keyframes']
         model['animations'][0]['animators'][g['uuid']]['keyframes'].sort(key=lambda frame:frame['time'])
     save('players/motionrp_gate_of_babylon_enuma.bbmodel',model)

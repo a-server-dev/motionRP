@@ -4,6 +4,12 @@ debug-input: false
 # BetterModel/players にあるプレイヤーモデルを指定します。
 # 標準の steve.bbmodel に含まれる roll を初期モーションとして使用します。
 motions:
+  zangetsu_bankai:
+    name: 斬月・卍解（天鎖斬月）
+    model: motionrp_zangetsu_bankai
+    animation: zangetsu_bankai
+    effect: zangetsu_bankai
+    max-ticks: 220
   gate_of_babylon_100:
     name: 王の財宝・百門
     model: motionrp_gate_of_babylon_100

@@ -48,7 +48,7 @@ public final class BundledModels {
             }
             var files=new java.util.ArrayList<>(java.util.List.of("players/" + PLAYER + ".bbmodel", "models/" + ORB + ".bbmodel",
                     "players/" + SHURIKEN_PLAYER + ".bbmodel", "models/" + SHURIKEN_ORB + ".bbmodel", "LICENSE-MotionRP-models.txt"));
-            for(String effect:java.util.List.of("gate_of_babylon","susanoo","senbonzakura","titan_transform","gate_of_babylon_100","gate_of_babylon_enuma")) {
+            for(String effect:java.util.List.of("gate_of_babylon","susanoo","senbonzakura","titan_transform","gate_of_babylon_100","gate_of_babylon_enuma","zangetsu_bankai")) {
                 files.add("players/motionrp_"+effect+".bbmodel");
                 for(String model:SummonAssets.models(effect)) files.add("models/"+model+".bbmodel");
             }
@@ -61,9 +61,10 @@ public final class BundledModels {
                                     : file.equals("players/" + SHURIKEN_PLAYER + ".bbmodel") ? Set.of(SHURIKEN_030_SHA)
                                     : file.equals("players/motionrp_gate_of_babylon.bbmodel") ? Set.of(SUMMON_040_SHA.get(file),"308b4f2762d09705d8c7852b215092556d1a36e46e9aa99b7956ea7fd780ea7d",SUMMON_050_SHA.get(file))
                                     : file.equals("players/motionrp_senbonzakura.bbmodel") ? Set.of(SUMMON_050_SHA.get(file),"cfa5f6ce32f52c32fa3a6d1a75de6371f5b013883445afc29c6bae6add12ded5")
-                                    : file.equals("players/motionrp_gate_of_babylon_enuma.bbmodel") ? Set.of("65690445a739722ab052f571ceccd0476f2fab7ce106f2795cb724c45d5a199c")
-                                    : file.equals("models/motionrp_ea.bbmodel") ? Set.of("26bf036c8d1230c4da474034a86dc1afbe88f500237d9d5872c8a58318bb3e6e")
+                                    : file.equals("players/motionrp_gate_of_babylon_enuma.bbmodel") ? Set.of("65690445a739722ab052f571ceccd0476f2fab7ce106f2795cb724c45d5a199c","6d4400edfb1decb0b5a01e2068d1769e94c22e2fe0e95a95a3fbec3be816e5ab")
+                                    : file.equals("models/motionrp_ea.bbmodel") ? Set.of("26bf036c8d1230c4da474034a86dc1afbe88f500237d9d5872c8a58318bb3e6e","dcf8d64c65ccf7b3c50e28ccc063048368bc9bfcc88c0d2e4e8c4109496dd69d")
                                     : file.equals("models/motionrp_enuma_vortex.bbmodel") ? Set.of("9ddebc5469047326fbff87242a29e64723952d0147512c4cf6339643042ecb0e")
+                                    : file.equals("models/motionrp_bab_ilu.bbmodel") ? Set.of("72e48d5765f3f3cd4a196ad42bdac6594cc4a19e3c5c19901b531b859124bbb2")
                                     : file.equals("players/motionrp_titan_transform.bbmodel") ? Set.of("bfbc83f290b4252a4088fd825e0fca0bed7a4a019e74f4305d33a791d3f20857")
                                     : SUMMON_050_SHA.containsKey(file) ? Set.of(SUMMON_050_SHA.get(file))
                                     : SUMMON_040_SHA.containsKey(file) ? Set.of(SUMMON_040_SHA.get(file)) : Set.of(),

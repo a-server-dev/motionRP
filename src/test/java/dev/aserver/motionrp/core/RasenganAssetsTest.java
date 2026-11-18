@@ -16,7 +16,7 @@ class RasenganAssetsTest {
     }
 
     @Test void allAnimatedBonesAndOutlinerEntriesResolveToRealModelParts() throws Exception {
-        for (String file : List.of("players/motionrp_rasengan.bbmodel", "models/motionrp_rasengan_orb.bbmodel",
+        for (String file : List.of("players/motionrp_zangetsu_bankai.bbmodel", "models/motionrp_zangetsu_cleaver.bbmodel", "models/motionrp_tensa_zangetsu.bbmodel", "models/motionrp_bankai_cocoon.bbmodel", "models/motionrp_bankai_wave.bbmodel", "models/motionrp_bankai_coat.bbmodel", "players/motionrp_rasengan.bbmodel", "models/motionrp_rasengan_orb.bbmodel",
                 "players/motionrp_rasenshuriken.bbmodel", "models/motionrp_rasenshuriken_orb.bbmodel",
                 "players/motionrp_gate_of_babylon.bbmodel", "players/motionrp_susanoo.bbmodel",
                 "models/motionrp_golden_gate.bbmodel", "models/motionrp_treasury_sword.bbmodel",

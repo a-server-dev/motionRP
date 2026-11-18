@@ -49,12 +49,17 @@ class TreasuryTest {
         for(var raw:pose.getAsJsonArray("groups")) { var g=raw.getAsJsonObject();String id=g.get("uuid").getAsString();groups.put(id,g);names.put(g.get("name").getAsString(),id); }
         math.parentTree(pose.getAsJsonArray("outliner"),null,parents);var animation=pose.getAsJsonArray("animations").get(0).getAsJsonObject();
         assertEquals(13.6,animation.get("length").getAsDouble());
-        for(double time:new double[]{1,6,8,9.3}) {
+        for(double time:new double[]{6,8,9.3}) {
             var right=math.posedPoint(names.get("prfl_right_foreleg"),new double[]{1.875,0,0},time,animation,groups,parents);
             var left=math.posedPoint(names.get("plfl_left_foreleg"),new double[]{-1.875,0,0},time,animation,groups,parents);
             assertTrue(Math.abs(right[1])<.5 && Math.abs(left[1])<.5,"Feet must stay planted");
             assertTrue(Math.abs(right[2]-left[2])>3,"One foot must be behind the other");
             assertTrue(Math.hypot(right[0]-left[0],right[2]-left[2])>6,"Stance must be wider than the original idle");
+        }
+        for(double time:new double[]{1,3,TreasuryTimeline.EA_READY/20.0}) {
+            var right=math.posedPoint(names.get("prfl_right_foreleg"),new double[]{1.875,0,0},time,animation,groups,parents);
+            var left=math.posedPoint(names.get("plfl_left_foreleg"),new double[]{-1.875,0,0},time,animation,groups,parents);
+            assertEquals(0,right[2]-left[2],.01,"Feet stay neutral until Ea is fully drawn");
         }
         var charge=TreasuryHandPath.at(140);var fire=TreasuryHandPath.at(TreasuryTimeline.FIRE);
         assertTrue(charge.height()>1.3 && charge.height()<1.9,"Charging hand should be beside the face: "+charge);

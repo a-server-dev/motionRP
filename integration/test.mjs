@@ -142,6 +142,7 @@ try {
   fs.writeFileSync(path.join(run, 'plugins/MotionRP/config.yml'),
     fs.readFileSync(path.join(project, 'src/main/resources/config.yml'), 'utf8')
       .replace('debug-input: false', 'debug-input: true')
+      .replace(/  zangetsu_bankai:\n[\s\S]*?(?=  gate_of_babylon_100:)/, '')
       .replace(/  gate_of_babylon_100:\n[\s\S]*?(?=  titan_transform:)/, '')
       .replace(/  titan_transform:\n[\s\S]*?(?=  senbonzakura:)/, '')
       .replace(/  senbonzakura:\n[\s\S]*?(?=  gate_of_babylon:)/, '')
@@ -164,7 +165,7 @@ try {
   const oldShuriken=gunzipSync(fs.readFileSync(path.join(project,'src/test/resources/motionrp_rasenshuriken-0.3.0.bbmodel.gz')));
   fs.mkdirSync(path.join(run,'plugins/BetterModel/players'),{recursive:true});
   fs.writeFileSync(path.join(run,'plugins/BetterModel/players/motionrp_rasenshuriken.bbmodel'),oldShuriken);
-  const oldSummons=[['players/motionrp_gate_of_babylon_enuma','65690445a739722ab052f571ceccd0476f2fab7ce106f2795cb724c45d5a199c','0.8.0'],['models/motionrp_ea','26bf036c8d1230c4da474034a86dc1afbe88f500237d9d5872c8a58318bb3e6e','0.8.0'],['models/motionrp_enuma_vortex','9ddebc5469047326fbff87242a29e64723952d0147512c4cf6339643042ecb0e','0.8.0'],['players/motionrp_titan_transform','bfbc83f290b4252a4088fd825e0fca0bed7a4a019e74f4305d33a791d3f20857','0.6.0'],['players/motionrp_gate_of_babylon','2e0bae16f4570116a383ccaa91e09319564665870b34c7cc03a9c156c34c2272','0.5.0'],
+  const oldSummons=[['models/motionrp_bab_ilu','72e48d5765f3f3cd4a196ad42bdac6594cc4a19e3c5c19901b531b859124bbb2','0.8.1'],['players/motionrp_gate_of_babylon_enuma','6d4400edfb1decb0b5a01e2068d1769e94c22e2fe0e95a95a3fbec3be816e5ab','0.8.1'],['models/motionrp_ea','dcf8d64c65ccf7b3c50e28ccc063048368bc9bfcc88c0d2e4e8c4109496dd69d','0.8.1'],['models/motionrp_enuma_vortex','9ddebc5469047326fbff87242a29e64723952d0147512c4cf6339643042ecb0e','0.8.0'],['players/motionrp_titan_transform','bfbc83f290b4252a4088fd825e0fca0bed7a4a019e74f4305d33a791d3f20857','0.6.0'],['players/motionrp_gate_of_babylon','2e0bae16f4570116a383ccaa91e09319564665870b34c7cc03a9c156c34c2272','0.5.0'],
     ['players/motionrp_senbonzakura','7a38d287afad202d93644f1d54ba0267baa33eff01315860675bd940c5944afe','0.5.0'],
     ['models/motionrp_senbonzakura_blade','aebce2d6a72045a193e54ebaad4e7cf8fd579ccc19aba3182b659c5f5ed44d70','0.5.0'],
     ['models/motionrp_susanoo_armor','d054d6147211c1cc72e6281ee5b9cc1a3ddcda8d9da6548e4472affedb16040c'],
@@ -801,6 +802,10 @@ generate-structures=false
 
   await addSummon('gate_of_babylon_enuma',7);
   consoleCommand(`summon minecraft:cow ${hundredOrigin.x} ${hundredOrigin.y} ${hundredOrigin.z+20} {NoAI:1b,NoGravity:1b,Silent:1b,Tags:["motionrp_target"]}`);await sleep(500);
+  const cutSample=hundredOrigin.offset(0,-1,10).floored();
+  consoleCommand(`setblock ${cutSample.x} ${cutSample.y} ${cutSample.z} minecraft:stone`);await sleep(500);
+  const sampleType=bot=>bot.blockAt(cutSample)?.name;
+  await waitFor(()=>sampleType(a)==='stone' && sampleType(b)==='stone','floor sample loaded');
   sceneDisplays.clear();sceneRemoved.clear();const enumaBegin=output.length,enumaHealth=[a.health,b.health];
   a._testLeftClick();await waitFor(()=>output.slice(enumaBegin).includes('TreasuryEnuma phase: DRAW'),'two hundred gates loaded',25000);
   await sleep(300);const enumaInitial=summonTrace('TreasuryEnuma',enumaBegin);
@@ -811,6 +816,9 @@ generate-structures=false
   assert.equal(cage.length,100);
   assert.ok(cage.every(m=>Math.abs(Math.hypot(Number(m[2])-hundredOrigin.x,Number(m[4])-(hundredOrigin.z+20))-6)<.05));
   pass('serious treasury shows one hundred rear gates and one hundred gates enclosing the living target twenty blocks ahead');
+  await waitFor(()=>sampleType(a)==='air' && sampleType(b)==='air','excavated ground visible to both clients',30000);
+  const worldCheck=output.length;consoleCommand(`execute if block ${cutSample.x} ${cutSample.y} ${cutSample.z} minecraft:stone run say ENUMA_WORLD_UNCHANGED`);
+  await waitFor(()=>output.slice(worldCheck).includes('ENUMA_WORLD_UNCHANGED'),'actual floor preserved');
   await waitFor(()=>output.slice(enumaBegin).includes('TreasuryEnuma phase: FADE'),'Enuma Elish and impact',30000);
   await waitFor(()=>sceneRemoved.size===sceneDisplays.size,'Ea/beam/gates cleanup',15000);
   const enumaTrace=output.slice(enumaBegin),enumaEntries=summonTrace('TreasuryEnuma',enumaBegin);
@@ -821,13 +829,16 @@ generate-structures=false
   assert.equal(enumaEntries.filter(e=>e.kind.startsWith('beam')).length,16);
   assert.equal(enumaEntries.filter(e=>e.kind.startsWith('charge_ring')).length,2);
   assert.equal(enumaEntries.filter(e=>e.kind.startsWith('shock_ring')).length,3);
-  assert.equal(enumaEntries.filter(e=>e.kind.startsWith('rift')).length,8);
-  assert.ok(enumaEntries.some(e=>e.kind==='charge_core') && enumaEntries.some(e=>e.kind==='impact_core'));
-  pass('white-gold core, gyroscopic rings, three traveling shock rings and eight ground rifts reach both clients');
+  assert.equal(enumaEntries.filter(e=>e.kind.startsWith('rift')).length,0);
+  assert.ok(!enumaEntries.some(e=>e.kind==='charge_core' || e.kind==='impact_core'));
+  assert.ok(enumaTrace.includes('ea ready tick=94'));
+  pass('Ea is fully drawn before the stance; rings and vortex reach both clients without spheres or flat ground marks');
   assert.ok(enumaTrace.includes('enuma impact tick=204'));assert.ok(renderedForBoth(enumaEntries));assert.ok(removedForBoth(enumaEntries));
   assert.deepEqual([a.health,b.health],enumaHealth);assert.ok(a.entity.position.distanceTo(hundredOrigin)<.01);
   const healthCheck=output.length;consoleCommand('execute if entity @e[tag=motionrp_target,nbt={Health:10.0f}] run say TREASURY_TARGET_UNHARMED');
   await waitFor(()=>output.slice(healthCheck).includes('TREASURY_TARGET_UNHARMED'),'target stays unharmed');
+  await waitFor(()=>sampleType(a)==='stone' && sampleType(b)==='stone','ground restored after natural completion');
+  pass('client-only excavation has actual depth and restores for both clients while the server world stays intact');
   pass('two hundred gates fire four hundred cosmetic shots as Bab-ilu and spinning Ea lead into a sixteen-part Enuma Elish vortex without damaging its target');
   sceneDisplays.clear();sceneRemoved.clear();const chargeCancel=output.length;a._testLeftClick();
   await waitFor(()=>output.slice(chargeCancel).includes('TreasuryEnuma phase: EA_CHARGE'),'Ea charge before cancel',20000);
@@ -836,13 +847,30 @@ generate-structures=false
   const stoppedCharge=particles;await sleep(1200);assert.equal(particles,stoppedCharge);assert.ok(!output.slice(chargeCancel).includes('phase: ENUMA_ELISH'));
   pass('cancelling during Ea charging removes the key/weapon and every gate and prevents the beam');
   sceneDisplays.clear();sceneRemoved.clear();const beamCancel=output.length;a._testLeftClick();
-  await waitFor(()=>output.slice(beamCancel).includes('TreasuryEnuma displays beam3'),'Enuma beam before cancel',25000);
+  await waitFor(()=>sampleType(a)==='air' && sampleType(b)==='air','Enuma excavation before cancel',25000);
   const cancelledBeam=summonTrace('TreasuryEnuma',beamCancel);a._testLeftClick();
   await waitFor(()=>removedForBoth(cancelledBeam) && sceneRemoved.size===sceneDisplays.size,'Enuma beam cancel cleanup');
   const stoppedBeam=particles;await sleep(1000);assert.equal(particles,stoppedBeam);assert.ok(!output.slice(beamCancel).includes('enuma impact'));
-  pass('cancelling the emitted Enuma vortex removes every segment and stops later impacts and particles');
+  await waitFor(()=>sampleType(a)==='stone' && sampleType(b)==='stone','cancelled excavation restored');
+  pass('cancelling the emitted Enuma vortex restores terrain for both clients, removes every segment and stops later impacts and particles');
   consoleCommand('kill @e[tag=motionrp_target]');
   assert.ok(!/Treasury100 scene failed|TreasuryEnuma scene failed/.test(output));
+  await addSummon('zangetsu_bankai',8);
+  sceneDisplays.clear();sceneRemoved.clear();const bankaiStart=output.length;
+  a._testLeftClick();await waitFor(()=>output.slice(bankaiStart).includes('Bankai phase: TENSA_ZANGETSU'),'Tensa Zangetsu reveal',20000);
+  const bankaiEntries=summonTrace('Bankai',bankaiStart);
+  for(const kind of ['zangetsu','cocoon','pressure_wave','tensa_zangetsu','black_coat']) assert.ok(bankaiEntries.some(e=>e.kind===kind));
+  await waitFor(()=>renderedForBoth(bankaiEntries) && removedForBoth(bankaiEntries) && sceneRemoved.size===sceneDisplays.size,'Bankai natural cleanup',12000);
+  pass('first Bankai reveals broad Zangetsu, compressing black pressure and Tensa Zangetsu with a fluttering coat on both clients');
+  for(const phase of ['BANKAI','REVEAL']) {
+    sceneDisplays.clear();sceneRemoved.clear();const start=output.length;a._testLeftClick();
+    await waitFor(()=>output.slice(start).includes('Bankai phase: '+phase),'Bankai cancel phase '+phase,15000);
+    const entries=summonTrace('Bankai',start);a._testLeftClick();
+    await waitFor(()=>removedForBoth(entries) && sceneRemoved.size===sceneDisplays.size,'Bankai cancelled cleanup');
+    const stopped=particles;await sleep(700);assert.equal(particles,stopped);
+  }
+  assert.ok(!output.includes('Bankai scene failed'));
+  pass('cancelling Bankai during the pressure column or final reveal removes all models and stops the effect');
   a.setControlState('sneak',true);await sleep(300);
   for(let i=0;i<6;i++) {a._testLeftClick();await sleep(300);}
   a.setControlState('sneak',false);await sleep(300);

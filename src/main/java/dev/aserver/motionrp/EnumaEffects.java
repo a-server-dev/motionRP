@@ -12,21 +12,20 @@ final class EnumaEffects {
     private static final Particle.DustOptions GOLD=new Particle.DustOptions(Color.fromRGB(255,239,177),1.2f);
     private final TreasuryScene scene;
     private final Location focus;
-    private DummyTracker core,storm;
-    private final DummyTracker[] halos=new DummyTracker[2],shocks=new DummyTracker[3],beams=new DummyTracker[16],rifts=new DummyTracker[8];
+    private final DummyTracker[] halos=new DummyTracker[2],shocks=new DummyTracker[3],beams=new DummyTracker[16];
     private Location start;
-    EnumaEffects(TreasuryScene scene,Location focus) { this.scene=scene;this.focus=focus.clone(); }
+    private final EnumaGroundCut cut;
+    EnumaEffects(TreasuryScene scene,Location focus) { this.scene=scene;this.focus=focus.clone();cut=new EnumaGroundCut(scene,focus); }
     void update(int tick,Location palm) {
         double tilt=thrust(tick)*Math.PI/2;
         Location tip=palm.clone().add(scene.origin.getDirection().multiply(1.63*Math.sin(tilt))).add(0,1.63*Math.cos(tilt),0);
         Vector axis=scene.origin.getDirection().multiply(Math.sin(tilt)).add(new Vector(0,Math.cos(tilt),0));
         tip.setDirection(axis);
         if(tick==CHARGE) {
-            core=scene.model(SummonAssets.ENUMA_CHARGE,tip,.15f,"charge_core");scene.loop(core,"spin");
             for(int i=0;i<halos.length;i++) { halos[i]=scene.model(SummonAssets.ENUMA_RING,tip,.4f,"charge_ring"+i);scene.loop(halos[i],"spin"); }
         }
         if(tick>=CHARGE && tick<FIRE) {
-            double p=charge(tick);core.location(kr.toxicity.model.api.bukkit.platform.BukkitAdapter.adapt(tip));core.scaler(ModelScaler.value((float)(.15+1.1*p)));
+            double p=charge(tick);
             for(int i=0;i<halos.length;i++) {
                 Location at=tip.clone();at.setPitch(at.getPitch()+i*25);at.setYaw(at.getYaw()+i*tick*2);
                 halos[i].location(kr.toxicity.model.api.bukkit.platform.BukkitAdapter.adapt(at));TreasuryScene.point(halos[i],at);
@@ -41,7 +40,7 @@ final class EnumaEffects {
             }
         }
         if(tick==FIRE) {
-            start=tip.clone();scene.audience.hide(core);core=null;
+            start=tip.clone();
             for(int i=0;i<halos.length;i++) { scene.audience.hide(halos[i]);halos[i]=null; }
             flash(start);
         }
@@ -68,31 +67,19 @@ final class EnumaEffects {
                     shocks[i].scaler(ModelScaler.value((float)(.7+3.5*p)));
                 } else if(shocks[i]!=null) { scene.audience.hide(shocks[i]);shocks[i]=null; }
             }
-            for(int i=0;i<rifts.length;i++) if(rifts[i]==null && tick-FIRE>=i*2) {
-                Location aim=scene.origin.clone().add(focus.toVector().subtract(scene.origin.toVector()).multiply((i+.5)/rifts.length));
-                Location ground=scene.ground(aim);
-                if(ground!=null) {
-                    ground.subtract(0,.10,0);ground.setYaw(scene.origin.getYaw());
-                    rifts[i]=scene.model(SummonAssets.ENUMA_RIFT,ground,1.3f,"rift"+i);
-                    scene.particle(ground,Particle.DUST_PLUME,4,.3,.02);
-                }
-            }
+            cut.update(progress);
         }
-        if(tick==IMPACT) { storm=scene.model(SummonAssets.ENUMA_CHARGE,focus.clone().add(0,2,0),2,"impact_core");scene.loop(storm,"spin");flash(focus.clone().add(0,2,0)); }
-        if(storm!=null) {
-            double p=Math.clamp((tick-IMPACT)/(double)(RECOVER-IMPACT),0,1);
-            storm.scaler(ModelScaler.value((float)(2+3*Math.sin(p*Math.PI))));
-            if(tick%3==0 && tick<RECOVER) {
-                for(int i=0;i<6;i++) { double a=tick*.25+i*Math.PI/3;scene.dust(focus.clone().add(Math.cos(a)*4,1.5+Math.sin(a*2),Math.sin(a)*4),RED,4,.3); }
-                scene.particle(focus,Particle.DUST_PLUME,4,3,.05);
-            }
+        if(tick==IMPACT) flash(focus.clone().add(0,2,0));
+        if(tick>=IMPACT && tick<RECOVER && tick%3==0) {
+            for(int i=0;i<6;i++) { double a=tick*.25+i*Math.PI/3;scene.dust(focus.clone().add(Math.cos(a)*4,1.5+Math.sin(a*2),Math.sin(a)*4),RED,4,.3); }
+            scene.particle(focus,Particle.DUST_PLUME,4,3,.05);
         }
         if(tick==RECOVER) {
             for(int i=0;i<beams.length;i++) { scene.audience.hide(beams[i]);beams[i]=null; }
             for(int i=0;i<shocks.length;i++) { scene.audience.hide(shocks[i]);shocks[i]=null; }
-            scene.audience.hide(storm);storm=null;
         }
-        if(tick>=RECOVER) for(var rift:rifts) if(rift!=null) rift.scaler(ModelScaler.value((float)Math.max(.02,1.3*(SERIOUS_END-tick)/(double)(SERIOUS_END-RECOVER))));
+        if(tick>=RECOVER && tick%5==0) cut.update(1);
     }
+    void close() { cut.close(); }
     private void flash(Location at) { for(Player p:scene.audience.players()) p.spawnParticle(Particle.FLASH,at,1,0,0,0,0,Color.fromRGB(255,240,210)); }
 }

@@ -18,11 +18,12 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
     private LoadoutMenu menu;
     private MotionPlayback playback;
     private AutomaticResourcePack resourcePack;
+    private TerrainOverlayManager terrain;
 
     @Override public void onEnable() {
         saveDefaultConfig();
         // Add only the new built-in definition during upgrade; keep user entries.
-        for (String builtIn : java.util.List.of("rasengan", "rasenshuriken", "gate_of_babylon", "susanoo", "senbonzakura","titan_transform","gate_of_babylon_100","gate_of_babylon_enuma")) {
+        for (String builtIn : java.util.List.of("rasengan", "rasenshuriken", "gate_of_babylon", "susanoo", "senbonzakura","titan_transform","gate_of_babylon_100","gate_of_babylon_enuma","zangetsu_bankai")) {
             if (!getConfig().contains("assets." + builtIn + "-definition-installed", true)) {
                 if (!getConfig().contains("motions." + builtIn, true)) {
                     for (var entry : Objects.requireNonNull(getConfig().getDefaults())
@@ -58,6 +59,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
         items = new MotionItems(this);
         loadouts = new PlayerLoadouts(this, items);
         menu = new LoadoutMenu(this, loadouts, items);
+        terrain=new TerrainOverlayManager();Bukkit.getPluginManager().registerEvents(terrain,this);
         playback = new MotionPlayback(this);
         Bukkit.getPluginManager().registerEvents(menu, this);
         Bukkit.getPluginManager().registerEvents(new ControllerListener(this), this);
@@ -72,7 +74,8 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
 
     @Override public void onDisable() {
         if(resourcePack!=null) resourcePack.close();
-        if (playback != null) playback.stopAll();
+        try { if (playback != null) playback.stopAll(); }
+        finally { if(terrain!=null) terrain.restoreAll(); }
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (player.getOpenInventory().getTopInventory().getHolder() instanceof LoadoutMenu.Holder) player.closeInventory();
         }
@@ -90,6 +93,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
     public MotionItems items() { return items; }
     public PlayerLoadouts loadouts() { return loadouts; }
     public LoadoutMenu menu() { return menu; }
+    TerrainOverlayManager terrain() { return terrain; }
     public MotionPlayback playback() { return playback; }
 
     public void tell(CommandSender sender, String message) {
