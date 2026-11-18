@@ -48,7 +48,7 @@ public final class BundledModels {
             }
             var files=new java.util.ArrayList<>(java.util.List.of("players/" + PLAYER + ".bbmodel", "models/" + ORB + ".bbmodel",
                     "players/" + SHURIKEN_PLAYER + ".bbmodel", "models/" + SHURIKEN_ORB + ".bbmodel", "LICENSE-MotionRP-models.txt"));
-            for(String effect:java.util.List.of("gate_of_babylon","susanoo","senbonzakura","titan_transform","gate_of_babylon_100","gate_of_babylon_enuma","zangetsu_bankai")) {
+            for(String effect:java.util.List.of("gate_of_babylon","susanoo","senbonzakura","titan_transform","gate_of_babylon_100","gate_of_babylon_enuma","zangetsu_bankai","excalibur","gae_bolg")) {
                 files.add("players/motionrp_"+effect+".bbmodel");
                 for(String model:SummonAssets.models(effect)) files.add("models/"+model+".bbmodel");
             }
@@ -69,8 +69,8 @@ public final class BundledModels {
                                     : file.equals("players/motionrp_zangetsu_bankai.bbmodel") ? Set.of("909515f7393027b9c35aee34ab05e89d04c718bb67e5645e3667198eb4261c33","1eef505842f410eca1b28c82c6707903c016e247f5ac4ffdd537a3b68207d822")
                                     : file.equals("models/motionrp_tensa_zangetsu.bbmodel") ? Set.of("cf68b92b1a7cde04d8b7b0c4a5f435b621d9c9760e1102675d969416c7068806")
                                     : file.equals("models/motionrp_bankai_cocoon.bbmodel") ? Set.of("d6f38cfd0592d3ce2dd6fa5154269bc340f9f4eb8f6fe528f79b04f761faa127")
-                                    : file.equals("models/motionrp_zangetsu_cleaver.bbmodel") ? Set.of("de065d3da7442d5a4c74c7d1cfadaaf1352e32e294b216d28d6f91be7dc5335d")
-                                    : file.equals("models/motionrp_susanoo_armor.bbmodel") ? Set.of(SUMMON_040_SHA.get(file),"1868e0e239fee4b7470332ba21007cbde29a12c4938a146ea08af4e00e23c098")
+                                    : file.equals("models/motionrp_zangetsu_cleaver.bbmodel") ? Set.of("de065d3da7442d5a4c74c7d1cfadaaf1352e32e294b216d28d6f91be7dc5335d","397b60c008232307f099443b633a46a4643e7ac58422441e55ca67ed7d9c6385")
+                                    : file.equals("models/motionrp_susanoo_armor.bbmodel") ? Set.of(SUMMON_040_SHA.get(file),"1868e0e239fee4b7470332ba21007cbde29a12c4938a146ea08af4e00e23c098","add67777e2a776ae9b7e2344b66ffabeba44ca41baa29a6fad5b415fbdb060ee")
                                     : file.equals("players/motionrp_susanoo.bbmodel") ? Set.of("435fb48bd71a7c2b7357b4070ff3084a351d4884ac7810cedd4accacc7c155d9")
                                     : file.equals("models/motionrp_susanoo_ribs.bbmodel") ? Set.of(SUMMON_040_SHA.get(file),"ef9b07b05a0000b5a0f9d908a621e4543d71db9081d1bb61b06b97fa2a0cf62b")
                                     : file.equals("models/motionrp_susanoo_slash.bbmodel") ? Set.of("6255e3d0879d4442415cf00594cb7ed59928179965e7ad7d2b9ae2388a24dbf6")

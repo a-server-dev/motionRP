@@ -97,7 +97,7 @@ async function connect(name) {
   return bot;
 }
 function tokens(bot) { return bot.inventory.items().filter(item => item.name === 'paper').reduce((sum, item) => sum + item.count, 0); }
-function registered(bot) { return bot.currentWindow.slots.slice(0, 9).filter(item => item?.name === 'paper').length; }
+function registered(bot) { return bot.currentWindow.slots.slice(0, 18).filter(item => item?.name === 'paper').length; }
 async function menu(bot) {
   bot.chat('/motionrp gui');
   await waitFor(() => bot.currentWindow !== null, 'registration GUI');
@@ -113,8 +113,8 @@ async function click(bot, slot, button = 0, mode = 0) {
   await sleep(300);
 }
 async function deposit(bot) {
-  const index = bot.currentWindow.slots.findIndex((item, i) => i >= 9 && item?.name === 'paper');
-  assert.ok(index >= 9, 'Motion token missing from storage');
+  const index = bot.currentWindow.slots.findIndex((item, i) => i >= 18 && item?.name === 'paper');
+  assert.ok(index >= 18, 'Motion token missing from storage');
   await click(bot, index);
 }
 async function disconnect(bot) { bot.quit(); await sleep(500); }
@@ -125,6 +125,53 @@ async function readSaved(name) {
   assert.ok(bytes, 'Player PDC loadout is missing');
   return { data, loadout: Buffer.from(bytes) };
 }
+
+// Short verification against a fixture created by the full suite; never touches a real server.
+if(process.env.MOTIONRP_NOBLE_ONLY==='1') {
+  let code=0;
+  try {
+    assert.ok(fs.existsSync(path.join(run,'world/players/data',uuid('MotionTesterA')+'.dat')),'Run the full integration suite first');
+    fs.copyFileSync(path.join(project,`build/libs/motionRP-${version}.jar`),path.join(run,'plugins/MotionRP.jar'));
+    for(const file of ['motionrp_excalibur_blade','motionrp_excalibur_light','motionrp_gae_bolg_spear','motionrp_gae_bolg_trail','motionrp_gae_bolg_thorns','motionrp_susanoo_armor','motionrp_zangetsu_cleaver'])
+      fs.copyFileSync(path.join(project,'src/main/resources/bettermodel/models',file+'.bbmodel'),path.join(run,'plugins/BetterModel/models',file+'.bbmodel'));
+    log=fs.createWriteStream(path.join(project,'build/noble-smoke.log'));await startServer();
+    const a=await connect('MotionTesterA'),b=await connect('MotionTesterB');
+    const items={owner:new Map(),observer:new Map()},removed={owner:new Set(),observer:new Set()},spawned={owner:new Set(),observer:new Set()};
+    const itemIndex=b.registry.entitiesByName.item_display.metadataKeys.indexOf('item_stack');
+    for(const [bot,role] of [[a,'owner'],[b,'observer']]) {
+      bot._client.on('spawn_entity',p=>{if(p.type===b.registry.entitiesByName.item_display.id)spawned[role].add(p.entityId);});
+      bot._client.on('entity_metadata',p=>{for(const e of p.metadata)if(e.key===itemIndex)items[role].set(p.entityId,e.value);});
+      bot._client.on('entity_destroy',p=>p.entityIds.forEach(id=>removed[role].add(id)));
+    }
+    await a.equip(a.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');
+    for(const [slot,prefix,segments] of [[9,'Excalibur',14],[10,'GaeBolg',6]]) {
+      a.setControlState('sneak',true);await sleep(300);
+      for(let i=0;(await readSaved('MotionTesterA')).loadout[6]!==slot && i<18;i++) {a._testLeftClick();await sleep(300);}
+      a.setControlState('sneak',false);await sleep(300);a._testLook(0,0);
+      assert.equal((await readSaved('MotionTesterA')).loadout[6],slot);
+      const start=output.length,health=[a.health,b.health];for(const role of ['owner','observer'])spawned[role].clear();a._testLeftClick();
+      await waitFor(()=>output.slice(start).includes(prefix+' phase: FADE'),prefix+' smoke release',20000);
+      const entries=[...output.slice(start).matchAll(new RegExp(prefix+' displays (\\w+) ids=([0-9,]+)','g'))].map(m=>({kind:m[1],ids:m[2].split(',').map(Number)}));
+      assert.equal(entries.filter(e=>e.kind.startsWith('beam')).length,segments);
+      for(const role of ['owner','observer']) assert.ok(entries.every(e=>e.ids.some(id=>(items[role].get(id)?.itemCount||0)>0)));
+      await waitFor(()=>['owner','observer'].every(role=>[...spawned[role]].every(id=>removed[role].has(id))),prefix+' smoke cleanup');
+      assert.deepEqual([a.health,b.health],health);pass(prefix+' final model reload, release, both-client display and cleanup');
+    }
+    a.setControlState('sneak',true);await sleep(300);
+    for(let i=0;(await readSaved('MotionTesterA')).loadout[6]!==3 && i<18;i++) {a._testLeftClick();await sleep(300);}
+    a.setControlState('sneak',false);await sleep(300);const seatOrigin=a.entity.position.clone(),seatBegin=output.length;
+    for(const role of ['owner','observer'])spawned[role].clear();a._testLeftClick();
+    await waitFor(()=>output.slice(seatBegin).includes('pilot seated scale=10.0'),'final neck seat');assert.ok(a.entity.position.y>seatOrigin.y+50);
+    await waitFor(()=>output.slice(seatBegin).includes('Susanoo phase: FADE'),'final neck return',20000);assert.ok(a.entity.position.distanceTo(seatOrigin)<.01);
+    await waitFor(()=>['owner','observer'].every(role=>[...spawned[role]].every(id=>removed[role].has(id))),'final full giant cleanup');
+    pass('Final complete Susanoo model reload, scale-ten neck seat and grounded return');
+    assert.ok(!/Excalibur scene failed|GaeBolg scene failed/.test(output));
+    fs.writeFileSync(path.join(project,'build/noble-smoke-result.json'),JSON.stringify({passed:checks.length,checks},null,2));
+  } catch(e) {console.error(e.stack);code=1;}
+  finally {for(const bot of bots)bot.quit();await stopServer();if(log)log.end();}
+  process.exit(code);
+}
+
 
 try {
   fs.mkdirSync(path.dirname(run), { recursive: true });
@@ -142,6 +189,8 @@ try {
   fs.writeFileSync(path.join(run, 'plugins/MotionRP/config.yml'),
     fs.readFileSync(path.join(project, 'src/main/resources/config.yml'), 'utf8')
       .replace('debug-input: false', 'debug-input: true')
+      .replace(/  excalibur:\n[\s\S]*?(?=  gae_bolg:)/, '')
+      .replace(/  gae_bolg:\n[\s\S]*?(?=  zangetsu_bankai:)/, '')
       .replace(/  zangetsu_bankai:\n[\s\S]*?(?=  gate_of_babylon_100:)/, '')
       .replace(/  gate_of_babylon_100:\n[\s\S]*?(?=  titan_transform:)/, '')
       .replace(/  titan_transform:\n[\s\S]*?(?=  senbonzakura:)/, '')
@@ -165,10 +214,10 @@ try {
   const oldShuriken=gunzipSync(fs.readFileSync(path.join(project,'src/test/resources/motionrp_rasenshuriken-0.3.0.bbmodel.gz')));
   fs.mkdirSync(path.join(run,'plugins/BetterModel/players'),{recursive:true});
   fs.writeFileSync(path.join(run,'plugins/BetterModel/players/motionrp_rasenshuriken.bbmodel'),oldShuriken);
-  const oldSummons=[['models/motionrp_susanoo_slash','6255e3d0879d4442415cf00594cb7ed59928179965e7ad7d2b9ae2388a24dbf6','0.10.0'],['players/motionrp_susanoo','435fb48bd71a7c2b7357b4070ff3084a351d4884ac7810cedd4accacc7c155d9','0.10.0'],['models/motionrp_zangetsu_cleaver','de065d3da7442d5a4c74c7d1cfadaaf1352e32e294b216d28d6f91be7dc5335d','0.9.0'],['models/motionrp_bankai_cocoon','d6f38cfd0592d3ce2dd6fa5154269bc340f9f4eb8f6fe528f79b04f761faa127','0.9.0'],['models/motionrp_tensa_zangetsu','cf68b92b1a7cde04d8b7b0c4a5f435b621d9c9760e1102675d969416c7068806','0.9.0'],['players/motionrp_zangetsu_bankai','1eef505842f410eca1b28c82c6707903c016e247f5ac4ffdd537a3b68207d822','0.10.0'],['models/motionrp_bab_ilu','545322bab257c47b88f2b4a96cdbe67adece3bc641c07c06ce4b16cf4a656039','0.9.0'],['players/motionrp_gate_of_babylon_enuma','4be25d52494f9f97b56693808dc9aef769e205679b4fed7bc7c77e5c0131c7b5','0.10.0'],['models/motionrp_ea','97161bc3d6a447a255f60c5f42e54c15ea58007c0f28e3270f10581fbaf5dad0','0.10.0'],['models/motionrp_enuma_vortex','9ddebc5469047326fbff87242a29e64723952d0147512c4cf6339643042ecb0e','0.8.0'],['players/motionrp_titan_transform','bfbc83f290b4252a4088fd825e0fca0bed7a4a019e74f4305d33a791d3f20857','0.6.0'],['players/motionrp_gate_of_babylon','2e0bae16f4570116a383ccaa91e09319564665870b34c7cc03a9c156c34c2272','0.5.0'],
+  const oldSummons=[['models/motionrp_susanoo_slash','6255e3d0879d4442415cf00594cb7ed59928179965e7ad7d2b9ae2388a24dbf6','0.10.0'],['players/motionrp_susanoo','435fb48bd71a7c2b7357b4070ff3084a351d4884ac7810cedd4accacc7c155d9','0.10.0'],['models/motionrp_zangetsu_cleaver','397b60c008232307f099443b633a46a4643e7ac58422441e55ca67ed7d9c6385','0.11.0'],['models/motionrp_bankai_cocoon','d6f38cfd0592d3ce2dd6fa5154269bc340f9f4eb8f6fe528f79b04f761faa127','0.9.0'],['models/motionrp_tensa_zangetsu','cf68b92b1a7cde04d8b7b0c4a5f435b621d9c9760e1102675d969416c7068806','0.9.0'],['players/motionrp_zangetsu_bankai','1eef505842f410eca1b28c82c6707903c016e247f5ac4ffdd537a3b68207d822','0.10.0'],['models/motionrp_bab_ilu','545322bab257c47b88f2b4a96cdbe67adece3bc641c07c06ce4b16cf4a656039','0.9.0'],['players/motionrp_gate_of_babylon_enuma','4be25d52494f9f97b56693808dc9aef769e205679b4fed7bc7c77e5c0131c7b5','0.10.0'],['models/motionrp_ea','97161bc3d6a447a255f60c5f42e54c15ea58007c0f28e3270f10581fbaf5dad0','0.10.0'],['models/motionrp_enuma_vortex','9ddebc5469047326fbff87242a29e64723952d0147512c4cf6339643042ecb0e','0.8.0'],['players/motionrp_titan_transform','bfbc83f290b4252a4088fd825e0fca0bed7a4a019e74f4305d33a791d3f20857','0.6.0'],['players/motionrp_gate_of_babylon','2e0bae16f4570116a383ccaa91e09319564665870b34c7cc03a9c156c34c2272','0.5.0'],
     ['players/motionrp_senbonzakura','7a38d287afad202d93644f1d54ba0267baa33eff01315860675bd940c5944afe','0.5.0'],
     ['models/motionrp_senbonzakura_blade','aebce2d6a72045a193e54ebaad4e7cf8fd579ccc19aba3182b659c5f5ed44d70','0.5.0'],
-    ['models/motionrp_susanoo_armor','1868e0e239fee4b7470332ba21007cbde29a12c4938a146ea08af4e00e23c098','0.10.0'],
+    ['models/motionrp_susanoo_armor','add67777e2a776ae9b7e2344b66ffabeba44ca41baa29a6fad5b415fbdb060ee','0.11.0'],
     ['models/motionrp_susanoo_ribs','ef9b07b05a0000b5a0f9d908a621e4543d71db9081d1bb61b06b97fa2a0cf62b','0.10.0']];
   for(const [relative,,version='0.4.0'] of oldSummons) {
     const base=path.basename(relative);
@@ -716,7 +765,10 @@ generate-structures=false
   sceneDisplays.clear();sceneRemoved.clear();const susanooBegin=output.length;
   const guardianOrigin=a.entity.position.clone(),guardianHealth=[a.health,b.health];
   a._testLeftClick();await waitFor(() => output.slice(susanooBegin).includes('Susanoo phase: WINDUP'),'guardian armor ready');
+  assert.ok(a.entity.position.y>guardianOrigin.y+50 && a.entity.position.y<guardianOrigin.y+54,'Player sits in the scale-ten neck');
+  assert.ok(output.slice(susanooBegin).includes('pilot seated scale=10.0'));
   await waitFor(() => output.slice(susanooBegin).includes('Susanoo phase: FADE'),'guardian slash completed',15000);
+  assert.ok(a.entity.position.distanceTo(guardianOrigin)<.01,'Pilot returns before giant starts dissolving');
   const guardianEntries=summonTrace('Susanoo',susanooBegin);
   assert.deepEqual(guardianEntries.map(e => e.kind),['ribs','armor','slash']);
   assert.ok(renderedForBoth(guardianEntries));
@@ -900,6 +952,21 @@ generate-structures=false
   }
   assert.ok(!output.includes('Bankai scene failed'));
   pass('cancelling Bankai during the pressure column or final reveal removes all models and stops the effect');
+  for(const [id,prefix,slot,segments] of [['excalibur','Excalibur',9,14],['gae_bolg','GaeBolg',10,6]]) {
+    await addSummon(id,slot);sceneDisplays.clear();sceneRemoved.clear();const begin=output.length,anchor=a.entity.position.clone(),healthBefore=[a.health,b.health];
+    a._testLeftClick();await waitFor(()=>output.slice(begin).includes(prefix+' phase: FADE'),prefix+' completed Noble Phantasm',20000);
+    const entries=summonTrace(prefix,begin);assert.ok(entries.some(e=>e.kind==='weapon'));assert.equal(entries.filter(e=>e.kind.startsWith('beam')).length,segments);
+    if(id==='gae_bolg')assert.ok(entries.some(e=>e.kind==='heart_thorns'));
+    assert.ok(renderedForBoth(entries));await waitFor(()=>removedForBoth(entries) && sceneRemoved.size===sceneDisplays.size,prefix+' full cleanup');
+    assert.ok(output.slice(begin).includes(prefix+' impact reach='));assert.deepEqual([a.health,b.health],healthBefore);assert.ok(a.entity.position.distanceTo(anchor)<.01);
+    pass(prefix+' registers beyond slot nine, displays its weapon and full release on both clients and finishes without damage or movement');
+    sceneDisplays.clear();sceneRemoved.clear();const cancel=output.length;a._testLeftClick();
+    await waitFor(()=>output.slice(cancel).includes(prefix+' phase: CHARGE'),prefix+' before cancellation');
+    const cancelled=summonTrace(prefix,cancel);a._testLeftClick();await waitFor(()=>removedForBoth(cancelled) && sceneRemoved.size===sceneDisplays.size,prefix+' cancelled cleanup');
+    const stopped=particles;await sleep(800);assert.equal(particles,stopped);assert.ok(!output.slice(cancel).includes(prefix+' impact'));
+    pass(prefix+' cancellation removes the held weapon and prevents the later release, particles and impact');
+    assert.ok(!output.includes(prefix+' scene failed'));
+  }
   a.setControlState('sneak',true);await sleep(300);
   for(let i=0;i<6;i++) {a._testLeftClick();await sleep(300);}
   a.setControlState('sneak',false);await sleep(300);
@@ -995,6 +1062,22 @@ generate-structures=false
   pass('a restart interrupted during the nape dive recovers original scale and returns the player to safe ground');
   assert.ok(!output.includes('Titan scene failed'),'Titan scene logged a runtime failure');
 
+  // Persist a scale-ten pilot seat, kill the disposable server, then verify recovery.
+  await a.equip(a.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');
+  a.setControlState('sneak',true);await sleep(300);
+  for(let count=0;(await readSaved('MotionTesterA')).loadout[6]!==3 && count<18;count++) {a._testLeftClick();await sleep(300);}
+  a.setControlState('sneak',false);await sleep(300);assert.equal((await readSaved('MotionTesterA')).loadout[6],3);
+  const pilotOrigin=a.entity.position.clone(),pilotBegin=output.length;a._testLeftClick();
+  await waitFor(()=>output.slice(pilotBegin).includes('pilot seated scale=10.0'),'pilot seat before recovery test',20000);
+  assert.ok(a.entity.position.y>pilotOrigin.y+50);
+  const pilotSave=output.length;consoleCommand('save-all flush');await waitFor(()=>output.slice(pilotSave).includes('Saved the game'),'persist aerial seat');
+  assert.ok((await readSaved('MotionTesterA')).data.BukkitValues['motionrp:aerial_return_v1']);
+  const pilotKilled=new Promise(resolve=>server.once('exit',resolve));server.kill('SIGKILL');await pilotKilled;server=undefined;
+  await disconnect(a);await disconnect(b);await startServer();a=await connect('MotionTesterA');b=await connect('MotionTesterB');
+  await waitFor(async()=>!(await readSaved('MotionTesterA')).data.BukkitValues['motionrp:aerial_return_v1'],'aerial recovery journal cleared');
+  assert.ok(a.entity.position.distanceTo(pilotOrigin)<.01,'Restart left the pilot at the neck');
+  const pilotRecovered=(await readSaved('MotionTesterA')).data;assert.ok(!pilotRecovered.abilities?.mayfly && !pilotRecovered.abilities?.flying);
+  pass('interrupted scale-ten Susanoo pilot seat restores the original ground position and flight abilities after restart');
   await disconnect(b);
   await disconnect(a);
   await stopServer();

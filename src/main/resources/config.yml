@@ -4,6 +4,18 @@ debug-input: false
 # BetterModel/players にあるプレイヤーモデルを指定します。
 # 標準の steve.bbmodel に含まれる roll を初期モーションとして使用します。
 motions:
+  excalibur:
+    name: 約束された勝利の剣（エクスカリバー）
+    model: motionrp_excalibur
+    animation: excalibur
+    effect: excalibur
+    max-ticks: 220
+  gae_bolg:
+    name: 刺し穿つ死棘の槍（ゲイ・ボルク）
+    model: motionrp_gae_bolg
+    animation: gae_bolg
+    effect: gae_bolg
+    max-ticks: 180
   zangetsu_bankai:
     name: 斬月・卍解（天鎖斬月）
     model: motionrp_zangetsu_bankai

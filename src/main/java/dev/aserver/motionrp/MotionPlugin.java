@@ -23,7 +23,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
     @Override public void onEnable() {
         saveDefaultConfig();
         // Add only the new built-in definition during upgrade; keep user entries.
-        for (String builtIn : java.util.List.of("rasengan", "rasenshuriken", "gate_of_babylon", "susanoo", "senbonzakura","titan_transform","gate_of_babylon_100","gate_of_babylon_enuma","zangetsu_bankai")) {
+        for (String builtIn : java.util.List.of("rasengan", "rasenshuriken", "gate_of_babylon", "susanoo", "senbonzakura","titan_transform","gate_of_babylon_100","gate_of_babylon_enuma","zangetsu_bankai","excalibur","gae_bolg")) {
             if (!getConfig().contains("assets." + builtIn + "-definition-installed", true)) {
                 if (!getConfig().contains("motions." + builtIn, true)) {
                     for (var entry : Objects.requireNonNull(getConfig().getDefaults())
@@ -76,11 +76,11 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
         playback = new MotionPlayback(this);
         Bukkit.getPluginManager().registerEvents(menu, this);
         Bukkit.getPluginManager().registerEvents(new ControllerListener(this), this);
-        for(Player player:Bukkit.getOnlinePlayers()) TitanState.recover(this,player);
+        for(Player player:Bukkit.getOnlinePlayers()) {TitanState.recover(this,player);AerialAnchor.recover(this,player);}
         var command = Objects.requireNonNull(getCommand("motionrp"));
         command.setExecutor(this);
         command.setTabCompleter(this);
-        getLogger().info("MotionRP enabled: " + catalog.motions().size() + " motion(s), 9 slots per player.");
+        getLogger().info("MotionRP enabled: " + catalog.motions().size() + " motion(s), 18 slots per player.");
         new BundledModels(this).install();
         configureResourcePack();
     }

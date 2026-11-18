@@ -31,10 +31,13 @@ def blade(tensa=False):
                 parts.append(m.cube(f'chain_side_{i}_{side}',[side*.8,y,0],[.3,1.5,.4],5))
                 parts.append(m.cube(f'chain_end_{i}_{side}',[0,y+side*.65,0],[1.7,.3,.4],5))
     else:
-        for j in range(16):
-            t=j/15;y=1.2+j*2.8;width=8*(1-.85*t*t);x=2*t*t
-            parts.append(m.cube('cleaver_spine_'+str(j),[x,y,0],[width,3,.9],0))
-            parts.append(m.cube('broad_white_edge_'+str(j),[x-width*.32,y,-.1],[width*.38,3,1],4))
+        for j in range(18):
+            t=j/17;y=1.2+j*1.8
+            width=11.5 if t<.72 else max(.9,11.5*(1-(t-.72)/.28)**.65)
+            x=2.6+(11.5-width)*.5
+            parts.append(m.cube('cleaver_spine_'+str(j),[x,y,0],[width,2.0,1.15],0))
+            parts.append(m.cube('broad_white_edge_'+str(j),[x-width*.39,y,-.12],[max(.5,width*.23),2.05,1.35],4))
+            parts.append(m.cube('steel_bevel_'+str(j),[x-width*.22,y,-.72],[max(.35,width*.08),2,.12],1))
         parts.append(m.cube('cloth_grip',[0,-4.5,0],[1.7,9,1.6],1))
         for i in range(7):parts.append(m.cube('cloth_wrap_'+str(i),[0,-.5-i*1.2,-.85],[1.9,.35,.1],5))
         for i in range(6):parts.append(m.cube('trailing_bandage_'+str(i),[.4+math.sin(i)*.35,-10-i*1.3,0],[1.2,1.5,.18],4))

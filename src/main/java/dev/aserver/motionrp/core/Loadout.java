@@ -5,7 +5,7 @@ import java.util.Objects;
 
 /** Immutable escrow contents. Empty slots are skipped when cycling selection. */
 public final class Loadout {
-    public static final int SIZE = 9;
+    public static final int SIZE = 18;
     private final StoredMotion[] slots;
     private final int selected;
 

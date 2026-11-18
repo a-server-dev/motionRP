@@ -44,7 +44,7 @@ class LoadoutTest {
         assertEquals(-1, full.firstEmpty());
         var saved = full;
         assertThrows(IllegalStateException.class, () -> saved.deposit(0, token("other")));
-        assertEquals(9, saved.count());
+        assertEquals(Loadout.SIZE, saved.count());
         assertEquals("roll", saved.slot(0).id());
         assertThrows(IllegalStateException.class, () -> Loadout.empty().withdraw(0));
     }
@@ -55,7 +55,7 @@ class LoadoutTest {
         bytes[0] = 9;
         item.item()[0] = 8;
         assertArrayEquals(new byte[]{1, 2}, item.item());
-        var slots = new StoredMotion[9];
+        var slots = new StoredMotion[Loadout.SIZE];
         slots[0] = item;
         var state = new Loadout(slots, 0);
         slots[0] = null;
@@ -68,7 +68,7 @@ class LoadoutTest {
         var state = Loadout.empty();
         var codec = new LoadoutCodec();
         for (int turn = 0; turn < 2000; turn++) {
-            int slot = random.nextInt(9);
+            int slot = random.nextInt(Loadout.SIZE);
             if (state.slot(slot) == null && inventory > 0) {
                 state = state.deposit(slot, token("roll"));
                 inventory--;

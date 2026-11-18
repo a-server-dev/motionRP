@@ -6,8 +6,8 @@ import java.util.zip.CRC32;
 /** Bounded, versioned data. Corruption must never become an empty, overwritable loadout. */
 public final class LoadoutCodec {
     private static final int MAGIC = 0x4D525031;
-    private static final int VERSION = 1;
-    private static final int MAX_BYTES = 1_000_000;
+    private static final int VERSION = 2;
+    private static final int MAX_BYTES = 2_000_000;
 
     public byte[] encode(Loadout loadout) {
         try {
@@ -44,11 +44,13 @@ public final class LoadoutCodec {
             var checksum = new DataInputStream(new ByteArrayInputStream(data, data.length - 8, 8));
             if (checksum.readLong() != crc.getValue()) throw new IOException("Loadout checksum mismatch");
             var in = new DataInputStream(new ByteArrayInputStream(data, 0, data.length - 8));
-            if (in.readInt() != MAGIC || in.readUnsignedByte() != VERSION) throw new IOException("Unsupported loadout format");
-            if (in.readUnsignedByte() != Loadout.SIZE) throw new IOException("Invalid slot count");
+            if (in.readInt() != MAGIC) throw new IOException("Unsupported loadout format");
+            int version=in.readUnsignedByte(),count=in.readUnsignedByte();
+            if (!((version==1 && count==9) || (version==VERSION && count==Loadout.SIZE))) throw new IOException("Unsupported loadout shape");
             int selected = in.readUnsignedByte();
+            if(selected>=count) throw new IOException("Invalid saved selection");
             var slots = new StoredMotion[Loadout.SIZE];
-            for (int i = 0; i < slots.length; i++) {
+            for (int i = 0; i < count; i++) {
                 if (!in.readBoolean()) continue;
                 String id = in.readUTF();
                 int length = in.readInt();

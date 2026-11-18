@@ -27,8 +27,11 @@ abstract class SummonScene implements MotionScene {
     private int lastProjectileSound=-10;
 
     SummonScene(MotionPlugin plugin,Player owner,String prefix,int duration) {
+        this(plugin,owner,prefix,duration,48,false);
+    }
+    SummonScene(MotionPlugin plugin,Player owner,String prefix,int duration,double range,boolean fixedAudience) {
         this.plugin=plugin;this.owner=owner;this.prefix=prefix;this.duration=duration;
-        audience=new SceneAudience(owner);origin=owner.getLocation().clone();origin.setPitch(0);
+        origin=owner.getLocation().clone();origin.setPitch(0);audience=new SceneAudience(owner,fixedAudience?origin:null,range);
     }
     @Override public final void start() { task=Bukkit.getScheduler().runTaskTimer(plugin,this::advance,0,1); }
     @Override public boolean ownsMove(Location from,Location to) { return false; }

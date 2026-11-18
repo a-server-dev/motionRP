@@ -72,6 +72,8 @@ def complete():
         for side in [-1,1]:
             c(f'chest_flute_{side}_{j}',[side*(w*.32),y,-8.4],[1.3,2.8,.8],1)
             c(f'breastplate_bevel_{side}_{j}',[side*w/2,y,-5.5],[2.3,3.5,4],4,[0,0,side*22.5])
+    c('neck_chakra_core',[0,84,-1.7],[12,10,11],5)
+    c('neck_collar_edge',[0,83,-7.6],[13,1.5,1],7)
     c('belt',[0,54,0],[25,4,16],0);c('belt_crest',[0,54,-8.5],[7,5,1.5],7)
     for side in [-1,1]:
         for j in range(4):c(f'collar_{side}_{j}',[side*(3+j*3.3),82-j*1.1,-5],[4.5,3,6],7,[0,0,-side*22.5])

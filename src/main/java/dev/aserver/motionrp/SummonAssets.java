@@ -12,8 +12,11 @@ final class SummonAssets {
     static final String MASS_GATE="motionrp_golden_gate_mass",BAB_ILU="motionrp_bab_ilu",EA="motionrp_ea",ENUMA="motionrp_enuma_vortex",TITAN_BODY="motionrp_titan_body";
     static final String ENUMA_CHARGE="motionrp_enuma_charge",ENUMA_RING="motionrp_enuma_ring",ENUMA_RIFT="motionrp_enuma_rift";
     static final String ZANGETSU="motionrp_zangetsu_cleaver",TENSA="motionrp_tensa_zangetsu",BANKAI_COCOON="motionrp_bankai_cocoon",BANKAI_WAVE="motionrp_bankai_wave",BANKAI_COAT="motionrp_bankai_coat";
+    static final String EXCALIBUR="motionrp_excalibur_blade",EXCALIBUR_LIGHT="motionrp_excalibur_light",GAE_BOLG="motionrp_gae_bolg_spear",GAE_TRAIL="motionrp_gae_bolg_trail",GAE_THORNS="motionrp_gae_bolg_thorns";
     static List<String> models(String effect) {
         return switch(effect) {
+            case "excalibur" -> List.of(EXCALIBUR,EXCALIBUR_LIGHT);
+            case "gae_bolg" -> List.of(GAE_BOLG,GAE_TRAIL,GAE_THORNS);
             case "zangetsu_bankai" -> List.of(ZANGETSU,TENSA,BANKAI_COCOON,BANKAI_WAVE);
             case "gate_of_babylon_100" -> List.of(MASS_GATE,SWORD,SPEAR,AXE);
             case "gate_of_babylon_enuma" -> List.of(MASS_GATE,SWORD,SPEAR,AXE,BAB_ILU,EA,ENUMA,ENUMA_RING);

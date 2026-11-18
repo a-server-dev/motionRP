@@ -26,7 +26,7 @@ class LoadoutCodecTest {
         }
         byte[] corrupt = valid.clone(); corrupt[8] ^= 1;
         assertThrows(IOException.class, () -> codec.decode(corrupt));
-        assertThrows(IOException.class, () -> codec.decode(new byte[1_000_001]));
+        assertThrows(IOException.class, () -> codec.decode(new byte[2_000_001]));
         assertThrows(IOException.class, () -> codec.decode(null));
     }
 
@@ -56,6 +56,17 @@ class LoadoutCodecTest {
         assertThrows(IllegalArgumentException.class, () -> new StoredMotion("roll", new byte[0]));
         assertThrows(IllegalArgumentException.class, () -> new StoredMotion("roll", new byte[StoredMotion.MAX_ITEM_BYTES + 1]));
         assertThrows(IllegalArgumentException.class, () -> new Loadout(new StoredMotion[8], 0));
+    }
+
+    @Test void nineSlotV1MigratesWithoutChangingEscrowBytesOrSelection() throws Exception {
+        var bytes=new java.io.ByteArrayOutputStream();var out=new java.io.DataOutputStream(bytes);
+        out.writeInt(0x4D525031);out.writeByte(1);out.writeByte(9);out.writeByte(8);
+        for(int i=0;i<9;i++) {out.writeBoolean(i==8);if(i==8) {out.writeUTF("roll");out.writeInt(3);out.write(new byte[]{7,8,9});}}
+        out.writeLong(0);byte[] old=bytes.toByteArray();resign(old);
+        var migrated=codec.decode(old);assertEquals(8,migrated.selected());assertEquals(1,migrated.count());
+        assertArrayEquals(new byte[]{7,8,9},migrated.slot(8).item());assertNull(migrated.slot(17));
+        var expanded=migrated.deposit(17,new StoredMotion("excalibur",new byte[]{1}));
+        assertEquals(expanded,codec.decode(codec.encode(expanded)));assertEquals(17,expanded.next().selected());
     }
 
     private static void resign(byte[] data) {
