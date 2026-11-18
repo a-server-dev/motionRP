@@ -51,8 +51,8 @@ final class GateOfBabylonScene extends SummonScene {
             weapons[i].location(BukkitAdapter.adapt(at(right,back-.25+.5*emerging,up)));
             if(shoots(tick,i)) {
                 double spread=(i%5-2)*2.1+(i/5-1.5)*.15;
-                Location start=at(right,back+.25,up),target=ground(at(spread,9+(i%3)*.6,0));
-                if(target==null) target=at(spread,9+(i%3)*.6,.2);
+                Location start=at(right,back+.25,up),target=ground(at(spread,20+(i%3)*.6,0));
+                if(target==null) target=at(spread,20+(i%3)*.6,.2);
                 shots.add(new Shot(i,tick,weapons[i],start,target,start.clone()));weapons[i]=null;
                 if(tick<VOLLEY) reloadAt[i]=tick+1;
                 sound(start,Sound.ITEM_TRIDENT_THROW,.7f,1.15f+(i%3)*.15f);trace("fire index="+i+" tick="+tick);
@@ -83,8 +83,12 @@ final class GateOfBabylonScene extends SummonScene {
                         sound(next,Sound.ENTITY_BREEZE_WIND_BURST,1,.9f);
                     }
                 } else sound(next,Sound.ENTITY_ARROW_HIT,.65f,1.3f);
-                trace("impact index="+shot.gate()+" tick="+tick);
+                trace("impact index="+shot.gate()+" tick="+tick+" forward="+forwardDistance(next));
             }
         }
+    }
+    private double forwardDistance(Location point) {
+        double yaw=Math.toRadians(origin.getYaw());
+        return -(point.getX()-origin.getX())*Math.sin(yaw)+(point.getZ()-origin.getZ())*Math.cos(yaw);
     }
 }

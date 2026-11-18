@@ -7,10 +7,11 @@ import org.bukkit.*;
 import org.bukkit.entity.Player;
 import static dev.aserver.motionrp.core.SenbonzakuraTimeline.*;
 
-/** Two rows of descending-tip katanas dissolve into bounded pink blade clouds. */
+/** Two dense blade rows dissolve in a far-to-near wave into bounded petal clouds. */
 final class SenbonzakuraScene extends SummonScene {
     private static final Particle.DustOptions ROSE=new Particle.DustOptions(Color.fromRGB(255,151,207),.65f);
     private DummyTracker dropped;
+    private final DummyTracker[] scattering=new DummyTracker[SWORDS];
     private final DummyTracker[] swords=new DummyTracker[SWORDS],clouds=new DummyTracker[CLOUDS];
     private final Location[] surgeFrom=new Location[CLOUDS];
     SenbonzakuraScene(MotionPlugin plugin,Player owner) { super(plugin,owner,"Senbonzakura",END); }
@@ -37,15 +38,31 @@ final class SenbonzakuraScene extends SummonScene {
                 double rise=Math.clamp((tick-swordAt(i))/(double)RISE_TICKS,0,1);
                 Location standing=at(right,forward,-5+5*rise);standing.setYaw(origin.getYaw()+pose.yawOffset());
                 swords[i].location(BukkitAdapter.adapt(standing));
-                if(tick==BLOOM) {
-                    dust(at(right,forward,1.1),ROSE,8,.5);dust(at(right,forward,3.2),ROSE,8,.5);
-                    audience.hide(swords[i]);swords[i]=null;
+                int elapsed=tick-dissolveAt(i);
+                if(elapsed==0) {
+                    scattering[i]=model(SummonAssets.CHERRY_PETALS,at(right,forward,2.5),.18f,"scatter"+i);
+                    loop(scattering[i],"swirl");trace("dissolve index="+i+" tick="+tick);
                 }
+                if(elapsed>=0) {
+                    swords[i].scaler(ModelScaler.value((float)Math.max(.02,1.5*(1-elapsed/8.0))));
+                    dust(at(right,forward,2.5),ROSE,6,1.1);
+                    particle(at(right,forward,2.5),Particle.CHERRY_LEAVES,4,1.3,.025);
+                    if(elapsed>=8) { audience.hide(swords[i]);swords[i]=null; }
+                }
+            }
+            if(scattering[i]!=null) {
+                double p=Math.clamp((tick-dissolveAt(i))/16.0,0,1);
+                Location from=at(right,forward,2.5),to=orbit(i%CLOUDS);
+                scattering[i].location(BukkitAdapter.adapt(from.clone().add(to.toVector().subtract(from.toVector()).multiply(p))));
+                scattering[i].scaler(ModelScaler.value((float)(.18+.4*Math.sin(p*Math.PI))));
+                if(p>=1) { audience.hide(scattering[i]);scattering[i]=null; }
             }
         }
         if(tick==BLOOM) {
             sound(at(0,0,2),Sound.BLOCK_CHERRY_LEAVES_BREAK,.9f,1.1f);
             sound(at(0,0,2),Sound.ENTITY_BREEZE_WHIRL,.55f,1.4f);
+        }
+        if(tick==ORBIT) {
             for(int i=0;i<CLOUDS;i++) { clouds[i]=model(SummonAssets.CHERRY_PETALS,orbit(i),.35f,"petals"+i);loop(clouds[i],"swirl"); }
         }
         for(int i=0;i<CLOUDS;i++) {
@@ -63,7 +80,7 @@ final class SenbonzakuraScene extends SummonScene {
                 }
             }
             clouds[i].location(BukkitAdapter.adapt(point));
-            float scale=(float)Math.clamp((tick-BLOOM)/10.0,.1,1);
+            float scale=(float)Math.clamp((tick-ORBIT)/10.0,.1,1);
             if(tick>=FADE) scale*=Math.max(.02f,(END-tick)/(float)(END-FADE));
             clouds[i].scaler(ModelScaler.value(scale));
             if(tick%3==0) { dust(point,ROSE,3,.3);particle(point,Particle.CHERRY_LEAVES,2,.25,0); }

@@ -2868,7 +2868,7 @@
       "name": "titan_transform",
       "loop": "once",
       "override": false,
-      "length": 10.3,
+      "length": 12.2,
       "snapping": 20,
       "selected": false,
       "animators": {

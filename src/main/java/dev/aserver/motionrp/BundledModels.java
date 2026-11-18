@@ -60,6 +60,8 @@ public final class BundledModels {
                             file.equals("players/" + PLAYER + ".bbmodel") ? Set.of(PLAYER_020_SHA, PLAYER_021_SHA, PLAYER_023_SHA)
                                     : file.equals("players/" + SHURIKEN_PLAYER + ".bbmodel") ? Set.of(SHURIKEN_030_SHA)
                                     : file.equals("players/motionrp_gate_of_babylon.bbmodel") ? Set.of(SUMMON_040_SHA.get(file),"308b4f2762d09705d8c7852b215092556d1a36e46e9aa99b7956ea7fd780ea7d",SUMMON_050_SHA.get(file))
+                                    : file.equals("players/motionrp_senbonzakura.bbmodel") ? Set.of(SUMMON_050_SHA.get(file),"cfa5f6ce32f52c32fa3a6d1a75de6371f5b013883445afc29c6bae6add12ded5")
+                                    : file.equals("players/motionrp_titan_transform.bbmodel") ? Set.of("bfbc83f290b4252a4088fd825e0fca0bed7a4a019e74f4305d33a791d3f20857")
                                     : SUMMON_050_SHA.containsKey(file) ? Set.of(SUMMON_050_SHA.get(file))
                                     : SUMMON_040_SHA.containsKey(file) ? Set.of(SUMMON_040_SHA.get(file)) : Set.of(),
                             plugin.getDataFolder().toPath().resolve("model-backups"),

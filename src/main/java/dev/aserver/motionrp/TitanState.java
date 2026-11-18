@@ -2,6 +2,8 @@ package dev.aserver.motionrp;
 
 import com.destroystokyo.paper.profile.ProfileProperty;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Location;
+import org.bukkit.Bukkit;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataType;
@@ -60,8 +62,23 @@ final class TitanState {
         } catch(IOException failure) { throw new UncheckedIOException(failure); }
     }
     void scale(double value) { Objects.requireNonNull(player.getAttribute(Attribute.SCALE)).setBaseValue(value); }
+    void prepareExit(Location safeGround) {
+        try {
+            var bytes=new ByteArrayOutputStream();var out=new DataOutputStream(bytes);
+            out.writeUTF(safeGround.getWorld().getUID().toString());
+            out.writeDouble(safeGround.getX());out.writeDouble(safeGround.getY());out.writeDouble(safeGround.getZ());
+            out.writeFloat(safeGround.getYaw());out.writeFloat(safeGround.getPitch());
+            player.getPersistentDataContainer().set(key(plugin,"return"),PersistentDataType.BYTE_ARRAY,bytes.toByteArray());
+            player.saveData();
+        } catch(IOException failure) { throw new UncheckedIOException(failure); }
+    }
+    void landed() {
+        player.getPersistentDataContainer().remove(key(plugin,"return"));player.saveData();
+    }
+    void restoreAppearance() { restoreState(plugin,player,false); }
     void restore() { if(began) { recover(plugin,player);began=false; } }
-    static void recover(MotionPlugin plugin,Player player) {
+    static void recover(MotionPlugin plugin,Player player) { restoreState(plugin,player,true); }
+    private static void restoreState(MotionPlugin plugin,Player player,boolean finish) {
         var data=player.getPersistentDataContainer();
         Double previous=data.get(key(plugin,"scale"),PersistentDataType.DOUBLE);
         if(previous==null) return;
@@ -77,10 +94,23 @@ final class TitanState {
                 for(int i=0;i<count;i++) { String value=input.readUTF();String signature=input.readBoolean()?input.readUTF():null;original.add(new ProfileProperty("textures",value,signature)); }
                 var profile=player.getPlayerProfile().clone();profile.removeProperty("textures");
                 for(var p:original) profile.setProperty(p);
-                player.setPlayerProfile(profile);
+                var current=player.getPlayerProfile().getProperties().stream().filter(p->p.getName().equals("textures")).toList();
+                if(!new HashSet<>(current).equals(new HashSet<>(original))) player.setPlayerProfile(profile);
             }
             player.setInvisible(invisible!=null && invisible!=0);
-            data.remove(key(plugin,"scale"));data.remove(key(plugin,"skin"));data.remove(key(plugin,"invisible"));
+            if(finish) {
+                byte[] returnTo=data.get(key(plugin,"return"),PersistentDataType.BYTE_ARRAY);
+                if(returnTo!=null) {
+                    var input=new DataInputStream(new ByteArrayInputStream(returnTo));
+                    var world=Bukkit.getWorld(UUID.fromString(input.readUTF()));
+                    var safe=new Location(world,input.readDouble(),input.readDouble(),input.readDouble(),input.readFloat(),input.readFloat());
+                    if(world!=null && player.getWorld()==world && !player.collidesAt(safe)) {
+                        player.teleport(safe,org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.PLUGIN);
+                        player.setFallDistance(0);player.setVelocity(new org.bukkit.util.Vector());
+                    }
+                }
+                data.remove(key(plugin,"scale"));data.remove(key(plugin,"skin"));data.remove(key(plugin,"invisible"));data.remove(key(plugin,"return"));
+            }
             player.saveData();
         } catch(IOException failure) { throw new UncheckedIOException("Titan recovery journal is invalid",failure); }
         finally { player.setInvisible(invisible!=null && invisible!=0); }

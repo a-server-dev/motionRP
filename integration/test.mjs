@@ -163,7 +163,7 @@ try {
   const oldShuriken=gunzipSync(fs.readFileSync(path.join(project,'src/test/resources/motionrp_rasenshuriken-0.3.0.bbmodel.gz')));
   fs.mkdirSync(path.join(run,'plugins/BetterModel/players'),{recursive:true});
   fs.writeFileSync(path.join(run,'plugins/BetterModel/players/motionrp_rasenshuriken.bbmodel'),oldShuriken);
-  const oldSummons=[['players/motionrp_gate_of_babylon','2e0bae16f4570116a383ccaa91e09319564665870b34c7cc03a9c156c34c2272','0.5.0'],
+  const oldSummons=[['players/motionrp_titan_transform','bfbc83f290b4252a4088fd825e0fca0bed7a4a019e74f4305d33a791d3f20857','0.6.0'],['players/motionrp_gate_of_babylon','2e0bae16f4570116a383ccaa91e09319564665870b34c7cc03a9c156c34c2272','0.5.0'],
     ['players/motionrp_senbonzakura','7a38d287afad202d93644f1d54ba0267baa33eff01315860675bd940c5944afe','0.5.0'],
     ['models/motionrp_senbonzakura_blade','aebce2d6a72045a193e54ebaad4e7cf8fd579ccc19aba3182b659c5f5ed44d70','0.5.0'],
     ['models/motionrp_susanoo_armor','d054d6147211c1cc72e6281ee5b9cc1a3ddcda8d9da6548e4472affedb16040c'],
@@ -652,6 +652,7 @@ generate-structures=false
   await waitFor(() => /gate_of_babylon:.*利用可能/.test(output) && /susanoo:.*利用可能/.test(output),'both summoned motion catalogs available');
   pass('both new definitions migrate into an old config and every summon model loads in BetterModel');
 
+  consoleCommand('fill -8 -61 18 8 -61 23 minecraft:stone');await sleep(200);
   await addSummon('gate_of_babylon',2);
   pass('Gate of Babylon stacks to 64 and registers/selects in the same per-player GUI');
   sceneDisplays.clear();sceneRemoved.clear();
@@ -672,6 +673,9 @@ generate-structures=false
   const fired=[...gateTrace.matchAll(/Gate fire index=(\d+) tick=(\d+)/g)].map(m => [Number(m[1]),Number(m[2])]);
   assert.deepEqual(fired,[...Array.from({length:30},(_,i)=>[i%20,42+i]),...Array.from({length:20},(_,i)=>[i,84])]);
   assert.equal([...gateTrace.matchAll(/Gate impact index=/g)].length,50);
+  const impactRanges=[...gateTrace.matchAll(/Gate impact index=\d+ tick=\d+ forward=([\d.]+)/g)].map(m=>Number(m[1]));
+  assert.equal(impactRanges.length,50);assert.ok(impactRanges.every(d=>d>=19.9 && d<=21.3),impactRanges.join(','));
+  pass('every unobstructed treasury shot targets ground about twenty blocks ahead');
   const reloaded=[...gateTrace.matchAll(/Gate reload index=(\d+) tick=(\d+)/g)].map(m => [Number(m[1]),Number(m[2])]);
   assert.deepEqual(reloaded,Array.from({length:30},(_,i)=>[i%20,43+i]));
   const allGateEntries=summonTrace('Gate',gateBegin);
@@ -681,7 +685,7 @@ generate-structures=false
   const blastTimes=[...gateTrace.matchAll(/Gate explosion index=(\d+) tick=(\d+)/g)].map(m=>Number(m[2]));
   assert.equal(blastTimes.length,20);assert.ok(blastTimes.every(t=>t>=84));
   const gateBlockBegin=output.length;
-  consoleCommand(`execute positioned ${gateOrigin.x} ${gateOrigin.y-1} ${gateOrigin.z+9} if block ~ ~ ~ minecraft:stone run say GATE_GROUND_UNCHANGED`);
+  consoleCommand(`execute positioned ${gateOrigin.x} ${gateOrigin.y-1} ${gateOrigin.z+20} if block ~ ~ ~ minecraft:stone run say GATE_GROUND_UNCHANGED`);
   await waitFor(()=>output.slice(gateBlockBegin).includes('GATE_GROUND_UNCHANGED'),'explosive volley keeps the impact floor');
   pass('only the final volley makes twenty cosmetic explosions and leaves the impact blocks intact');
   sceneDisplays.clear();sceneRemoved.clear();const gateCancel=output.length;a._testLeftClick();
@@ -727,12 +731,17 @@ generate-structures=false
   sceneDisplays.clear();sceneRemoved.clear();const cherryBegin=output.length;
   const cherryOrigin=a.entity.position.clone(),cherryHealth=[a.health,b.health];
   const particleBeforeCherry=particles;
-  a._testLeftClick();await waitFor(() => output.slice(cherryBegin).includes('Senbonzakura phase: BLOOM'),'swords dissolve into petals');
+  a._testLeftClick();await waitFor(() => output.slice(cherryBegin).includes('Senbonzakura phase: ORBIT'),'swords dissolve into petals');
   await sleep(400);
   const cherryEntries=summonTrace('Senbonzakura',cherryBegin);
   assert.equal(cherryEntries.filter(e => e.kind.startsWith('blade')).length,48);
   assert.equal(cherryEntries.filter(e => e.kind.startsWith('petals')).length,8);
   assert.equal(cherryEntries.filter(e => e.kind==='dropped').length,1);
+  assert.equal(cherryEntries.filter(e=>e.kind.startsWith('scatter')).length,48);
+  const dissolves=[...output.slice(cherryBegin).matchAll(/Senbonzakura dissolve index=(\d+) tick=(\d+)/g)].map(m=>[Number(m[1]),Number(m[2])]);
+  assert.equal(dissolves.length,48);assert.equal(dissolves[0][1],80);assert.equal(dissolves.at(-1)[1],95);
+  for(const [index,tick] of dissolves) assert.equal(tick,80+Math.floor((23-Math.floor(index/2))*15/23));
+  pass('all forty-eight blades shed local swirling petals from far to near across fifteen ticks');
   assert.ok(renderedForBoth(cherryEntries),'Cherry blade/cloud render metadata missing');
   pass('caster and observer receive a held katana, forty-eight dense blade-only sheets and eight petal clouds');
   await waitFor(() => output.slice(cherryBegin).includes('Senbonzakura phase: FADE'),'petal convergence and impact',15000);
@@ -767,7 +776,9 @@ generate-structures=false
     }
     return value && typeof value==='object' ? Object.values(value).flatMap(skinUrls) : [];
   }
-  const profileUpdates=[],scaleUpdates=[];
+  const profileUpdates=[],scaleUpdates=[],nativeLightning=new Set(),playerFlags=[];
+  b._client.on('spawn_entity',p=>{if(p.type===b.registry.entitiesByName.lightning_bolt.id) nativeLightning.add(p.entityId);});
+  b._client.on('entity_metadata',p=>{if(p.entityId===a.entity?.id) for(const e of p.metadata) if(e.key===0) playerFlags.push(e.value);});
   b._client.on('player_info',packet=>{
     for(const e of packet.data||[]) if(e.uuid===uuid('MotionTesterA') && e.player) profileUpdates.push(skinUrls(e.player));
   });
@@ -790,14 +801,23 @@ generate-structures=false
   assert.ok(scaleUpdates.some(v=>Math.abs(v-10)<.001),'Observer received no real scale-10 attribute: '+scaleUpdates);
   assert.ok(profileUpdates.some(urls=>urls.some(url=>url.includes('1c6cd7202c34e78f'))),'Temporary Mojang skin missing from player profile packets');
   const pending=await readSaved('MotionTesterA');assert.equal(pending.data.BukkitValues['motionrp:titan_scale_v1'],1.25);
-  pass('hand bite triggers lightning/flash, a giant skin model, real scale 10 and temporary signed player skin');
-  await waitFor(()=>output.slice(titanBegin).includes('Titan phase: STEAM'),'steam and shrink',20000);
+  assert.ok(nativeLightning.size>=4,'No vanilla lightning entities reached the observer');
+  pass('hand bite triggers native lightning/flash, a giant skin model, real scale 10 and temporary signed player skin');
+  await waitFor(()=>output.slice(titanBegin).includes('Titan phase: EXIT'),'human exits the nape',20000);
+  assert.ok(a.entity.position.y>titanOrigin.y+13,'The real player did not emerge at the nape');
+  assert.ok(Math.abs(scaleUpdates.at(-1)-1.25)<.001);assert.equal(profileUpdates.at(-1).length,0);
+  await sleep(300);assert.equal(playerFlags.at(-1)&0x20,0,'The real player remains hidden after leaving its model');
+  a._testStep(.2,.1,.2); // Inputs cannot cancel the owned dive.
+  pass('original skinned real player emerges at the nape while the giant stays full size');
+  await waitFor(()=>output.slice(titanBegin).includes('Titan phase: STEAM'),'landing followed by steam',20000);
   await waitFor(()=>removedForBoth(titanEntries) && sceneRemoved.size===sceneDisplays.size,'giant and lightning cleanup',15000);
   await waitFor(noTitanJournal,'titan state journal cleared');
   assert.ok(Math.abs(scaleUpdates.at(-1)-1.25)<.001,'Scale did not restore: '+scaleUpdates.at(-1));
   assert.ok(profileUpdates.length>=2 && profileUpdates.at(-1).length===0,'Original empty test-player texture properties did not restore');
-  assert.ok(a.entity.position.distanceTo(titanOrigin)<.01);assert.deepEqual([a.health,b.health],titanHealth);
-  pass('normal Titan completion restores original skin, original scale 1.25 and visibility without damage or movement');
+  assert.ok(Math.abs(a.entity.position.y-titanOrigin.y)<.01);
+  assert.ok(Math.abs(a.entity.position.z-(titanOrigin.z-5))<.01);assert.deepEqual([a.health,b.health],titanHealth);
+  assert.ok([...nativeLightning].every(id=>removedByRole.observer.has(id)));
+  pass('real player dives five blocks behind the giant, lands without damage and all lightning/models clean up');
 
   sceneDisplays.clear();sceneRemoved.clear();const titanCancel=output.length;a._testLeftClick();
   await waitFor(()=>output.slice(titanCancel).includes('Titan phase: GIANT'),'giant before cancellation',20000);
@@ -808,6 +828,13 @@ generate-structures=false
   pass('cancelling at scale 10 restores the original skin/scale and removes every replacement display');
 
   await sleep(300); // Controller inputs intentionally debounce for four ticks.
+  sceneDisplays.clear();sceneRemoved.clear();const airOrigin=a.entity.position.clone(),airBegin=output.length;
+  a._testLeftClick();await waitFor(()=>output.slice(airBegin).includes('Titan phase: DIVE'),'titan dive before cancellation',20000);
+  assert.ok(a.entity.position.y>airOrigin.y+10);const airEntries=summonTrace('Titan',airBegin);
+  a._testLeftClick();await waitFor(()=>a.entity.position.distanceTo(airOrigin)<.01 && removedForBoth(airEntries),'air cancel restores safe ground');
+  await waitFor(noTitanJournal,'air cancel clears recovery state');
+  pass('cancelling the nape dive safely returns the actual player to its ground anchor');
+  await sleep(300);
   const titanQuit=output.length;a._testLeftClick();
   await waitFor(()=>output.slice(titanQuit).includes('Titan phase: GIANT'),'giant before logout',20000);
   await disconnect(a);await waitFor(noTitanJournal,'logout restores the player.dat state');
@@ -815,11 +842,13 @@ generate-structures=false
   const restored=await readSaved('MotionTesterA');
   assert.ok(!Object.keys(restored.data.BukkitValues||{}).some(k=>k.startsWith('motionrp:titan_')));
   pass('logout during giant form restores saved scale/skin state before reconnection');
-  a._testLook(0,0);const crashBegin=output.length;a._testLeftClick();
-  await waitFor(()=>output.slice(crashBegin).includes('Titan phase: GIANT'),'giant before recovery test',20000);
+  a._testLook(0,0);const crashOrigin=a.entity.position.clone(),crashBegin=output.length;a._testLeftClick();
+  await waitFor(()=>output.slice(crashBegin).includes('Titan phase: DIVE'),'nape dive before recovery test',20000);
   const saveBegin=output.length;consoleCommand('save-all flush');
   await waitFor(()=>output.slice(saveBegin).includes('Saved the game'),'persist simulated interrupted giant state',20000);
-  assert.equal((await readSaved('MotionTesterA')).data.BukkitValues['motionrp:titan_scale_v1'],1.25);
+  const crashSaved=await readSaved('MotionTesterA');
+  assert.equal(crashSaved.data.BukkitValues['motionrp:titan_scale_v1'],1.25);
+  assert.ok(crashSaved.data.BukkitValues['motionrp:titan_return_v1']);
   const killed=new Promise(resolve=>server.once('exit',resolve));server.kill('SIGKILL');await killed;server=undefined;
   await disconnect(a);await disconnect(b);await startServer();
   a=await connect('MotionTesterA');b=await connect('MotionTesterB');
@@ -827,7 +856,8 @@ generate-structures=false
   const recovery=await readSaved('MotionTesterA');
   const attr=(recovery.data.attributes||recovery.data.Attributes||[]).find(x=>String(x.id||x.Name).includes('scale'));
   assert.ok(attr && Math.abs((attr.base??attr.Base)-1.25)<.001,'Interrupted scale did not recover');
-  pass('an interrupted server restart recovers the original scale and removes the transformation journal on login');
+  assert.ok(a.entity.position.distanceTo(crashOrigin)<.01,'Restart left the player in the air');
+  pass('a restart interrupted during the nape dive recovers original scale and returns the player to safe ground');
   assert.ok(!output.includes('Titan scene failed'),'Titan scene logged a runtime failure');
 
   await disconnect(b);

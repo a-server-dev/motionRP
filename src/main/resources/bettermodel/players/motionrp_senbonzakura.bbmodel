@@ -2868,7 +2868,7 @@
       "name": "senbonzakura",
       "loop": "once",
       "override": false,
-      "length": 10.6,
+      "length": 12.0,
       "snapping": 20,
       "selected": false,
       "animators": {
@@ -2907,7 +2907,7 @@
             },
             {
               "channel": "rotation",
-              "time": 0.7,
+              "time": 1.5,
               "interpolation": "linear",
               "color": -1,
               "uuid": "ca1664b3-2565-5791-8793-4118c85cd641",
@@ -2921,7 +2921,7 @@
             },
             {
               "channel": "rotation",
-              "time": 1.0,
+              "time": 1.8,
               "interpolation": "linear",
               "color": -1,
               "uuid": "f5447bdc-5ca7-55f0-9067-b142157b6316",
@@ -2935,7 +2935,7 @@
             },
             {
               "channel": "rotation",
-              "time": 3.2,
+              "time": 4.0,
               "interpolation": "linear",
               "color": -1,
               "uuid": "8d741257-818e-5134-a09d-e60979477b6e",
@@ -2949,7 +2949,7 @@
             },
             {
               "channel": "rotation",
-              "time": 7.5,
+              "time": 8.9,
               "interpolation": "linear",
               "color": -1,
               "uuid": "e7c9ccd9-8146-5652-9ea6-27fad2115360",
@@ -2963,7 +2963,7 @@
             },
             {
               "channel": "rotation",
-              "time": 7.65,
+              "time": 9.05,
               "interpolation": "linear",
               "color": -1,
               "uuid": "9394115e-d495-5083-850b-bafe4a8e4dfd",
@@ -2977,7 +2977,7 @@
             },
             {
               "channel": "rotation",
-              "time": 8.8,
+              "time": 10.2,
               "interpolation": "linear",
               "color": -1,
               "uuid": "a62e1405-c29d-56fb-8f51-b059bfdb008b",
@@ -2991,7 +2991,7 @@
             },
             {
               "channel": "rotation",
-              "time": 10.6,
+              "time": 12.0,
               "interpolation": "linear",
               "color": -1,
               "uuid": "54fc7023-0b57-5a6e-a65b-608923bb4bc7",
@@ -3040,7 +3040,7 @@
             },
             {
               "channel": "rotation",
-              "time": 3.2,
+              "time": 4.0,
               "interpolation": "linear",
               "color": -1,
               "uuid": "88b59b87-7a76-5ab2-9de9-9908cdc4d3a9",
@@ -3054,7 +3054,7 @@
             },
             {
               "channel": "rotation",
-              "time": 7.65,
+              "time": 9.05,
               "interpolation": "linear",
               "color": -1,
               "uuid": "7b7e551f-1233-5781-96f9-11b6b8ef8b31",
@@ -3068,7 +3068,7 @@
             },
             {
               "channel": "rotation",
-              "time": 10.6,
+              "time": 12.0,
               "interpolation": "linear",
               "color": -1,
               "uuid": "b670efaf-c353-5c4c-ac6c-7ddfa58172f3",
@@ -3103,7 +3103,7 @@
             },
             {
               "channel": "rotation",
-              "time": 3.2,
+              "time": 4.0,
               "interpolation": "linear",
               "color": -1,
               "uuid": "c9bcf8dc-521a-5e0e-b666-d0e6d7290984",
@@ -3117,7 +3117,7 @@
             },
             {
               "channel": "rotation",
-              "time": 8.8,
+              "time": 10.2,
               "interpolation": "linear",
               "color": -1,
               "uuid": "45a99ccd-e4c5-5bac-9248-94c523ae8d90",
@@ -3131,7 +3131,7 @@
             },
             {
               "channel": "rotation",
-              "time": 10.6,
+              "time": 12.0,
               "interpolation": "linear",
               "color": -1,
               "uuid": "d86573d3-6aaf-570f-a3ea-68b029d83bb0",
@@ -3180,7 +3180,7 @@
             },
             {
               "channel": "rotation",
-              "time": 7.5,
+              "time": 8.9,
               "interpolation": "linear",
               "color": -1,
               "uuid": "58851260-bca8-5c3c-a581-7ccefef9364f",
@@ -3194,7 +3194,7 @@
             },
             {
               "channel": "rotation",
-              "time": 7.65,
+              "time": 9.05,
               "interpolation": "linear",
               "color": -1,
               "uuid": "c151e691-f581-5ef7-99d4-78e1235218a4",
@@ -3208,7 +3208,7 @@
             },
             {
               "channel": "rotation",
-              "time": 10.6,
+              "time": 12.0,
               "interpolation": "linear",
               "color": -1,
               "uuid": "9849e5fd-bd39-5a98-8124-420f4d96de1b",
@@ -3257,7 +3257,7 @@
             },
             {
               "channel": "rotation",
-              "time": 3.2,
+              "time": 4.0,
               "interpolation": "linear",
               "color": -1,
               "uuid": "9cf05ba3-ac79-51cd-b41d-e781c095a276",
@@ -3271,7 +3271,7 @@
             },
             {
               "channel": "rotation",
-              "time": 10.6,
+              "time": 12.0,
               "interpolation": "linear",
               "color": -1,
               "uuid": "dea41403-a5dc-513e-bef5-2240623e250d",

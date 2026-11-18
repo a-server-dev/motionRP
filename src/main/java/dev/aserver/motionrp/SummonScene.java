@@ -11,7 +11,7 @@ import org.bukkit.util.Vector;
 import java.util.Objects;
 import java.util.logging.Level;
 
-/** Bounded packet-only summons. No blocks, physical projectiles or combat. */
+/** Bounded cosmetic scenes. No block edits, physical projectiles or combat. */
 abstract class SummonScene implements MotionScene {
     static final TrackerModifier MODIFIER=TrackerModifier.builder().sightTrace(false).damageAnimation(false).damageTint(false).build();
     final MotionPlugin plugin;
@@ -30,7 +30,7 @@ abstract class SummonScene implements MotionScene {
         audience=new SceneAudience(owner);origin=owner.getLocation().clone();origin.setPitch(0);
     }
     @Override public final void start() { task=Bukkit.getScheduler().runTaskTimer(plugin,this::advance,0,1); }
-    @Override public final boolean ownsMove(Location from,Location to) { return false; }
+    @Override public boolean ownsMove(Location from,Location to) { return false; }
     private void advance() {
         if(closed) return;
         try {
