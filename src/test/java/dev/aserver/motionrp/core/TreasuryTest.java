@@ -31,15 +31,39 @@ class TreasuryTest {
         assertEquals("KEY",TreasuryTimeline.phase(TreasuryTimeline.KEY,true));
         assertTrue(TreasuryTimeline.KEY<72 && TreasuryTimeline.EA<72);
         assertEquals("ENUMA_ELISH",TreasuryTimeline.phase(TreasuryTimeline.FIRE,true));
-        assertEquals("FINISHED",TreasuryTimeline.phase(232,true));
+        assertEquals("FINISHED",TreasuryTimeline.phase(272,true));
     }
     @Test void theHundredGatePoseKeepsTheWristsSpreadAndStandingStill() throws Exception {
         var pose=model("players/motionrp_gate_of_babylon_100");
         assertEquals(5.8,pose.getAsJsonArray("animations").get(0).getAsJsonObject().get("length").getAsDouble());
-        var a=TreasuryHandPath.at(20);var b=TreasuryHandPath.at(30);
-        assertTrue(Math.abs(a.right())>.7,"Arm must extend sideways: "+a);
-        assertEquals(a.right(),b.right(),1e-5);assertEquals(a.height(),b.height(),1e-5);
-        assertTrue(TreasuryHandPath.at(TreasuryTimeline.FIRE).forward()>.7,"Ea hand must thrust forward");
+        var math=new RasenganAssetsTest();Map<String,JsonObject> groups=new HashMap<>();Map<String,String> names=new HashMap<>(),parents=new HashMap<>();
+        for(var raw:pose.getAsJsonArray("groups")) { var g=raw.getAsJsonObject();String id=g.get("uuid").getAsString();groups.put(id,g);names.put(g.get("name").getAsString(),id); }
+        math.parentTree(pose.getAsJsonArray("outliner"),null,parents);
+        var animation=pose.getAsJsonArray("animations").get(0).getAsJsonObject();
+        var a=math.posedOrigin(names.get("pri_right_item"),1,animation,groups,parents);var b=math.posedOrigin(names.get("pri_right_item"),2,animation,groups,parents);
+        assertTrue(Math.abs(a[0])>11,"Hundred-gate arm must remain spread");assertArrayEquals(a,b,1e-7);
+    }
+    @Test void seriousStancePlantsStaggeredFeetAndHoldsEaBesideTheFaceBeforeThrusting() throws Exception {
+        var pose=model("players/motionrp_gate_of_babylon_enuma");var math=new RasenganAssetsTest();
+        Map<String,JsonObject> groups=new HashMap<>();Map<String,String> names=new HashMap<>(),parents=new HashMap<>();
+        for(var raw:pose.getAsJsonArray("groups")) { var g=raw.getAsJsonObject();String id=g.get("uuid").getAsString();groups.put(id,g);names.put(g.get("name").getAsString(),id); }
+        math.parentTree(pose.getAsJsonArray("outliner"),null,parents);var animation=pose.getAsJsonArray("animations").get(0).getAsJsonObject();
+        assertEquals(13.6,animation.get("length").getAsDouble());
+        for(double time:new double[]{1,6,8,9.3}) {
+            var right=math.posedPoint(names.get("prfl_right_foreleg"),new double[]{1.875,0,0},time,animation,groups,parents);
+            var left=math.posedPoint(names.get("plfl_left_foreleg"),new double[]{-1.875,0,0},time,animation,groups,parents);
+            assertTrue(Math.abs(right[1])<.5 && Math.abs(left[1])<.5,"Feet must stay planted");
+            assertTrue(Math.abs(right[2]-left[2])>3,"One foot must be behind the other");
+            assertTrue(Math.hypot(right[0]-left[0],right[2]-left[2])>6,"Stance must be wider than the original idle");
+        }
+        var charge=TreasuryHandPath.at(140);var fire=TreasuryHandPath.at(TreasuryTimeline.FIRE);
+        assertTrue(charge.height()>1.3 && charge.height()<1.9,"Charging hand should be beside the face: "+charge);
+        assertTrue(fire.forward()>charge.forward()+.4,"The hand must thrust toward the target");
+    }
+    @Test void chargeAndSwordTiltReachFullPowerAtTheReleaseAndTheVortexWidens() {
+        assertEquals(0,TreasuryTimeline.charge(TreasuryTimeline.CHARGE));assertEquals(1,TreasuryTimeline.charge(TreasuryTimeline.FIRE));
+        assertEquals(0,TreasuryTimeline.thrust(TreasuryTimeline.THRUST));assertEquals(1,TreasuryTimeline.thrust(TreasuryTimeline.FIRE));
+        assertTrue(TreasuryTimeline.beamScale(15)>TreasuryTimeline.beamScale(0)*2.5);
     }
     @Test void eaHasThreeIndependentlyRotatingCylindersAndASeparateVortex() throws Exception {
         var ea=model("models/motionrp_ea");int cylinders=0;

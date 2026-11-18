@@ -52,18 +52,48 @@ def key_and_ea():
     spin=animation('spin',1,{})
     spin['loop']='loop'
     for j,g in enumerate(cylinder_groups):spin['animators'][g['uuid']]=animator(g,[(0,(0,0,0)),(1,(0,360 if j%2==0 else -360,0))])
-    level=animation('level',7,{})
-    level['animators'][root['uuid']]=animator(root,[(0,(0,0,0)),(3.7,(0,0,0)),(4.5,(-90,0,0)),(7,(-90,0,0))])
+    level=animation('level',10,{})
+    level['animators'][root['uuid']]=animator(root,[(0,(0,0,0)),(5.1,(0,0,0)),(5.7,(-90,0,0)),(10,(-90,0,0))])
     m.data['animations']=[spin,level];m.save()
     m=Model('motionrp_enuma_vortex',colors=colors);parts=[]
-    parts.append(m.cube('white_energy_core',[0,0,0],[1.4,1.4,31],7))
+    parts.append(m.cube('white_energy_core',[0,0,0],[2.8,2.8,31],7))
     for i in range(16):
         a=i*math.pi/4;z=-14+i*1.8
-        for strand in range(3):
-            angle=a+strand*math.tau/3
-            parts.append(m.cube(f'red_wind_{i}_{strand}',[4*math.cos(angle),4*math.sin(angle),z],[1.8,1.8,2.5],4 if strand==0 else 3))
+        for strand in range(4):
+            angle=a+strand*math.tau/4
+            parts.append(m.cube(f'red_wind_{i}_{strand}',[7*math.cos(angle),7*math.sin(angle),z],[1.8,1.8,2.5],7 if strand==0 else 2 if strand==3 else 3))
     g=m.group('enuma_vortex',parts);a=animation('vortex',.8,{})
     a['loop']='loop';a['animators'][g['uuid']]=animator(g,[(0,(0,0,0)),(.8,(0,0,360))]);m.data['animations']=[a];m.save()
+
+def charge_models():
+    colors=[(255,195,54,255),(255,236,166,255),(28,6,22,255),(195,10,35,255),(255,48,65,255),(80,3,20,255),(255,250,221,255),(255,255,249,255)]
+    m=Model('motionrp_enuma_charge',colors=colors);parts=[]
+    for j in range(9):
+        y=-4+j;size=max(1,2*math.sqrt(max(0,25-y*y)))
+        parts.append(m.cube('white_core_'+str(j),[0,y,0],[size,1.1,size],7 if j%2 else 6))
+    for j in range(18):
+        a=math.tau*j/18
+        parts.append(m.cube('gold_spark_'+str(j),[7*math.cos(a),7*math.sin(a),(j%3-1)*2],[1,2.5,1],0,[0,0,22.5 if j%2 else -22.5]))
+    g=m.group('charge_core',parts);a=animation('spin',1,{})
+    a['loop']='loop';a['animators'][g['uuid']]=animator(g,[(0,(0,0,0)),(1,(0,0,360))]);m.data['animations']=[a];m.save()
+    m=Model('motionrp_enuma_ring',colors=colors);parts=[]
+    for ring,(radius,color) in enumerate([(5.5,1),(8,4),(10,2)]):
+        for j in range(32):
+            angle=math.tau*j/32
+            parts.append(m.cube(f'ring_{ring}_{j}',[radius*math.cos(angle),radius*math.sin(angle),ring*.18],[1.2,1.2,.3],color))
+    for j in range(8):
+        a=j*math.pi/4
+        parts.append(m.cube('red_fracture_'+str(j),[10*math.cos(a),10*math.sin(a),-.4],[.65,4.5,.3],3,[0,0,45 if j%2 else -45]))
+    g=m.group('space_ring',parts);a=animation('spin',1.4,{})
+    a['loop']='loop';a['animators'][g['uuid']]=animator(g,[(0,(0,0,0)),(1.4,(0,0,-360))]);m.data['animations']=[a];m.save()
+    m=Model('motionrp_enuma_rift',colors=colors);parts=[]
+    for j in range(8):
+        z=-14+j*4;x=(-1 if j%2 else 1)*(1+j%3)
+        parts.append(m.cube('black_tear_'+str(j),[x,0,z],[3.2,.12,5.3],2))
+        parts.append(m.cube('red_edge_'+str(j),[x-.5,.09,z],[1.1,.1,5.4],4))
+        parts.append(m.cube('hot_edge_'+str(j),[x-1,.16,z],[.3,.08,5.4],6))
+    m.group('ground_rift',parts);m.save()
+
 
 def titan_skin(rig):
     skin=ROOT.parent/'skins/titan.png';raw=skin.read_bytes()
@@ -93,12 +123,25 @@ def main():
       'h_ph_head':[(0,(0,0,0)),(.4,(-14,10,0)),(5.3,(-14,10,0)),(5.8,(0,0,0))]}
     player(rig,'gate_of_babylon_100',5.8,spread)
     poses={
-      'pra_right_arm':[(0,(0,0,0)),(.4,(-10,0,65)),(1.8,(-10,0,65)),(2.4,(-65,5,15)),(3.5,(-75,0,10)),(5.2,(-75,0,10)),(7,(-135,0,10)),(7.5,(-135,0,10)),(8,(-90,0,5)),(9.3,(-90,0,5)),(11.6,(0,0,0))],
-      'prfa_right_forearm':[(0,(0,0,0)),(.4,(-10,0,0)),(1.8,(-10,0,0)),(2.4,(-30,0,0)),(3.5,(-45,0,0)),(5.2,(-45,0,0)),(7,(-10,0,0)),(8,(0,0,0)),(9.3,(0,0,0)),(11.6,(0,0,0))],
-      'pla_left_arm':[(0,(0,0,0)),(.4,(-10,0,-65)),(3.5,(-10,0,-65)),(5.2,(0,0,12)),(7,(0,0,12)),(8,(25,0,25)),(9.3,(25,0,25)),(11.6,(0,0,0))],
-      'h_ph_head':[(0,(0,0,0)),(.4,(-14,10,0)),(3.5,(-14,10,0)),(5.2,(-20,0,0)),(8,(-5,0,0)),(9.3,(-5,0,0)),(11.6,(0,0,0))],
-      'pc_chest':[(0,(0,0,0)),(5.2,(0,0,0)),(7,(0,-10,0)),(8,(8,5,0)),(9.3,(8,5,0)),(11.6,(0,0,0))]}
-    model=player(rig,'gate_of_babylon_enuma',11.6,poses)
-    (ROOT/'gate_of_babylon_enuma-hand-path.csv').write_text(hand_path(model,232))
+      'player_root':[(0,(0,0,0)),(.5,(0,-18,0)),(11.8,(0,-18,0)),(13.6,(0,0,0))],
+      'pra_right_arm':[(0,(0,0,0)),(.5,(-5,0,12)),(1.8,(-5,0,12)),(2.4,(-65,5,10)),(3.5,(-50,0,8)),(8.6,(-50,0,8)),(9.2,(-90,0,5)),(11,(-90,0,5)),(13.6,(0,0,0))],
+      'prfa_right_forearm':[(0,(0,0,0)),(.5,(-12,0,0)),(1.8,(-12,0,0)),(2.4,(-35,0,0)),(3.5,(-100,0,0)),(8.6,(-100,0,0)),(9.2,(0,0,0)),(11,(0,0,0)),(13.6,(0,0,0))],
+      'pla_left_arm':[(0,(0,0,0)),(.5,(-45,0,-28)),(2.8,(-45,0,-28)),(5.2,(3,0,-6)),(8.6,(3,0,-6)),(9.2,(10,0,-12)),(11,(10,0,-12)),(13.6,(0,0,0))],
+      'plfa_left_forearm':[(0,(0,0,0)),(.5,(-10,0,0)),(5.2,(-15,0,0)),(11,(-15,0,0)),(13.6,(0,0,0))],
+      'h_ph_head':[(0,(0,0,0)),(.5,(-10,15,0)),(3.5,(-10,15,0)),(5.2,(-8,12,0)),(8.6,(-8,12,0)),(9.2,(-4,-2,0)),(11,(-4,-2,0)),(13.6,(0,0,0))],
+      'pc_chest':[(0,(0,0,0)),(.5,(0,8,0)),(3.5,(0,8,0)),(5.2,(-3,-8,0)),(8.6,(-3,-8,0)),(9.2,(6,20,0)),(11,(6,20,0)),(13.6,(0,0,0))],
+      'prl_right_leg':[(0,(0,0,0)),(.5,(3,12,0)),(11.8,(3,12,0)),(13.6,(0,0,0))],
+      'prfl_right_foreleg':[(0,(0,0,0)),(.5,(-3,0,0)),(11.8,(-3,0,0)),(13.6,(0,0,0))],
+      'pll_left_leg':[(0,(0,0,0)),(.5,(-9,-12,0)),(11.8,(-9,-12,0)),(13.6,(0,0,0))],
+      'plfl_left_foreleg':[(0,(0,0,0)),(.5,(9,0,0)),(11.8,(9,0,0)),(13.6,(0,0,0))]}
+    model=player(rig,'gate_of_babylon_enuma',13.6,poses)
+    groups={g['name']:g for g in model['groups']}
+    for name,side in [('prl_right_leg',1),('pll_left_leg',-1)]:
+        g=groups[name];keys=[(0,(0,0,0)),(.5,(side,0,2.5 if side==1 else -2)),(8.6,(side,0,2.5 if side==1 else -2)),(9.2,(side,0,2.5 if side==1 else -3.5)),(11.8,(side,0,2.5 if side==1 else -3.5)),(13.6,(0,0,0))]
+        model['animations'][0]['animators'][g['uuid']]['keyframes']+=animator(g,keys,'position')['keyframes']
+        model['animations'][0]['animators'][g['uuid']]['keyframes'].sort(key=lambda frame:frame['time'])
+    save('players/motionrp_gate_of_babylon_enuma.bbmodel',model)
+    (ROOT/'gate_of_babylon_enuma-hand-path.csv').write_text(hand_path(model,272))
+    charge_models()
     dense_gate();key_and_ea();titan_skin(rig)
 if __name__=='__main__':main()

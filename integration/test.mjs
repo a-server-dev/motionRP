@@ -164,7 +164,7 @@ try {
   const oldShuriken=gunzipSync(fs.readFileSync(path.join(project,'src/test/resources/motionrp_rasenshuriken-0.3.0.bbmodel.gz')));
   fs.mkdirSync(path.join(run,'plugins/BetterModel/players'),{recursive:true});
   fs.writeFileSync(path.join(run,'plugins/BetterModel/players/motionrp_rasenshuriken.bbmodel'),oldShuriken);
-  const oldSummons=[['players/motionrp_titan_transform','bfbc83f290b4252a4088fd825e0fca0bed7a4a019e74f4305d33a791d3f20857','0.6.0'],['players/motionrp_gate_of_babylon','2e0bae16f4570116a383ccaa91e09319564665870b34c7cc03a9c156c34c2272','0.5.0'],
+  const oldSummons=[['players/motionrp_gate_of_babylon_enuma','65690445a739722ab052f571ceccd0476f2fab7ce106f2795cb724c45d5a199c','0.8.0'],['models/motionrp_ea','26bf036c8d1230c4da474034a86dc1afbe88f500237d9d5872c8a58318bb3e6e','0.8.0'],['models/motionrp_enuma_vortex','9ddebc5469047326fbff87242a29e64723952d0147512c4cf6339643042ecb0e','0.8.0'],['players/motionrp_titan_transform','bfbc83f290b4252a4088fd825e0fca0bed7a4a019e74f4305d33a791d3f20857','0.6.0'],['players/motionrp_gate_of_babylon','2e0bae16f4570116a383ccaa91e09319564665870b34c7cc03a9c156c34c2272','0.5.0'],
     ['players/motionrp_senbonzakura','7a38d287afad202d93644f1d54ba0267baa33eff01315860675bd940c5944afe','0.5.0'],
     ['models/motionrp_senbonzakura_blade','aebce2d6a72045a193e54ebaad4e7cf8fd579ccc19aba3182b659c5f5ed44d70','0.5.0'],
     ['models/motionrp_susanoo_armor','d054d6147211c1cc72e6281ee5b9cc1a3ddcda8d9da6548e4472affedb16040c'],
@@ -305,9 +305,11 @@ generate-structures=false
   saved = await readSaved('MotionTesterA');
   assert.equal(saved.loadout[6], 1);
   const priorConfig=path.join(run,'plugins/MotionRP/config.yml');
-  fs.writeFileSync(priorConfig,fs.readFileSync(priorConfig,'utf8').replace(/(  senbonzakura:\n[\s\S]*?max-ticks:) \d+/, '$1 180'));
+  fs.writeFileSync(priorConfig,fs.readFileSync(priorConfig,'utf8').replace(/(  senbonzakura:\n[\s\S]*?max-ticks:) \d+/, '$1 180').replace(/(  gate_of_babylon_enuma:\n[\s\S]*?max-ticks:) \d+/, '$1 280'));
   await startServer();
   assert.ok(/senbonzakura:\n[\s\S]*?max-ticks: 260/.test(fs.readFileSync(priorConfig,'utf8')));
+  assert.ok(/gate_of_babylon_enuma:\n[\s\S]*?max-ticks: 320/.test(fs.readFileSync(priorConfig,'utf8')));
+  pass('Enuma old timeout upgrades to fit the longer charging performance');
   pass('old bundled Senbonzakura timeout is extended automatically for the longer petal orbit');
   a = await connect('MotionTesterA');
   assert.equal(tokens(a), 62);
@@ -817,7 +819,12 @@ generate-structures=false
   assert.equal([...enumaTrace.matchAll(/TreasuryEnuma impact index=/g)].length,400);
   for(const kind of ['bab_ilu','hand_vault','ea']) assert.ok(enumaEntries.some(e=>e.kind===kind));
   assert.equal(enumaEntries.filter(e=>e.kind.startsWith('beam')).length,16);
-  assert.ok(enumaTrace.includes('enuma impact tick=176'));assert.ok(renderedForBoth(enumaEntries));assert.ok(removedForBoth(enumaEntries));
+  assert.equal(enumaEntries.filter(e=>e.kind.startsWith('charge_ring')).length,2);
+  assert.equal(enumaEntries.filter(e=>e.kind.startsWith('shock_ring')).length,3);
+  assert.equal(enumaEntries.filter(e=>e.kind.startsWith('rift')).length,8);
+  assert.ok(enumaEntries.some(e=>e.kind==='charge_core') && enumaEntries.some(e=>e.kind==='impact_core'));
+  pass('white-gold core, gyroscopic rings, three traveling shock rings and eight ground rifts reach both clients');
+  assert.ok(enumaTrace.includes('enuma impact tick=204'));assert.ok(renderedForBoth(enumaEntries));assert.ok(removedForBoth(enumaEntries));
   assert.deepEqual([a.health,b.health],enumaHealth);assert.ok(a.entity.position.distanceTo(hundredOrigin)<.01);
   const healthCheck=output.length;consoleCommand('execute if entity @e[tag=motionrp_target,nbt={Health:10.0f}] run say TREASURY_TARGET_UNHARMED');
   await waitFor(()=>output.slice(healthCheck).includes('TREASURY_TARGET_UNHARMED'),'target stays unharmed');

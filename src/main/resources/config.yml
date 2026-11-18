@@ -15,7 +15,7 @@ motions:
     model: motionrp_gate_of_babylon_enuma
     animation: gate_of_babylon_enuma
     effect: gate_of_babylon_enuma
-    max-ticks: 280
+    max-ticks: 320
   titan_transform:
     name: 巨人化
     model: motionrp_titan_transform

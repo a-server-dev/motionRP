@@ -26,7 +26,7 @@ public final class MotionPlayback {
             if(BetterModel.modelOrNull(required)==null) return "演出モデルが未読込: "+required;
         }
         if(definition.effect().startsWith("gate_of_babylon_") && BetterModel.modelOrNull(SummonAssets.MASS_GATE).animation("spin").isEmpty()) return "大規模門の回転が未登録";
-        if(definition.effect().equals("gate_of_babylon_enuma") && (BetterModel.modelOrNull(SummonAssets.EA).animation("spin").isEmpty() || BetterModel.modelOrNull(SummonAssets.EA).animation("level").isEmpty() || BetterModel.modelOrNull(SummonAssets.ENUMA).animation("vortex").isEmpty())) return "エアの回転・射出が未登録";
+        if(definition.effect().equals("gate_of_babylon_enuma") && (BetterModel.modelOrNull(SummonAssets.ENUMA_CHARGE).animation("spin").isEmpty() || BetterModel.modelOrNull(SummonAssets.ENUMA_RING).animation("spin").isEmpty() || BetterModel.modelOrNull(SummonAssets.EA).animation("spin").isEmpty() || BetterModel.modelOrNull(SummonAssets.EA).animation("level").isEmpty() || BetterModel.modelOrNull(SummonAssets.ENUMA).animation("vortex").isEmpty())) return "エアの回転・射出が未登録";
         if(definition.effect().equals("susanoo") && BetterModel.modelOrNull(SummonAssets.ARMOR).animation("slash").isEmpty())
             return "須佐能乎の斬撃アニメーションが未登録";
         if(definition.effect().equals("gate_of_babylon") && BetterModel.modelOrNull(SummonAssets.GATE).animation("spin").isEmpty())

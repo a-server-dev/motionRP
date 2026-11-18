@@ -21,9 +21,8 @@ final class TreasuryScene extends SummonScene {
     private final int[] loadedAt;
     private final Location focus;
     private final List<Shot> shots=new ArrayList<>();
-    private final DummyTracker[] beams=new DummyTracker[16];
+    private final EnumaEffects enumaEffects;
     private DummyTracker key,vault,ea;
-    private Location beamStart;
     private final Set<Player> chargeListeners=new HashSet<>();
     private record Shot(int index,int fired,DummyTracker model,Location start,Location target,Location previous) {}
     TreasuryScene(MotionPlugin plugin,Player owner,EntityTracker body,boolean serious) {
@@ -41,7 +40,7 @@ final class TreasuryScene extends SummonScene {
             }
             if(nearest!=null) aim=nearest.getLocation().clone();
         }
-        Location floor=ground(aim);focus=floor==null?aim:floor;
+        Location floor=ground(aim);focus=floor==null?aim:floor;enumaEffects=serious?new EnumaEffects(this,focus):null;
     }
     @Override String phase() { return TreasuryTimeline.phase(tick,serious); }
     @Override void update() {
@@ -104,7 +103,7 @@ final class TreasuryScene extends SummonScene {
         } else location=at(pose.right(),pose.forward(),pose.height());
         location.setDirection(focus.clone().add(0,1.2,0).toVector().subtract(location.toVector()));return location;
     }
-    private static void point(DummyTracker tracker,Location location) {
+    static void point(DummyTracker tracker,Location location) {
         float pitch=location.getPitch(),yaw=location.getYaw();
         tracker.rotator(ModelRotator.DEFAULT);tracker.rotation(()->new ModelRotation(pitch,yaw));
     }
@@ -117,7 +116,7 @@ final class TreasuryScene extends SummonScene {
         if(vault!=null) vault.location(BukkitAdapter.adapt(hand.clone().add(0,.2,0)));
         if(tick==EA) {
             audience.hide(key);key=null;ea=model(SummonAssets.EA,hand,.85f,"ea");loop(ea,"spin");
-            ea.animate("level",AnimationModifier.DEFAULT_WITH_PLAY_ONCE);sound(hand,Sound.BLOCK_BEACON_POWER_SELECT,.8f,.55f);
+            ea.animate("level",AnimationModifier.DEFAULT_WITH_PLAY_ONCE);sound(hand,Sound.BLOCK_RESPAWN_ANCHOR_CHARGE,.8f,.6f);
         }
         if(tick==EA+8) { audience.hide(vault);vault=null; }
         if(ea!=null) ea.location(BukkitAdapter.adapt(hand));
@@ -125,36 +124,15 @@ final class TreasuryScene extends SummonScene {
             if((tick-CHARGE)%12==0) {
                 chargeListeners.addAll(audience.players());sound(hand,Sound.ENTITY_BREEZE_CHARGE,.8f,(float)(.6+(tick-CHARGE)*.008));
             }
-            if(tick%2==0) {
-                double radius=.5+(tick-CHARGE)*.014;
-                for(int j=0;j<3;j++) {
-                    double a=tick*.4+j*Math.PI*2/3;
-                    dust(hand.clone().add(Math.cos(a)*radius,.7+Math.sin(a*.5)*.5,Math.sin(a)*radius),RED,4,.06);
-                }
-                particle(hand.clone().add(0,1,0),Particle.SMALL_GUST,2,.5,.02);
-            }
+            if((tick-CHARGE)%20==0) sound(hand,Sound.ENTITY_WARDEN_HEARTBEAT,.7f,.65f);
         }
         if(tick==FIRE) {
-            beamStart=hand.clone().add(origin.getDirection().multiply(1.6));
             sound(hand,Sound.ENTITY_WARDEN_SONIC_BOOM,2,.55f);sound(hand,Sound.ENTITY_BREEZE_SHOOT,2,.5f);
             for(Player player:audience.players()) player.stopSound(Sound.ENTITY_BREEZE_CHARGE,SoundCategory.PLAYERS);
         }
-        if(tick>=FIRE && tick<RECOVER) {
-            Location target=focus.clone().add(0,1,0);Vector line=target.toVector().subtract(beamStart.toVector());
-            int visible=(int)Math.ceil(16*Math.clamp((tick-FIRE)/(double)(IMPACT-FIRE),0,1));
-            for(int i=0;i<visible;i++) {
-                Location center=beamStart.clone().add(line.clone().multiply((i+.5)/16));center.setDirection(line);
-                if(beams[i]==null) { beams[i]=model(SummonAssets.ENUMA,center,1.8f,"beam"+i);loop(beams[i],"vortex");point(beams[i],center); }
-                if(tick%3==0) {
-                    double a=tick*.4+i;
-                    dust(center.clone().add(Math.cos(a)*.7,Math.sin(a)*.7,0),RED,3,.1);
-                    particle(center,Particle.GUST,1,.35,.02);
-                }
-            }
-        }
+        enumaEffects.update(tick,hand);
         if(tick==IMPACT) { blast(focus,9);trace("enuma impact tick="+tick); }
         if(tick==RECOVER) {
-            for(int i=0;i<beams.length;i++) { audience.hide(beams[i]);beams[i]=null; }
             audience.hide(ea);ea=null;
         }
     }
@@ -169,6 +147,9 @@ final class TreasuryScene extends SummonScene {
         if(radius>=9) sound(center,Sound.ENTITY_WARDEN_SONIC_BOOM,2,.6f);
     }
     @Override void onClose() {
-        if(serious) for(Player player:chargeListeners) player.stopSound(Sound.ENTITY_BREEZE_CHARGE,SoundCategory.PLAYERS);
+        if(serious) for(Player player:chargeListeners) {
+            player.stopSound(Sound.ENTITY_BREEZE_CHARGE,SoundCategory.PLAYERS);
+            player.stopSound(Sound.ENTITY_WARDEN_HEARTBEAT,SoundCategory.PLAYERS);
+        }
     }
 }

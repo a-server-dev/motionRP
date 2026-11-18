@@ -25,7 +25,7 @@ class RasenganAssetsTest {
                 "players/motionrp_senbonzakura.bbmodel","models/motionrp_senbonzakura_blade.bbmodel","models/motionrp_senbonzakura_petals.bbmodel",
                 "models/motionrp_senbonzakura_field_blade.bbmodel","players/motionrp_titan_transform.bbmodel","models/motionrp_titan_lightning.bbmodel","models/motionrp_titan_body.bbmodel",
                 "players/motionrp_gate_of_babylon_100.bbmodel","players/motionrp_gate_of_babylon_enuma.bbmodel",
-                "models/motionrp_golden_gate_mass.bbmodel","models/motionrp_bab_ilu.bbmodel","models/motionrp_ea.bbmodel","models/motionrp_enuma_vortex.bbmodel")) {
+                "models/motionrp_golden_gate_mass.bbmodel","models/motionrp_bab_ilu.bbmodel","models/motionrp_ea.bbmodel","models/motionrp_enuma_vortex.bbmodel","models/motionrp_enuma_charge.bbmodel","models/motionrp_enuma_ring.bbmodel","models/motionrp_enuma_rift.bbmodel")) {
             var model = read(file);
             Set<String> groups = new HashSet<>();
             Set<String> all = new HashSet<>();
@@ -52,7 +52,7 @@ class RasenganAssetsTest {
     }
 
     @Test void summonsContainEmbeddedTexturesDifferentWeaponsAndAnAnimatedGiantSword() throws Exception {
-        for(String id:List.of("golden_gate","treasury_sword","treasury_spear","treasury_axe","susanoo_ribs","susanoo_armor","susanoo_slash","senbonzakura_blade","senbonzakura_petals","senbonzakura_field_blade","titan_lightning")) {
+        for(String id:List.of("golden_gate","treasury_sword","treasury_spear","treasury_axe","susanoo_ribs","susanoo_armor","susanoo_slash","senbonzakura_blade","senbonzakura_petals","senbonzakura_field_blade","titan_lightning","enuma_charge","enuma_ring","enuma_rift")) {
             var model=read("models/motionrp_"+id+".bbmodel");
             String source=model.getAsJsonArray("textures").get(0).getAsJsonObject().get("source").getAsString();
             var image=ImageIO.read(new ByteArrayInputStream(Base64.getDecoder().decode(source.substring(source.indexOf(',')+1))));
@@ -277,7 +277,7 @@ class RasenganAssetsTest {
         }
     }
 
-    private void parentTree(JsonArray nodes, String parent, Map<String, String> parents) {
+    void parentTree(JsonArray nodes, String parent, Map<String, String> parents) {
         for (var node : nodes) if (node.isJsonObject()) {
             var group = node.getAsJsonObject();
             String id = group.get("uuid").getAsString();
@@ -286,11 +286,11 @@ class RasenganAssetsTest {
         }
     }
 
-    private double[] posedOrigin(String id, double time, JsonObject animation, Map<String, JsonObject> groups, Map<String, String> parents) {
+    double[] posedOrigin(String id, double time, JsonObject animation, Map<String, JsonObject> groups, Map<String, String> parents) {
         return posedPoint(id, vector(groups.get(id).getAsJsonArray("origin")), time, animation, groups, parents);
     }
 
-    private double[] posedPoint(String id, double[] point, double time, JsonObject animation, Map<String, JsonObject> groups, Map<String, String> parents) {
+    double[] posedPoint(String id, double[] point, double time, JsonObject animation, Map<String, JsonObject> groups, Map<String, String> parents) {
         for (String bone = id; bone != null; bone = parents.get(bone)) {
             double[] origin = vector(groups.get(bone).getAsJsonArray("origin"));
             double[] angle = sample(animation, bone, "rotation", time);

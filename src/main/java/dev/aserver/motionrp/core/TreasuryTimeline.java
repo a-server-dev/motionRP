@@ -3,7 +3,7 @@ package dev.aserver.motionrp.core;
 /** One rapid pass in thirty ticks, one full volley, then optional Ea. */
 public final class TreasuryTimeline {
     public static final int OPEN=6,DRAW=34,RAPID=42,RAPID_TICKS=30,VOLLEY=84,FLIGHT=2;
-    public static final int KEY=48,EA=70,CHARGE=104,FIRE=160,IMPACT=176,RECOVER=204,SERIOUS_END=232;
+    public static final int KEY=48,EA=70,CHARGE=104,THRUST=172,FIRE=184,IMPACT=204,RECOVER=236,SERIOUS_END=272;
     public record Portal(double right,double forward,double height,double scale,boolean surroundsTarget) {}
     private TreasuryTimeline() {}
     public static int count(boolean serious) { return serious?200:100; }
@@ -18,6 +18,12 @@ public final class TreasuryTimeline {
             return new Portal(12*radius*Math.cos(angle),-2.5-3*((i*.61803398875)%1),6.6+5.8*radius*Math.sin(angle),.78+.2*((i*.4142)%1),false);
         }
         return new Portal(6*Math.cos(angle),6*Math.sin(angle),.8+7*((i*.41421356237)%1),.72+.2*((i*.732)%1),true);
+    }
+    public static double charge(int tick) { return Math.clamp((tick-CHARGE)/(double)(FIRE-CHARGE),0,1); }
+    public static double thrust(int tick) { return Math.clamp((tick-THRUST)/(double)(FIRE-THRUST),0,1); }
+    public static double beamScale(int index) {
+        if(index<0 || index>=16) throw new IllegalArgumentException("Invalid vortex segment");
+        return 1.2+2.4*index/15.0;
     }
     public static String phase(int tick,boolean serious) {
         if(tick<0 || tick>=end(serious)) return "FINISHED";
