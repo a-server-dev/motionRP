@@ -13,6 +13,7 @@ public record PackSnapshot(byte[] bytes,String sha1,String sha256) {
     public PackSnapshot { bytes=bytes.clone(); }
     @Override public byte[] bytes() { return bytes.clone(); }
     public static PackSnapshot read(Path path) throws IOException {
+        EnergyPackLighting.prepare(path);
         var before=Files.readAttributes(path,java.nio.file.attribute.BasicFileAttributes.class);
         if(before.size()>MAX_BYTES) throw new IOException("Resource pack exceeds 100 MiB");
         byte[] bytes;

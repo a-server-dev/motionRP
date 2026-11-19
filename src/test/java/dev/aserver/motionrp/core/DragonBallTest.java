@@ -13,9 +13,14 @@ class DragonBallTest {
         assertEquals(40,DragonBallTimeline.RISE_END-DragonBallTimeline.RISE);
         assertEquals(0,DragonBallTimeline.height(DragonBallTimeline.RISE));assertEquals(50,DragonBallTimeline.height(DragonBallTimeline.RISE_END));
         var m=model("models/motionrp_genki_dama_orb");double[] min={100,100,100},max={-100,-100,-100};
-        for(var raw:m.getAsJsonArray("elements")){var e=raw.getAsJsonObject();if(e.get("name").getAsString().startsWith("surface_arc"))continue;for(int axis=0;axis<3;axis++){min[axis]=Math.min(min[axis],e.getAsJsonArray("from").get(axis).getAsDouble());max[axis]=Math.max(max[axis],e.getAsJsonArray("to").get(axis).getAsDouble());}}
+        var mesh=m.getAsJsonArray("elements").get(0).getAsJsonObject();assertEquals("mesh",mesh.get("type").getAsString());
+        for(var raw:mesh.getAsJsonObject("vertices").entrySet()){
+            var point=raw.getValue().getAsJsonArray();double norm=0;
+            for(int axis=0;axis<3;axis++){double v=point.get(axis).getAsDouble();min[axis]=Math.min(min[axis],v);max[axis]=Math.max(max[axis],v);norm+=v*v;}
+            assertEquals(256,norm,1e-6,"The surface should lie on a smooth sphere");
+        }
         for(int axis=0;axis<3;axis++)assertEquals(80,(max[axis]-min[axis])*40/16,.01);
-        assertTrue(m.getAsJsonArray("elements").size()<400,"Bound the giant sphere rendering cost");
+        assertTrue(mesh.getAsJsonObject("faces").size()<=2400,"Bound the giant sphere rendering cost");
     }
     @Test void bothArmsRiseWithTheAscentAndNewPlayerAnimationsCoverTheirFullScenes() throws Exception {
         for(boolean spirit:new boolean[]{false,true}){

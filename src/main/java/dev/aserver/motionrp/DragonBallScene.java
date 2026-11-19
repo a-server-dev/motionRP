@@ -70,7 +70,6 @@ final class DragonBallScene extends SummonScene {
         if(spirit && tick>=release && tick<=impact && orb!=null){
             double t=(tick-release)/(double)(impact-release);orbCenter=launch.clone().add(target.toVector().subtract(launch.toVector()).multiply(t));orb.location(BukkitAdapter.adapt(orbCenter));
             if(tick%2==0)EnergyVisuals.surface(audience.players(),orbCenter,41.2,tick);
-            if(tick==release+8){flight.close();trace("pilot returned");}
         }
         if(!spirit && tick>=release && tick<fade){
             EnergyVisuals.stream(audience.players(),launch,target,tick,false);
@@ -79,11 +78,12 @@ final class DragonBallScene extends SummonScene {
                 beam[j]=model(SummonAssets.KAME_BEAM,p,(float)Math.max(1.8,line.length()/25),"beam"+j);loop(beam[j],"flow");TreasuryScene.point(beam[j],p);}
         }
         if(tick==impact){
-            if(spirit){audience.hide(orb);orb=null;}
+            if(spirit){trace("impact airborneHeight="+(owner.getY()-origin.getY()));audience.hide(orb);orb=null;}
             flash(target);fx(target,Particle.EXPLOSION_EMITTER,spirit?20:8,spirit?14:4,0);
             fx(target,Particle.CLOUD,spirit?300:100,spirit?18:5,.15);fx(target,Particle.DUST_PLUME,spirit?180:70,spirit?15:4,.1);
             fx(target,Particle.END_ROD,spirit?200:80,spirit?18:5,.2);sound(target,Sound.ENTITY_GENERIC_EXPLODE,6,.5f);trace("impact");
         }
+        if(spirit && tick==SPIRIT_RETURN){flight.close();trace("pilot returned after impact tick="+tick);}
         if(tick==fade){for(var b:beam)audience.hide(b);java.util.Arrays.fill(beam,null);flight.close();}
     }
 }

@@ -18,6 +18,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
     private LoadoutMenu menu;
     private MotionPlayback playback;
     private AutomaticResourcePack resourcePack;
+    private EnergyPackService energyPack;
     private TerrainOverlayManager terrain;
 
     @Override public void onEnable() {
@@ -85,10 +86,12 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
         command.setTabCompleter(this);
         getLogger().info("MotionRP enabled: " + catalog.motions().size() + " motion(s), 18 slots per player.");
         new BundledModels(this).install();
+        energyPack=new EnergyPackService(this);
         configureResourcePack();
     }
 
     @Override public void onDisable() {
+        if(energyPack!=null)energyPack.close();
         if(resourcePack!=null) resourcePack.close();
         try { if (playback != null) playback.stopAll(); }
         finally { if(terrain!=null) terrain.restoreAll(); }

@@ -27,7 +27,7 @@ class EnergyRevisionTest {
             assertArrayEquals(math.posedPoint(parents.get(thigh),new double[]{x,11.25,0},t,an,groups,parents),math.posedOrigin(thigh,t,an,groups,parents),1e-6);
             var foot=math.posedPoint(names.get(right?"prfl_right_foreleg":"plfl_left_foreleg"),new double[]{x,0,0},t,an,groups,parents);assertEquals(0,foot[1],.03,"Foot contact at "+tick);
         }
-        var charge=EnergyHandPath.at(false,30);for(var palm:List.of(charge.right(),charge.left())){assertTrue(palm.right()>.28 && palm.forward()<.08 && palm.height()<.85);}
+        var charge=EnergyHandPath.at(false,30);for(var palm:List.of(charge.right(),charge.left())){assertTrue(palm.right()>.18 && palm.forward()>.3 && palm.height()<.85);}
         var hip=math.posedOrigin(names.get("prl_right_leg"),1.5,an,groups,parents);assertTrue(hip[1]<6.5,"Deeply lowered waist");
         var release=EnergyHandPath.at(false,56);for(var palm:List.of(release.right(),release.left()))assertTrue(Math.abs(palm.right())<.15 && palm.forward()>.6);
     }

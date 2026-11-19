@@ -160,7 +160,16 @@ if(process.env.MOTIONRP_NOBLE_ONLY==='1') {
       referenceUpgrade=gunzipSync(fs.readFileSync(path.join(project,'src/test/resources/bundled-0.14.1/players_motionrp_excalibur.bbmodel.gz')));
       fs.writeFileSync(path.join(run,'plugins/BetterModel/players/motionrp_excalibur.bbmodel'),referenceUpgrade);
     }
+    const surfaceUpgrade=[];
+    if(process.env.MOTIONRP_VERIFY_SURFACE_UPGRADE==='1')for(const file of fs.readdirSync(path.join(project,'src/test/resources/bundled-0.14.2'))){
+      const relative=file.replace(/^(models|players)_/,'$1/').replace(/\.gz$/,'');const old=gunzipSync(fs.readFileSync(path.join(project,'src/test/resources/bundled-0.14.2',file)));
+      fs.writeFileSync(path.join(run,'plugins/BetterModel',relative),old);surfaceUpgrade.push([relative,old]);
+    }
     log=fs.createWriteStream(path.join(project,'build/noble-smoke.log'));await startServer();
+    for(const [relative,old] of surfaceUpgrade){assert.deepEqual(fs.readFileSync(path.join(run,'plugins/BetterModel',relative)),fs.readFileSync(path.join(project,'src/main/resources/bettermodel',relative)));const h=createHash('sha256').update(old).digest('hex');assert.deepEqual(fs.readFileSync(path.join(run,'plugins/MotionRP/model-backups',path.basename(relative)+'.'+h+'.bak')),old);}
+    if(surfaceUpgrade.length)pass('0.14.2 sphere, pillar and arm assets migrate with exact backups');
+    await waitFor(()=>fs.existsSync(path.join(run,'plugins/BetterModel/build.zip')) && fs.readFileSync(path.join(run,'plugins/BetterModel/build.zip')).includes(Buffer.from('assets/motionrp/models/energy/')),'energy pack is prepared for manual distribution');
+
     if(referenceUpgrade){
       assert.deepEqual(fs.readFileSync(path.join(run,'plugins/BetterModel/players/motionrp_excalibur.bbmodel')),fs.readFileSync(path.join(project,'src/main/resources/bettermodel/players/motionrp_excalibur.bbmodel')));
       const hash=createHash('sha256').update(referenceUpgrade).digest('hex');assert.deepEqual(fs.readFileSync(path.join(run,'plugins/MotionRP/model-backups/motionrp_excalibur.bbmodel.'+hash+'.bak')),referenceUpgrade);
@@ -226,9 +235,19 @@ if(process.env.MOTIONRP_NOBLE_ONLY==='1') {
         await waitFor(()=>output.slice(begin).includes('sphere ready diameter=80 bottom tracks raised palms'),'full sphere at raised palms');
         const match=output.slice(begin).match(/GenkiDama displays charge_orb ids=([0-9,]+)/);assert.ok(match);const core=Number(match[1].split(',')[0]);
         const span=Number(execFileSync('python3',['-c',`import zipfile,json,sys
-z=zipfile.ZipFile(sys.argv[1]);f=next(n for n in z.namelist() if n.endswith('/motionrp_genki_dama_orb_energy_sphere.json') and '/items/' in n);ns,p=json.loads(z.read(f))['model']['model'].split(':');m=json.loads(z.read('assets/'+ns+'/models/'+p+'.json'));print(max(e['to'][0] for e in m['elements'])-min(e['from'][0] for e in m['elements']))`,path.join(run,'plugins/BetterModel/build.zip')],{encoding:'utf8'}));
+z=zipfile.ZipFile(sys.argv[1]);f=next(n for n in z.namelist() if n.endswith('/motionrp_genki_dama_orb_energy_sphere.json') and '/items/' in n);item=json.loads(z.read(f))['model'];assert item['type'].split(':')[-1]=='composite'
+def count_models(v):
+ if isinstance(v,dict):return int('transformation' in v)+sum(count_models(x) for x in v.values())
+ if isinstance(v,list):return sum(count_models(x) for x in v)
+ return 0
+assert count_models(item)>500
+m=json.load(open(sys.argv[2]));mesh=next(e for e in m['elements'] if e['name']=='plasma_sphere');v=list(mesh['vertices'].values());print(max(p[0] for p in v)-min(p[0] for p in v))`,path.join(run,'plugins/BetterModel/build.zip'),path.join(project,'src/main/resources/bettermodel/models/motionrp_genki_dama_orb.bbmodel')],{encoding:'utf8'}));
         await waitFor(()=>['owner','observer'].every(role=>Math.abs((scales[role].get(core)?.x||0)*span/16-80)<.05),'both clients receive an actual 80-block sphere');
 }
+      if(id==='genki_dama'){
+        await waitFor(()=>output.slice(begin).includes('GenkiDama pilot returned after impact'),'return follows the impact');
+        const trace=output.slice(begin);assert.ok(trace.includes('impact airborneHeight=50.0'));assert.ok(trace.indexOf('GenkiDama impact')<trace.indexOf('GenkiDama pilot returned after impact'));
+      }
       await waitFor(()=>output.slice(begin).includes(prefix+' phase: FADE'),prefix+' complete',20000);
       assert.ok(a.entity.position.distanceTo(base)<.01);
       const entries=[...output.slice(begin).matchAll(new RegExp(prefix+' displays (\\w+) ids=([0-9,]+)','g'))].map(m=>({kind:m[1],ids:m[2].split(',').map(Number)}));
@@ -239,6 +258,10 @@ z=zipfile.ZipFile(sys.argv[1]);f=next(n for n in z.namelist() if n.endswith('/mo
       assert.deepEqual([a.health,b.health],dragonHealth);pass(prefix+' both-client rendering, complete release and clean recovery without damage');
       if(id==='genki_dama'){const beginCancel=output.length;a._testLeftClick();await waitFor(()=>a.entity.position.y>base.y+8,'Spirit Bomb airborne cancel');a._testLeftClick();await waitFor(()=>a.entity.position.distanceTo(base)<.01,'Spirit Bomb cancelled ground return');await sleep(1000);assert.ok(!output.slice(beginCancel).includes('GenkiDama impact'));pass('Spirit Bomb cancellation restores grounded player before later impact');}
     }
+    const airBase=a.entity.position.clone(),airBegin=output.length;a._testLeftClick();
+    await waitFor(()=>output.slice(airBegin).includes('GenkiDama phase: THROW'),'cancel a thrown Spirit Bomb');assert.ok(a.entity.position.y>airBase.y+49);a._testLeftClick();
+    await waitFor(()=>a.entity.position.distanceTo(airBase)<.01,'throw cancellation returns to ground');await sleep(1800);assert.ok(!output.slice(airBegin).includes('GenkiDama impact'));
+    pass('cancelling after the throw returns the airborne player and prevents the impact');
     a.setControlState('sneak',true);await sleep(300);
     for(let i=0;(await readSaved('MotionTesterA')).loadout[6]!==3 && i<18;i++) {a._testLeftClick();await sleep(300);}
     a.setControlState('sneak',false);await sleep(300);const seatOrigin=a.entity.position.clone(),seatBegin=output.length;

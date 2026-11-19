@@ -24,7 +24,12 @@ public final class BundledAssetVersions {
             java.util.Map.entry("players/motionrp_excalibur.bbmodel","c4db9979e6723df4328bce88251ededcedaee258158e2396c25b9218a6f03cff"),
             java.util.Map.entry("players/motionrp_kamehameha.bbmodel","1f197d97a75fa05ec21e9a6148fb84cc3db2217ce728a21b38243d97ce26813d"),
             java.util.Map.entry("players/motionrp_genki_dama.bbmodel","757f02882a900f71b54267ee6e7807f80de1313c1b7b0871bc98222ed9dcf29e"));
+    private static final java.util.Map<String,String> PREVIOUS_0142=java.util.Map.ofEntries(
+            java.util.Map.entry("models/motionrp_genki_dama_orb.bbmodel","bb696b373bd9044635653551b7cdaae7813ad9e63603490863d62ad2511cb66a"),
+            java.util.Map.entry("models/motionrp_excalibur_pillar.bbmodel","0dc70073d1aed7dc983f181aa29d466bd1d7f6876849392bbd512cc911737a85"),
+            java.util.Map.entry("models/motionrp_kamehameha_orb.bbmodel","ac8343b22f0dbe85e89ed1092016030df134bd706a3607a2d6c1caa807c7f773"),
+            java.util.Map.entry("players/motionrp_kamehameha.bbmodel","7a7c78d21de386ba228e35270733c1d7e2ce725fa5d9192be0d0f8114fe28f0a"));
     public static Set<String> knownHashes(String file,Set<String> older) {
-        var hashes=new java.util.HashSet<>(older);String previous=PREVIOUS_013.get(file);if(previous!=null)hashes.add(previous);String v14=PREVIOUS_014.get(file);if(v14!=null)hashes.add(v14);if(file.equals("players/motionrp_excalibur.bbmodel"))hashes.add("0c9d6dde3fc2e47dabdf376c938aa52c02a4eca1b5108480f678f3b8e7bc4c30");return hashes;
+        var hashes=new java.util.HashSet<>(older);String previous=PREVIOUS_013.get(file);if(previous!=null)hashes.add(previous);String v14=PREVIOUS_014.get(file);if(v14!=null)hashes.add(v14);if(file.equals("players/motionrp_excalibur.bbmodel"))hashes.add("0c9d6dde3fc2e47dabdf376c938aa52c02a4eca1b5108480f678f3b8e7bc4c30");String v142=PREVIOUS_0142.get(file);if(v142!=null)hashes.add(v142);return hashes;
     }
 }

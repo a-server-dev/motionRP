@@ -56,9 +56,8 @@ final class NobleScene extends SummonScene {
         if(tick>=32 && tick<NobleTimeline.release(gold)) {
             if((tick-32)%20==0) {heard.addAll(audience.players());sound(hand,Sound.ENTITY_BREEZE_CHARGE,.8f,gold?.7f:1.1f);}
             if(tick%2==0) {
-                for(int j=0;j<12;j++) {
-                    double angle=j*Math.PI/6+tick*.17,r=.6+(j%3)*.35,up=(tick+j*3)%38/15.0;
-                    dust(at(Math.cos(angle)*r,Math.sin(angle)*r,up),energy,2,.02);
+                for(var point:SwordChargePath.samples(tick)){
+                    Location light=at(point.right(),point.forward(),point.height());dust(light,energy,1,.025);spark(light);
                 }
                 particle(hand,gold?Particle.END_ROD:Particle.ELECTRIC_SPARK,5,.2,.02);
             }
@@ -99,7 +98,11 @@ final class NobleScene extends SummonScene {
         if(pillar!=null){
             EnergyVisuals.stream(audience.players(),focus,focus.clone().add(0,30,0),tick,true);
             if(tick%2==0){ring(focus,2+(tick-NobleTimeline.impact(gold))*.3);
-                for(int j=0;j<24;j++){double y=j*1.25,a=tick*.3+j*.55; spark(focus.clone().add(4*Math.cos(a),y,4*Math.sin(a)));}}
+                for(int j=0;j<96;j++){
+                    double y=(tick*.9+j*30./96)%30,a=tick*.45+j*2.399963,r=.25+2.5*Math.sqrt((j%11)/10.);
+                    Location light=focus.clone().add(r*Math.cos(a),y,r*Math.sin(a));
+                    for(Player viewer:audience.players())viewer.spawnParticle(Particle.END_ROD,light,0,0,1,0,.25,null,true);
+                }}
         }
         if(thorns!=null) thorns.scaler(ModelScaler.value((float)(2+.25*Math.sin(tick*.6))));
         if(tick==NobleTimeline.fade(gold)) {

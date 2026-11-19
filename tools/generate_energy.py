@@ -22,48 +22,79 @@ def beam(name,colors):
         g=m.group('stream_'+str(strand),ids)
         flow['animators'][g['uuid']]=animator(g,[(t/8,(0,0,t*(90 if strand%2 else -90))) for t in range(5)])
     m.data['animations']=[flow];glow(m)
+def mesh_model(name,colors):
+    import base64,struct,zlib
+    m=Model(name,colors=colors)
+    raw=b''.join(b'\0'+b''.join(bytes(colors[x//2]) for x in range(16)) for _ in range(16))
+    def chunk(t,b):return struct.pack('!I',len(b))+t+b+struct.pack('!I',zlib.crc32(t+b)&0xffffffff)
+    png=b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('!2I5B',16,16,8,6,0,0,0))+chunk(b'IDAT',zlib.compress(raw))+chunk(b'IEND',b'')
+    m.data['resolution']={'width':16,'height':16}
+    m.data['textures'][0].update(width=16,height=16,uv_width=16,uv_height=16,source='data:image/png;base64,'+base64.b64encode(png).decode())
+    return m
+
+def add_mesh(m,name,vertices,faces):
+    from generate_summons import ident
+    uid=ident(m.name+'/'+name)
+    data={}
+    for ids,color in faces:
+        triangles=[ids] if len(ids)==3 else [[ids[0],ids[1],ids[2]],[ids[0],ids[2],ids[3]]]
+        for triangle in triangles:
+            uv=[[color*2+.2,8.2],[color*2+.8,8.2],[color*2+.8,8.8]]
+            data[str(len(data))]={'vertices':triangle,'uv':dict(zip(triangle,uv)),'texture':0}
+    m.data['elements'].append({'name':name,'uuid':uid,'type':'mesh','origin':[0,0,0],'rotation':[0,0,0],'vertices':vertices,'faces':data})
+    return uid
+
+def ribbon(m,name,points,width,color):
+    vertices={};faces=[]
+    for j,(x,y,z) in enumerate(points):
+        length=max(.001,math.hypot(x,z));dx,dz=x/length*width/2,z/length*width/2
+        vertices[f'a{j}']=[x-dx,y,z-dz];vertices[f'b{j}']=[x+dx,y,z+dz]
+        if j:faces.append(([f'a{j-1}',f'b{j-1}',f'b{j}',f'a{j}'],color))
+    return add_mesh(m,name,vertices,faces)
+
 def pillar():
-    m=Model('motionrp_excalibur_pillar',colors=GOLD_LIGHT);ids=[]
-    for row in range(-3,4):
-        z=row*.7;w=2*math.sqrt(max(.1,2.5**2-z*z))
-        ids.append(m.cube('round_light_column_'+str(row),[0,12,z],[w,24,.75],7 if abs(row)<2 else 3))
-    m.group('column_core',ids,origin=(0,12,0));a=animation('surge',.5,{});a['loop']='loop'
-    for i in range(3):
-        ids=[]
-        for j in range(24):
-            angle=j*.65+i*math.tau/3
-            ids.append(m.cube(f'column_spark_{i}_{j}',[3*math.cos(angle),j+.5,3*math.sin(angle)],[.3,.8,.3],1))
-        g=m.group('rising_sparks_'+str(i),ids,origin=(0,12,0));a['animators'][g['uuid']]=animator(g,[(t/8,(0,t*90,0)) for t in range(5)])
+    m=mesh_model('motionrp_excalibur_pillar',GOLD_LIGHT);a=animation('surge',.7,{});a['loop']='loop'
+    for strand in range(6):
+        points=[]
+        for j in range(49):
+            angle=j*.25+strand*math.tau/6;r=1.3+.8*math.sin(j*.12+strand)**2
+            points.append((r*math.cos(angle),j*.5,r*math.sin(angle)))
+        uid=ribbon(m,'light_ribbon_'+str(strand),points,.12,7 if strand%2 else 1)
+        g=m.group('rising_light_'+str(strand),[uid],origin=(0,12,0))
+        a['animators'][g['uuid']]=animator(g,[(t*.7/4,(0,t*90,0)) for t in range(5)])
     m.data['animations']=[a];glow(m)
+
 def sphere(name):
-    m=Model(name,colors=BLUE_LIGHT);ids=[]
-    for y in range(-15,16,2):
-        for z in range(-15,16,2):
-            d=256-y*y-z*z
-            if d>0:
-                # Bright core and coloured rim, with the brightest cap following the round surface.
-                colour=7 if y*y+z*z<100 else 3 if y*y+z*z<190 else 1
-                uid=m.cube(f'sphere_{y}_{z}',[0,y,z],[2*math.sqrt(d),2,2],colour);ids.append(uid)
-                # Keep a coherent rounded highlight across all six directions, not flat stripes.
-                e=m.data['elements'][-1]
-                for face,normal in [('west',(-1,0,0)),('east',(1,0,0)),('up',(0,1,0)),('down',(0,-1,0)),('north',(0,0,-1)),('south',(0,0,1))]:
-                    p=[normal[0]*math.sqrt(d),y+normal[1],z+normal[2]];length=max(.001,math.sqrt(sum(v*v for v in p)))
-                    light=sum(a*b for a,b in zip(p,[-.35,.55,-.76]))/length
-                    palette=[0,2,4,1,5,3,7];index=palette[min(6,max(0,int((light+1)*3.5)))]
-                    e['faces'][face]['uv']=[index+.05,.05,index+.95,.95]
-    ids.append(m.cube('equatorial_diameter',[0,0,0],[32,1,1],7));m.group('energy_sphere',ids)
-    a=animation('corona',1.5,{});a['loop']='loop'
-    for axis in range(3):
-        ids=[]
-        for j in range(48):
-            angle=j*math.tau/48;r=16.3
-            p=[r*math.cos(angle),r*math.sin(angle),.7*math.sin(angle*3)]
-            if axis==1:p=[p[2],p[0],p[1]]
-            elif axis==2:p=[p[1],p[2],p[0]]
-            ids.append(m.cube(f'surface_arc_{axis}_{j}',p,[.35,.35,.35],7 if j%4 else 6))
-        g=m.group('corona_'+str(axis),ids)
-        rot=[0,0,0];rot[axis]=360 if axis%2 else -360
-        a['animators'][g['uuid']]=animator(g,[(t*1.5/4,tuple(v*t/4 for v in rot)) for t in range(5)])
+    # No voxel slabs: an actual curved surface with moving plasma channels.
+    m=mesh_model(name,BLUE_LIGHT);vertices={};faces=[];lat,lon=24,48
+    for j in range(lat+1):
+        phi=math.pi*j/lat
+        for i in range(lon):
+            theta=math.tau*i/lon
+            vertices[f'v{j}_{i}']=[16*math.sin(phi)*math.cos(theta),16*math.cos(phi),16*math.sin(phi)*math.sin(theta)]
+    for j in range(lat):
+        phi=math.pi*(j+.5)/lat
+        for i in range(lon):
+            theta=math.tau*(i+.5)/lon
+            flow=abs(math.sin(theta*5+2*math.sin(phi*4)+.7*math.sin(theta*3-phi*7)))
+            color=7 if flow<.18 else 3 if flow<.32 else 1 if flow<.6 else 4
+            ids=[f'v{j}_{i}',f'v{j}_{(i+1)%lon}',f'v{j+1}_{(i+1)%lon}',f'v{j+1}_{i}']
+            if j==0:ids=[ids[0],ids[2],ids[3]]
+            elif j==lat-1:ids=[ids[0],ids[1],ids[2]]
+            faces.append((ids,color))
+    uid=add_mesh(m,'plasma_sphere',vertices,faces);g=m.group('energy_sphere',[uid])
+    a=animation('corona',4,{});a['loop']='loop';a['animators'][g['uuid']]=animator(g,[(t,(0,t*90,0)) for t in range(5)])
+    for strand in range(3):
+        v={};f=[]
+        for j in range(97):
+            theta=j*math.tau/96
+            phi=math.pi/2+.48*math.sin(theta*3+strand*2)
+            for edge,delta in [('a',-.012),('b',.012)]:
+                p=phi+delta;r=16.25
+                v[f'{edge}{j}']=[r*math.sin(p)*math.cos(theta),r*math.cos(p),r*math.sin(p)*math.sin(theta)]
+            if j:f.append(([f'a{j-1}',f'b{j-1}',f'b{j}',f'a{j}'],7))
+        uid=add_mesh(m,'plasma_current_'+str(strand),v,f);g=m.group('corona_'+str(strand),[uid])
+        a['animators'][g['uuid']]=animator(g,[(t,(t*90 if strand==1 else 0,t*(-90 if strand%2 else 90),0)) for t in range(5)])
     m.data['animations']=[a];glow(m)
 
 def excalibur_reference():

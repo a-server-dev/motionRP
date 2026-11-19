@@ -12,9 +12,9 @@ def generate(rig):
     for spirit in [False,True]:
         name='genki_dama' if spirit else 'kamehameha';poses={}
         for side,arm,fore in [(1,'pra_right_arm','prfa_right_forearm'),(-1,'pla_left_arm','plfa_left_forearm')]:
-            charge=(24.873,115.861,57.2) if side==1 else (-54.146,-98.098,-4.994)
+            charge=(-3.5297,24.3213,25.0728) if side==1 else (-126.1255,-22.6459,-103.4792)
             release=(-63.263,side*20.906,-side*6.279)
-            elbow=-129.911 if side==1 else -31.602
+            elbow=-111.7729 if side==1 else -44.3461
             poses[arm]=([(0,(0,0,0)),(.4,(-175,0,side*8)),(5.3,(-175,0,side*8)),(5.5,(-85,0,side*8)),(8.8,(0,0,0))] if spirit else
                         [(0,(0,0,0)),(.8,charge),(2.5,charge),(2.8,release),(5.5,release),(6.4,(0,0,0))])
             poses[fore]=([(0,(0,0,0)),(.4,(0,0,0)),(5.3,(0,0,0)),(5.5,(-15,0,0)),(8.8,(0,0,0))] if spirit else
