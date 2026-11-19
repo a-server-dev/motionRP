@@ -25,6 +25,6 @@ public final class BundledAssetVersions {
             java.util.Map.entry("players/motionrp_kamehameha.bbmodel","1f197d97a75fa05ec21e9a6148fb84cc3db2217ce728a21b38243d97ce26813d"),
             java.util.Map.entry("players/motionrp_genki_dama.bbmodel","757f02882a900f71b54267ee6e7807f80de1313c1b7b0871bc98222ed9dcf29e"));
     public static Set<String> knownHashes(String file,Set<String> older) {
-        var hashes=new java.util.HashSet<>(older);String previous=PREVIOUS_013.get(file);if(previous!=null)hashes.add(previous);String v14=PREVIOUS_014.get(file);if(v14!=null)hashes.add(v14);return hashes;
+        var hashes=new java.util.HashSet<>(older);String previous=PREVIOUS_013.get(file);if(previous!=null)hashes.add(previous);String v14=PREVIOUS_014.get(file);if(v14!=null)hashes.add(v14);if(file.equals("players/motionrp_excalibur.bbmodel"))hashes.add("0c9d6dde3fc2e47dabdf376c938aa52c02a4eca1b5108480f678f3b8e7bc4c30");return hashes;
     }
 }

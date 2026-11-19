@@ -146,7 +146,7 @@ if(process.env.MOTIONRP_NOBLE_ONLY==='1') {
   try {
     assert.ok(fs.existsSync(path.join(run,'world/players/data',uuid('MotionTesterA')+'.dat')),'Run the full integration suite first');
     fs.copyFileSync(path.join(project,`build/libs/motionRP-${version}.jar`),path.join(run,'plugins/MotionRP.jar'));
-    for(const file of ['motionrp_excalibur_pillar','motionrp_susanoo_slash','motionrp_kamehameha_orb','motionrp_kamehameha_beam','motionrp_genki_dama_orb','motionrp_excalibur_blade','motionrp_excalibur_light','motionrp_gae_bolg_spear','motionrp_gae_bolg_trail','motionrp_gae_bolg_thorns','motionrp_susanoo_armor','motionrp_zangetsu_cleaver'])
+    for(const file of ['motionrp_excalibur_charge','motionrp_excalibur_wave','motionrp_excalibur_pillar','motionrp_susanoo_slash','motionrp_kamehameha_orb','motionrp_kamehameha_beam','motionrp_genki_dama_orb','motionrp_excalibur_blade','motionrp_excalibur_light','motionrp_gae_bolg_spear','motionrp_gae_bolg_trail','motionrp_gae_bolg_thorns','motionrp_susanoo_armor','motionrp_zangetsu_cleaver'])
       fs.copyFileSync(path.join(project,'src/main/resources/bettermodel/models',file+'.bbmodel'),path.join(run,'plugins/BetterModel/models',file+'.bbmodel'));
     for(const id of ['excalibur','gae_bolg','kamehameha','genki_dama'])fs.copyFileSync(path.join(project,'src/main/resources/bettermodel/players','motionrp_'+id+'.bbmodel'),path.join(run,'plugins/BetterModel/players','motionrp_'+id+'.bbmodel'));
     const energyUpgrade=[];
@@ -155,7 +155,18 @@ if(process.env.MOTIONRP_NOBLE_ONLY==='1') {
       const previous=gunzipSync(fs.readFileSync(path.join(project,'src/test/resources/bundled-0.14.0',file)));
       fs.writeFileSync(path.join(run,'plugins/BetterModel',relative),previous);energyUpgrade.push([relative,previous]);
     }
+    let referenceUpgrade;
+    if(process.env.MOTIONRP_VERIFY_REFERENCE_UPGRADE==='1'){
+      referenceUpgrade=gunzipSync(fs.readFileSync(path.join(project,'src/test/resources/bundled-0.14.1/players_motionrp_excalibur.bbmodel.gz')));
+      fs.writeFileSync(path.join(run,'plugins/BetterModel/players/motionrp_excalibur.bbmodel'),referenceUpgrade);
+    }
     log=fs.createWriteStream(path.join(project,'build/noble-smoke.log'));await startServer();
+    if(referenceUpgrade){
+      assert.deepEqual(fs.readFileSync(path.join(run,'plugins/BetterModel/players/motionrp_excalibur.bbmodel')),fs.readFileSync(path.join(project,'src/main/resources/bettermodel/players/motionrp_excalibur.bbmodel')));
+      const hash=createHash('sha256').update(referenceUpgrade).digest('hex');assert.deepEqual(fs.readFileSync(path.join(run,'plugins/MotionRP/model-backups/motionrp_excalibur.bbmodel.'+hash+'.bak')),referenceUpgrade);
+      pass('0.14.1 Excalibur pose migrates with an exact backup');
+    }
+
     for(const [relative,previous] of energyUpgrade){
       assert.deepEqual(fs.readFileSync(path.join(run,'plugins/BetterModel',relative)),fs.readFileSync(path.join(project,'src/main/resources/bettermodel',relative)));
       const hash=createHash('sha256').update(previous).digest('hex');
@@ -185,9 +196,20 @@ if(process.env.MOTIONRP_NOBLE_ONLY==='1') {
       await waitFor(()=>output.slice(start).includes(prefix+' phase: FADE'),prefix+' smoke release',20000);
       const entries=[...output.slice(start).matchAll(new RegExp(prefix+' displays (\\w+) ids=([0-9,]+)','g'))].map(m=>({kind:m[1],ids:m[2].split(',').map(Number)}));
       assert.equal(entries.filter(e=>e.kind.startsWith('beam')).length,segments);
+      if(prefix==='Excalibur')for(const kind of ['light_blade','wavefront','light_pillar'])assert.ok(entries.some(e=>e.kind===kind),kind+' present');
       for(const role of ['owner','observer']) assert.ok(entries.every(e=>e.ids.some(id=>(items[role].get(id)?.itemCount||0)>0)));
       await waitFor(()=>['owner','observer'].every(role=>[...spawned[role]].every(id=>removed[role].has(id))),prefix+' smoke cleanup');
       assert.deepEqual([a.health,b.health],health);pass(prefix+' final model reload, release, both-client display and cleanup');
+    }
+    a.setControlState('sneak',true);await sleep(300);
+    for(let i=0;(await readSaved('MotionTesterA')).loadout[6]!==9 && i<18;i++){a._testLeftClick();await sleep(300);}
+    a.setControlState('sneak',false);await sleep(300);
+    for(const kind of ['light_blade','wavefront']){
+      const begin=output.length;for(const role of ['owner','observer'])spawned[role].clear();a._testLeftClick();
+      await waitFor(()=>output.slice(begin).includes('Excalibur displays '+kind),'Excalibur '+kind+' before cancellation');a._testLeftClick();
+      await waitFor(()=>['owner','observer'].every(role=>[...spawned[role]].every(id=>removed[role].has(id))),'Excalibur '+kind+' cancellation cleanup');
+      await sleep(1200);assert.ok(!output.slice(begin).includes('Excalibur displays light_pillar'));
+      pass('cancelling Excalibur '+kind+' removes every effect and prevents the impact pillar');
     }
     for(const [slot,id,prefix] of [[11,'kamehameha','Kamehameha'],[12,'genki_dama','GenkiDama']]) {
       await menu(a);const registeredAlready=a.currentWindow.slots[slot]?.name==='paper';await closeMenu(a);

@@ -54,8 +54,8 @@ def weapon(excalibur):
 
 def effects(excalibur):
     if excalibur:
-        from generate_energy import beam,pillar,GOLD_LIGHT
-        beam('motionrp_excalibur_light',GOLD_LIGHT);pillar()
+        from generate_energy import beam,pillar,excalibur_reference,GOLD_LIGHT
+        beam('motionrp_excalibur_light',GOLD_LIGHT);pillar();excalibur_reference()
 
 def actors(rig):
     poses={
@@ -64,7 +64,19 @@ def actors(rig):
       'pla_left_arm':[(0,(0,0,0)),(.6,(-55.87,-32.89,-.03)),(1.6,(-55.87,-32.89,-.03)),(3.2,(-114.69,-79.82,-4.43)),(4.5,(-114.69,-79.82,-4.43)),(4.625,(-71.94,-27.13,-.21)),(7.4,(-71.94,-27.13,-.21)),(8.8,(0,0,0))],
       'plfa_left_forearm':[(0,(0,0,0)),(.6,(-73.77,0,0)),(1.6,(-73.77,0,0)),(3.2,(-76.78,0,0)),(4.5,(-76.78,0,0)),(4.625,(0,0,0)),(8.8,(0,0,0))],
       'h_ph_head':[(0,(0,0,0)),(3.2,(-10,0,0)),(4.5,(-10,0,0)),(4.625,(3,0,0)),(8.8,(0,0,0))]}
-    m=player(rig,'excalibur',8.8,poses);(ROOT/'excalibur-hand-path.csv').write_text(hand_path(m,176))
+    drops=[]
+    for leg,fore,right in [('prl_right_leg','prfl_right_foreleg',True),('pll_left_leg','plfl_left_foreleg',False)]:
+        poses[leg]=[];poses[fore]=[]
+        for tick in range(177):
+            t=min(1,tick/32) if tick<148 else max(0,(176-tick)/28)
+            hip=11.25-1.05*t;spread=8*t;h=hip/math.cos(math.radians(spread));z=(4 if right else -3)*t
+            distance=min(11.25,math.hypot(h,z));half=math.acos(distance/11.25);mean=math.atan2(-z,h)
+            poses[leg].append((tick/20,(-math.degrees(mean+half),0,spread if right else -spread)))
+            poses[fore].append((tick/20,(math.degrees(2*half),0,0)))
+            if right:drops.append((tick/20,(0,hip-11.25,0)))
+    m=player(rig,'excalibur',8.8,poses);root=next(g for g in m['groups'] if g['name']=='player_root')
+    m['animations'][0]['animators'][root['uuid']]=animator(root,drops,'position');save('players/motionrp_excalibur.bbmodel',m)
+    (ROOT/'excalibur-hand-path.csv').write_text(hand_path(m,176))
     poses={
       'pra_right_arm':[(0,(0,0,0)),(.6,(20,0,15)),(1.2,(40,-5,15)),(1.7,(40,-5,15)),(2.5,(-150,-10,0)),(2.7,(-65,0,5)),(3.1,(-85,0,5)),(4.3,(-65,0,5)),(5,(-65,0,5)),(5.8,(0,0,0))],
       'prfa_right_forearm':[(0,(0,0,0)),(.6,(-20,0,0)),(2.5,(-20,0,0)),(2.7,(0,0,0)),(3.1,(-15,0,0)),(4.3,(-25,0,0)),(5,(-25,0,0)),(5.8,(0,0,0))],

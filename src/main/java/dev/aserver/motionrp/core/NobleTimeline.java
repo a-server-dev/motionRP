@@ -1,6 +1,7 @@
 package dev.aserver.motionrp.core;
 
 public final class NobleTimeline {
+    public static final int LIGHT_BLADE=64,CUT_START=90;
     private NobleTimeline() {}
     public static int draw(boolean excalibur) {return excalibur?12:8;}
     public static int release(boolean excalibur) {return excalibur?93:GaeBolgTimeline.THROW;}

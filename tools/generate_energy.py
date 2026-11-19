@@ -65,3 +65,25 @@ def sphere(name):
         rot=[0,0,0];rot[axis]=360 if axis%2 else -360
         a['animators'][g['uuid']]=animator(g,[(t*1.5/4,tuple(v*t/4 for v in rot)) for t in range(5)])
     m.data['animations']=[a];glow(m)
+
+def excalibur_reference():
+    # Tall blade split into legal child meshes, pivoting at the same palm as the actual sword.
+    m=Model('motionrp_excalibur_charge',colors=GOLD_LIGHT);children=[]
+    for half in range(2):
+        ids=[]
+        for j in range(10):
+            y=half*20+j*2+1;w=1.3+3.8*math.sin(y/40*math.pi*.8)
+            ids.append(m.cube(f'light_blade_core_{half}_{j}',[0,y,0],[w,2.2,.8],7))
+            for side in [-1,1]:
+                ids.append(m.cube(f'gold_blade_flare_{half}_{j}_{side}',[side*(w*.55+.6*math.sin(j)),y,.05],[.55,2.4,.6],1))
+        m.group('blade_half_'+str(half),ids,origin=(0,half*20+10,0));children.append(m.data['outliner'].pop())
+    g=m.group('light_blade',[]);m.data['outliner'][-1]['children']=children
+    a=animation('cleave',1.6,{});a['animators'][g['uuid']]=animator(g,[(0,(0,0,0)),(1.3,(0,0,0)),(1.425,(-95,0,0)),(1.6,(-95,0,0))]);m.data['animations']=[a];glow(m)
+    # A wide, flame-edged wavefront which runs along the ground ahead of the narrow white core.
+    m=Model('motionrp_excalibur_wave',colors=GOLD_LIGHT);ids=[]
+    for j in range(25):
+        x=-12+j;y=.5+3*(1-(x/12)**2);z=2.8*(x/12)**2
+        ids.append(m.cube('golden_wave_front_'+str(j),[x,y,z],[1.2,1.2,1],3))
+        for k in range(3):
+            ids.append(m.cube(f'wave_flame_{j}_{k}',[x,.8+y+k*(.6+.8*(1-abs(x)/13)),z-k*.4],[.6,1.2,.7],7 if k==0 else 1))
+    g=m.group('surging_wave',ids);a=animation('rush',.3,{});a['loop']='loop';a['animators'][g['uuid']]=animator(g,[(0,(1,1,1)),(.15,(1.08,1.3,1)),(.3,(1,1,1))],'scale');m.data['animations']=[a];glow(m)
