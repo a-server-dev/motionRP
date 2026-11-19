@@ -3,10 +3,10 @@ import java.util.Set;
 public final class EpicTimeline {
  public static final Set<String> EFFECTS=Set.of("road_roller","kokuryuha","kokujo_tengen_myoo","chibaku_tensei");
  private EpicTimeline(){}
- public static int end(String effect){if(!EFFECTS.contains(effect))throw new IllegalArgumentException(effect);return switch(effect){case "kokuryuha"->164;case "road_roller"->260;case "chibaku_tensei"->312;default->220;};}
+ public static int end(String effect){if(!EFFECTS.contains(effect))throw new IllegalArgumentException(effect);return switch(effect){case "kokuryuha"->320;case "road_roller"->260;case "chibaku_tensei"->312;default->220;};}
  public static String phase(String effect,int tick){if(tick<0||tick>=end(effect))return "FINISHED";return switch(effect){
   case "road_roller"->tick<12?"POSE":tick<40?"THE_WORLD":tick<68?"LEAP":tick<82?"CARRY":tick<104?"DROP":tick<168?"BARRAGE":tick<192?"FINISHER":tick<232?"IMPACT":"FADE";
-  case "kokuryuha"->tick<16?"POSE":tick<50?"CHARGE":tick<96?"DRAGON":tick<132?"IMPACT":"FADE";
+  case "kokuryuha"->tick<16?"POSE":tick<50?"CHARGE":tick<96?"DRAGON":tick<112?"IMPACT":tick<172?"RETURN":tick<208?"DEVOUR":tick<288?"CLOAK":"FADE";
   case "kokujo_tengen_myoo"->tick<16?"POSE":tick<54?"SUMMON":tick<124?"WINDUP":tick<156?"SLASH":tick<196?"IMPACT":"FADE";
   default->tick<28?"SEAL":tick<68?"CORE":tick<240?"ATTRACTION":tick<288?"MOON":"FADE";};}
  public static final int ROCK_COUNT=144;

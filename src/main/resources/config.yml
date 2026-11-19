@@ -15,7 +15,7 @@ motions:
     model: motionrp_kokuryuha
     animation: kokuryuha
     effect: kokuryuha
-    max-ticks: 174
+    max-ticks: 330
   kokujo_tengen_myoo:
     name: 黒縄天譴明王
     model: motionrp_kokujo_tengen_myoo

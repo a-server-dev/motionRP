@@ -52,6 +52,8 @@ public final class MotionPlayback {
         return current != null && !current.tracker.isClosed();
     }
 
+    public boolean followsMovement(Player player){var current=playing.get(player.getUniqueId());return current!=null&&current.scene!=null&&current.scene.followsMovement();}
+
     public boolean ownsMove(Player player, org.bukkit.Location from, org.bukkit.Location to) {
         var current = playing.get(player.getUniqueId());
         return current != null && current.scene != null && current.scene.ownsMove(from, to);
@@ -88,6 +90,7 @@ public final class MotionPlayback {
             var timeout = Bukkit.getScheduler().runTaskLater(plugin, () -> finish(uuid, owned), definition.maxTicks());
             MotionScene scene = switch (definition.effect()) {
                 case "road_roller","kokuryuha","kokujo_tengen_myoo","chibaku_tensei" -> new EpicScene(plugin,player,owned,definition.effect());
+                case "final_battle_naruto","final_battle_sasuke" -> new FinalBattleScene(plugin,player,owned,definition.effect().equals("final_battle_naruto"));
                 case "fusion_left","fusion_right" -> new FusionScene(plugin,player,owned,definition.effect().equals("fusion_left"));
                 case "rho_aias","getsuga_tensho" -> new BarrierSlashScene(plugin,player,owned,definition.effect().equals("rho_aias"));
                 case "performance" -> new PerformanceScene(plugin,player,owned,java.util.Arrays.stream(dev.aserver.motionrp.core.Performance.values()).filter(p->p.id().equals(definition.animation())).findFirst().orElseThrow());

@@ -68,6 +68,14 @@ def myoo():
  for side in [-1,1]:
   c('white_sash_knot_'+str(side),(side*3,53,-12),(5,3.8,4),6,(0,0,side*22.5))
   for j in range(7):c('white_sash_tail_'+str(side)+'_'+str(j),(side*(4+j*.8),50-j*2,-13-.15*j),(3.8,2.7,1.2),6 if j%3 else 7,(0,0,-side*22.5))
+ for row in range(9):
+  y=64+row*2;w=19+8*math.sin(math.pi*row/8)
+  c('overlapping_sternum_'+str(row),(0,y,-11.1),(w,2.6,1.8),2 if row%3 else 1)
+  for side in [-1,1]:c('breastplate_rivet_'+str(side)+'_'+str(row),(side*w*.44,y,-12.2),(1,.9,.7),7)
+ for side in [-1,1]:
+  for j in range(9):
+   c('pauldron_edge_stud_'+str(side)+'_'+str(j),(side*(21+j*2.4),85,-14),(1.2,1.4,1.1),7)
+   c('neck_lacing_'+str(side)+'_'+str(j),(side*11,84+j*1.8,-9.4),(1.3,1.3,2),0)
  chest=a.joint('heavy_breastplate',(0,56,0))
  # Concealed helmet, hanging crimson face cloth, swept heavy horns.
  c('helmet_void',(0,98,-.5),(18,19,17),4)
@@ -80,11 +88,23 @@ def myoo():
   for j in range(6):c('helmet_neck_lamella_'+str(side)+'_'+str(j),(side*10,93-j*2.1,2),(5,2.8,18),1)
  for x in [-6,-3,0,3,6]:
   for j in range(4):c('crimson_face_veil_'+str(x)+'_'+str(j),(x+(j%2)*.4,93-j*2,-10),(3.2,2.7,1),5)
+ # Rounded crown, oval visor rim and individually modelled hanging cloth folds.
+ for j in range(12):
+  y=94+j*1.65;f=math.sqrt(max(.04,1-((y-101.5)/13.0)**2));c('curved_helmet_crown_'+str(j),(0,y,1),(24*f,1.9,22*f),1 if j%3 else 2)
+ for j in range(28):
+  q=j*math.tau/28;c('oval_visor_frame_'+str(j),(11*math.cos(q),100+12*math.sin(q),-11.4),(2.1,2.2,2.4),2 if j%4 else 3)
+ for j in range(13):
+  x=-9+j*1.5;h=13*math.sqrt(max(.1,1-(x/11)**2));c('metal_visor_grille_'+str(j),(x,101,-12.8),(.65,h,1),7 if j%3==0 else 0)
+ for side in [-1,1]:
+  for j in range(14):
+   q=math.radians(-100+j*180/13);c('curved_helmet_horn_'+str(side)+'_'+str(j),(side*(12+5*math.cos(q)),103+11*math.sin(q),3),(3.2,3.4,5),2 if j%3 else 3)
+ for j in range(9):
+  for k in range(5):c('ragged_crimson_fold_'+str(j)+'_'+str(k),(-8+j*2+.3*math.sin(k+j),91-k*2.1-(j%3)*.35,-12.4-k*.15),(2.6-k*.25,2.8,1.3),5,(0,0,(j-4)*2))
  helmet=a.joint('closed_helmet_and_veil',(0,88,0))
  # Broad rounded shoulder plates with concentric armored ridges.
  shoulders=[]
  for side in [-1,1]:
-  for band in range(7):
+  for band in range(9):
    x=side*(21+band*2.4)
    for j in range(12):
     q=-.15+j*math.pi/11;c('rounded_pauldron_'+str(side)+'_'+str(band)+'_'+str(j),(x,81+13*math.sin(q),12*math.cos(q)),(3.2,4,4),2 if band%2 else 1)
@@ -113,10 +133,15 @@ def myoo():
  clip=animation('slam',8.3,{})
  for side,(upper,fore)in zip([-1,1],arms):
   right=side==1
-  clip['animators'][upper['uuid']]=animator(upper,[(0,(0,0,0)),(1.7,(135 if right else 35,0,0)),(3.2,(135 if right else 35,0,0)),(3.5,(25 if right else -10,0,0)),(4.5,(-5 if right else 0,0,0)),(8.3,(-5 if right else 0,0,0))])
-  clip['animators'][fore['uuid']]=animator(fore,[(0,(45,0,0)),(1.7,(25 if right else 55,0,0)),(3.2,(25 if right else 55,0,0)),(3.5,(15 if right else 35,0,0)),(8.3,(15 if right else 35,0,0))])
- clip['animators'][torso['uuid']]=animator(torso,[(0,(0,0,0)),(1.7,(-3,-6,0)),(3.2,(-3,-6,0)),(3.5,(-10,7,0)),(4.5,(-5,3,0)),(8.3,(-5,3,0))]);idle=animation('idle',1,{});idle['loop']='loop'
+  clip['animators'][upper['uuid']]=animator(upper,[(0,(0,0,0)),(1.7,(140 if right else 35,-45 if right else 0,0)),(3.2,(140 if right else 35,-45 if right else 0,0)),(3.5,(75 if right else -10,-75 if right else 0,0)),(4.5,(75 if right else -10,95 if right else 0,0)),(8.3,(75 if right else -10,95 if right else 0,0))])
+  clip['animators'][fore['uuid']]=animator(fore,[(0,(45,0,0)),(1.7,(15 if right else 55,0,0)),(3.2,(15 if right else 55,0,0)),(3.5,(15 if right else 35,0,0)),(8.3,(15 if right else 35,0,0))])
+ clip['animators'][torso['uuid']]=animator(torso,[(0,(0,0,0)),(1.7,(-3,-10,0)),(3.2,(-3,-10,0)),(3.5,(-8,-8,0)),(4.5,(-8,12,0)),(8.3,(-8,12,0))]);idle=animation('idle',1,{});idle['loop']='loop'
  for upper,fore in arms:idle['animators'][fore['uuid']]=animator(fore,[(0,(45,0,0)),(1,(45,0,0))])
- a.m.data['animations']=[clip,idle];a.m.save()
+ walk=animation('walk',.8,{});walk['loop']='loop';stand=animation('stand_legs',.15,{})
+ groups={g['name']:g for g in a.m.data['groups']}
+ for side in [-1,1]:
+  leg=groups['armored_leg_'+str(side)];walk['animators'][leg['uuid']]=animator(leg,[(0,(0,0,0)),(.2,(side*18,0,0)),(.4,(0,0,0)),(.6,(-side*18,0,0)),(.8,(0,0,0))]);stand['animators'][leg['uuid']]=animator(leg,[(0,(0,0,0)),(.15,(0,0,0))])
+ for action in [clip,idle,walk,stand]:action['override']=True
+ a.m.data['animations']=[clip,idle,walk,stand];a.m.save()
 
 def generate():flame_dragon();myoo()

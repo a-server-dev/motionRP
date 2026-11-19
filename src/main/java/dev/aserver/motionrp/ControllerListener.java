@@ -87,6 +87,7 @@ public final class ControllerListener implements Listener {
     public void move(PlayerMoveEvent event) {
         if (event instanceof PlayerTeleportEvent || !event.hasChangedPosition()
                 || !plugin.playback().active(event.getPlayer().getUniqueId())
+                || plugin.playback().followsMovement(event.getPlayer())
                 || plugin.playback().ownsMove(event.getPlayer(), event.getFrom(), event.getTo())) return;
         // Keep camera rotation, but reject walking/jumping without ending playback.
         var locked = event.getFrom().clone();

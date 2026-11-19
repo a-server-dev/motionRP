@@ -15,7 +15,10 @@ final class SceneAudience implements AutoCloseable {
     private final Player owner;
     private MotionVisibility visibility;
     SceneAudience filtered(MotionVisibility value){visibility=value;return this;}
-    private final org.bukkit.Location anchor;private final double range;
+    private org.bukkit.Location anchor;private final double range;
+    private final Set<UUID> participants=new HashSet<>();
+    SceneAudience focus(org.bukkit.Location p){anchor=p.clone();return this;}
+    SceneAudience include(UUID id){participants.add(Objects.requireNonNull(id));return this;}
     private final Map<UUID, Player> viewers = new LinkedHashMap<>();
     // BetterModel Tracker.equals/hashCode use only the model name. Two clones
     // of the same model must still be owned and closed independently.
@@ -27,7 +30,7 @@ final class SceneAudience implements AutoCloseable {
         Set<UUID> eligible = new HashSet<>();
         for (Player p : Bukkit.getOnlinePlayers()) {
             if ((visibility!=null && !visibility.enabled(p.getUniqueId())) || p.getWorld() != owner.getWorld() || !p.canSee(owner)
-                    || (!p.getUniqueId().equals(owner.getUniqueId()) && p.getLocation().distanceSquared(anchor==null?owner.getLocation():anchor) > Math.pow(visibility==null?range:visibility.range(range),2))) continue;
+                    || (!p.getUniqueId().equals(owner.getUniqueId()) && !participants.contains(p.getUniqueId()) && p.getLocation().distanceSquared(anchor==null?owner.getLocation():anchor) > Math.pow(visibility==null?range:visibility.range(range),2))) continue;
             eligible.add(p.getUniqueId());
             Player old = viewers.put(p.getUniqueId(), p);
             if (old != null && old != p){for (var t : trackers) t.remove(BukkitAdapter.adapt(old));for(var e:nativeEntities)if(old.isOnline())old.hideEntity(plugin,e);}

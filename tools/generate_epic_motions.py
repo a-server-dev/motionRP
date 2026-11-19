@@ -173,5 +173,7 @@ def generate(rig):
  revise(rig)
  from generate_epic_refinement import generate as refine
  refine()
+ from generate_epic_expansion import generate as expand
+ expand(rig)
 if __name__=='__main__':
  raw=Path(sys.argv[1]).read_bytes();assert hashlib.sha256(raw).hexdigest()==RIG_SHA;generate(json.loads(raw))
