@@ -223,7 +223,8 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
         if (args.length == 1) {
             choices.add("gui");choices.add("view");choices.add("fusion");
             if (sender.hasPermission("motionrp.admin")) choices.addAll(List.of("give", "reload", "status", "pack"));
-        } else if((args.length==2||args.length==3)&&args[0].equalsIgnoreCase("fusion")){choices.addAll(List.of("accept","cancel"));Bukkit.getOnlinePlayers().forEach(p->choices.add(p.getName()));
+        } else if((args.length==2||args.length==3)&&args[0].equalsIgnoreCase("fusion")){if(args.length==2)choices.addAll(List.of("accept","cancel"));
+            if(args.length==2||args[1].equalsIgnoreCase("accept"))Bukkit.getOnlinePlayers().stream().filter(p->p!=sender&&(!(sender instanceof Player viewer)||viewer.canSee(p))).forEach(p->choices.add(p.getName()));
         } else if(args.length==2 && args[0].equalsIgnoreCase("view")){choices.addAll(List.of("on","off"));
         } else if(sender.hasPermission("motionrp.admin") && args[0].equalsIgnoreCase("pack") && args.length==2) {
             choices.addAll(List.of("status","publish"));
