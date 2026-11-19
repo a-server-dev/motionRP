@@ -6,7 +6,7 @@ import java.util.*;
 public enum Performance {
     RONALDO("goal","ronaldo","ロナウド：Siu",112,46),
     KNEESLIDE("goal","kneeslide","膝スライディング",100,20),
-    KAZU("goal","kazu","カズダンス",140,28),
+    KAZU("goal","kazu","カズダンス",180,128),
     DESTASHA("hr","destasha","ベイスターズ：デスターシャ",112,48),
     MBAPPE("goal","mbappe","エムバペ：腕組み",100,26),
     YAMAKAWA("hr","yamakawa","山川穂高：どすこい",112,28),

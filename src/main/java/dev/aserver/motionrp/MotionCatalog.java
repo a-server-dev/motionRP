@@ -25,7 +25,7 @@ public record MotionCatalog(Map<String, Definition> motions, String controllerNa
             int ticks = config.getInt(base + "max-ticks", 200);
             if (ticks < 1 || ticks > 12_000) throw new IllegalArgumentException(base + "max-ticks must be 1..12000");
             String effect = config.getString(base + "effect", "none");
-            if (!Set.of("none", "rasengan", "rasenshuriken", "gate_of_babylon", "susanoo", "senbonzakura","titan_transform","gate_of_babylon_100","gate_of_babylon_enuma","zangetsu_bankai","excalibur","gae_bolg","kamehameha","genki_dama").contains(effect)) throw new IllegalArgumentException("Unknown effect: " + effect);
+            if (!Set.of("none", "rasengan", "rasenshuriken", "gate_of_babylon", "susanoo", "senbonzakura","titan_transform","gate_of_babylon_100","gate_of_babylon_enuma","zangetsu_bankai","excalibur","gae_bolg","kamehameha","genki_dama","rho_aias","getsuga_tensho").contains(effect)) throw new IllegalArgumentException("Unknown effect: " + effect);
             if (effect.equals("rasengan") && ticks < RasenganTimeline.END) throw new IllegalArgumentException("Rasengan max-ticks must be at least " + RasenganTimeline.END);
             if (effect.equals("rasenshuriken") && ticks < RasenshurikenTimeline.END) throw new IllegalArgumentException("Rasenshuriken max-ticks must be at least " + RasenshurikenTimeline.END);
             if (effect.equals("gate_of_babylon") && ticks < GateTimeline.END) throw new IllegalArgumentException("Gate max-ticks must be at least " + GateTimeline.END);
@@ -36,6 +36,7 @@ public record MotionCatalog(Map<String, Definition> motions, String controllerNa
             if(Set.of("excalibur","gae_bolg").contains(effect) && ticks<dev.aserver.motionrp.core.NobleTimeline.end(effect.equals("excalibur"))) throw new IllegalArgumentException("Noble max-ticks is too short");
             if(effect.equals("zangetsu_bankai") && ticks<dev.aserver.motionrp.core.BankaiTimeline.END) throw new IllegalArgumentException("Bankai max-ticks is too short");
             if(Set.of("kamehameha","genki_dama").contains(effect) && ticks<dev.aserver.motionrp.core.DragonBallTimeline.end(effect.equals("genki_dama"))) throw new IllegalArgumentException("Dragon Ball max-ticks is too short");
+            if(Set.of("rho_aias","getsuga_tensho").contains(effect) && ticks<dev.aserver.motionrp.core.BarrierSlashTimeline.end(effect.equals("rho_aias"))) throw new IllegalArgumentException("Barrier/slash max-ticks is too short");
             definitions.put(id, new Definition(id, config.getString(base + "name", id), model, animation, ticks, key(config, base + "item-model"), effect));
         }
         return new MotionCatalog(Collections.unmodifiableMap(definitions), config.getString("controller.name", "モーションセット"), key(config, "controller.item-model"));

@@ -16,7 +16,7 @@ class RasenganAssetsTest {
     }
 
     @Test void allAnimatedBonesAndOutlinerEntriesResolveToRealModelParts() throws Exception {
-        for (String file : List.of("players/motionrp_performances.bbmodel","players/motionrp_excalibur.bbmodel","players/motionrp_gae_bolg.bbmodel","models/motionrp_excalibur_blade.bbmodel","models/motionrp_excalibur_light.bbmodel","models/motionrp_gae_bolg_spear.bbmodel","models/motionrp_gae_bolg_trail.bbmodel","models/motionrp_gae_bolg_thorns.bbmodel","players/motionrp_zangetsu_bankai.bbmodel", "models/motionrp_zangetsu_cleaver.bbmodel", "models/motionrp_tensa_zangetsu.bbmodel", "models/motionrp_bankai_cocoon.bbmodel", "models/motionrp_bankai_wave.bbmodel", "models/motionrp_bankai_coat.bbmodel", "players/motionrp_rasengan.bbmodel", "models/motionrp_rasengan_orb.bbmodel",
+        for (String file : List.of("players/motionrp_rho_aias.bbmodel","players/motionrp_getsuga_tensho.bbmodel","models/motionrp_rho_aias_shield.bbmodel","models/motionrp_getsuga_crescent.bbmodel","models/motionrp_getsuga_tensa.bbmodel","players/motionrp_performances.bbmodel","players/motionrp_excalibur.bbmodel","players/motionrp_gae_bolg.bbmodel","models/motionrp_excalibur_blade.bbmodel","models/motionrp_excalibur_light.bbmodel","models/motionrp_gae_bolg_spear.bbmodel","models/motionrp_gae_bolg_trail.bbmodel","models/motionrp_gae_bolg_thorns.bbmodel","players/motionrp_zangetsu_bankai.bbmodel", "models/motionrp_zangetsu_cleaver.bbmodel", "models/motionrp_tensa_zangetsu.bbmodel", "models/motionrp_bankai_cocoon.bbmodel", "models/motionrp_bankai_wave.bbmodel", "models/motionrp_bankai_coat.bbmodel", "players/motionrp_rasengan.bbmodel", "models/motionrp_rasengan_orb.bbmodel",
                 "players/motionrp_rasenshuriken.bbmodel", "models/motionrp_rasenshuriken_orb.bbmodel",
                 "players/motionrp_gate_of_babylon.bbmodel", "players/motionrp_susanoo.bbmodel",
                 "models/motionrp_golden_gate.bbmodel", "models/motionrp_treasury_sword.bbmodel",
@@ -322,14 +322,20 @@ class RasenganAssetsTest {
                 assertTrue(r[1]>head[1]+3 && l[1]>head[1]+3,"Wide V must stay above head");
             }
             if(p==Performance.KAZU){
-                for(int frame:new int[]{24,32,40,48}){
-                    boolean right=(frame/8)%2==1;String shin=names.get(right?"prfl_right_foreleg":"plfl_left_foreleg");
-                    var knee=posedOrigin(shin,frame/20.0,a,groups,parents);
-                    var foot=posedPoint(shin,new double[]{right?1.875:-1.875,0,0},frame/20.0,a,groups,parents);
-                    assertTrue(foot[1]>4,"Kazu heel not lifted");assertTrue(foot[2]>knee[2]+3,"Kazu must flick heel back, not march high knees");
+                for(int cycle=0;cycle<3;cycle++)for(int step=0;step<4;step++){
+                    int frame=28+cycle*32+step*8;double[] expected=step==0?new double[]{-4,cycle==0?0:4}:step==1?new double[]{-4,-4}:step==2?new double[]{4,-4}:new double[]{4,4};
+                    for(int side=0;side<2;side++){
+                        var foot=posedPoint(names.get(side==0?"prfl_right_foreleg":"plfl_left_foreleg"),new double[]{side==0?1.875:-1.875,0,0},frame/20.0,a,groups,parents);
+                        assertEquals(expected[side],foot[2],.001,"Kazu must step right forward, left forward, right back, left back");
+                    }
                 }
-                var up=posedOrigin(names.get("pri_right_item"),1.2,a,groups,parents);var side=posedOrigin(names.get("pri_right_item"),1.6,a,groups,parents);
-                assertTrue(up[1]>side[1]+4,"Kazu arms do not swing from overhead to the side");
+                var forward=posedOrigin(names.get("pri_right_item"),1.4,a,groups,parents);var back=posedOrigin(names.get("pri_right_item"),2.2,a,groups,parents);
+                assertTrue(forward[2]<-7 && back[2]>7,"Windmill must pass through front and back");
+                var up=posedOrigin(names.get("pri_right_item"),1.8,a,groups,parents);var down=posedOrigin(names.get("pri_right_item"),2.6,a,groups,parents);
+                assertTrue(up[1]>down[1]+15,"Windmill must make a full shoulder circle");
+                var finish=posedOrigin(names.get("pri_right_item"),6.4,a,groups,parents);
+                assertTrue(finish[1]>24,"Kazu final pointing pose missing");
+                assertArrayEquals(finish,posedOrigin(names.get("pri_right_item"),7.9,a,groups,parents),.001,"Kazu final pose must visibly hold");
             }
             if(p==Performance.DESTASHA){
                 var forward=posedOrigin(names.get("pri_right_item"),.9,a,groups,parents);var down=posedOrigin(names.get("pri_right_item"),1.5,a,groups,parents);
@@ -340,6 +346,41 @@ class RasenganAssetsTest {
                     double t=frame/20.0;var palm=posedOrigin(names.get("pri_right_item"),t,a,groups,parents);var head=posedOrigin(names.get("h_ph_head"),t,a,groups,parents);
                     assertTrue(Math.abs(palm[0])<4 && palm[1]>head[1]+5.5 && palm[1]<head[1]+8 && palm[2]<-5,"Right hand must salute across brow");
                     var left=posedOrigin(names.get("pli_left_item"),t,a,groups,parents);assertEquals(-5.625,left[0],.001);assertEquals(0,left[2],.001);assertTrue(left[1]<12,"Left hand should stay relaxed");
+                }
+            }
+        }
+    }
+
+    @Test void newBarrierAndSlashHaveSevenPetalsCurvedEnergyAndRealTensaGeometry() throws Exception {
+        var shield=read("models/motionrp_rho_aias_shield.bbmodel");
+        long petals=shield.getAsJsonArray("groups").asList().stream().filter(g->g.getAsJsonObject().get("name").getAsString().startsWith("petal_")).count();assertEquals(7,petals);
+        double lowest=0;
+        for(var element:shield.getAsJsonArray("elements"))if(element.getAsJsonObject().has("vertices"))for(var entry:element.getAsJsonObject().getAsJsonObject("vertices").entrySet())lowest=Math.min(lowest,entry.getValue().getAsJsonArray().get(1).getAsDouble());
+        assertTrue(2.2+lowest*1.89/16>0,"The largest shield must not bury its lower petals in the floor");
+        var crescent=read("models/motionrp_getsuga_crescent.bbmodel");assertEquals(3,crescent.getAsJsonArray("elements").size());
+        for(var raw:crescent.getAsJsonArray("elements")){
+            var e=raw.getAsJsonObject();assertEquals("mesh",e.get("type").getAsString());
+            double min=100,max=-100;for(var vertex:e.getAsJsonObject("vertices").entrySet()){double y=vertex.getValue().getAsJsonArray().get(1).getAsDouble();min=Math.min(min,y);max=Math.max(max,y);}
+            assertTrue(max-min>34,"Crescent must be tall and curved");assertTrue(e.getAsJsonObject("faces").size()>100);
+        }
+        var weapon=read("models/motionrp_getsuga_tensa.bbmodel");var clip=weapon.getAsJsonArray("animations").get(0).getAsJsonObject();
+        String socket=weapon.getAsJsonArray("groups").asList().stream().map(JsonElement::getAsJsonObject).filter(g->g.get("name").getAsString().equals("sword_socket")).findFirst().orElseThrow().get("uuid").getAsString();
+        assertEquals(-125,sample(clip,socket,"rotation",(BarrierSlashTimeline.GETSUGA_RELEASE-8)/20.0)[0],.001,"Weapon cut must finish on the crescent release tick");
+        var names=weapon.getAsJsonArray("elements").asList().stream().map(e->e.getAsJsonObject().get("name").getAsString()).toList();
+        var grip=weapon.getAsJsonArray("elements").asList().stream().map(JsonElement::getAsJsonObject).filter(e->e.get("name").getAsString().equals("black_wrapped_hilt")).findFirst().orElseThrow();
+        assertEquals(0,(grip.getAsJsonArray("from").get(1).getAsDouble()+grip.getAsJsonArray("to").get(1).getAsDouble())/2,.001,"Hold Tensa by the grip rather than the guard");
+        assertEquals(12,names.stream().filter(n->n.startsWith("black_blade_")).count());assertTrue(names.stream().filter(n->n.startsWith("manji_guard_")).count()>=8);assertTrue(names.stream().anyMatch(n->n.startsWith("chain_side_")));assertFalse(names.stream().anyMatch(n->n.startsWith("cleaver_")));
+    }
+    @Test void newSceneHandsFollowTheAnimatedRigAndFeetStayGrounded() throws Exception {
+        for(boolean shield:new boolean[]{true,false}){
+            String id=shield?"rho_aias":"getsuga_tensho";int end=BarrierSlashTimeline.end(shield);var model=read("players/motionrp_"+id+".bbmodel");var a=model.getAsJsonArray("animations").get(0).getAsJsonObject();
+            Map<String,JsonObject> groups=new HashMap<>();Map<String,String> names=new HashMap<>(),parents=new HashMap<>();
+            for(var raw:model.getAsJsonArray("groups")){var g=raw.getAsJsonObject();String uid=g.get("uuid").getAsString();groups.put(uid,g);names.put(g.get("name").getAsString(),uid);}parentTree(model.getAsJsonArray("outliner"),null,parents);
+            for(int tick=0;tick<end;tick++){
+                var expected=posedOrigin(names.get(shield?"pli_left_item":"pri_right_item"),tick/20.0,a,groups,parents);var hand=BarrierHandPath.at(shield,tick);
+                assertEquals(expected[0]/16,hand.right(),.000001);assertEquals(-expected[2]/16+.05,hand.forward(),.000001);assertEquals(expected[1]/16+.03,hand.height(),.000001);
+                for(boolean right:new boolean[]{true,false}){
+                    var foot=posedPoint(names.get(right?"prfl_right_foreleg":"plfl_left_foreleg"),new double[]{right?1.875:-1.875,0,0},tick/20.0,a,groups,parents);assertEquals(0,foot[1],.001,"New motion feet detached from ground");
                 }
             }
         }

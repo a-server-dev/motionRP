@@ -59,19 +59,44 @@ def generate(rig):
       'pw_waist':[(0,(0,0,0)),(28,(0,0,6)),(62,(0,0,6)),(112,(0,0,0))],
       'h_ph_head':[(0,(0,0,0)),(28,(-15,0,0)),(62,(-15,0,0)),(112,(0,0,0))]},
       [(0,(0,0,0,0,0)),(18,(-20,40,-20,40,25)),(28,(-50,100,-50,100,38)),(62,(-50,100,-50,100,38)),(82,(-15,30,-15,30,20)),(112,(0,0,0,0,0))])
-    # Uploaded six-second clip: heel flicks and hip turns, with broad arm swings.
-    beats=list(range(24,113,8))
+    # Continuous shoulder circles, then a held finish. Euler keys stay unwrapped.
     poses={b:[(0,(0,0,0))] for b in ['pra_right_arm','pla_left_arm','prfa_right_forearm','plfa_left_forearm','pw_waist','pc_chest','h_ph_head']}
-    poses['pw_waist'].append((12,(18,0,0)))
-    poses['pra_right_arm'].append((12,(15,0,35)));poses['pla_left_arm'].append((12,(15,0,-35)))
-    legs=[(0,(0,0,0,0,0)),(12,(-20,40,-20,40,6))]
-    arms=[((-155,0,-25),(-25,0,-55),-15,-20),((-20,0,75),(-20,0,-75),-15,-15),((20,0,35),(-145,0,25),-20,-10),((-35,0,75),(-60,0,-30),-15,-35)]
-    for i,t in enumerate(beats):
-        side=1 if i%2==0 else -1;r,l,rf,lf=arms[i%4]
-        for bone,value in [('pra_right_arm',r),('pla_left_arm',l),('prfa_right_forearm',(rf,0,0)),('plfa_left_forearm',(lf,0,0)),('pw_waist',(-8,side*24,side*6)),('pc_chest',(0,-side*10,0)),('h_ph_head',(-5,-side*12,0))]:poses[bone].append((t,value))
-        legs.append((t,(-12,100,-18,36,6) if side>0 else (-18,36,-12,100,6)))
-    for keys in poses.values():keys.append((140,(0,0,0)))
-    legs.append((140,(0,0,0,0,0)));make('kazu',140,poses,legs)
+    for t in range(20,117,4):
+        phase=(t-20)*360/32;beat=math.sin((t-20)*math.tau/16)
+        poses['pra_right_arm'].append((t,(-phase,0,25*math.cos(math.radians(phase)))))
+        poses['pla_left_arm'].append((t,(-phase-180,0,-25*math.cos(math.radians(phase+180)))))
+        for bone in ['prfa_right_forearm','plfa_left_forearm']:poses[bone].append((t,(-12,0,0)))
+        poses['pw_waist'].append((t,(-6,beat*20,beat*5)))
+        poses['pc_chest'].append((t,(0,-beat*8,0)));poses['h_ph_head'].append((t,(-6,-beat*8,0)))
+    finish={'pra_right_arm':(-1230,0,-30),'pla_left_arm':(-1460,0,-75),'prfa_right_forearm':(-5,0,0),'plfa_left_forearm':(-10,0,0),'pw_waist':(-8,-15,0),'pc_chest':(0,0,0),'h_ph_head':(-12,15,0)}
+    for bone,keys in poses.items():
+        keys.extend([(128,finish[bone]),(160,finish[bone]),(180,(-1080,0,0) if bone=='pra_right_arm' else (-1440,0,0) if bone=='pla_left_arm' else (0,0,0))])
+    make('kazu',180,poses,[(0,(0,0,0,0,0)),(180,(0,0,0,0,0))])
+    a=m['animations'][-1];tracks=a['animators'];rkeys=[];lkeys=[];rk=[];lk=[];roots=[]
+    for tick in range(181):
+        feet=[0.,0.];lift=[0.,0.]
+        if tick<20:hip=11.25-3*tick/20;spread=8*tick/20
+        else:
+            hip=8.25;spread=8
+            for step in range(12):
+                start=20+step*8;side=step%2;target=-4 if step%4<2 else 4
+                if tick>=start+8:feet[side]=target
+                elif tick>=start:
+                    f=(tick-start)/8;e=f*f*(3-2*f);feet[side]+=(target-feet[side])*e;lift[side]=2.5*math.sin(math.pi*f);break
+                else:break
+        if tick>=116:
+            f=min(1,(tick-116)/12);left=min(1,2*f);right=max(0,2*f-1);feet=[4-right,4-6.5*left];lift=[3*right,1.5*math.sin(math.pi*left)]
+        if tick>=160:
+            f=(tick-160)/20;feet=[3*(1-f),-2.5*(1-f)];lift=[3*(1-f),0];hip=8.25+3*f;spread=8*(1-f)
+        center=sum(feet)*.175 if tick<116 else 1.4*(1-min(1,(tick-116)/12))
+        roots.append((tick/20,(0,hip-11.25,center)))
+        for side,upper,knee in [(0,rkeys,rk),(1,lkeys,lk)]:
+            vertical=(hip-lift[side])/math.cos(math.radians(spread));z=feet[side]-center;length=5.625
+            bend=math.acos(max(-1,min(1,(vertical*vertical+z*z-2*length*length)/(2*length*length))))
+            thigh=math.atan2(z,vertical)-bend/2
+            upper.append((tick/20,(math.degrees(thigh),0,spread if side==0 else -spread)));knee.append((tick/20,(math.degrees(bend),0,0)))
+    for bone,keys in [('prl_right_leg',rkeys),('pll_left_leg',lkeys),('prfl_right_foreleg',rk),('plfl_left_foreleg',lk)]:tracks[groups[bone]['uuid']]=player_animator(groups[bone],keys)
+    tracks[groups['player_root']['uuid']]=animator(groups['player_root'],roots,'position')
     # Only the right arm acts: forward, sweeping down, then a brow-level salute.
     make('destasha',112,{
       'pra_right_arm':[(0,(0,0,0)),(18,(-90,0,0)),(30,(15,0,15)),(48,(-48.4808,-47.6508,120.8730)),(82,(-48.4808,-47.6508,120.8730)),(112,(0,0,0))],

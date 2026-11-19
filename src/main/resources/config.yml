@@ -4,6 +4,18 @@ debug-input: false
 # BetterModel/players にあるプレイヤーモデルを指定します。
 # 標準の steve.bbmodel に含まれる roll を初期モーションとして使用します。
 motions:
+  rho_aias:
+    name: 熾天覆う七つの円環（ロー・アイアス）
+    model: motionrp_rho_aias
+    animation: rho_aias
+    effect: rho_aias
+    max-ticks: 190
+  getsuga_tensho:
+    name: 月牙天衝（天鎖斬月）
+    model: motionrp_getsuga_tensho
+    animation: getsuga_tensho
+    effect: getsuga_tensho
+    max-ticks: 142
   kamehameha:
     name: かめはめ波
     model: motionrp_kamehameha
