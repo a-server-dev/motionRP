@@ -305,8 +305,12 @@ class RasenganAssetsTest {
             }
             if(p==Performance.YAMAKAWA)assertTrue(posedOrigin(names.get("phip_hip"),1.4,a,groups,parents)[1]<7,"Dosukoi stance too tall");
             if(p==Performance.MATSUDA){
-                assertTrue(posedOrigin(names.get("pri_right_item"),2,a,groups,parents)[1]>24,"Atsuo fist not raised");
-                var chest=posedOrigin(names.get("pc_chest"),2,a,groups,parents);var hip=posedOrigin(names.get("phip_hip"),2,a,groups,parents);assertTrue(chest[2]>hip[2]+1.5,"Torso not arched backwards");
+                for(int frame=30;frame<=78;frame++){
+                    var fist=posedOrigin(names.get("pri_right_item"),frame/20.0,a,groups,parents);var head=posedOrigin(names.get("h_ph_head"),frame/20.0,a,groups,parents);
+                    assertTrue(fist[1]>head[1]+3,"Atsuo fist must be above the face");
+                    assertTrue(fist[2]<head[2]-5,"Atsuo fist went behind the head instead of forward");
+                }
+                var chest=posedOrigin(names.get("pc_chest"),2,a,groups,parents);var hip=posedOrigin(names.get("phip_hip"),2,a,groups,parents);assertTrue(chest[2]>hip[2]+1,"Torso not arched backwards");
             }
             if(p==Performance.YAMAKAWA)for(int frame=28;frame<=62;frame++){
                 double t=frame/20.0;
@@ -318,8 +322,25 @@ class RasenganAssetsTest {
                 assertTrue(r[1]>head[1]+3 && l[1]>head[1]+3,"Wide V must stay above head");
             }
             if(p==Performance.KAZU){
-                var right=posedOrigin(names.get("prfl_right_foreleg"),.8,a,groups,parents);var left=posedOrigin(names.get("plfl_left_foreleg"),.8,a,groups,parents);assertTrue(right[1]>left[1]+1,"Kazu knee not raised");
-                right=posedOrigin(names.get("prfl_right_foreleg"),1.3,a,groups,parents);left=posedOrigin(names.get("plfl_left_foreleg"),1.3,a,groups,parents);assertTrue(left[1]>right[1]+1,"Kazu knees not alternating");
+                for(int frame:new int[]{24,32,40,48}){
+                    boolean right=(frame/8)%2==1;String shin=names.get(right?"prfl_right_foreleg":"plfl_left_foreleg");
+                    var knee=posedOrigin(shin,frame/20.0,a,groups,parents);
+                    var foot=posedPoint(shin,new double[]{right?1.875:-1.875,0,0},frame/20.0,a,groups,parents);
+                    assertTrue(foot[1]>4,"Kazu heel not lifted");assertTrue(foot[2]>knee[2]+3,"Kazu must flick heel back, not march high knees");
+                }
+                var up=posedOrigin(names.get("pri_right_item"),1.2,a,groups,parents);var side=posedOrigin(names.get("pri_right_item"),1.6,a,groups,parents);
+                assertTrue(up[1]>side[1]+4,"Kazu arms do not swing from overhead to the side");
+            }
+            if(p==Performance.DESTASHA){
+                var forward=posedOrigin(names.get("pri_right_item"),.9,a,groups,parents);var down=posedOrigin(names.get("pri_right_item"),1.5,a,groups,parents);
+                var hip=posedOrigin(names.get("phip_hip"),1.5,a,groups,parents);
+                assertTrue(forward[2]<-9,"Destasha must start with right arm straight forward");
+                assertTrue(down[1]<hip[1]+2 && down[2]>forward[2]+8,"Destasha downward sweep missing");
+                for(int frame=48;frame<=82;frame++){
+                    double t=frame/20.0;var palm=posedOrigin(names.get("pri_right_item"),t,a,groups,parents);var head=posedOrigin(names.get("h_ph_head"),t,a,groups,parents);
+                    assertTrue(Math.abs(palm[0])<4 && palm[1]>head[1]+5.5 && palm[1]<head[1]+8 && palm[2]<-5,"Right hand must salute across brow");
+                    var left=posedOrigin(names.get("pli_left_item"),t,a,groups,parents);assertEquals(-5.625,left[0],.001);assertEquals(0,left[2],.001);assertTrue(left[1]<12,"Left hand should stay relaxed");
+                }
             }
         }
     }
