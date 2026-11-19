@@ -49,19 +49,19 @@ def fusion(rig):
    ex=along*dx/d-bend*h*dy/d;ey=along*dy/d+bend*h*dx/d
    uz=math.degrees(math.atan2(ey,ex)+math.pi/2);fz=math.degrees(math.atan2(dy-ey,dx-ex)-math.atan2(-5.625,side*.625))-uz
    uz=(uz+180)%360-180;fz=(fz+180)%360-180
-   put_track(m,upper,[(0,(0,0,0)),(.7,(0,0,-role*90)),(1.8,(0,0,-role*90)),(2.5,(0,0,-role*180)),(3.5,(0,0,-role*270)),(3.95,(0,0,-role*180)),(4.35,(0,0,-role*90)),(4.55,(0,0,-role*90)),(4.95,(0,0,uz)),(9.7,(0,0,uz))])
+   put_track(m,upper,[(0,(0,0,0)),(.7,(0,0,-role*90)),(1.8,(0,0,-role*90)),(2.5,(0,0,-role*180)),(3.5,(0,0,-role*270)),(3.95,(90,0,0)),(4.35,(90,role*90,0)),(4.55,(90,role*90,0)),(4.95,(0,0,uz)),(9.7,(0,0,uz))])
    put_track(m,fore,[(0,(0,0,0)),(4.55,(0,0,0)),(4.95,(0,0,fz)),(9.7,(0,0,fz))])
   for side,bone,shin in [(1,'prl_right_leg','prfl_right_foreleg'),(-1,'pll_left_leg','plfl_left_foreleg')]:
    inner=side*role==1;offset=0 if inner else .22;keys=[(0,(0,0,0)),(1.8,(0,0,0))]
    for n in range(3):
     t=1.85+n*.6+offset;keys.extend([(t,(0,0,0)),(t+.15,(30,0,0)),(t+.3,(0,0,0))])
-   keys.extend([(4,(0,0,0)),(4.4,(-65 if inner else 0,0,0)),(4.55,(-65 if inner else 0,0,0))])
+   keys.extend([(4,(0,0,0)),(4.4,(65 if inner else 0,0,0)),(4.55,(65 if inner else 0,0,0))])
    # Feet stay planted in the final lunge despite the lowered pelvis.
    dx=side*(6 if inner else 7)-side*1.875;dy=2-11.25;d=math.hypot(dx,dy);along=d/2;h=math.sqrt(5.625**2-along**2);bend=role
    ex=along*dx/d-bend*h*dy/d;ey=along*dy/d+bend*h*dx/d
    uz=math.degrees(math.atan2(ey,ex)+math.pi/2);fz=math.degrees(math.atan2(dy-ey,dx-ex)+math.pi/2)-uz
    keys.extend([(4.95,(0,0,uz)),(9.7,(0,0,uz))]);put_track(m,bone,keys)
-   put_track(m,shin,[(0,(0,0,0)),(4,(0,0,0)),(4.4,(100 if inner else 0,0,0)),(4.55,(100 if inner else 0,0,0)),(4.95,(0,0,fz)),(9.7,(0,0,fz))])
+   put_track(m,shin,[(0,(0,0,0)),(4,(0,0,0)),(4.4,(-100 if inner else 0,0,0)),(4.55,(-100 if inner else 0,0,0)),(4.95,(0,0,fz)),(9.7,(0,0,fz))])
   save('players/motionrp_'+name+'.bbmodel',m);(ROOT/(name+'-hand-path.csv')).write_text(hand_path(m,194))
 
 def punch_pose(tick):
@@ -87,7 +87,7 @@ def road_actor(rig):
   if name in ['pra_right_arm','pla_left_arm']:first=[(0,(0,0,0)),(.8,(90,0,(-15 if name.startswith('pra') else 15))),(2,(165,0,0)),(4.1,(165,0,0)),(4.9,(0,0,0))]
   else:first=[(0,(0,0,0)),(4.8,(0,0,0))]
   keys=first+[(t/20,punch_pose(t)[name])for t in range(104,193)]+[(9.9,punch_pose(192)[name]),(10.7,(0,0,0)),(13,(0,0,0))];put_track(m,name,keys)
- put_track(m,'player_root',[(0,(0,0,0)),(3.4,(0,0,0)),(3.9,(180,0,0)),(4.7,(180,0,0)),(5.2,(360,0,0)),(13,(360,0,0))])
+ put_track(m,'player_root',[(0,(0,0,0)),(3.4,(0,0,0)),(3.9,(-180,0,0)),(4.7,(-180,0,0)),(5.2,(-360,0,0)),(13,(-360,0,0))])
  save('players/motionrp_road_roller.bbmodel',m);(ROOT/'road_roller-hand-path.csv').write_text(hand_path(m,260))
 
 def world_skin():
@@ -200,6 +200,21 @@ def roller():
  a.m.data['animations']=[clip];a.m.save()
  a=palette_model('motionrp_roller_debris',GOLD);a.cube('torn_yellow_sheet',(0,0,0),(6,1,5),0);a.cube('dark_broken_frame',(1,1,0),(2,3,4),6);a.joint('debris',(0,0,0));a.m.save()
 
+def arm_afterimage():
+ a=palette_model('motionrp_world_arm_afterimage',GOLD);c=a.cube
+ c('ghost_gauntlet',(0,-8.2,0),(4.2,5.5,4.4),1)
+ c('ghost_fist',(0,-11.1,-.4),(5,3.5,5),5)
+ for x in [-1.5,-.5,.5,1.5]:c('ghost_knuckle_'+str(x),(x,-11.3,-3.1),(.75,2,.5),7)
+ for x in [-1.8,1.8]:c('motion_streak_'+str(x),(x,-8.3,3),( .35,.4,7),1)
+ fore=a.joint('ghost_forearm',(0,-5.5,0));fore_node=a.m.data['outliner'].pop()
+ c('ghost_upper_arm',(0,-2.75,0),(3.8,5.5,4),0)
+ c('ghost_shoulder',(0,-.4,0),(4.4,2,4.5),1)
+ upper=a.joint('ghost_upper_arm',(0,0,0));a.m.data['outliner'][-1]['children'].append(fore_node)
+ clip=animation('rapid_punch',.2,{});clip['loop']='loop'
+ clip['animators'][upper['uuid']]=animator(upper,[(0,(-10,0,0)),(.1,(55,0,0)),(.2,(-10,0,0))])
+ clip['animators'][fore['uuid']]=animator(fore,[(0,(110,0,0)),(.1,(25,0,0)),(.2,(110,0,0))])
+ a.m.data['animations']=[clip];a.m.save()
+
 def moon():
  a=palette_model('motionrp_rock_moon',ROCK);c=a.cube
  c('solid_rock_core',(0,0,0),(18,18,18),4)
@@ -215,4 +230,4 @@ def gravity_actor():
  save('players/motionrp_chibaku_tensei.bbmodel',m);(ROOT/'chibaku_tensei-hand-path.csv').write_text(hand_path(m,312))
 
 def revise(rig):
- fusion(rig);fused_skin(rig);the_world(rig);roller();road_actor(rig);moon();gravity_actor()
+ fusion(rig);fused_skin(rig);the_world(rig);roller();road_actor(rig);arm_afterimage();moon();gravity_actor()

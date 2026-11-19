@@ -11,7 +11,7 @@ import java.util.*;
 final class EpicScene extends SummonScene {
  private final String effect;private final EntityTracker body;private final AerialAnchor pilot;
  private final Map<Sound,Set<Player>> heard=new HashMap<>();
- private DummyTracker main,stand;private final DummyTracker[] parts=new DummyTracker[EpicTimeline.ROCK_COUNT];
+ private DummyTracker main,stand;private final DummyTracker[] armGhosts=new DummyTracker[8];private final DummyTracker[] parts=new DummyTracker[EpicTimeline.ROCK_COUNT];
  private static final Particle.DustOptions PURPLE=new Particle.DustOptions(Color.fromRGB(108,20,178),1.5f),BLACK=new Particle.DustOptions(Color.fromRGB(12,5,18),1.5f),GOLD=new Particle.DustOptions(Color.fromRGB(255,220,83),1.2f);
  EpicScene(MotionPlugin plugin,Player owner,EntityTracker body,String effect){super(plugin,owner,effect,EpicTimeline.end(effect),128,true);this.effect=effect;this.body=body;pilot=new AerialAnchor(plugin,owner);body.rotation(()->new ModelRotation(0,origin.getYaw()));}
  @Override String phase(){return EpicTimeline.phase(effect,tick);}
@@ -40,6 +40,13 @@ final class EpicScene extends SummonScene {
   if(tick==70){audience.hide(stand);stand=null;trace("initial World dissolves at apex");}
   if(tick==104){stand=model("motionrp_the_world_upper",owner.getLocation(),1.1f,"the_world_upper");followUpperStand();trace("upper-body World follows player from behind");blast(at(0,8,.3),4);stand.animate("barrage",AnimationModifier.DEFAULT_WITH_PLAY_ONCE);main.animate("crumple",AnimationModifier.DEFAULT_WITH_PLAY_ONCE);trace("roller hits ground; synchronized player/World barrage and dent begin");}
   if(tick>=104&&tick<232)followUpperStand();
+  for(int i=0;i<armGhosts.length;i++){
+   int lane=i/2,side=i%2==0?1:-1,birth=104+(lane+(i%2)*2)%4;
+   if(tick==birth){armGhosts[i]=model("motionrp_world_arm_afterimage",owner.getLocation(),1,"arm_afterimage"+i);loop(armGhosts[i],"rapid_punch");}
+   if(armGhosts[i]!=null&&tick<168){var p=at(side*(.36+lane*.11),-.12-lane*.07,1.42+lane*.11).add(owner.getLocation().toVector().subtract(origin.toVector()));locate(armGhosts[i],p);armGhosts[i].scaler(ModelScaler.value(.82f+lane*.06f));}
+   if(tick==168){audience.hide(armGhosts[i]);armGhosts[i]=null;}
+  }
+
   if(tick>=220&&tick<232&&stand!=null)stand.scaler(ModelScaler.value((float)(1.1*(232-tick)/12.0)));
   if(tick>=104&&tick<168&&tick%2==0){var p=palm();particle(p,Particle.CRIT,16,.25,.08);particle(p,Particle.ELECTRIC_SPARK,12,.2,.08);var q=p.clone().add(0,.1,-.3);particle(q,Particle.CRIT,16,.25,.08);cue(p,Sound.ENTITY_PLAYER_ATTACK_STRONG,.9f,1.3f);if(tick%18==14)trace("roller dent stage="+((tick-104)/18+1));}
   if(tick==184){cue(palm(),Sound.ENTITY_PLAYER_ATTACK_SWEEP,2,.5f);trace("both fists raised; full-body finishing slam");}

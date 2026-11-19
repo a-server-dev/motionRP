@@ -7,7 +7,7 @@ class EpicAssetsTest {
  private JsonObject model(String file)throws Exception{try(var in=Objects.requireNonNull(getClass().getResourceAsStream("/bettermodel/"+file+".bbmodel"))){return JsonParser.parseString(new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();}}
  @Test void everyNewModelHasValidTreeAndBoundedAnimationKeys()throws Exception{
   var files=new ArrayList<String>();for(String id:EpicTimeline.EFFECTS)files.add("players/motionrp_"+id);files.addAll(List.of("players/motionrp_fusion_left","players/motionrp_fusion_right"));
-  for(String id:List.of("the_world","road_roller","black_dragon_head","black_dragon_body","tengen_myoo","gravity_core","gravity_rock","rock_moon","fusion_warrior","roller_debris","the_world_upper"))files.add("models/motionrp_"+id);
+  for(String id:List.of("the_world","road_roller","black_dragon_head","black_dragon_body","tengen_myoo","gravity_core","gravity_rock","rock_moon","fusion_warrior","roller_debris","the_world_upper","world_arm_afterimage"))files.add("models/motionrp_"+id);
   for(String file:files){var m=model(file);Set<String> ids=new HashSet<>();for(var raw:m.getAsJsonArray("groups"))assertTrue(ids.add(raw.getAsJsonObject().get("uuid").getAsString()));for(var raw:m.getAsJsonArray("elements"))assertTrue(ids.add(raw.getAsJsonObject().get("uuid").getAsString()));tree(m.getAsJsonArray("outliner"),ids);
    for(var raw:m.getAsJsonArray("animations")){var a=raw.getAsJsonObject();for(var track:a.getAsJsonObject("animators").entrySet()){assertTrue(ids.contains(track.getKey()));double previous=-1;for(var frame:track.getValue().getAsJsonObject().getAsJsonArray("keyframes")){double t=frame.getAsJsonObject().get("time").getAsDouble();assertTrue(t>=previous&&t>=0&&t<=a.get("length").getAsDouble(),file+" timeline");previous=t;}}}
   }
@@ -104,6 +104,20 @@ class EpicAssetsTest {
    if(role.equals("road_roller")){var head=math.posedOrigin(names.get("h_ph_head"),4.4,clip,groups,parents);var hip=math.posedOrigin(names.get("phip_hip"),4.4,clip,groups,parents);assertTrue(head[1]<hip[1],"Head must be below hips during the drop");}
    else for(String hand:List.of("pri_right_item","pli_left_item")){var p=math.posedOrigin(names.get(hand),4.4,clip,groups,parents);var waist=math.posedOrigin(names.get("pw_waist"),4.4,clip,groups,parents);assertTrue(role.endsWith("left")?p[0]<waist[0]-5:p[0]>waist[0]+5,"Both hands must return outside before the final lunge");}
   }
+ }
+
+ @Test void fusionPassesHandsInFrontAndLiftsTheKneeForward()throws Exception{
+  var math=new RasenganAssetsTest();
+  for(String role:List.of("fusion_left","fusion_right","road_roller")){
+   var m=model("players/motionrp_"+role);var clip=m.getAsJsonArray("animations").get(0).getAsJsonObject();Map<String,JsonObject> groups=new HashMap<>();Map<String,String> names=new HashMap<>(),parents=new HashMap<>();
+   for(var raw:m.getAsJsonArray("groups")){var g=raw.getAsJsonObject();String uid=g.get("uuid").getAsString();groups.put(uid,g);names.put(g.get("name").getAsString(),uid);}math.parentTree(m.getAsJsonArray("outliner"),null,parents);
+   if(role.equals("road_roller")){var head=math.posedOrigin(names.get("h_ph_head"),3.65,clip,groups,parents);var hip=math.posedOrigin(names.get("phip_hip"),3.65,clip,groups,parents);assertTrue(head[2]<hip[2]-5,"Head must travel forward on entry to the handstand");}
+   else{
+    for(String hand:List.of("pri_right_item","pli_left_item")){var p=math.posedOrigin(names.get(hand),3.95,clip,groups,parents);assertTrue(p[2]<-10,"Return swing must pass in front of the torso");}
+    var knee=math.posedOrigin(names.get(role.endsWith("left")?"prfl_right_foreleg":"plfl_left_foreleg"),4.4,clip,groups,parents);var hip=math.posedOrigin(names.get("phip_hip"),4.4,clip,groups,parents);assertTrue(knee[2]<hip[2]-4,"Raised knee must point forward");
+   }
+  }
+  var ghost=model("models/motionrp_world_arm_afterimage");assertEquals(.2,ghost.getAsJsonArray("animations").get(0).getAsJsonObject().get("length").getAsDouble());assertEquals("loop",ghost.getAsJsonArray("animations").get(0).getAsJsonObject().get("loop").getAsString());
  }
 
 }
