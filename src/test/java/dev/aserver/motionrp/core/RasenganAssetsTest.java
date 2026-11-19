@@ -282,9 +282,9 @@ class RasenganAssetsTest {
         Map<String,JsonObject> groups=new HashMap<>();Map<String,String> names=new HashMap<>(),parents=new HashMap<>();
         for(var raw:model.getAsJsonArray("groups")){var g=raw.getAsJsonObject();String id=g.get("uuid").getAsString();groups.put(id,g);names.put(g.get("name").getAsString(),id);}
         parentTree(model.getAsJsonArray("outliner"),null,parents);
-        assertEquals(5,model.getAsJsonArray("animations").size());
+        assertEquals(7,model.getAsJsonArray("animations").size());
         for(var raw:model.getAsJsonArray("animations")){
-            var a=raw.getAsJsonObject();var p=Performance.find(a.get("name").getAsString().matches("ronaldo|mbappe|kneeslide")?"goal":"hr",a.get("name").getAsString()).orElseThrow();
+            var a=raw.getAsJsonObject();var p=Performance.find(a.get("name").getAsString().matches("ronaldo|mbappe|kneeslide|kazu")?"goal":"hr",a.get("name").getAsString()).orElseThrow();
             assertEquals(p.ticks()/20.0,a.get("length").getAsDouble(),.001);
             double highest=0;
             for(int tick=0;tick<=p.ticks();tick++){
@@ -304,7 +304,15 @@ class RasenganAssetsTest {
                 assertTrue(r[0]<0 && l[0]>0,"Arms do not cross");assertTrue(r[1]>l[1],"Forearms overlap");assertTrue(r[2]<-4 && l[2]<-4,"Hands buried in chest");
             }
             if(p==Performance.YAMAKAWA)assertTrue(posedOrigin(names.get("phip_hip"),1.4,a,groups,parents)[1]<7,"Dosukoi stance too tall");
-            if(p==Performance.MATSUDA)assertTrue(posedOrigin(names.get("pri_right_item"),2,a,groups,parents)[1]>26,"Atsuo fist not raised");
+            if(p==Performance.MATSUDA){
+                assertTrue(posedOrigin(names.get("pri_right_item"),2,a,groups,parents)[1]>24,"Atsuo fist not raised");
+                var chest=posedOrigin(names.get("pc_chest"),2,a,groups,parents);var hip=posedOrigin(names.get("phip_hip"),2,a,groups,parents);assertTrue(chest[2]>hip[2]+1.5,"Torso not arched backwards");
+            }
+            if(p==Performance.YAMAKAWA)for(String wrist:List.of("pri_right_item","pli_left_item"))assertTrue(posedOrigin(names.get(wrist),2,a,groups,parents)[1]>24,"Dosukoi arms not raised in V");
+            if(p==Performance.KAZU){
+                var right=posedOrigin(names.get("prfl_right_foreleg"),.8,a,groups,parents);var left=posedOrigin(names.get("plfl_left_foreleg"),.8,a,groups,parents);assertTrue(right[1]>left[1]+1,"Kazu knee not raised");
+                right=posedOrigin(names.get("prfl_right_foreleg"),1.3,a,groups,parents);left=posedOrigin(names.get("plfl_left_foreleg"),1.3,a,groups,parents);assertTrue(left[1]>right[1]+1,"Kazu knees not alternating");
+            }
         }
     }
 

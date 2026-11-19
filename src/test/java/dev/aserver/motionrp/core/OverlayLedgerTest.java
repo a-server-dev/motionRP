@@ -5,6 +5,12 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class OverlayLedgerTest {
+    @Test void viewerOptOutRestoresAllOverlappingCellsAndAllowsFreshOptIn(){
+        var ledger=new OverlayLedger<String,Integer>();var a=new Object();var b=new Object();
+        ledger.update(a,Map.of("viewer",Set.of(1,2)));ledger.update(b,Map.of("viewer",Set.of(2,3)));
+        assertEquals(Set.of(1,2,3),ledger.removeViewer("viewer"));assertTrue(ledger.release(a).isEmpty());
+        assertEquals(Set.of(2,3),ledger.update(b,Map.of("viewer",Set.of(2,3))).get("viewer").shown());
+    }
     @Test void overlappingOwnersOnlyRestoreTheirLastReference() {
         var ledger=new OverlayLedger<String,Integer>();Object a=new String("cast"),b=new String("cast");
         assertEquals(Set.of(1,2),ledger.update(a,Map.of("viewer",Set.of(1,2))).get("viewer").shown());

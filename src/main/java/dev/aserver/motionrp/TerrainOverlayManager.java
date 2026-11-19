@@ -26,6 +26,7 @@ final class TerrainOverlayManager implements Listener {
         }
         apply(ledger.update(owner,desired));
     }
+    void hideViewer(Player p){send(p,Set.of(),ledger.removeViewer(p.getUniqueId()));}
     void release(Object owner) { apply(ledger.release(owner)); }
     void restoreAll() {
         ledger.clear().forEach((id,cells)->{ var p=Bukkit.getPlayer(id);if(p!=null) send(p,Set.of(),cells); });

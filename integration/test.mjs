@@ -108,6 +108,7 @@ async function connect(name) {
   bot.once('spawn', () => { spawned = true; });
   await waitFor(() => spawned, name + ' spawn', 30_000);
   await sleep(1000);
+  if(process.env.MOTIONRP_PERFORMANCE_ONLY!=='1' && process.env.MOTIONRP_VISIBILITY_ONLY!=='1'){bot.chat('/motionrp view on');await sleep(200);}
   return bot;
 }
 function tokens(bot) { return bot.inventory.items().filter(item => item.name === 'paper').reduce((sum, item) => sum + item.count, 0); }
@@ -140,17 +141,195 @@ async function readSaved(name) {
   return { data, loadout: Buffer.from(bytes) };
 }
 
+async function verifyTitanRecovery(a,b,{sceneDisplays,sceneRemoved,removedByRole,summonTrace,renderedForBoth,removedForBoth}) {
+  function skinUrls(value) {
+    if(typeof value==='string') {
+      try {const decoded=JSON.parse(Buffer.from(value,'base64').toString('utf8'));return decoded?.textures?.SKIN?.url?[decoded.textures.SKIN.url]:[];} catch {return [];}
+    }
+    return value && typeof value==='object' ? Object.values(value).flatMap(skinUrls) : [];
+  }
+  const profileUpdates=[],scaleUpdates=[],nativeLightning=new Set(),playerFlags=[];
+  b._client.on('spawn_entity',p=>{if(p.type===b.registry.entitiesByName.lightning_bolt.id) nativeLightning.add(p.entityId);});
+  b._client.on('entity_metadata',p=>{if(p.entityId===a.entity?.id) for(const e of p.metadata) if(e.key===0) playerFlags.push(e.value);});
+  b._client.on('player_info',packet=>{
+    for(const e of packet.data||[]) if(e.uuid===uuid('MotionTesterA') && e.player) profileUpdates.push(skinUrls(e.player));
+  });
+  b._client.on('entity_update_attributes',packet=>{
+    if(packet.entityId!==a.entity?.id) return;
+    for(const p of packet.properties||[]) if(String(p.key).includes('scale')) scaleUpdates.push(p.value);
+  });
+  const noTitanJournal=async()=>{
+    const saved=await readSaved('MotionTesterA');
+    return !Object.keys(saved.data.BukkitValues||{}).some(k=>k.startsWith('motionrp:titan_'));
+  };
+  consoleCommand('attribute MotionTesterA minecraft:scale base set 1.25');await sleep(400);
+  sceneDisplays.clear();sceneRemoved.clear();const titanBegin=output.length;
+  const titanHealth=[a.health,b.health],titanOrigin=a.entity.position.clone();
+  a._testLeftClick();await waitFor(()=>output.slice(titanBegin).includes('Titan phase: GIANT'),'actual giant form',20000);
+  await sleep(350);
+  const titanEntries=summonTrace('Titan',titanBegin);
+  assert.ok(titanEntries.some(e=>e.kind==='giant'));assert.ok(titanEntries.filter(e=>e.kind.startsWith('lightning')).length>=6);
+  await waitFor(()=>renderedForBoth(titanEntries),'both clients receive generated lightning and replacement skin models',3000);
+  assert.ok(scaleUpdates.some(v=>Math.abs(v-10)<.001),'Observer received no real scale-10 attribute: '+scaleUpdates);
+  assert.ok(output.slice(titanBegin).includes('skin=bundled:titan.png'),'Uploaded embedded skin is not selected');
+  assert.ok(profileUpdates.every(urls=>urls.length===0),'Bundled giant must preserve the original player profile');
+  const pending=await readSaved('MotionTesterA');assert.equal(pending.data.BukkitValues['motionrp:titan_scale_v1'],1.25);
+  assert.ok(nativeLightning.size>=4,'No vanilla lightning entities reached the observer');
+  pass('hand bite triggers native lightning/flash, a giant skin model, real scale 10 and the exact embedded user skin');
+  await waitFor(()=>output.slice(titanBegin).includes('Titan phase: EXIT'),'human exits the nape',20000);
+  await waitFor(()=>a.entity.position.y>titanOrigin.y+13,'client sees human emerge at nape',2000);
+  await waitFor(()=>Math.abs(scaleUpdates.at(-1)-1.25)<.001,'observer receives restored original scale',3000);assert.equal((profileUpdates.at(-1)?.length??0),0);
+  await sleep(300);assert.equal(playerFlags.at(-1)&0x20,0,'The real player remains hidden after leaving its model');
+  a._testStep(.2,.1,.2); // Inputs cannot cancel the owned dive.
+  pass('original skinned real player emerges at the nape while the giant stays full size');
+  await waitFor(()=>output.slice(titanBegin).includes('Titan phase: STEAM'),'landing followed by steam',20000);
+  await waitFor(()=>removedForBoth(titanEntries) && sceneRemoved.size===sceneDisplays.size,'giant and lightning cleanup',15000);
+  await waitFor(noTitanJournal,'titan state journal cleared');
+  assert.ok(Math.abs(scaleUpdates.at(-1)-1.25)<.001,'Scale did not restore: '+scaleUpdates.at(-1));
+  assert.ok(profileUpdates.every(urls=>urls.length===0),'Original empty test-player texture properties did not restore');
+  assert.ok(Math.abs(a.entity.position.y-titanOrigin.y)<.01);
+  assert.ok(Math.abs(a.entity.position.z-(titanOrigin.z-5))<.01);assert.deepEqual([a.health,b.health],titanHealth);
+  assert.ok([...nativeLightning].every(id=>removedByRole.observer.has(id)));
+  pass('real player dives five blocks behind the giant, lands without damage and all lightning/models clean up');
+
+  sceneDisplays.clear();sceneRemoved.clear();const titanCancel=output.length;a._testLeftClick();
+  await waitFor(()=>output.slice(titanCancel).includes('Titan phase: GIANT'),'giant before cancellation',20000);
+  const cancelledGiant=summonTrace('Titan',titanCancel);a._testLeftClick();
+  await waitFor(()=>removedForBoth(cancelledGiant) && sceneRemoved.size===sceneDisplays.size,'cancel clears giant and lightning');
+  await waitFor(noTitanJournal,'cancel restores saved state');
+  await waitFor(()=>Math.abs(scaleUpdates.at(-1)-1.25)<.001,'observer receives restored original scale',3000);assert.equal((profileUpdates.at(-1)?.length??0),0);
+  pass('cancelling at scale 10 restores the original skin/scale and removes every replacement display');
+
+  await sleep(300); // Controller inputs intentionally debounce for four ticks.
+  sceneDisplays.clear();sceneRemoved.clear();const airOrigin=a.entity.position.clone(),airBegin=output.length;
+  a._testLeftClick();await waitFor(()=>output.slice(airBegin).includes('Titan phase: DIVE'),'titan dive before cancellation',20000);
+  assert.ok(a.entity.position.y>airOrigin.y+10);const airEntries=summonTrace('Titan',airBegin);
+  a._testLeftClick();await waitFor(()=>a.entity.position.distanceTo(airOrigin)<.01 && removedForBoth(airEntries),'air cancel restores safe ground');
+  await waitFor(noTitanJournal,'air cancel clears recovery state');
+  pass('cancelling the nape dive safely returns the actual player to its ground anchor');
+  await sleep(300);
+  const titanQuit=output.length;a._testLeftClick();
+  await waitFor(()=>output.slice(titanQuit).includes('Titan phase: GIANT'),'giant before logout',20000);
+  await disconnect(a);await waitFor(noTitanJournal,'logout restores the player.dat state');
+  a=await connect('MotionTesterA');
+  const restored=await readSaved('MotionTesterA');
+  assert.ok(!Object.keys(restored.data.BukkitValues||{}).some(k=>k.startsWith('motionrp:titan_')));
+  pass('logout during giant form restores saved scale/skin state before reconnection');
+  a._testLook(0,0);const crashOrigin=a.entity.position.clone(),crashBegin=output.length;a._testLeftClick();
+  await waitFor(()=>output.slice(crashBegin).includes('Titan phase: DIVE'),'nape dive before recovery test',20000);
+  const saveBegin=output.length;consoleCommand('save-all flush');
+  await waitFor(()=>output.slice(saveBegin).includes('Saved the game'),'persist simulated interrupted giant state',20000);
+  const crashSaved=await readSaved('MotionTesterA');
+  assert.equal(crashSaved.data.BukkitValues['motionrp:titan_scale_v1'],1.25);
+  assert.ok(crashSaved.data.BukkitValues['motionrp:titan_return_v1']);
+  const killed=new Promise(resolve=>server.once('exit',resolve));server.kill('SIGKILL');await killed;server=undefined;
+  await disconnect(a);await disconnect(b);await startServer();
+  a=await connect('MotionTesterA');b=await connect('MotionTesterB');
+  await waitFor(noTitanJournal,'join recovers interrupted Titan state');
+  const recovery=await readSaved('MotionTesterA');
+  const attr=(recovery.data.attributes||recovery.data.Attributes||[]).find(x=>String(x.id||x.Name).includes('scale'));
+  assert.ok(attr && Math.abs((attr.base??attr.Base)-1.25)<.001,'Interrupted scale did not recover');
+  assert.ok(a.entity.position.distanceTo(crashOrigin)<.01,'Restart left the player in the air');
+  pass('a restart interrupted during the nape dive recovers original scale and returns the player to safe ground');
+  assert.ok(!output.includes('Titan scene failed'),'Titan scene logged a runtime failure');
+
+  // Persist a scale-ten pilot seat, kill the disposable server, then verify recovery.
+  await a.equip(a.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');
+  a.setControlState('sneak',true);await sleep(300);
+  for(let count=0;(await readSaved('MotionTesterA')).loadout[6]!==3 && count<18;count++) {a._testLeftClick();await sleep(300);}
+  a.setControlState('sneak',false);await sleep(300);assert.equal((await readSaved('MotionTesterA')).loadout[6],3);
+  const pilotOrigin=a.entity.position.clone(),pilotBegin=output.length;a._testLeftClick();
+  await waitFor(()=>output.slice(pilotBegin).includes('pilot seated scale=10.0'),'pilot seat before recovery test',20000);
+  assert.ok(a.entity.position.y>pilotOrigin.y+50);
+  const pilotSave=output.length;consoleCommand('save-all flush');await waitFor(()=>output.slice(pilotSave).includes('Saved the game'),'persist aerial seat');
+  assert.ok((await readSaved('MotionTesterA')).data.BukkitValues['motionrp:aerial_return_v1']);
+  const pilotKilled=new Promise(resolve=>server.once('exit',resolve));server.kill('SIGKILL');await pilotKilled;server=undefined;
+  await disconnect(a);await disconnect(b);await startServer();a=await connect('MotionTesterA');b=await connect('MotionTesterB');
+  await waitFor(async()=>!(await readSaved('MotionTesterA')).data.BukkitValues['motionrp:aerial_return_v1'],'aerial recovery journal cleared');
+  assert.ok(a.entity.position.distanceTo(pilotOrigin)<.01,'Restart left the pilot at the neck');
+  const pilotRecovered=(await readSaved('MotionTesterA')).data;assert.ok(!pilotRecovered.abilities?.mayfly && !pilotRecovered.abilities?.flying);
+  pass('interrupted scale-ten Susanoo pilot seat restores the original ground position and flight abilities after restart');
+  return {a,b};
+}
+
+if(process.env.MOTIONRP_TITAN_ONLY==='1'){
+  let code=0;
+  try{
+    fs.copyFileSync(path.join(project,`build/libs/motionRP-${version}.jar`),path.join(run,'plugins/MotionRP.jar'));
+    log=fs.createWriteStream(path.join(project,'build/titan-smoke.log'));await startServer();
+    let a=await connect('MotionTesterA'),b=await connect('MotionTesterB');
+    consoleCommand('tp MotionTesterA 0 -60 0 0 0');consoleCommand('tp MotionTesterB 5 -60 0 0 0');await sleep(500);
+    await a.equip(a.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');
+    a.setControlState('sneak',true);await sleep(300);for(let i=0;(await readSaved('MotionTesterA')).loadout[6]!==5 && i<18;i++){a._testLeftClick();await sleep(300);}a.setControlState('sneak',false);await sleep(300);a._testLook(0,0);
+    const sceneDisplays=new Set(),sceneRemoved=new Set(),visibleItems={owner:new Map(),observer:new Map()},removedByRole={owner:new Set(),observer:new Set()};
+    for(const [bot,role]of[[a,'owner'],[b,'observer']]){
+      bot._client.on('spawn_entity',p=>{if(role==='observer' && p.type===bot.registry.entitiesByName.item_display.id)sceneDisplays.add(p.entityId);});
+      bot._client.on('entity_destroy',p=>{for(const id of p.entityIds){removedByRole[role].add(id);if(role==='observer' && sceneDisplays.has(id))sceneRemoved.add(id);}});
+      const index=bot.registry.entitiesByName.item_display.metadataKeys.indexOf('item_stack');bot._client.on('entity_metadata',p=>{for(const m of p.metadata)if(m.key===index)visibleItems[role].set(p.entityId,m.value);});
+    }
+    const summonTrace=(prefix,begin)=>[...output.slice(begin).matchAll(new RegExp(prefix+' displays (\\w+) ids=([0-9,]+)','g'))].map(m=>({kind:m[1],ids:m[2].split(',').map(Number)}));
+    const renderedForBoth=entries=>['owner','observer'].every(role=>entries.every(e=>e.ids.some(id=>(visibleItems[role].get(id)?.itemCount||0)>0)));
+    const removedForBoth=entries=>['owner','observer'].every(role=>entries.every(e=>e.ids.every(id=>removedByRole[role].has(id))));
+    ({a,b}=await verifyTitanRecovery(a,b,{sceneDisplays,sceneRemoved,removedByRole,summonTrace,renderedForBoth,removedForBoth}));
+    await disconnect(a);await disconnect(b);await stopServer();
+  }catch(error){code=1;console.error(error.stack);}
+  finally{for(const b of bots)try{b.quit();}catch{}try{await stopServer();}catch{}log?.end();fs.writeFileSync(path.join(project,'build/titan-smoke-result.json'),JSON.stringify({passed:code===0,version,checks},null,2));}
+  process.exit(code);
+}
+
+if(process.env.MOTIONRP_VISIBILITY_ONLY==='1'){
+  let code=0;
+  try{
+    fs.copyFileSync(path.join(project,`build/libs/motionRP-${version}.jar`),path.join(run,'plugins/MotionRP.jar'));
+    log=fs.createWriteStream(path.join(project,'build/visibility-smoke.log'));await startServer();
+    const suffix=String(Date.now()).slice(-6);const an='ViewA'+suffix,bn='ViewB'+suffix;
+    const a=await connect(an),b=await connect(bn);consoleCommand(`tp ${an} 0 -60 0 0 0`);consoleCommand(`tp ${bn} 5 -60 0 0 0`);await sleep(400);
+    const spawned=[new Set(),new Set()],removed=[new Set(),new Set()],particles=[0,0],bolts=[0,0];let offInvisible=false;
+    for(const [i,bot]of[a,b].entries()){
+      bot._client.on('spawn_entity',p=>{if(p.type===bot.registry.entitiesByName.item_display.id)spawned[i].add(p.entityId);if(p.type===bot.registry.entitiesByName.lightning_bolt.id)bolts[i]++;});
+      bot._client.on('entity_destroy',p=>p.entityIds.forEach(id=>removed[i].add(id)));
+      bot._client.on('world_particles',()=>particles[i]++);
+      if(i===1)bot._client.on('entity_metadata',p=>{if(p.entityId===a.entity.id && p.metadata.some(m=>m.key===0 && (Number(m.value)&32)))offInvisible=true;});
+    }
+    consoleCommand(`motionrp give controller ${an}`);consoleCommand(`motionrp give motion rasengan 1 ${an}`);
+    await waitFor(()=>tokens(a)===1,'visibility test token');await menu(a);await deposit(a);await closeMenu(a);
+    await a.equip(a.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');
+    let start=output.length;a._testLeftClick();await waitFor(()=>output.slice(start).includes('Rasengan phase:'),'default-off playback');await sleep(600);
+    assert.equal(spawned[0].size,0);assert.equal(spawned[1].size,0);assert.deepEqual(particles,[0,0]);pass('new players default OFF for actor model, clone, orb and particles');
+    a.chat('/motionrp view on');await waitFor(()=>spawned[0].size>0 && particles[0]>0,'caster opts in');assert.equal(spawned[1].size,0);assert.equal(particles[1],0);
+    b.chat('/motionrp view on');await waitFor(()=>spawned[1].size>0 && particles[1]>0,'observer opts in mid-scene');
+    b.chat('/motionrp view off');await waitFor(()=>[...spawned[1]].every(id=>removed[1].has(id)),'OFF immediately removes owned display entities');
+    await sleep(200);const offParticles=particles[1];await sleep(500);assert.equal(particles[1],offParticles);pass('ON joins mid-scene; OFF removes body/effects and stops new particles');
+    // Stop current scene with the same controller and add Titan as the second slot.
+    a._testLeftClick();await sleep(250);consoleCommand(`motionrp give motion titan_transform 1 ${an}`);await waitFor(()=>tokens(a)===1,'Titan visibility token');await menu(a);await deposit(a);await closeMenu(a);
+    a.setControlState('sneak',true);await sleep(200);a._testLeftClick();await sleep(200);a.setControlState('sneak',false);await sleep(250);
+    start=output.length;a._testLeftClick();await waitFor(()=>output.slice(start).includes('Titan native lightning id='),'filtered native lightning',10000);await sleep(500);
+    assert.ok(bolts[0]>0,'enabled caster has no native lightning');assert.equal(bolts[1],0,'OFF observer saw native lightning');assert.equal(offInvisible,false,'Titan globally hid the source player from OFF observer');
+    a._testLeftClick();await sleep(400);pass('Titan native lightning is hidden before spawning to OFF observers');
+    const oldCount=spawned[1].size;a.chat('/goalperformance mbappe');await waitFor(()=>spawned[1].size>oldCount,'sports performance remains visible with MotionRP view OFF');await sleep(5500);pass('sports commands remain independent of original MotionRP viewer preferences');
+    consoleCommand(`tp ${bn} 80 -60 0`);await sleep(300);b.chat('/motionrp view on');await sleep(200);
+    const distantCount=spawned[1].size;start=output.length;a._testLeftClick();await waitFor(()=>output.slice(start).includes('Titan native lightning id='),'range-bounded Titan');await sleep(400);
+    assert.equal(spawned[1].size,distantCount,'ON viewer beyond configured range saw scene models');a._testLeftClick();b.chat('/motionrp view off');await sleep(300);pass('configured viewer range also bounds large scenes');
+    await disconnect(a);await disconnect(b);await stopServer();
+    const saved=await readSaved(an);assert.equal(saved.data.BukkitValues['motionrp:view_enabled'],1);const {parsed:otherData}=await nbt.parse(fs.readFileSync(path.join(run,'world/players/data',uuid(bn)+'.dat')));assert.equal(nbt.simplify(otherData).BukkitValues['motionrp:view_enabled'],0);
+    await startServer();const rejoined=await connect(an);rejoined.chat('/motionrp view');await waitFor(()=>rejoined._testMessages.some(m=>m.includes('演出表示: OFF')),'saved ON toggles OFF after server restart');pass('viewer preference persists through disconnect and server restart');
+    await disconnect(rejoined);await stopServer();assert.ok(!/scene failed|Could not pass event|Motion playback failed/.test(output));
+  }catch(error){code=1;console.error(error.stack);}
+  finally{for(const b of bots)try{b.quit();}catch{}try{await stopServer();}catch{}log?.end();fs.writeFileSync(path.join(project,'build/visibility-smoke-result.json'),JSON.stringify({passed:code===0,version,checks},null,2));}
+  process.exit(code);
+}
+
 // Command celebrations use the same disposable Paper fixture, without tokens or GUI input.
 if(process.env.MOTIONRP_PERFORMANCE_ONLY==='1') {
   let code=0;
   try {
     assert.ok(fs.existsSync(path.join(run,'server.properties')),'Run full integration first');
     fs.copyFileSync(path.join(project,`build/libs/motionRP-${version}.jar`),path.join(run,'plugins/MotionRP.jar'));
-    const oldPerformance=gunzipSync(fs.readFileSync(path.join(project,'src/test/resources/bundled-0.15.0/players_motionrp_performances.bbmodel.gz')));
+    const oldPerformance=gunzipSync(fs.readFileSync(path.join(project,'src/test/resources/bundled-0.15.1/players_motionrp_performances.bbmodel.gz')));
     fs.writeFileSync(path.join(run,'plugins/BetterModel/players/motionrp_performances.bbmodel'),oldPerformance);
     log=fs.createWriteStream(path.join(project,'build/performance-smoke.log'));await startServer();
     assert.deepEqual(fs.readFileSync(path.join(run,'plugins/BetterModel/players/motionrp_performances.bbmodel')),fs.readFileSync(path.join(project,'src/main/resources/bettermodel/players/motionrp_performances.bbmodel')));
-    const oldHash=createHash('sha256').update(oldPerformance).digest('hex');assert.deepEqual(fs.readFileSync(path.join(run,'plugins/MotionRP/model-backups/motionrp_performances.bbmodel.'+oldHash+'.bak')),oldPerformance);pass('0.15.0 performance model migrates with exact backup');
+    const oldHash=createHash('sha256').update(oldPerformance).digest('hex');assert.deepEqual(fs.readFileSync(path.join(run,'plugins/MotionRP/model-backups/motionrp_performances.bbmodel.'+oldHash+'.bak')),oldPerformance);pass('0.15.1 performance model migrates with exact backup');
     const a=await connect('MotionTesterA'),b=await connect('MotionTesterB');
     consoleCommand('tp MotionTesterA 0 -60 0 0 0');consoleCommand('tp MotionTesterB 5 -60 0 0 0');
     await waitFor(()=>Math.abs(a.entity.position.z-.5)<.01 && Math.abs(a.entity.position.y+60)<.01,'celebration origins');
@@ -163,7 +342,7 @@ if(process.env.MOTIONRP_PERFORMANCE_ONLY==='1') {
       bot._client.on('spawn_entity',p=>{if(p.type===bot.registry.entitiesByName.item_display.id)spawned[i].add(p.entityId);});
       bot._client.on('entity_destroy',p=>p.entityIds.forEach(id=>removed[i].add(id)));
     }
-    for(const [command,id] of [['goalperformance ronaldo','ronaldo'],['goalperformance mbappe','mbappe'],['goalperformance kneeslide','kneeslide'],['HRperformance yamakawa','yamakawa'],['HRperformance matsuda','matsuda']]){
+    for(const [command,id] of [['goalperformance ronaldo','ronaldo'],['goalperformance mbappe','mbappe'],['goalperformance kneeslide','kneeslide'],['goalperformance kazu','kazu'],['hrperformance destasha','destasha'],['HRperformance yamakawa','yamakawa'],['HRperformance matsuda','matsuda']]){
       a._testLook(0,0);await sleep(150);for(const s of spawned)s.clear();const origin=a.entity.position.clone();let highest=origin.y;
       const sampler=setInterval(()=>{highest=Math.max(highest,a.entity.position.y);},20);
       const start=output.length;a.chat('/'+command);
@@ -181,7 +360,7 @@ if(process.env.MOTIONRP_PERFORMANCE_ONLY==='1') {
       assert.ok(!(await readSaved('MotionTesterA')).data.BukkitValues?.['motionrp:aerial_return_v1'],'travel journal left behind');
       pass(command+' plays empty-handed for owner and observer, finishes and preserves loadout');
     }
-    for(const [command,allowed] of [['goalperformance',['ronaldo','mbappe','kneeslide']],['HRperformance',['yamakawa','matsuda']]]){
+    for(const [command,allowed] of [['goalperformance',['ronaldo','mbappe','kneeslide','kazu']],['HRperformance',['yamakawa','matsuda','destasha']]]){
       const start=output.length;a.chat('/'+command);await waitFor(()=>/Performance-\w+ phase: PREPARE/.test(output.slice(start)),'random choice');
       const id=output.slice(start).match(/Performance-(\w+) phase: PREPARE/)[1];assert.ok(allowed.includes(id));
       a.chat('/'+command+' stop');await sleep(500);pass(command+' chooses within category and stops');
@@ -307,6 +486,7 @@ if(process.env.MOTIONRP_NOBLE_ONLY==='1') {
       if(id==='genki_dama') {await waitFor(()=>output.slice(begin).includes('rise complete height=50.0 ticks=40 diameter=80'),'Spirit Bomb 50-block ascent');await waitFor(()=>Math.abs(a.entity.position.y-base.y-50)<.1,'client follows full ascent');
         await waitFor(()=>output.slice(begin).includes('sphere ready diameter=80 bottom tracks raised palms'),'full sphere at raised palms');
         const match=output.slice(begin).match(/GenkiDama displays charge_orb ids=([0-9,]+)/);assert.ok(match);const core=Number(match[1].split(',')[0]);
+        assert.ok(!removed.owner.has(core),'ON caster lost the Spirit Bomb while rising beyond the ground audience range');
         const span=Number(execFileSync('python3',['-c',`import zipfile,json,sys
 z=zipfile.ZipFile(sys.argv[1]);f=next(n for n in z.namelist() if n.endswith('/motionrp_genki_dama_orb_energy_sphere.json') and '/items/' in n);item=json.loads(z.read(f))['model'];assert item['type'].split(':')[-1]=='composite'
 def count_models(v):
@@ -946,7 +1126,7 @@ generate-structures=false
   assert.ok(a.entity.position.y>guardianOrigin.y+50 && a.entity.position.y<guardianOrigin.y+54,'Player sits in the scale-ten neck');
   assert.ok(output.slice(susanooBegin).includes('pilot seated scale=10.0'));
   await waitFor(() => output.slice(susanooBegin).includes('Susanoo phase: FADE'),'guardian slash completed',15000);
-  assert.ok(a.entity.position.distanceTo(guardianOrigin)<.01,'Pilot returns before giant starts dissolving');
+  await waitFor(()=>a.entity.position.distanceTo(guardianOrigin)<.01,'client receives pilot return before dissolution',2000);
   const guardianEntries=summonTrace('Susanoo',susanooBegin);
   assert.deepEqual(guardianEntries.map(e => e.kind),['ribs','armor','slash_left','slash_right']);
   assert.ok(renderedForBoth(guardianEntries));
@@ -1169,113 +1349,7 @@ generate-structures=false
   for(let i=0;i<6;i++) {a._testLeftClick();await sleep(300);}
   a.setControlState('sneak',false);await sleep(300);
   assert.equal((await readSaved('MotionTesterA')).loadout[6],5);a._testLook(0,0);
-  function skinUrls(value) {
-    if(typeof value==='string') {
-      try {const decoded=JSON.parse(Buffer.from(value,'base64').toString('utf8'));return decoded?.textures?.SKIN?.url?[decoded.textures.SKIN.url]:[];} catch {return [];}
-    }
-    return value && typeof value==='object' ? Object.values(value).flatMap(skinUrls) : [];
-  }
-  const profileUpdates=[],scaleUpdates=[],nativeLightning=new Set(),playerFlags=[];
-  b._client.on('spawn_entity',p=>{if(p.type===b.registry.entitiesByName.lightning_bolt.id) nativeLightning.add(p.entityId);});
-  b._client.on('entity_metadata',p=>{if(p.entityId===a.entity?.id) for(const e of p.metadata) if(e.key===0) playerFlags.push(e.value);});
-  b._client.on('player_info',packet=>{
-    for(const e of packet.data||[]) if(e.uuid===uuid('MotionTesterA') && e.player) profileUpdates.push(skinUrls(e.player));
-  });
-  b._client.on('entity_update_attributes',packet=>{
-    if(packet.entityId!==a.entity?.id) return;
-    for(const p of packet.properties||[]) if(String(p.key).includes('scale')) scaleUpdates.push(p.value);
-  });
-  const noTitanJournal=async()=>{
-    const saved=await readSaved('MotionTesterA');
-    return !Object.keys(saved.data.BukkitValues||{}).some(k=>k.startsWith('motionrp:titan_'));
-  };
-  consoleCommand('attribute MotionTesterA minecraft:scale base set 1.25');await sleep(400);
-  sceneDisplays.clear();sceneRemoved.clear();const titanBegin=output.length;
-  const titanHealth=[a.health,b.health],titanOrigin=a.entity.position.clone();
-  a._testLeftClick();await waitFor(()=>output.slice(titanBegin).includes('Titan phase: GIANT'),'actual giant form',20000);
-  await sleep(350);
-  const titanEntries=summonTrace('Titan',titanBegin);
-  assert.ok(titanEntries.some(e=>e.kind==='giant'));assert.ok(titanEntries.filter(e=>e.kind.startsWith('lightning')).length>=6);
-  assert.ok(renderedForBoth(titanEntries),'Lightning or replacement skin model was not sent');
-  assert.ok(scaleUpdates.some(v=>Math.abs(v-10)<.001),'Observer received no real scale-10 attribute: '+scaleUpdates);
-  assert.ok(output.slice(titanBegin).includes('skin=bundled:titan.png'),'Uploaded embedded skin is not selected');
-  assert.ok(profileUpdates.every(urls=>urls.length===0),'Bundled giant must preserve the original player profile');
-  const pending=await readSaved('MotionTesterA');assert.equal(pending.data.BukkitValues['motionrp:titan_scale_v1'],1.25);
-  assert.ok(nativeLightning.size>=4,'No vanilla lightning entities reached the observer');
-  pass('hand bite triggers native lightning/flash, a giant skin model, real scale 10 and the exact embedded user skin');
-  await waitFor(()=>output.slice(titanBegin).includes('Titan phase: EXIT'),'human exits the nape',20000);
-  assert.ok(a.entity.position.y>titanOrigin.y+13,'The real player did not emerge at the nape');
-  assert.ok(Math.abs(scaleUpdates.at(-1)-1.25)<.001);assert.equal((profileUpdates.at(-1)?.length??0),0);
-  await sleep(300);assert.equal(playerFlags.at(-1)&0x20,0,'The real player remains hidden after leaving its model');
-  a._testStep(.2,.1,.2); // Inputs cannot cancel the owned dive.
-  pass('original skinned real player emerges at the nape while the giant stays full size');
-  await waitFor(()=>output.slice(titanBegin).includes('Titan phase: STEAM'),'landing followed by steam',20000);
-  await waitFor(()=>removedForBoth(titanEntries) && sceneRemoved.size===sceneDisplays.size,'giant and lightning cleanup',15000);
-  await waitFor(noTitanJournal,'titan state journal cleared');
-  assert.ok(Math.abs(scaleUpdates.at(-1)-1.25)<.001,'Scale did not restore: '+scaleUpdates.at(-1));
-  assert.ok(profileUpdates.every(urls=>urls.length===0),'Original empty test-player texture properties did not restore');
-  assert.ok(Math.abs(a.entity.position.y-titanOrigin.y)<.01);
-  assert.ok(Math.abs(a.entity.position.z-(titanOrigin.z-5))<.01);assert.deepEqual([a.health,b.health],titanHealth);
-  assert.ok([...nativeLightning].every(id=>removedByRole.observer.has(id)));
-  pass('real player dives five blocks behind the giant, lands without damage and all lightning/models clean up');
-
-  sceneDisplays.clear();sceneRemoved.clear();const titanCancel=output.length;a._testLeftClick();
-  await waitFor(()=>output.slice(titanCancel).includes('Titan phase: GIANT'),'giant before cancellation',20000);
-  const cancelledGiant=summonTrace('Titan',titanCancel);a._testLeftClick();
-  await waitFor(()=>removedForBoth(cancelledGiant) && sceneRemoved.size===sceneDisplays.size,'cancel clears giant and lightning');
-  await waitFor(noTitanJournal,'cancel restores saved state');
-  assert.ok(Math.abs(scaleUpdates.at(-1)-1.25)<.001);assert.equal((profileUpdates.at(-1)?.length??0),0);
-  pass('cancelling at scale 10 restores the original skin/scale and removes every replacement display');
-
-  await sleep(300); // Controller inputs intentionally debounce for four ticks.
-  sceneDisplays.clear();sceneRemoved.clear();const airOrigin=a.entity.position.clone(),airBegin=output.length;
-  a._testLeftClick();await waitFor(()=>output.slice(airBegin).includes('Titan phase: DIVE'),'titan dive before cancellation',20000);
-  assert.ok(a.entity.position.y>airOrigin.y+10);const airEntries=summonTrace('Titan',airBegin);
-  a._testLeftClick();await waitFor(()=>a.entity.position.distanceTo(airOrigin)<.01 && removedForBoth(airEntries),'air cancel restores safe ground');
-  await waitFor(noTitanJournal,'air cancel clears recovery state');
-  pass('cancelling the nape dive safely returns the actual player to its ground anchor');
-  await sleep(300);
-  const titanQuit=output.length;a._testLeftClick();
-  await waitFor(()=>output.slice(titanQuit).includes('Titan phase: GIANT'),'giant before logout',20000);
-  await disconnect(a);await waitFor(noTitanJournal,'logout restores the player.dat state');
-  a=await connect('MotionTesterA');
-  const restored=await readSaved('MotionTesterA');
-  assert.ok(!Object.keys(restored.data.BukkitValues||{}).some(k=>k.startsWith('motionrp:titan_')));
-  pass('logout during giant form restores saved scale/skin state before reconnection');
-  a._testLook(0,0);const crashOrigin=a.entity.position.clone(),crashBegin=output.length;a._testLeftClick();
-  await waitFor(()=>output.slice(crashBegin).includes('Titan phase: DIVE'),'nape dive before recovery test',20000);
-  const saveBegin=output.length;consoleCommand('save-all flush');
-  await waitFor(()=>output.slice(saveBegin).includes('Saved the game'),'persist simulated interrupted giant state',20000);
-  const crashSaved=await readSaved('MotionTesterA');
-  assert.equal(crashSaved.data.BukkitValues['motionrp:titan_scale_v1'],1.25);
-  assert.ok(crashSaved.data.BukkitValues['motionrp:titan_return_v1']);
-  const killed=new Promise(resolve=>server.once('exit',resolve));server.kill('SIGKILL');await killed;server=undefined;
-  await disconnect(a);await disconnect(b);await startServer();
-  a=await connect('MotionTesterA');b=await connect('MotionTesterB');
-  await waitFor(noTitanJournal,'join recovers interrupted Titan state');
-  const recovery=await readSaved('MotionTesterA');
-  const attr=(recovery.data.attributes||recovery.data.Attributes||[]).find(x=>String(x.id||x.Name).includes('scale'));
-  assert.ok(attr && Math.abs((attr.base??attr.Base)-1.25)<.001,'Interrupted scale did not recover');
-  assert.ok(a.entity.position.distanceTo(crashOrigin)<.01,'Restart left the player in the air');
-  pass('a restart interrupted during the nape dive recovers original scale and returns the player to safe ground');
-  assert.ok(!output.includes('Titan scene failed'),'Titan scene logged a runtime failure');
-
-  // Persist a scale-ten pilot seat, kill the disposable server, then verify recovery.
-  await a.equip(a.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');
-  a.setControlState('sneak',true);await sleep(300);
-  for(let count=0;(await readSaved('MotionTesterA')).loadout[6]!==3 && count<18;count++) {a._testLeftClick();await sleep(300);}
-  a.setControlState('sneak',false);await sleep(300);assert.equal((await readSaved('MotionTesterA')).loadout[6],3);
-  const pilotOrigin=a.entity.position.clone(),pilotBegin=output.length;a._testLeftClick();
-  await waitFor(()=>output.slice(pilotBegin).includes('pilot seated scale=10.0'),'pilot seat before recovery test',20000);
-  assert.ok(a.entity.position.y>pilotOrigin.y+50);
-  const pilotSave=output.length;consoleCommand('save-all flush');await waitFor(()=>output.slice(pilotSave).includes('Saved the game'),'persist aerial seat');
-  assert.ok((await readSaved('MotionTesterA')).data.BukkitValues['motionrp:aerial_return_v1']);
-  const pilotKilled=new Promise(resolve=>server.once('exit',resolve));server.kill('SIGKILL');await pilotKilled;server=undefined;
-  await disconnect(a);await disconnect(b);await startServer();a=await connect('MotionTesterA');b=await connect('MotionTesterB');
-  await waitFor(async()=>!(await readSaved('MotionTesterA')).data.BukkitValues['motionrp:aerial_return_v1'],'aerial recovery journal cleared');
-  assert.ok(a.entity.position.distanceTo(pilotOrigin)<.01,'Restart left the pilot at the neck');
-  const pilotRecovered=(await readSaved('MotionTesterA')).data;assert.ok(!pilotRecovered.abilities?.mayfly && !pilotRecovered.abilities?.flying);
-  pass('interrupted scale-ten Susanoo pilot seat restores the original ground position and flight abilities after restart');
+  ({a,b}=await verifyTitanRecovery(a,b,{sceneDisplays,sceneRemoved,removedByRole,summonTrace,renderedForBoth,removedForBoth}));
   await disconnect(b);
   await disconnect(a);
   await stopServer();

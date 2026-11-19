@@ -62,9 +62,7 @@ final class TitanScene extends SummonScene {
             double a=(tick-FLASH)*.9;Location location=at(Math.cos(a)*2.8,Math.sin(a)*2.8,0);
             bolts.add(new Bolt(model(SummonAssets.TITAN_BOLT,location,2,"lightning"+tick),tick+6));
             if((tick-FLASH)%8==0) {
-                LightningStrike bolt=origin.getWorld().strikeLightningEffect(location);
-                bolt.setSilent(true);bolt.setVisibleByDefault(false);
-                for(Player p:audience.players()) p.showEntity(plugin,bolt);
+                LightningStrike bolt=plugin.visibility().lightning(location,audience.players());
                 lightning.add(bolt);trace("native lightning id="+bolt.getEntityId()+" tick="+tick);
             }
         }

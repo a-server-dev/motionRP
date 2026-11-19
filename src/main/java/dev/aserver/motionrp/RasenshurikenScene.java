@@ -32,8 +32,9 @@ final class RasenshurikenScene implements MotionScene {
 
     RasenshurikenScene(MotionPlugin plugin, Player owner, String playerModel) {
         this.plugin=plugin;this.owner=owner;this.playerModel=playerModel;
-        audience=new SceneAudience(owner);
+        audience=new SceneAudience(owner).filtered(plugin.visibility());
     }
+    @Override public void refreshAudience(){audience.refresh();}
     @Override public void start() { task=Bukkit.getScheduler().runTaskTimer(plugin, this::advance, 0, 1); }
     @Override public boolean ownsMove(Location from, Location to) {
         return movingFrom != null && movingFrom.equals(from) && movingTo.equals(to);

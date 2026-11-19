@@ -12,7 +12,7 @@ import java.util.*;
 
 /** Owns only trackers created by MotionRP; never closes another plugin's model. */
 public final class MotionPlayback {
-    private record Playing(EntityTracker tracker, BukkitTask timeout, MotionScene scene) {}
+    private record Playing(EntityTracker tracker, BukkitTask timeout, MotionScene scene, boolean filtered) {}
     private final MotionPlugin plugin;
     private final Map<UUID, Playing> playing = new HashMap<>();
 
@@ -71,9 +71,17 @@ public final class MotionPlayback {
         try {
             TitanState titan=definition.effect().equals("titan_transform") ? new TitanState(plugin,player) : null;
             // Same player-limb path used by BetterModel's own /bm play command.
-            // No per-viewer filter: BetterModel manages visibility for nearby players.
+            // Apply the condition during construction, before BetterModel can spawn displays.
+            var castOrigin=BukkitAdapter.adapt(player.getLocation());
+            boolean fixedAudience=Set.of("susanoo","kamehameha","genki_dama").contains(definition.effect());
             tracker = Objects.requireNonNull(BetterModel.limbOrNull(definition.model()))
-                    .create(BukkitAdapter.adapt(player), TrackerModifier.DEFAULT);
+                    .create(BukkitAdapter.adapt(player), TrackerModifier.DEFAULT,t->{
+                        if(!definition.effect().equals("performance"))t.spawnCondition(p->{
+                            var center=fixedAudience?castOrigin:t.location();
+                            return plugin.visibility().enabled(p.uuid()) && p.location().world().equals(center.world())
+                                    && (p.uuid().equals(player.getUniqueId()) || p.location().distanceSquared(center)<=Math.pow(plugin.visibility().range(256),2));
+                        });
+                    });
             EntityTracker owned = tracker;
             UUID uuid = player.getUniqueId();
             var timeout = Bukkit.getScheduler().runTaskLater(plugin, () -> finish(uuid, owned), definition.maxTicks());
@@ -94,7 +102,7 @@ public final class MotionPlayback {
                 case "titan_transform" -> new TitanScene(plugin,player,definition.model(),owned,Objects.requireNonNull(titan));
                 default -> null;
             };
-            playing.put(uuid, new Playing(owned, timeout, scene));
+            playing.put(uuid, new Playing(owned, timeout, scene,!definition.effect().equals("performance")));
             boolean started = owned.animate(definition.animation(), AnimationModifier.DEFAULT_WITH_PLAY_ONCE, () -> {
                 if (plugin.isEnabled()) Bukkit.getScheduler().runTask(plugin, () -> finish(uuid, owned));
             });
@@ -120,6 +128,16 @@ public final class MotionPlayback {
         current.timeout.cancel();
         try { if (current.scene != null) current.scene.close(); }
         finally { if (!current.tracker.isClosed()) current.tracker.close(); }
+    }
+
+    void refreshVisibility(Player viewer){
+        for(var active:playing.values()){
+            var tracker=active.tracker;
+            if(!active.filtered)continue;
+            if(active.scene!=null)active.scene.refreshAudience();
+            if(!plugin.visibility().enabled(viewer.getUniqueId()))tracker.remove(BukkitAdapter.adapt(viewer));
+            else tracker.refresh();
+        }
     }
 
     public void stopAll() { new ArrayList<>(playing.keySet()).forEach(this::stop); }

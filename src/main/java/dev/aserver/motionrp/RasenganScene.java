@@ -103,6 +103,7 @@ public final class RasenganScene implements MotionScene {
                 sound(ball, Sound.ENTITY_BREEZE_WIND_BURST, .75f, 1.1f);
                 WindEffects.burst(viewers.values(), ball);
                 for (Player viewer : viewers.values()) {
+                    if(!plugin.visibility().enabled(viewer.getUniqueId()))continue;
                     viewer.spawnParticle(Particle.DUST, ball, 24, .22, .22, .22, 0, CYAN);
                     viewer.spawnParticle(Particle.END_ROD, ball, 8, .16, .16, .16, .025);
                 }
@@ -178,8 +179,8 @@ public final class RasenganScene implements MotionScene {
     private void refreshViewers() {
         Set<UUID> eligible = new HashSet<>();
         for (Player player : Bukkit.getOnlinePlayers()) {
-            if (player.getWorld() != owner.getWorld() || !player.canSee(owner)
-                    || player.getLocation().distanceSquared(owner.getLocation()) > 48 * 48) continue;
+            if (!plugin.visibility().enabled(player.getUniqueId()) || player.getWorld() != owner.getWorld() || !player.canSee(owner)
+                    || player.getLocation().distanceSquared(owner.getLocation()) > Math.pow(plugin.visibility().range(48),2)) continue;
             eligible.add(player.getUniqueId());
             Player previous = viewers.put(player.getUniqueId(), player);
             if (previous != null && previous != player) {
@@ -219,6 +220,7 @@ public final class RasenganScene implements MotionScene {
                 .map(b -> Integer.toString(b.getDisplay().id())).collect(java.util.stream.Collectors.joining(","));
         plugin.getLogger().info("Rasengan displays " + kind + " ids=" + ids + " viewers=" + viewers.size());
         for (Player viewer : viewers.values()) {
+                    if(!plugin.visibility().enabled(viewer.getUniqueId()))continue;
             var adapted = BukkitAdapter.adapt(viewer);
             boolean passesView = tracker.getPipeline().viewedPlayer().anyMatch(p -> p.uuid().equals(viewer.getUniqueId()));
             plugin.getLogger().info("Rasengan visibility " + kind + " viewer=" + viewer.getName()
@@ -229,11 +231,11 @@ public final class RasenganScene implements MotionScene {
     }
 
     private void smoke(Location at) {
-        for (Player viewer : viewers.values()) viewer.spawnParticle(Particle.POOF, at, 16, .23, .5, .23, .025);
+        for (Player viewer : viewers.values()) if(plugin.visibility().enabled(viewer.getUniqueId())) viewer.spawnParticle(Particle.POOF, at, 16, .23, .5, .23, .025);
     }
 
     private void sound(Location at, Sound sound, float volume, float pitch) {
-        for (Player viewer : viewers.values()) viewer.playSound(at, sound, SoundCategory.PLAYERS, volume, pitch);
+        for (Player viewer : viewers.values()) if(plugin.visibility().enabled(viewer.getUniqueId())) viewer.playSound(at, sound, SoundCategory.PLAYERS, volume, pitch);
     }
 
     private void spiral(Location ball, double scale) {
@@ -242,10 +244,11 @@ public final class RasenganScene implements MotionScene {
             double angle = tick * .65 + i * Math.PI / 2 + strand * Math.PI;
             double radius = (.12 + .07 * strand) * scale;
             Location point = ball.clone().add(Math.cos(angle) * radius, Math.sin(angle * 1.5) * radius, Math.sin(angle) * radius);
-            for (Player viewer : viewers.values()) viewer.spawnParticle(Particle.DUST, point, 1, 0, 0, 0, 0, strand == 0 ? CYAN : WHITE);
+            for (Player viewer : viewers.values()) if(plugin.visibility().enabled(viewer.getUniqueId())) viewer.spawnParticle(Particle.DUST, point, 1, 0, 0, 0, 0, strand == 0 ? CYAN : WHITE);
         }
     }
 
+    @Override public void refreshAudience(){refreshViewers();}
     @Override public void close() {
         if (closed) return;
         closed = true;

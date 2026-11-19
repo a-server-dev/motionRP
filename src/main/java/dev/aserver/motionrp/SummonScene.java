@@ -31,8 +31,9 @@ abstract class SummonScene implements MotionScene {
     }
     SummonScene(MotionPlugin plugin,Player owner,String prefix,int duration,double range,boolean fixedAudience) {
         this.plugin=plugin;this.owner=owner;this.prefix=prefix;this.duration=duration;
-        origin=owner.getLocation().clone();origin.setPitch(0);audience=new SceneAudience(owner,fixedAudience?origin:null,range);
+        origin=owner.getLocation().clone();origin.setPitch(0);audience=new SceneAudience(owner,fixedAudience?origin:null,range).filtered(prefix.startsWith("Performance-")?null:plugin.visibility());
     }
+    @Override public void refreshAudience(){audience.refresh();}
     @Override public final void start() { task=Bukkit.getScheduler().runTaskTimer(plugin,this::advance,0,1); }
     @Override public boolean ownsMove(Location from,Location to) { return false; }
     private void advance() {

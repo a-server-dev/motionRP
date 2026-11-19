@@ -18,8 +18,8 @@ class PerformanceTest {
         assertTrue(first>last && last>0);
     }
     @Test void commandCategoriesStaySeparateAndAliasesAreCaseInsensitive() {
-        assertEquals(List.of(Performance.RONALDO,Performance.KNEESLIDE,Performance.MBAPPE),Performance.choices("goal"));
-        assertEquals(List.of(Performance.YAMAKAWA,Performance.MATSUDA),Performance.choices("hr"));
+        assertEquals(List.of(Performance.RONALDO,Performance.KNEESLIDE,Performance.KAZU,Performance.MBAPPE),Performance.choices("goal"));
+        assertEquals(List.of(Performance.DESTASHA,Performance.YAMAKAWA,Performance.MATSUDA),Performance.choices("hr"));
         assertEquals(Performance.RONALDO,Performance.find("goal","SIU").orElseThrow());
         assertEquals(Performance.YAMAKAWA,Performance.find("hr","DOSUKOI").orElseThrow());
         assertEquals(Performance.MATSUDA,Performance.find("hr","ATSUO").orElseThrow());

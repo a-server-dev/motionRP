@@ -110,3 +110,7 @@ resource-pack:
   prompt: MotionRPのモーション表示用リソースパックです。
 # 認証: 環境変数 MOTIONRP_GITHUB_TOKEN または plugins/MotionRP/github-token.txt
 # 公開するファイル名は mortionRP.zip。認証情報をこの設定へ書かないでください。
+
+# Original MotionRP scenes: viewers opt in with /motionrp view; default OFF.
+visibility:
+  range: 48

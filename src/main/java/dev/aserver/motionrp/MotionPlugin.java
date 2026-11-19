@@ -21,6 +21,8 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
     private EnergyPackService energyPack;
     private TerrainOverlayManager terrain;
 
+    private MotionVisibility visibility;
+    MotionVisibility visibility(){return visibility;}
     @Override public void onEnable() {
         saveDefaultConfig();
         // Add only the new built-in definition during upgrade; keep user entries.
@@ -72,11 +74,13 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
         if(!getConfig().contains("titan.use-bundled-skin",true)) {
             getConfig().set("titan.use-bundled-skin",true);saveConfig();
         }
+        if(!getConfig().contains("visibility.range",true)){getConfig().set("visibility.range",48);saveConfig();}
         catalog = MotionCatalog.read(getConfig());
         items = new MotionItems(this);
         loadouts = new PlayerLoadouts(this, items);
         menu = new LoadoutMenu(this, loadouts, items);
         terrain=new TerrainOverlayManager();Bukkit.getPluginManager().registerEvents(terrain,this);
+        visibility=new MotionVisibility(this);Bukkit.getPluginManager().registerEvents(visibility,this);
         playback = new MotionPlayback(this);
         Bukkit.getPluginManager().registerEvents(menu, this);
         Bukkit.getPluginManager().registerEvents(new ControllerListener(this), this);
@@ -127,6 +131,14 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
     }
 
     @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if(args.length>0 && args[0].equalsIgnoreCase("view")){
+            if(!(sender instanceof Player player)){tell(sender,"プレイヤーのみ実行できます。");return true;}
+            if(!player.hasPermission("motionrp.use")){tell(sender,"権限がありません。");return true;}
+            if(args.length>2 || (args.length==2 && !List.of("on","off").contains(args[1].toLowerCase(Locale.ROOT)))){tell(sender,"使い方: /motionrp view [on|off]");return true;}
+            boolean value=args.length==1?!visibility.enabled(player.getUniqueId()):args[1].equalsIgnoreCase("on");
+            visibility.set(player,value);if(!value)terrain.hideViewer(player);playback.refreshVisibility(player);
+            tell(sender,"MotionRPの演出表示: "+(value?"ON":"OFF")+"（保存済み）");return true;
+        }
         if (args.length == 0 || args[0].equalsIgnoreCase("gui")) {
             if (sender instanceof Player player) menu.open(player);
             else tell(sender, "プレイヤーのみ実行できます。");
@@ -136,7 +148,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
         try {
             switch (args[0].toLowerCase(Locale.ROOT)) {
                 case "reload" -> {
-                    reloadConfig();
+                    reloadConfig();visibility.reload(this);
                     MotionCatalog updated = MotionCatalog.read(getConfig());
                     playback.stopAll();
                     catalog = updated;
@@ -195,7 +207,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
     }
 
     private void usage(CommandSender sender) {
-        tell(sender, "/motionrp gui | status | reload | pack status | pack publish");
+        tell(sender, "/motionrp gui | view [on|off] | status | reload | pack status | pack publish");
         tell(sender, "/motionrp give controller [プレイヤー]");
         tell(sender, "/motionrp give motion <ID> [個数1〜64] [プレイヤー]");
     }
@@ -203,8 +215,9 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
     @Override public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         List<String> choices = new ArrayList<>();
         if (args.length == 1) {
-            choices.add("gui");
+            choices.add("gui");choices.add("view");
             if (sender.hasPermission("motionrp.admin")) choices.addAll(List.of("give", "reload", "status", "pack"));
+        } else if(args.length==2 && args[0].equalsIgnoreCase("view")){choices.addAll(List.of("on","off"));
         } else if(sender.hasPermission("motionrp.admin") && args[0].equalsIgnoreCase("pack") && args.length==2) {
             choices.addAll(List.of("status","publish"));
         } else if (sender.hasPermission("motionrp.admin") && args[0].equalsIgnoreCase("give")) {

@@ -11,6 +11,8 @@ import java.util.*;
 /** Owns the bounded recipients and display trackers of a cosmetic scene. */
 final class SceneAudience implements AutoCloseable {
     private final Player owner;
+    private MotionVisibility visibility;
+    SceneAudience filtered(MotionVisibility value){visibility=value;return this;}
     private final org.bukkit.Location anchor;private final double range;
     private final Map<UUID, Player> viewers = new LinkedHashMap<>();
     // BetterModel Tracker.equals/hashCode use only the model name. Two clones
@@ -18,12 +20,12 @@ final class SceneAudience implements AutoCloseable {
     private final Set<DummyTracker> trackers = Collections.newSetFromMap(new IdentityHashMap<>());
     SceneAudience(Player owner) {this(owner,null,48);}
     SceneAudience(Player owner,org.bukkit.Location anchor,double range) {this.owner=owner;this.anchor=anchor;this.range=range;}
-    Collection<Player> players() { return viewers.values(); }
+    Collection<Player> players() { return viewers.values().stream().filter(p->visibility==null || visibility.enabled(p.getUniqueId())).toList(); }
     void refresh() {
         Set<UUID> eligible = new HashSet<>();
         for (Player p : Bukkit.getOnlinePlayers()) {
-            if (p.getWorld() != owner.getWorld() || !p.canSee(owner)
-                    || p.getLocation().distanceSquared(anchor==null?owner.getLocation():anchor) > range*range) continue;
+            if ((visibility!=null && !visibility.enabled(p.getUniqueId())) || p.getWorld() != owner.getWorld() || !p.canSee(owner)
+                    || (!p.getUniqueId().equals(owner.getUniqueId()) && p.getLocation().distanceSquared(anchor==null?owner.getLocation():anchor) > Math.pow(visibility==null?range:visibility.range(range),2))) continue;
             eligible.add(p.getUniqueId());
             Player old = viewers.put(p.getUniqueId(), p);
             if (old != null && old != p) for (var t : trackers) t.remove(BukkitAdapter.adapt(old));

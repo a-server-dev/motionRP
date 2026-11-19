@@ -51,7 +51,7 @@ final class TitanState {
             data.set(key(plugin,"scale"),PersistentDataType.DOUBLE,originalScale);
             data.set(key(plugin,"invisible"),PersistentDataType.BYTE,(byte)(originalInvisible?1:0));
             player.saveData();began=true;
-            player.setInvisible(true);
+            // BetterModel hides the source per opted-in viewer; keep vanilla visibility for OFF viewers.
             if(bundledSkin()) return;
             var changed=player.getPlayerProfile().clone();
             if(skin.toString().equals(DEFAULT_SKIN)) {

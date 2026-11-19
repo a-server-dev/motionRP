@@ -28,6 +28,9 @@ public final class OverlayLedger<V,K> {
         return result;
     }
     public Map<V,Delta<K>> release(Object owner) { return update(owner,Map.of()); }
+    public Set<K> removeViewer(V viewer){
+        var cells=Set.copyOf(counts.getOrDefault(viewer,Map.of()).keySet());forget(viewer);return cells;
+    }
     public void forget(V viewer) {
         counts.remove(viewer);for(var map:owners.values()) map.remove(viewer);owners.values().removeIf(Map::isEmpty);
     }
