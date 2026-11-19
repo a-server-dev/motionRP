@@ -13,12 +13,12 @@ class EpicAssetsTest {
   }
  }
  private void tree(JsonArray nodes,Set<String> ids){for(var n:nodes)if(n.isJsonPrimitive())assertTrue(ids.contains(n.getAsString()));else{var g=n.getAsJsonObject();assertTrue(ids.contains(g.get("uuid").getAsString()));tree(g.getAsJsonArray("children"),ids);}}
- @Test void fusionMirrorsBothWristsIntoOneContactPoint()throws Exception{
+ @Test void fusionMirrorsUpperAndLowerFingertipContacts()throws Exception{
   for(String role:List.of("fusion_left","fusion_right")){
    var m=model("players/motionrp_"+role);var clip=m.getAsJsonArray("animations").get(0).getAsJsonObject();var math=new RasenganAssetsTest();Map<String,JsonObject> groups=new HashMap<>();Map<String,String> names=new HashMap<>(),parents=new HashMap<>();
    for(var raw:m.getAsJsonArray("groups")){var g=raw.getAsJsonObject();String id=g.get("uuid").getAsString();groups.put(id,g);names.put(g.get("name").getAsString(),id);}math.parentTree(m.getAsJsonArray("outliner"),null,parents);
    for(String hand:List.of("pri_right_item","pli_left_item")){
-    var p=math.posedOrigin(names.get(hand),6.0,clip,groups,parents);assertEquals(role.endsWith("left")?1.75:-1.75,p[0]/16,.00001);assertEquals(1.0,p[1]/16,.00001);assertEquals(0,p[2],.00001);
+    var p=math.posedOrigin(names.get(hand),FusionTimeline.CONTACT/20.0,clip,groups,parents);assertEquals(role.endsWith("left")?1.75:-1.75,p[0]/16,.00001);boolean outer=role.endsWith("left")?hand.equals("pli_left_item"):hand.equals("pri_right_item");assertEquals((outer?25:16)/16.0,p[1]/16,.00001);assertEquals(0,p[2],.00001);
    }
   }
  }
@@ -26,7 +26,7 @@ class EpicAssetsTest {
   for(var check:Map.of("road_roller","radiator_grille","the_world","forehead_heart","black_dragon_head","swept_horn","tengen_myoo","giant_sword_blade").entrySet()){
    var m=model("models/motionrp_"+check.getKey());assertTrue(m.getAsJsonArray("elements").asList().stream().anyMatch(e->e.getAsJsonObject().get("name").getAsString().startsWith(check.getValue())));
   }
-  assertEquals(10,EpicTimeline.moonScale(200));assertEquals(36,EpicTimeline.dragonDistance(95));assertTrue(EpicTimeline.rollerHeight(70)==16);assertTrue(EpicTimeline.rollerHeight(104)<.2);
+  assertEquals(36,EpicTimeline.dragonDistance(95));assertTrue(EpicTimeline.rollerHeight(70)==18.2);assertTrue(EpicTimeline.rollerHeight(104)<.2);
  }
  @Test void fusedAvatarEmbedsTheExactProvidedSkin()throws Exception{
   var m=model("models/motionrp_fusion_warrior");String source=m.getAsJsonArray("textures").get(0).getAsJsonObject().get("source").getAsString();
@@ -34,8 +34,12 @@ class EpicAssetsTest {
   assertEquals("fusion_idle",m.getAsJsonArray("animations").get(0).getAsJsonObject().get("name").getAsString());
  }
  @Test void retainedRocksCoverTheWholeSphere(){
-  for(int i=0;i<96;i++){var n=EpicTimeline.rockNormal(i);assertEquals(1,Math.sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2]),1e-9);}
-  assertEquals(260,EpicTimeline.end("chibaku_tensei"));assertEquals(216,FusionTimeline.END);
+  for(int i=0;i<EpicTimeline.ROCK_COUNT;i++){var n=EpicTimeline.rockNormal(i);assertEquals(1,Math.sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2]),1e-9);}
+  assertEquals(312,EpicTimeline.end("chibaku_tensei"));assertEquals(228,FusionTimeline.END);
+  assertTrue(EpicTimeline.rockRadius(0)<EpicTimeline.rockRadius(24));assertTrue(EpicTimeline.rockRadius(24)<EpicTimeline.rockRadius(72));
+  assertEquals(24,java.util.stream.IntStream.range(0,144).filter(i->EpicTimeline.rockLayer(i)==0).count());
+  assertEquals(48,java.util.stream.IntStream.range(0,144).filter(i->EpicTimeline.rockLayer(i)==1).count());
+  assertEquals(72,java.util.stream.IntStream.range(0,144).filter(i->EpicTimeline.rockLayer(i)==2).count());
  }
 
  @Test void fusionHeadsStayOnTheirOwnSideThroughoutTheLean()throws Exception{
@@ -70,10 +74,20 @@ class EpicAssetsTest {
   for(var raw:stand.getAsJsonArray("groups")){var g=raw.getAsJsonObject();sg.put(g.get("uuid").getAsString(),g);}
   math.parentTree(actor.getAsJsonArray("outliner"),null,ap);math.parentTree(stand.getAsJsonArray("outliner"),null,sp);
   var ac=actor.getAsJsonArray("animations").get(0).getAsJsonObject();var sc=stand.getAsJsonArray("animations").get(0).getAsJsonObject();
-  for(int tick=104;tick<=176;tick++)for(String hand:List.of("pri_right_item","pli_left_item")){
+  for(int tick=104;tick<=192;tick++)for(String hand:List.of("pri_right_item","pli_left_item")){
    String uid=names.get(hand);assertArrayEquals(math.posedOrigin(uid,tick/20.0,ac,ag,ap),math.posedOrigin(uid,(tick-104)/20.0,sc,sg,sp),.00001,"Player/World arm timing drift at "+tick);
   }
   var r=math.posedOrigin(names.get("pri_right_item"),5.2,ac,ag,ap);var l=math.posedOrigin(names.get("pli_left_item"),5.2,ac,ag,ap);assertTrue(l[1]-r[1]>10,"One hand must strike while the other retracts");
+ }
+
+ @Test void fusionFinalLungePlantsBothFeetAndKeepsTheTopHandAboveTheHead()throws Exception{
+  var math=new RasenganAssetsTest();
+  for(String role:List.of("fusion_left","fusion_right")){
+   var m=model("players/motionrp_"+role);var clip=m.getAsJsonArray("animations").get(0).getAsJsonObject();Map<String,JsonObject> groups=new HashMap<>();Map<String,String> names=new HashMap<>(),parents=new HashMap<>();
+   for(var raw:m.getAsJsonArray("groups")){var g=raw.getAsJsonObject();String uid=g.get("uuid").getAsString();groups.put(uid,g);names.put(g.get("name").getAsString(),uid);}math.parentTree(m.getAsJsonArray("outliner"),null,parents);
+   for(String shin:List.of("prfl_right_foreleg","plfl_left_foreleg")){double x=shin.startsWith("pr")?1.875:-1.875;var foot=math.posedPoint(names.get(shin),new double[]{x,0,0},6.6,clip,groups,parents);assertEquals(0,foot[1],.00001);}
+   var arm=math.posedOrigin(names.get(role.endsWith("left")?"pli_left_item":"pri_right_item"),6.6,clip,groups,parents);var head=math.posedOrigin(names.get("h_ph_head"),6.6,clip,groups,parents);assertTrue(arm[1]>head[1]+3,"Outer arm must form the high arch in the reference");
+  }
  }
 
 }

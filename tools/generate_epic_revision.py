@@ -1,4 +1,4 @@
-"""0.22: separated Fusion choreography, exact fused skin, humanoid World and dented roller."""
+"""Reference-based Fusion, exact fused skin, humanoid World and staged roller crush."""
 import sys
 sys.dont_write_bytecode=True
 import math,json,copy,base64,io
@@ -8,8 +8,6 @@ from generate_perfect_susanoo import Armor,continuous
 from generate_rasengan import hand_path
 GOLD=[(211,173,59,255),(255,238,149,255),(114,92,44,255),(69,174,94,255),(177,137,42,255),(231,203,112,255),(43,74,72,255),(255,255,220,255)]
 ROCK=[(67,59,53,255),(105,89,73,255),(138,120,95,255),(74,75,77,255),(40,36,37,255),(166,153,131,255),(107,109,111,255),(196,180,152,255)]
-FUSION_END=216
-CONTACT=120
 
 def palette_model(name,colors):
  a=Armor(name,False);a.m=Model(name,False,colors);return a
@@ -35,38 +33,46 @@ def fused_skin(rig):
  save('models/motionrp_fusion_warrior.bbmodel',exact_skin_model(rig,'motionrp_fusion_warrior',raw,[a]))
 
 def fusion(rig):
+ # Reference: both arms outside -> overhead arc with side steps -> inside,
+ # inside knee lift -> wide lunge, outer arm arched above the head.
  for role in [1,-1]:
-  name='fusion_left'if role==1 else'fusion_right';m=player(rig,name,FUSION_END/20,{})
-  waist=-role*85
-  put_track(m,'pw_waist',[(0,(0,0,0)),(3.8,(0,0,0)),(5.6,(0,0,waist)),(10.8,(0,0,waist))])
-  put_track(m,'player_root',[(0,(0,0,0)),(1.4,(0,0,0)),(3.8,(role*11.6,0,0)),(10.8,(role*11.6,0,0))],'position')
+  name='fusion_left'if role==1 else'fusion_right';m=player(rig,name,11.4,{})
+  waist=-role*55
+  put_track(m,'pw_waist',[(0,(0,0,0)),(5.2,(0,0,0)),(6.5,(0,0,waist)),(11.4,(0,0,waist))])
+  put_track(m,'h_ph_head',[(0,(0,0,0)),(5.2,(0,0,0)),(6.5,(0,-role*15,role*45)),(11.4,(0,-role*15,role*45))])
+  put_track(m,'player_root',[(0,(0,0,0)),(1.8,(0,0,0)),(4,(role*15.2,0,0)),(5.2,(role*15.2,0,0)),(6.5,(role*15.2,-2,0)),(11.4,(role*15.2,-2,0))],'position')
   for side,upper,fore in [(1,'pra_right_arm','prfa_right_forearm'),(-1,'pla_left_arm','plfa_left_forearm')]:
-   v=math.radians(waist);target=(role*16.4,16);tx=math.cos(v)*target[0]+math.sin(v)*(target[1]-15);ty=-math.sin(v)*target[0]+math.cos(v)*(target[1]-15)+15
-   dx,dy=tx-side*5,ty-22;d=math.hypot(dx,dy);l1=5.5;l2=math.hypot(.625,5.625);assert abs(l1-l2)<d<l1+l2
-   along=(l1*l1-l2*l2+d*d)/(2*d);h=math.sqrt(l1*l1-along*along);ex=along*dx/d-role*h*dy/d;ey=along*dy/d+role*h*dx/d
-   upper_z=math.degrees(math.atan2(ey,ex)+math.pi/2);fore_z=math.degrees(math.atan2(dy-ey,dx-ex)-math.atan2(-5.625,side*.625))-upper_z
-   upper_z=(upper_z+180)%360-180;fore_z=(fore_z+180)%360-180
-   # Mirrored full T -> broad overhead arcs -> pointing pose. No body/head overlap.
-   canonical_side=side*role
-   initial=90 if canonical_side==1 else -90;arc=155 if canonical_side==1 else -155;last=170 if canonical_side==1 else -200
-   put_track(m,upper,[(0,(0,0,0)),(.6,(0,0,initial*role)),(1.5,(0,0,initial*role)),(2.6,(15,0,arc*role)),(3.8,(15,0,last*role)),(5.6,(0,0,upper_z)),(10.8,(0,0,upper_z))])
-   put_track(m,fore,[(0,(0,0,0)),(3.8,(0,0,0)),(5.6,(0,0,fore_z)),(10.8,(0,0,fore_z))])
-  for side,bone in [(1,'prl_right_leg'),(-1,'pll_left_leg')]:
-   offset=0 if side*role==1 else .28
-   keys=[(0,(0,0,0)),(1.4,(0,0,0))]
+   outer=side*role==-1;target=(role*12.8,27.0 if outer else 18.0)
+   v=math.radians(waist);tx=math.cos(v)*target[0]+math.sin(v)*(target[1]-15);ty=-math.sin(v)*target[0]+math.cos(v)*(target[1]-15)+15
+   dx,dy=tx-side*5,ty-22;l1=5.5;l2=math.hypot(.625,5.625);d=math.hypot(dx,dy);assert abs(l1-l2)<d<l1+l2,(name,side,d)
+   along=(l1*l1-l2*l2+d*d)/(2*d);h=math.sqrt(l1*l1-along*along);bend=-role if outer else role
+   ex=along*dx/d-bend*h*dy/d;ey=along*dy/d+bend*h*dx/d
+   uz=math.degrees(math.atan2(ey,ex)+math.pi/2);fz=math.degrees(math.atan2(dy-ey,dx-ex)-math.atan2(-5.625,side*.625))-uz
+   uz=(uz+180)%360-180;fz=(fz+180)%360-180
+   put_track(m,upper,[(0,(0,0,0)),(.7,(0,0,-role*90)),(1.8,(0,0,-role*90)),(2.5,(0,0,-role*180)),(3.5,(0,0,-role*270)),(5.2,(0,0,-role*270)),(6.5,(0,0,uz)),(11.4,(0,0,uz))])
+   put_track(m,fore,[(0,(0,0,0)),(5.2,(0,0,0)),(6.5,(0,0,fz)),(11.4,(0,0,fz))])
+  for side,bone,shin in [(1,'prl_right_leg','prfl_right_foreleg'),(-1,'pll_left_leg','plfl_left_foreleg')]:
+   inner=side*role==1;offset=0 if inner else .22;keys=[(0,(0,0,0)),(1.8,(0,0,0))]
    for n in range(3):
-    t=1.45+n*.65+offset;keys.extend([(t,(0,0,0)),(t+.17,(32,0,0)),(t+.34,(0,0,0))])
-   keys.extend([(3.8,(0,0,0)),(10.8,(0,0,0))]);put_track(m,bone,keys)
-  save('players/motionrp_'+name+'.bbmodel',m);(ROOT/(name+'-hand-path.csv')).write_text(hand_path(m,FUSION_END))
+    t=1.85+n*.6+offset;keys.extend([(t,(0,0,0)),(t+.15,(30,0,0)),(t+.3,(0,0,0))])
+   keys.extend([(4,(0,0,0)),(4.6,(-65 if inner else 0,0,0)),(5.2,(-65 if inner else 0,0,0))])
+   # Feet stay planted in the final lunge despite the lowered pelvis.
+   dx=side*(6 if inner else 7)-side*1.875;dy=2-11.25;d=math.hypot(dx,dy);along=d/2;h=math.sqrt(5.625**2-along**2);bend=role
+   ex=along*dx/d-bend*h*dy/d;ey=along*dy/d+bend*h*dx/d
+   uz=math.degrees(math.atan2(ey,ex)+math.pi/2);fz=math.degrees(math.atan2(dy-ey,dx-ex)+math.pi/2)-uz
+   keys.extend([(6.5,(0,0,uz)),(11.4,(0,0,uz))]);put_track(m,bone,keys)
+   put_track(m,shin,[(0,(0,0,0)),(4,(0,0,0)),(4.6,(100 if inner else 0,0,0)),(5.2,(100 if inner else 0,0,0)),(6.5,(0,0,fz)),(11.4,(0,0,fz))])
+  save('players/motionrp_'+name+'.bbmodel',m);(ROOT/(name+'-hand-path.csv')).write_text(hand_path(m,228))
 
 def punch_pose(tick):
- progress=max(0,min(1,(tick-104)/72));phase=(tick-104)%8;strength=(1+math.cos(phase*math.tau/8))/2
- if tick>=172:strength=max(strength,(tick-172)/4)
+ progress=max(0,min(1,(tick-104)/64));phase=(tick-104)%8;strength=(1+math.cos(phase*math.tau/8))/2
  chest=-20-15*progress;result={}
  for side,upper,fore in [(1,'pra_right_arm','prfa_right_forearm'),(-1,'pla_left_arm','plfa_left_forearm')]:
   p=strength if side==1 else 1-strength
-  if tick>=172:p=max(p,(tick-172)/4)
   gy=25*(1-p)+(13-2.85*progress)*p;gz=2*(1-p)+(-8+progress)*p
+  if tick>=168:
+   wind=min(1,(tick-168)/16);cut=max(0,min(1,(tick-184)/8));chest=-10 if cut==0 else -10-35*cut
+   gy=(25+(31.8-25)*wind)*(1-cut)+9.9*cut;gz=(2-4*wind)*(1-cut)-6*cut
   angle=math.radians(-chest);dy=(gy-15)*math.cos(angle)-gz*math.sin(angle)+15-22;dz=(gy-15)*math.sin(angle)+gz*math.cos(angle)
   d=math.hypot(dy,dz);l1,l2=5.5,5.625;assert abs(l1-l2)<d<l1+l2,(tick,side,d)
   along=(l1*l1-l2*l2+d*d)/(2*d);h=math.sqrt(l1*l1-along*along);ey=along*dy/d-h*dz/d;ez=along*dz/d+h*dy/d
@@ -76,12 +82,12 @@ def punch_pose(tick):
  return result
 
 def road_actor(rig):
- m=player(rig,'road_roller',12.2,{})
+ m=player(rig,'road_roller',13,{})
  for name in ['pra_right_arm','pla_left_arm','prfa_right_forearm','plfa_left_forearm','pw_waist','h_ph_head']:
-  if name in ['pra_right_arm','pla_left_arm']:first=[(0,(0,0,0)),(.8,(90,0,(-15 if name.startswith('pra') else 15))),(2,(165,0,0)),(3.5,(165,0,0)),(4.8,(0,0,0))]
+  if name in ['pra_right_arm','pla_left_arm']:first=[(0,(0,0,0)),(.8,(90,0,(-15 if name.startswith('pra') else 15))),(2,(165,0,0)),(4.1,(165,0,0)),(4.9,(0,0,0))]
   else:first=[(0,(0,0,0)),(4.8,(0,0,0))]
-  keys=first+[(t/20,punch_pose(t)[name])for t in range(104,177)]+[(9.0,punch_pose(176)[name]),(9.8,(0,0,0)),(12.2,(0,0,0))];put_track(m,name,keys)
- save('players/motionrp_road_roller.bbmodel',m);(ROOT/'road_roller-hand-path.csv').write_text(hand_path(m,244))
+  keys=first+[(t/20,punch_pose(t)[name])for t in range(104,193)]+[(9.9,punch_pose(192)[name]),(10.7,(0,0,0)),(13,(0,0,0))];put_track(m,name,keys)
+ save('players/motionrp_road_roller.bbmodel',m);(ROOT/'road_roller-hand-path.csv').write_text(hand_path(m,260))
 
 def world_skin():
  im=Image.new('RGBA',(64,64));d=ImageDraw.Draw(im)
@@ -103,8 +109,8 @@ def world_skin():
  path=ROOT.parent/'skins/the_world.png';im.save(path);return path.read_bytes()
 
 def the_world(rig):
- g={x['name']:x for x in rig['groups']};clip=animation('barrage',3.6,{})
- for name in punch_pose(104):clip['animators'][g[name]['uuid']]=animator(g[name],continuous([(t/20,list(punch_pose(104+t)[name]))for t in range(73)]))
+ g={x['name']:x for x in rig['groups']};clip=animation('barrage',4.4,{})
+ for name in punch_pose(104):clip['animators'][g[name]['uuid']]=animator(g[name],continuous([(t/20,list(punch_pose(104+t)[name]))for t in range(89)]))
  idle=animation('world_idle',2,{});idle['loop']='loop'
  for name in ['pra_right_arm','pla_left_arm']:idle['animators'][g[name]['uuid']]=animator(g[name],[(0,(0,0,5 if 'pra' in name else -5)),(1,(0,0,7 if 'pra' in name else -7)),(2,(0,0,5 if 'pra' in name else -5))])
  m=exact_skin_model(rig,'motionrp_the_world',world_skin(),[clip,idle]);groups={x['uuid']:x for x in m['groups']};nodes={}
@@ -161,10 +167,10 @@ def roller():
   c(f'grab_rail_{side}',(side*16,19,3),(1,5,1),6)
  c('roll_bar_crossbeam',(0,30,13),(26,1.8,1.8),0);c('short_exhaust',(10,24,-1),(2,8,2),2)
  cab=a.joint('crushable_cab',(0,17,12))
- clip=animation('crumple',3.6,{})
+ clip=animation('crumple',4.4,{})
  for g,drop,sy in [(hood,1.6,.62),(deck,2.7,.8),(cab,4.5,.62)]:
   keys=[]
-  for channel,values in [('position',[(0,(0,0,0)),(.9,(0,-drop*.2,0)),(1.8,(.4,-drop*.45,.2)),(2.7,(-.3,-drop*.75,.4)),(3.6,(.5,-drop,.6))]),('scale',[(0,(1,1,1)),(3.6,(1.03,sy,1.03))])]:
+  for channel,values in [('position',[(0,(0,0,0)),(.9,(0,-drop*.2,0)),(1.8,(.4,-drop*.45,.2)),(2.7,(-.3,-drop*.75,.4)),(3.6,(.3,-drop*.8,.5)),(4.4,(.5,-drop*1.3,.6))]),('scale',[(0,(1,1,1)),(3.6,(1.03,sy,1.03)),(4.4,(1.06,sy*.7,1.06))])]:
    keys+=animator(g,values,channel)['keyframes']
   clip['animators'][g['uuid']]={'name':g['name'],'type':'bone','keyframes':sorted(keys,key=lambda k:k['time'])}
  a.m.data['animations']=[clip];a.m.save()
@@ -181,8 +187,8 @@ def moon():
  a.joint('rock_body',(0,0,0));a.m.save()
 
 def gravity_actor():
- m=json.loads((ROOT/'players/motionrp_chibaku_tensei.bbmodel').read_text());m['animations'][0]['length']=13
- save('players/motionrp_chibaku_tensei.bbmodel',m);(ROOT/'chibaku_tensei-hand-path.csv').write_text(hand_path(m,260))
+ m=json.loads((ROOT/'players/motionrp_chibaku_tensei.bbmodel').read_text());m['animations'][0]['length']=15.6
+ save('players/motionrp_chibaku_tensei.bbmodel',m);(ROOT/'chibaku_tensei-hand-path.csv').write_text(hand_path(m,312))
 
 def revise(rig):
  fusion(rig);fused_skin(rig);the_world(rig);roller();road_actor(rig);moon();gravity_actor()
