@@ -77,13 +77,14 @@ abstract class SummonScene implements MotionScene {
     final void particle(Location at,Particle particle,int count,double spread,double speed) {
         for(Player p:audience.players()) p.spawnParticle(particle,at,count,spread,spread,spread,speed);
     }
-    final void projectileImpact(Location at,boolean volley) {
+    final void projectileImpact(Location at,boolean volley) {projectileImpact(at,volley,volley?1.4f:.85f);}
+    final void projectileImpact(Location at,boolean volley,float volume) {
         particle(at,Particle.EXPLOSION,volley?2:1,.2,0);
         particle(at,Particle.CLOUD,volley?18:10,volley?.6:.4,.06);
         particle(at,Particle.DUST_PLUME,volley?5:3,.4,.035);
         particle(at,Particle.FLAME,volley?8:3,.25,.025);
         if(tick-lastProjectileSound>=2) {
-            lastProjectileSound=tick;sound(at,Sound.ENTITY_GENERIC_EXPLODE,volley?1.4f:.85f,volley?.65f:1.0f);
+            lastProjectileSound=tick;sound(at,Sound.ENTITY_GENERIC_EXPLODE,volume,volley?.65f:1.0f);
         }
     }
     final Location ground(Location aim) {

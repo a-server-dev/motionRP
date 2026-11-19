@@ -394,7 +394,7 @@ class RasenganAssetsTest {
         }
         var weapon=read("models/motionrp_getsuga_tensa.bbmodel");var clip=weapon.getAsJsonArray("animations").get(0).getAsJsonObject();
         String socket=weapon.getAsJsonArray("groups").asList().stream().map(JsonElement::getAsJsonObject).filter(g->g.get("name").getAsString().equals("sword_socket")).findFirst().orElseThrow().get("uuid").getAsString();
-        double[] rot=sample(clip,socket,"rotation",(BarrierSlashTimeline.GETSUGA_RELEASE-40)/20.0);double rx=Math.toRadians(rot[0]),ry=Math.toRadians(rot[1]),rz=Math.toRadians(rot[2]);
+        double[] rot=sample(clip,socket,"rotation",(BarrierSlashTimeline.GETSUGA_RELEASE-(BarrierSlashTimeline.GETSUGA_PREFIX+8))/20.0);double rx=Math.toRadians(rot[0]),ry=Math.toRadians(rot[1]),rz=Math.toRadians(rot[2]);
         double x=Math.cos(rz)*Math.sin(ry)*Math.sin(rx)-Math.sin(rz)*Math.cos(rx),y=Math.sin(rz)*Math.sin(ry)*Math.sin(rx)+Math.cos(rz)*Math.cos(rx);
         assertTrue(x<-.2 && y<-.6,"Forceful sword cut must finish diagonally down-left");
         var names=weapon.getAsJsonArray("elements").asList().stream().map(e->e.getAsJsonObject().get("name").getAsString()).toList();
@@ -408,8 +408,8 @@ class RasenganAssetsTest {
             Map<String,JsonObject> groups=new HashMap<>();Map<String,String> names=new HashMap<>(),parents=new HashMap<>();
             for(var raw:model.getAsJsonArray("groups")){var g=raw.getAsJsonObject();String uid=g.get("uuid").getAsString();groups.put(uid,g);names.put(g.get("name").getAsString(),uid);}parentTree(model.getAsJsonArray("outliner"),null,parents);
             if(!shield){
-                var ready=posedOrigin(names.get("h_ph_head"),82/20.0,a,groups,parents);
-                var cut=posedOrigin(names.get("h_ph_head"),88/20.0,a,groups,parents);
+                var ready=posedOrigin(names.get("h_ph_head"),(BarrierSlashTimeline.GETSUGA_RELEASE-6)/20.0,a,groups,parents);
+                var cut=posedOrigin(names.get("h_ph_head"),BarrierSlashTimeline.GETSUGA_RELEASE/20.0,a,groups,parents);
                 assertTrue(ready[1]-cut[1]>1,"Upper body must sink into the cut");
                 var first=BarrierHandPath.left(12);var last=BarrierHandPath.left(26);
                 assertTrue(first.right()>last.right() && first.height()>last.height(),"Left hand sweeps from forehead toward the opposite jaw");
@@ -417,10 +417,10 @@ class RasenganAssetsTest {
             for(int tick=0;tick<end;tick++){
                 var expected=posedOrigin(names.get(shield?"pli_left_item":"pri_right_item"),tick/20.0,a,groups,parents);var hand=BarrierHandPath.at(shield,tick);
                 assertEquals(expected[0]/16,hand.right(),.000001);assertEquals(-expected[2]/16+.05,hand.forward(),.000001);assertEquals(expected[1]/16+.03,hand.height(),.000001);
-                if(!shield && tick>=60 && tick<=138){
+                if(!shield && tick>=BarrierSlashTimeline.GETSUGA_CHARGE && tick<=BarrierSlashTimeline.GETSUGA_FADE-6){
                     var l=posedOrigin(names.get("pli_left_item"),tick/20.0,a,groups,parents);var r=posedOrigin(names.get("pri_right_item"),tick/20.0,a,groups,parents);double gap=0;for(int k=0;k<3;k++)gap+=(r[k]-l[k])*(r[k]-l[k]);assertEquals(3.5,Math.sqrt(gap),.003,"Both palms must remain on the same sword hilt through the diagonal cut");
                     var grip=GetsugaBladePath.at(tick).grip();assertEquals((r[0]+l[0])/32,grip.right(),.0001);assertEquals(-(r[2]+l[2])/32+.05,grip.forward(),.0001);assertEquals((r[1]+l[1])/32+.03,grip.height(),.0001);
-                    if(tick<=82){var head=posedOrigin(names.get("h_ph_head"),tick/20.0,a,groups,parents);assertTrue(r[1]>head[1]+6 && l[1]>head[1]+4,"Hold both hands overhead before releasing Getsuga");}
+                    if(tick<=BarrierSlashTimeline.GETSUGA_RELEASE-6){var head=posedOrigin(names.get("h_ph_head"),tick/20.0,a,groups,parents);assertTrue(r[1]>head[1]+6 && l[1]>head[1]+4,"Hold both hands overhead before releasing Getsuga");}
                 }
                 if(!shield){var head=posedOrigin(names.get("h_ph_head"),tick/20.0,a,groups,parents);var anchor=HollowHeadPath.at(tick);assertEquals(head[0]/16,anchor.right(),.000001);assertEquals(-head[2]/16,anchor.forward(),.000001);assertEquals(head[1]/16,anchor.height(),.000001);}
                 for(boolean right:new boolean[]{true,false}){

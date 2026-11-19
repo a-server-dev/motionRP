@@ -184,6 +184,7 @@ def complete():
                 c(f'wing_feather_{side}_{feather}_{j}',[xx,yy,zz],[w,5.4,1.6],5 if feather%2 else 6,[0,0,-side*22.5])
                 c(f'feather_spine_{side}_{feather}_{j}',[xx,yy,zz-.95],[.65,5.5,.6],7,[0,0,-side*22.5])
         wings.append(a.joint('right_wing' if side==1 else 'left_wing',(side*17,82,10)))
+    roots=a.m.data['outliner'][:];a.m.data['outliner']=roots[:3];a.m.torso=a.m.group('battle_torso',[],origin=(0,57,0));a.m.data['outliner'][-1]['children']=roots[3:]
     slash=animation('slash',5.2,{})
     choreograph(a.m,slash,arm_joints,weapons)
     unfold=animation('unfurl',3.4,{})
@@ -215,8 +216,9 @@ def continuous(keys):
         out.append((t,rot))
     return out
 def choreograph(m,slash,arms,weapons):
-    hilt=[(0,(-18,59,-7)),(.45,(-18,59,-7)),(.8,(-7,68,-12)),(1.15,(26,72,-32)),(1.4,(19,62,-28)),(1.8,(-9,61,-23)),(2.5,(17,85,-17)),(3.2,(21,99,-5)),(3.5,(8,55,-23)),(4.2,(5,54,-20)),(5.2,(24,44,-2))]
-    axis=[(0,(0,-.24,.97)),(.45,(0,-.24,.97)),(.8,(-.8,0,.6)),(1.15,(-.8,0,.6)),(1.4,(-.95,-.10,-.28)),(1.8,(-.8,-.05,-.6)),(2.5,(-.1,.97,-.15)),(3.2,(-.3,.9,-.3)),(3.5,(-.4,-.65,-.64)),(4.2,(-.35,-.65,-.68)),(5.2,(0,-.2,-.98))]
+    hilt=[(0,(-18,59,-7)),(.45,(-18,59,-7)),(.8,(-7,68,-12)),(1.15,(26,72,-32)),(1.3,(26,72,-32)),(1.5,(43,65,-8)),(1.8,(30,60,-10)),(2.05,(34,78,-18)),(2.3,(18,97,12)),(2.7,(10,112,10)),(3.3,(10,112,10)),(3.5,(-6,58,-20)),(4.2,(-6,58,-20)),(5.2,(24,44,-2))]
+    axis=[(0,(0,-.24,.97)),(.45,(0,-.24,.97)),(.8,(-.8,0,.6)),(1.3,(-.8,0,.6)),(1.5,(.98,-.04,-.2)),(1.8,(.85,-.12,-.5)),(2.3,(.05,.5,.87)),(2.7,(.15,.8,.58)),(3.3,(.15,.8,.58)),(3.5,(-.55,-.45,-.70)),(4.2,(-.55,-.45,-.70)),(5.2,(0,-.2,-.98))]
+    torso=[(0,(0,-12,0)),(.8,(0,-22,-4)),(1.15,(-4,-38,-6)),(1.3,(-4,-38,-6)),(1.5,(12,40,8)),(1.8,(8,35,5)),(2.25,(-6,10,0)),(2.7,(-14,-20,-6)),(3.3,(-18,-28,-6)),(3.5,(22,30,12)),(4.2,(14,22,8)),(5.2,(0,0,0))]
     sheath=[(0,(-18,59,-7)),(.45,(-18,59,-7)),(.8,(-7,68,-12)),(1.15,(-31,67,9)),(1.8,(-31,67,9)),(2.3,(-18,59,-7)),(5.2,(-18,59,-7))]
     sheath_axis=[(0,(0,-.24,.97)),(.45,(0,-.24,.97)),(.8,(-.8,0,.6)),(1.8,(-.8,0,.6)),(2.3,(0,-.24,.97)),(5.2,(0,-.24,.97))]
     tracks={}
@@ -230,7 +232,7 @@ def choreograph(m,slash,arms,weapons):
             t=tick/20;h=interp(hilt,t);d=normalized(interp(axis,t));sh=interp(sheath,t);sd=normalized(interp(sheath_axis,t))
             if side==1:hand=interp([(0,(26,44,-2)),(.45,(-12,63,-7)),(.8,(-7,68,-12))],t) if t<.8 else h
             else:hand=interp([(0,(-26,44,-2)),(.45,(-18,59,-7)),(.8,tuple(sh[i]+sd[i]*14 for i in range(3)))],t) if t<.8 else [sh[i]+sd[i]*14 for i in range(3)]
-            shoulder=[side*24,81,0];delta=[hand[i]-shoulder[i] for i in range(3)];dist=math.sqrt(sum(v*v for v in delta));assert dist<45.01,(side,t,dist)
+            shoulder=[side*24,81,0];delta=[hand[i]-shoulder[i] for i in range(3)];dist=math.sqrt(sum(v*v for v in delta));assert 4.999<dist<45.01,(side,t,dist)
             aim=normalized(delta);along=(20*20-25*25+dist*dist)/(2*dist);height=math.sqrt(max(0,400-along*along));ref=[side,0,.45];dot=sum(ref[i]*aim[i] for i in range(3));bend=normalized([ref[i]-dot*aim[i] for i in range(3)])
             elbow=[shoulder[i]+aim[i]*along+bend[i]*height for i in range(3)]
             a=direction_rotation([elbow[i]-shoulder[i] for i in range(3)],True);b=direction_rotation([hand[i]-elbow[i] for i in range(3)],True)
@@ -244,7 +246,13 @@ def choreograph(m,slash,arms,weapons):
             else:p=interp(sheath if name.startswith('sheath') else hilt,t);d=interp(sheath_axis if name.startswith('sheath') else axis,t)
             positions.append((t,p));rotations.append((t,euler(direction_rotation(d))))
         track(g,'position',positions);track(g,'rotation',rotations)
+    track(m.torso,'rotation',torso)
     slash['animators']=tracks
+    rows=[]
+    for tick in range(236):
+        angles=interp(torso,max(0,(tick-100)/20));p=vector(matrix(*angles),[0,25.8,-7.44]);p[1]+=57
+        rows.append(','.join(f'{v:.8f}' for v in [p[0]*10/16,-p[2]*10/16,p[1]*10/16]))
+    (ROOT/'susanoo-pilot-path.csv').write_text('\n'.join(rows)+'\n')
     # An explicit held idle clip keeps both weapons at the waist during formation.
     m.idle_tracks={uid:{**track,'keyframes':[dict(k,time=0) for k in track['keyframes'] if k['time']==0]} for uid,track in tracks.items()}
 

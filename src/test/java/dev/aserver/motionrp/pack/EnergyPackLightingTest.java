@@ -10,6 +10,24 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class EnergyPackLightingTest {
     @TempDir Path root;
+    @Test void maskRepairsOldDuplexCopiesWithExteriorWindingWithoutChangingSharedPrimitives()throws Exception{
+        var pack=root.resolve("mask.zip");
+        String primitive="{\"elements\":[{\"from\":[0,0,0],\"to\":[16,16,0],\"faces\":{\"north\":{\"texture\":\"#0\"},\"south\":{\"texture\":\"#0\"}}}]}";
+        Map<String,String> entries=new LinkedHashMap<>();entries.put("pack.mcmeta","{\"pack\":{}}");entries.put("assets/motionrp/models/energy/old.json",primitive);
+        for(int sign:new int[]{1,-1})entries.put("assets/bettermodel/items/motionrp_hollow_mask_band_"+sign+".json","{\"model\":{\"type\":\"model\",\"model\":\"motionrp:energy/old\",\"transformation\":["+sign+",0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]}}");
+        try(var zip=new ZipOutputStream(Files.newOutputStream(pack))){for(var e:entries.entrySet()){zip.putNextEntry(new ZipEntry(e.getKey()));zip.write(e.getValue().getBytes(java.nio.charset.StandardCharsets.UTF_8));zip.closeEntry();}}
+        assertTrue(EnergyPackLighting.prepare(pack));
+        try(var zip=new ZipFile(pack.toFile())){
+            assertEquals(primitive,new String(zip.getInputStream(zip.getEntry("assets/motionrp/models/energy/old.json")).readAllBytes()));
+            for(int sign:new int[]{1,-1}){
+                var item=JsonParser.parseString(new String(zip.getInputStream(zip.getEntry("assets/bettermodel/items/motionrp_hollow_mask_band_"+sign+".json")).readAllBytes())).getAsJsonObject().getAsJsonObject("model");
+                String ref=item.get("model").getAsString();var model=JsonParser.parseString(new String(zip.getInputStream(zip.getEntry("assets/motionrp/models/"+ref.split(":")[1]+".json")).readAllBytes())).getAsJsonObject();
+                assertEquals(Set.of(sign<0?"north":"south"),model.getAsJsonArray("elements").get(0).getAsJsonObject().getAsJsonObject("faces").keySet());
+            }
+        }
+        byte[] repaired=Files.readAllBytes(pack);assertFalse(EnergyPackLighting.prepare(pack));assertArrayEquals(repaired,Files.readAllBytes(pack));
+    }
+
     @Test void ownEnergyItemsGetUnshadedCopiesWithoutChangingOtherModelsAndProcessingIsIdempotent()throws Exception{
         var pack=root.resolve("build.zip");String triangle="assets/bettermodel/models/triangle.json",energy="assets/bettermodel/items/motionrp_genki_dama_orb_energy_sphere.json",other="assets/custom/items/example.json";
         var model="{\"textures\":{\"0\":\"bettermodel:pixel\"},\"elements\":[{\"from\":[0,0,0],\"to\":[1,1,0],\"faces\":{}}]}";

@@ -22,10 +22,10 @@ def texture():
  poly([(.52,.39),(.55,.40),(.52,.66),(.495,.66)],red)
  for y,width in [(.51,.032),(.565,.026),(.62,.022)]:poly([(.54,y+.08),(.59,y+.025),(.91,y-.05),(.93,y-.05+width),(.63,y+.04+width)],red)
  poly([(.50,.87),(.57,.875),(.91,.77),(.85,.85),(.57,.93),(.56,1),(.49,.98)],red)
- poly([(.04,.34),(.17,.39),(.44,.45),(.48,.52),(.27,.475),(.13,.43)],(15,14,23,255))
- poly([(.53,.52),(.56,.45),(.83,.39),(.96,.34),(.87,.43),(.73,.475)],(15,14,23,255))
- poly([(.07,.355),(.18,.405),(.425,.458),(.458,.498),(.27,.46),(.14,.42)],(253,252,251,255))
- poly([(.55,.498),(.575,.458),(.82,.405),(.93,.355),(.86,.42),(.73,.46)],(253,252,251,255))
+ # Open angular eye sockets: several mesh rows of white rather than a one-row slit.
+ for points in [[(.04,.33),(.17,.365),(.435,.415),(.48,.55),(.25,.548),(.105,.46)],[(.075,.36),(.18,.395),(.40,.43),(.455,.52),(.27,.515),(.125,.445)]]:
+  color=(15,14,23,255) if points[0][0]<.05 else (253,252,251,255)
+  poly(points,color);poly([(1-x,y) for x,y in points],color)
  # Long interlocking teeth across the lower face, with an elongated central nose ridge.
  for i in range(12):
   x=.14+i*.061;top=.59+.025*abs(i-5.5);bottom=.86-.035*abs(i-5.5)
@@ -58,7 +58,8 @@ def generate(actor,end=164):
     for tri in [[ids[0],ids[1],ids[2]],[ids[0],ids[2],ids[3]]]:
      # BetterModel mesh UVs use the fixed Minecraft 0..16 range, unlike cube UVs.
      uv={tri[0]:[(color+.15)*2,.15*16],tri[1]:[(color+.15)*2,.85*16],tri[2]:[(color+.85)*2,.85*16]}
-     for order in [tri,list(reversed(tri))]:faces[str(len(faces))]={'vertices':order,'uv':uv,'texture':0}
+     # Outward-facing triangles only: an inside/head camera sees no mask back faces.
+     faces[str(len(faces))]={'vertices':tri,'uv':uv,'texture':0}
   uid=ident(m.name+'/band_'+str(band));m.data['elements'].append({'name':'mask_surface_'+str(band),'uuid':uid,'type':'mesh','origin':[0,0,0],'rotation':[0,0,0],'vertices':verts,'faces':faces,'light_emission':15});m.group('mask_band_'+str(band),[uid])
  children=m.data['outliner'][:];g=m.group('mask_socket',[]);m.data['outliner']=[{'uuid':g['uuid'],'children':children}]
  rotation=sampler(actor);keys=[];previous=None

@@ -101,16 +101,16 @@ def actors(rig):
         if not shield:
             prefix=[(12,(-118.83057,34.42578,-77.72337),-25.90309),(14,(-106.65096,29.72642,-76.52480),-48.74212),(16,(-95.57199,28.12860,-80.06693),-63.55864),(18,(-85.15057,26.88720,-85.38078),-75.10598),(20,(-75.01839,25.46008,-92.38223),-84.56594),(22,(-65.16199,23.46188,-101.26309),-92.39072),(24,(-55.98555,20.49292,-112.11064),-98.75500),(26,(-48.41147,16.26454,-124.57339),-103.69703)]
             for bone,track in list(tracks.items()):
-                for key in track['keyframes']:key['time']+=1.6
+                for key in track['keyframes']:key['time']=round(key['time']+2.2,8)
                 if track['name'] in ['pla_left_arm','plfa_left_forearm']:
                     upper=track['name']=='pla_left_arm';values=[(0,(0,0,0))]+[(t/20,q if upper else (f,0,0)) for t,q,f in prefix]
                     for key in track['keyframes']:
-                        if key['time']==1.6:
+                        if key['time']==2.2:
                             q=prefix[-1][1] if upper else (prefix[-1][2],0,0);key['data_points'][0].update(x=str(-q[0]),y=str(q[1]),z=str(q[2]))
                     track['keyframes']=player_animator(g[track['name']],values)['keyframes']+track['keyframes']
                 else:
                     channel=track['keyframes'][0]['channel'];neutral=animator(g[track['name']],[(0,(0,0,0))],channel);track['keyframes']=neutral['keyframes']+track['keyframes']
-            end+=32;m['animations'][0]['length']=end/20
+            end+=44;m['animations'][0]['length']=end/20
         save('players/motionrp_'+name+'.bbmodel',m)
         (ROOT/(name+'-hand-path.csv')).write_text(hand_path(m,end,'pli_left_item' if shield else 'pri_right_item'))
         if not shield:
@@ -122,7 +122,7 @@ def actors(rig):
             (ROOT/'getsuga_tensho-head-path.csv').write_text('\n'.join(head_rows)+'\n')
             rows=[];weapon_keys=[];previous=None
             for tick,palm in enumerate(right):
-                global_tick=tick;tick=max(0,tick-32)
+                global_tick=tick;tick=max(0,tick-44)
                 if tick<28:f=max(0,min(1,(tick-8)/20));pitch=-20+55*f;roll=-25*f
                 elif tick<=50:pitch=35;roll=-25
                 elif tick<=56:f=(tick-50)/6;pitch=35-160*f;roll=-25-20*f
@@ -131,13 +131,13 @@ def actors(rig):
                 total=mul(rotation('pc_chest',global_tick/20),matrix(pitch,0,roll));axis_source=vector(total,[0,1,0]);axis=[axis_source[0],-axis_source[2],axis_source[1]]
                 grip=[v-a*1.75/16 for v,a in zip(palm,axis)];tip=[v+a*(35.7*.65/16) for v,a in zip(grip,axis)]
                 rows.append(','.join(f'{v:.8f}' for v in grip+tip))
-                if global_tick>=40:
+                if global_tick>=52:
                     angles=euler(total)
                     if previous:
                         for i in range(3):
                             while angles[i]-previous[i]>180:angles[i]-=360
                             while angles[i]-previous[i]<-180:angles[i]+=360
-                    previous=angles;weapon_keys.append(((global_tick-40)/20,angles))
+                    previous=angles;weapon_keys.append(((global_tick-52)/20,angles))
             (ROOT/'getsuga_tensho-blade-path.csv').write_text('\n'.join(rows)+'\n')
             blade=json.loads((ROOT/'models/motionrp_getsuga_tensa.bbmodel').read_text());groups={x['name']:x for x in blade['groups']};clip=blade['animations'][0];clip['animators'][groups['sword_socket']['uuid']]=animator(groups['sword_socket'],weapon_keys);save('models/motionrp_getsuga_tensa.bbmodel',blade)
             from generate_hollow_mask import generate

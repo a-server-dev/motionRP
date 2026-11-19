@@ -37,11 +37,21 @@ class PerfectSusanooTest {
             var sheath=math.posedPoint(names.get("waist_scabbard_-1"),new double[]{0,0,-14},t,clip,groups,parents);
             assertArrayEquals(sword,right,.0001,"Right hand must hold the drawn left-waist sword");
             assertArrayEquals(sheath,left,.0001,"Left hand must hold the scabbard");
-            assertArrayEquals(new double[]{18,59,-7},math.posedOrigin(names.get("waist_blade_1"),t,clip,groups,parents),.0001,"Other sword stays at the waist");
+            assertArrayEquals(math.posedPoint(names.get("battle_torso"),new double[]{18,59,-7},t,clip,groups,parents),math.posedOrigin(names.get("waist_blade_1"),t,clip,groups,parents),.0001,"Other sword stays at the waist");
         }
+        for(int tick=SusanooTimeline.ARMOR+44;tick<SusanooTimeline.FADE;tick++){
+            var point=math.posedPoint(names.get("battle_torso"),new double[]{0,82.8,-7.44},Math.max(0,(tick-SusanooTimeline.READY)/20.0),clip,groups,parents);
+            var pilot=SusanooPilotPath.at(tick);assertEquals(point[0]*10/16,pilot.right(),.00001);assertEquals(-point[2]*10/16,pilot.forward(),.00001);assertEquals(point[1]*10/16,pilot.height(),.00001);
+        }
+        var overhead=math.posedPoint(names.get("waist_blade_-1"),new double[]{0,0,-60},2.9,clip,groups,parents);
+        var crown=math.posedPoint(names.get("battle_torso"),new double[]{0,110,0},2.9,clip,groups,parents);
+        assertTrue(overhead[1]>crown[1]+20 && overhead[2]>crown[2]+15,"Wind the blade high and behind the head");
+        var firstA=math.posedPoint(names.get("waist_blade_-1"),new double[]{0,0,-60},1.3,clip,groups,parents);
+        var firstB=math.posedPoint(names.get("waist_blade_-1"),new double[]{0,0,-60},1.5,clip,groups,parents);
+        assertTrue(Math.abs(firstB[0]-firstA[0])>70,"Draw cut sweeps the blade across a broad horizontal arc");
         var early=math.posedOrigin(names.get("waist_blade_-1"),.8,clip,groups,parents);
         var late=math.posedOrigin(names.get("waist_blade_-1"),1.15,clip,groups,parents);
-        assertTrue(late[0]-early[0]>30,"Pull the blade sideways out of its sheath");
+        assertTrue(Math.sqrt(java.util.stream.IntStream.range(0,3).mapToDouble(i->Math.pow(late[i]-early[i],2)).sum())>30,"Pull the blade sideways out of its sheath");
     }
 
     @Test void completeBlueSamuraiIncludesFullLegsTenguWingsAndPairedDetailedBlades() throws Exception {

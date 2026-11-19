@@ -13,20 +13,20 @@ class TreasuryTest {
             return JsonParser.parseString(new String(input.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
         }
     }
-    @Test void allHundredOrTwoHundredGatesFireOneRapidPassThenAllJoinTheVolley() {
+    @Test void allHundredOrTwoHundredGatesFireTwoRapidPassesThenAllJoinTheVolley() {
         for(boolean serious:new boolean[]{false,true}) {
             Set<TreasuryTimeline.Portal> unique=new HashSet<>();int[] waves=new int[30];int surrounding=0;
             for(int i=0;i<TreasuryTimeline.count(serious);i++) {
                 var p=TreasuryTimeline.portal(i,serious);assertTrue(unique.add(p));
                 assertTrue(TreasuryTimeline.openAt(i,serious)+8<TreasuryTimeline.rapidAt(i,serious));
-                int rapid=TreasuryTimeline.rapidAt(i,serious);waves[rapid-42]++;
+                int rapid=TreasuryTimeline.rapidAt(i,serious);for(int pass=0;pass<2;pass++){int when=TreasuryTimeline.rapidAt(i,serious,pass);waves[when-42]++;assertTrue(TreasuryTimeline.rapidFireAt(i,serious,when));}
                 assertTrue(rapid+1+6<84);assertTrue(p.height()>.5 && p.height()<13);
                 if(p.surroundsTarget()) { surrounding++;assertEquals(6,Math.hypot(p.right(),p.forward()),1e-6); }
                 else assertTrue(p.forward()<=-2.5 && Math.abs(p.right())<12);
             }
             assertEquals(serious?100:0,surrounding);
-            for(int count:waves) assertTrue(count>0 && count<8);
-            assertEquals(serious?400:200,Arrays.stream(waves).sum()+TreasuryTimeline.count(serious));
+            for(int count:waves) assertTrue(count>0 && count<15);
+            assertEquals(serious?600:300,Arrays.stream(waves).sum()+TreasuryTimeline.count(serious));
         }
         assertEquals("KEY",TreasuryTimeline.phase(TreasuryTimeline.KEY,true));
         assertTrue(TreasuryTimeline.KEY<72 && TreasuryTimeline.EA>TreasuryTimeline.CONVERGE);

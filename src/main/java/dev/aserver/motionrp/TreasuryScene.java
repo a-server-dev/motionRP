@@ -18,7 +18,7 @@ final class TreasuryScene extends SummonScene {
     private final boolean serious;
     private final EntityTracker body;
     private final DummyTracker[] gates,weapons;
-    private final int[] loadedAt;
+    private final int[] loadedAt;private int lastLaunchSound=-1;
     private final Location focus;
     private final List<Shot> shots=new ArrayList<>();
     private final EnumaEffects enumaEffects;
@@ -47,8 +47,6 @@ final class TreasuryScene extends SummonScene {
         body.update(TrackerUpdateAction.togglePart(false),bone->Set.of("pri_right_item","pli_left_item").contains(bone.name().rawName()));
         if(tick==0) trace("target x="+focus.getX()+" y="+focus.getY()+" z="+focus.getZ());
         if(tick==OPEN) sound(at(0,-3,4),Sound.BLOCK_ENCHANTMENT_TABLE_USE,1,.65f);
-        if((tick>=RAPID && tick<RAPID+RAPID_TICKS && tick%3==0) || tick==VOLLEY)
-            sound(at(0,-2,4),Sound.ITEM_TRIDENT_THROW,tick==VOLLEY?1.5f:.75f,tick==VOLLEY?.65f:1.4f);
         for(int i=0;i<gates.length;i++) {
             var pose=portal(i,serious);Location position=portalLocation(pose);
             if(tick==openAt(i,serious)) {
@@ -62,7 +60,7 @@ final class TreasuryScene extends SummonScene {
                 gates[i].scaler(ModelScaler.value(scale));
                 if(tick>=close) { audience.hide(gates[i]);gates[i]=null; }
             }
-            if(tick==openAt(i,serious)+8 || tick==rapidAt(i,serious)+1) {
+            if(tick==openAt(i,serious)+8 || rapidFireAt(i,serious,tick-1)) {
                 weapons[i]=model(WEAPONS[(i+(tick>DRAW?1:0))%3],position,.8f,"weapon"+i+(tick>DRAW?"_reload":""));
                 loadedAt[i]=tick;point(weapons[i],position);
             }
@@ -70,9 +68,10 @@ final class TreasuryScene extends SummonScene {
                 Vector outward=focus.clone().add(0,1,0).toVector().subtract(position.toVector()).normalize();
                 Location loaded=position.clone().add(outward.clone().multiply(.5*Math.clamp((tick-loadedAt[i])/6.0,0,1)));
                 loaded.setDirection(outward);weapons[i].location(BukkitAdapter.adapt(loaded));point(weapons[i],loaded);
-                if(tick==rapidAt(i,serious) || tick==VOLLEY) {
+                if(rapidFireAt(i,serious,tick) || tick==VOLLEY) {
                     Location target=focus.clone().add(pose.surroundsTarget()?Math.sin(i)*.8:(i%9-4)*.65,pose.surroundsTarget()?.9:.05,Math.cos(i)*.5);
                     shots.add(new Shot(i,tick,weapons[i],loaded,target,loaded.clone()));weapons[i]=null;
+                    if(lastLaunchSound!=tick){lastLaunchSound=tick;sound(at(0,-2,3),Sound.ITEM_TRIDENT_THROW,tick==VOLLEY?1.5f:.85f,1.15f+(i%3)*.15f);if(tick==VOLLEY)sound(origin,Sound.ENTITY_ENDER_DRAGON_FLAP,.7f,1.4f);trace("launch sound tick="+tick);}
                     trace("fire index="+i+" tick="+tick);
                 }
             }
@@ -88,7 +87,7 @@ final class TreasuryScene extends SummonScene {
             shot.previous().setX(next.getX());shot.previous().setY(next.getY());shot.previous().setZ(next.getZ());
             if(hit!=null || p>=1) {
                 audience.hide(shot.model());iterator.remove();
-                projectileImpact(next,shot.fired()==VOLLEY);
+                projectileImpact(next,shot.fired()==VOLLEY,shot.fired()==VOLLEY?2.5f:2f);
                 trace("explosion index="+shot.index()+" tick="+tick);
                 if(shot.index()%4==0) { dust(next,GOLD,3,.12);particle(next,Particle.ELECTRIC_SPARK,3,.15,.04); }
                 trace("impact index="+shot.index()+" tick="+tick);

@@ -7,7 +7,7 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.zip.*;
 
-/** Disable directional cube shading only for MotionRP energy items, including mesh triangle copies. */
+/** Scoped full-bright energy copies and exterior-only Hollow mask triangles. */
 public final class EnergyPackLighting {
     private static final List<String> IDS=List.of("motionrp_hollow_mask_","motionrp_rho_aias_shield_","motionrp_getsuga_crescent_","motionrp_genki_dama_orb_","motionrp_kamehameha_orb_","motionrp_kamehameha_beam_","motionrp_excalibur_light_","motionrp_excalibur_pillar_","motionrp_excalibur_charge_","motionrp_excalibur_wave_");
     private EnergyPackLighting() {}
@@ -37,7 +37,7 @@ public final class EnergyPackLighting {
                 String name=entry.getKey();int assets=name.indexOf("assets/");
                 if(assets<0 || !name.contains("/items/") || !name.endsWith(".json") || IDS.stream().noneMatch(id->name.substring(name.lastIndexOf('/')+1).startsWith(id)))continue;
                 JsonObject item=JsonParser.parseString(new String(entry.getValue(),StandardCharsets.UTF_8)).getAsJsonObject();
-                if(rewrite(item,name.substring(0,assets),files,additions)) {files.put(name,item.toString().getBytes(StandardCharsets.UTF_8));changed=true;}
+                if(rewrite(item,name.substring(0,assets),files,additions,name.substring(name.lastIndexOf('/')+1).startsWith("motionrp_hollow_mask_"))) {files.put(name,item.toString().getBytes(StandardCharsets.UTF_8));changed=true;}
             }
         }catch(RuntimeException invalid){throw new IOException("Invalid energy item definition",invalid);}
         if(!changed)return false;
@@ -52,24 +52,44 @@ public final class EnergyPackLighting {
         }finally{Files.deleteIfExists(tmp);}
         return true;
     }
-    private static boolean rewrite(JsonElement value,String prefix,Map<String,byte[]> files,Map<String,byte[]> added){
+    private static boolean rewrite(JsonElement value,String prefix,Map<String,byte[]> files,Map<String,byte[]> added,boolean mask){
         boolean changed=false;
-        if(value.isJsonArray()){for(var child:value.getAsJsonArray())changed|=rewrite(child,prefix,files,added);}
+        if(value.isJsonArray()){for(var child:value.getAsJsonArray())changed|=rewrite(child,prefix,files,added,mask);}
         else if(value.isJsonObject()){
             var obj=value.getAsJsonObject();
             for(var entry:new ArrayList<>(obj.entrySet())){
                 var child=entry.getValue();
                 if(entry.getKey().equals("model") && child.isJsonPrimitive() && child.getAsJsonPrimitive().isString()){
-                    String ref=child.getAsString();if(ref.startsWith("motionrp:energy/") || !ref.matches("[a-z0-9_.-]+:[a-z0-9_./-]+") || ref.contains(".."))continue;
+                    String ref=child.getAsString();if((ref.startsWith("motionrp:energy/") && !mask) || !ref.matches("[a-z0-9_.-]+:[a-z0-9_./-]+") || ref.contains(".."))continue;
                     String[] parts=ref.split(":",2);String source="assets/"+parts[0]+"/models/"+parts[1]+".json";
                     byte[] bytes=files.get(prefix+source);if(bytes==null)bytes=files.get(source);if(bytes==null)continue;
                     JsonObject model=JsonParser.parseString(new String(bytes,StandardCharsets.UTF_8)).getAsJsonObject();
                     if(!model.has("elements"))continue;
+                    String face="north";
+                    if(mask){
+                        // Mesh conversion can use mirrored affine triangles. Choose the winding
+                        // whose normal points toward the mask exterior (+Z in exported item space).
+                        double determinant=1;
+                        if(obj.has("transformation") && obj.get("transformation").isJsonArray()){
+                            var t=obj.getAsJsonArray("transformation");if(t.size()==16)determinant=t.get(0).getAsDouble()*t.get(5).getAsDouble()-t.get(1).getAsDouble()*t.get(4).getAsDouble();
+                        }
+                        face=determinant<0?"north":"south";
+                        boolean correct=true;
+                        for(var raw:model.getAsJsonArray("elements")){var faces=raw.getAsJsonObject().getAsJsonObject("faces");if(faces==null || faces.size()!=1 || !faces.has(face))correct=false;}
+                        if(ref.startsWith("motionrp:energy/") && correct)continue;
+                        for(var raw:model.getAsJsonArray("elements")){
+                            var cube=raw.getAsJsonObject();var faces=cube.getAsJsonObject("faces");
+                            if(faces!=null && !faces.isEmpty()){
+                                var side=faces.has(face)?faces.get(face).deepCopy():faces.entrySet().iterator().next().getValue().deepCopy();
+                                var one=new JsonObject();one.add(face,side);cube.add("faces",one);
+                            }
+                        }
+                    }
                     model.addProperty("ambientocclusion",false);
                     for(var raw:model.getAsJsonArray("elements")){var cube=raw.getAsJsonObject();cube.addProperty("shade",false);cube.addProperty("light_emission",15);}
-                    String id=PackSnapshot.digest("SHA-256",bytes).substring(0,24);String target="motionrp:energy/"+id;
+                    String id=(mask?"mask_"+face+"_":"")+PackSnapshot.digest("SHA-256",bytes).substring(0,24);String target="motionrp:energy/"+id;
                     added.put(prefix+"assets/motionrp/models/energy/"+id+".json",model.toString().getBytes(StandardCharsets.UTF_8));obj.addProperty("model",target);changed=true;
-                }else changed|=rewrite(child,prefix,files,added);
+                }else changed|=rewrite(child,prefix,files,added,mask);
             }
         }
         return changed;

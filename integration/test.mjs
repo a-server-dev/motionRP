@@ -252,13 +252,19 @@ async function verifyTitanRecovery(a,b,{sceneDisplays,sceneRemoved,removedByRole
   return {a,b};
 }
 
-function checkMaskPack(){
+async function checkMaskPack(){
+  await waitFor(()=>{try{execFileSync('python3',['-c',"import zipfile,json,sys;z=zipfile.ZipFile(sys.argv[1]);items=[json.loads(z.read(n)) for n in z.namelist() if '/items/'in n and 'motionrp_hollow_mask_'in n];assert items and all('mask_'in json.dumps(i) and 'motionrp:energy/mask_'in json.dumps(i) for i in items)",path.join(run,'plugins/BetterModel/build.zip')],{stdio:'pipe'});return true;}catch{return false;}},'single-sided mask pack preparation',20000);
   execFileSync('python3',['-c',`import zipfile,json,sys,collections
 z=zipfile.ZipFile(sys.argv[1]);c=collections.Counter()
 def walk(d):
  if isinstance(d,list):
   for x in d:walk(x)
  elif isinstance(d,dict):
+  ref=d.get('model')
+  if isinstance(ref,str) and ref.startswith('motionrp:energy/'):
+   model=json.loads(z.read('assets/motionrp/models/'+ref.split(':')[1]+'.json'))
+   t=d.get('transformation',[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);det=t[0]*t[5]-t[1]*t[4];side='north' if det<0 else 'south'
+   for element in model['elements']:assert set(element['faces'])=={side},'Mask must render only the exterior winding'
   for tint in d.get('tints',[]):c[tint['value']&0xffffff]+=1
   for v in d.values():walk(v)
 for n in z.namelist():
@@ -272,17 +278,56 @@ assert c[0]==0,c
   pass('compiled mask keeps a predominantly white face, red markings and limited black eye details');
 }
 
+if(process.env.MOTIONRP_TREASURY_ONLY==='1'){
+ let code=0;
+ try{
+  fs.copyFileSync(path.join(project,`build/libs/motionRP-${version}.jar`),path.join(run,'plugins/MotionRP.jar'));
+  log=fs.createWriteStream(path.join(project,'build/treasury-smoke.log'));await startServer();
+  const suffix=String(Date.now()).slice(-6),an='VaultA'+suffix,bn='VaultB'+suffix;
+  const a=await connect(an),b=await connect(bn);consoleCommand(`tp ${an} 0 -60 0 0 0`);consoleCommand(`tp ${bn} 5 -60 0 0 0`);await sleep(400);
+  const spawned=[new Set(),new Set()],removed=[new Set(),new Set()],sounds=[[],[]];
+  for(const [i,bot]of[a,b].entries()){
+   bot._client.on('spawn_entity',p=>{if(p.type===bot.registry.entitiesByName.item_display.id){spawned[i].add(p.entityId);removed[i].delete(p.entityId);}});
+   bot._client.on('entity_destroy',p=>p.entityIds.forEach(id=>removed[i].add(id)));
+   bot._client.on('sound_effect',p=>{const h=p.sound;const name=h?.data?.soundName??bot.registry.sounds[h?h.soundId+1:p.soundId]?.name;if(name)sounds[i].push(name);});
+  }
+  const cleanup=()=>spawned.every((set,i)=>[...set].every(id=>removed[i].has(id)));
+  consoleCommand(`motionrp give controller ${an}`);
+  for(const id of ['gate_of_babylon_100','gate_of_babylon_enuma']){
+   consoleCommand(`clear ${an} minecraft:paper`);await sleep(200);consoleCommand(`motionrp give motion ${id} 1 ${an}`);await waitFor(()=>tokens(a)===1,id+' token');await menu(a);await deposit(a);await closeMenu(a);
+  }
+  await a.equip(a.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');const health=[a.health,b.health],anchor=a.entity.position.clone();
+  for(const [prefix,count]of [['Treasury100',100],['TreasuryEnuma',200]]){
+   const begin=output.length;for(const s of spawned)s.clear();for(const s of sounds)s.length=0;
+   a._testLeftClick();await waitFor(()=>output.slice(begin).includes(prefix+' phase: FADE'),prefix+' completes',35000);await waitFor(cleanup,prefix+' cleanup');
+   const text=output.slice(begin),fires=[...text.matchAll(new RegExp(prefix+' fire index=(\\d+) tick=(\\d+)','g'))].map(m=>[+m[1],+m[2]]);
+   assert.deepEqual(fires,[...Array.from({length:count},(_,i)=>[i,42+Math.floor(i*15/count)]),...Array.from({length:count},(_,i)=>[i,57+Math.floor(i*15/count)]),...Array.from({length:count},(_,i)=>[i,84])]);
+   assert.equal([...text.matchAll(new RegExp(prefix+' explosion index=','g'))].length,count*3);
+   for(const list of sounds){assert.ok(list.filter(n=>n.includes('trident.throw')).length>=25,'rapid throw cues');assert.ok(list.filter(n=>n.includes('generic.explode')).length>=10,'audible impact cues');}
+   assert.deepEqual([a.health,b.health],health);assert.ok(a.entity.position.distanceTo(anchor)<.01);
+   pass(prefix+' fires '+(count*3)+' projectiles with two rapid passes, audible launch/impact cues for both viewers and full cleanup');
+   if(count===100){
+    const cancel=output.length;for(const s of spawned)s.clear();a._testLeftClick();await waitFor(()=>output.slice(cancel).includes(prefix+' fire index=0'),'rapid cancellation');a._testLeftClick();await waitFor(cleanup,'rapid cancellation cleanup');await sleep(1700);assert.ok(!output.slice(cancel).includes('volley blast'));pass('cancelling the denser rapid fire prevents the later passes and volley');
+    a.setControlState('sneak',true);await sleep(250);a._testLeftClick();await sleep(250);a.setControlState('sneak',false);await sleep(250);
+   }
+  }
+  assert.ok(!/Treasury100 scene failed|TreasuryEnuma scene failed/.test(output));await disconnect(a);await disconnect(b);await stopServer();
+ }catch(e){code=1;console.error(e.stack);}
+ finally{for(const bot of bots)try{bot.quit();}catch{}try{await stopServer();}catch{}log?.end();fs.writeFileSync(path.join(project,'build/treasury-smoke-result.json'),JSON.stringify({passed:code===0,version,checks},null,2));}
+ process.exit(code);
+}
+
 if(process.env.MOTIONRP_BARRIER_ONLY==='1'){
   let code=0;
   try{
     fs.copyFileSync(path.join(project,`build/libs/motionRP-${version}.jar`),path.join(run,'plugins/MotionRP.jar'));
     const previous=[];
     for(const file of ['models/motionrp_hollow_mask.bbmodel','models/motionrp_rho_aias_shield.bbmodel','models/motionrp_getsuga_crescent.bbmodel','models/motionrp_getsuga_tensa.bbmodel','players/motionrp_rho_aias.bbmodel','players/motionrp_getsuga_tensho.bbmodel']){
-      const latest=path.join(project,'src/test/resources/bundled-0.18.0',file.replace('/','_')+'.gz');const old=fs.existsSync(latest)?latest:path.join(project,'src/test/resources/bundled-0.17.0',file.replace('/','_')+'.gz');
+      const latest=path.join(project,'src/test/resources/bundled-0.19.0',file.replace('/','_')+'.gz');const old=fs.existsSync(latest)?latest:path.join(project,'src/test/resources/bundled-0.17.0',file.replace('/','_')+'.gz');
       if(fs.existsSync(old)){const bytes=gunzipSync(fs.readFileSync(old));fs.writeFileSync(path.join(run,'plugins/BetterModel',file),bytes);previous.push([file,bytes]);}else fs.rmSync(path.join(run,'plugins/BetterModel',file),{force:true});
     }
-    log=fs.createWriteStream(path.join(project,'build/barrier-smoke.log'));await startServer();checkMaskPack();
-    for(const [file,bytes]of previous){assert.deepEqual(fs.readFileSync(path.join(run,'plugins/BetterModel',file)),fs.readFileSync(path.join(project,'src/main/resources/bettermodel',file)));const hash=createHash('sha256').update(bytes).digest('hex');assert.deepEqual(fs.readFileSync(path.join(run,'plugins/MotionRP/model-backups',path.basename(file)+'.'+hash+'.bak')),bytes);}pass('0.17.0 shield, katana, crescent and two-handed player assets migrate with exact backups');
+    log=fs.createWriteStream(path.join(project,'build/barrier-smoke.log'));await startServer();await checkMaskPack();
+    for(const [file,bytes]of previous){assert.deepEqual(fs.readFileSync(path.join(run,'plugins/BetterModel',file)),fs.readFileSync(path.join(project,'src/main/resources/bettermodel',file)));const hash=createHash('sha256').update(bytes).digest('hex');assert.deepEqual(fs.readFileSync(path.join(run,'plugins/MotionRP/model-backups',path.basename(file)+'.'+hash+'.bak')),bytes);}pass('prior shield, mask, katana and two-handed player assets migrate with exact backups');
     const suffix=String(Date.now()).slice(-6),an='ArtsA'+suffix,bn='ArtsB'+suffix;
     const a=await connect(an),b=await connect(bn);consoleCommand(`tp ${an} 0 -60 0 0 0`);consoleCommand(`tp ${bn} 5 -60 0 0 0`);await sleep(400);
     const spawned=[new Set(),new Set()],removed=[new Set(),new Set()],items=[new Map(),new Map()],particles=[0,0];
@@ -492,7 +537,7 @@ if(process.env.MOTIONRP_NOBLE_ONLY==='1') {
       fs.writeFileSync(path.join(run,'plugins/BetterModel',relative),old);surfaceUpgrade.push([relative,old]);
     }
     const oldArmor=gunzipSync(fs.readFileSync(path.join(project,'src/test/resources/bundled-0.18.0/models_motionrp_susanoo_armor.bbmodel.gz')));fs.writeFileSync(path.join(run,'plugins/BetterModel/models/motionrp_susanoo_armor.bbmodel'),oldArmor);
-    log=fs.createWriteStream(path.join(project,'build/noble-smoke.log'));await startServer();checkMaskPack();
+    log=fs.createWriteStream(path.join(project,'build/noble-smoke.log'));await startServer();await checkMaskPack();
     assert.deepEqual(fs.readFileSync(path.join(run,'plugins/BetterModel/models/motionrp_susanoo_armor.bbmodel')),fs.readFileSync(path.join(project,'src/main/resources/bettermodel/models/motionrp_susanoo_armor.bbmodel')));pass('0.18.0 Susanoo armor migrates to the new sheath and articulated arms');
     for(const [relative,old] of surfaceUpgrade){assert.deepEqual(fs.readFileSync(path.join(run,'plugins/BetterModel',relative)),fs.readFileSync(path.join(project,'src/main/resources/bettermodel',relative)));const h=createHash('sha256').update(old).digest('hex');assert.deepEqual(fs.readFileSync(path.join(run,'plugins/MotionRP/model-backups',path.basename(relative)+'.'+h+'.bak')),old);}
     if(surfaceUpgrade.length)pass('0.14.2 sphere, pillar and arm assets migrate with exact backups');
@@ -1283,11 +1328,11 @@ generate-structures=false
   await waitFor(()=>sceneRemoved.size===sceneDisplays.size,'hundred gates cleanup');
   const hundredTrace=output.slice(hundredBegin),hundredEntries=summonTrace('Treasury100',hundredBegin);
   const hundredFires=[...hundredTrace.matchAll(/Treasury100 fire index=(\d+) tick=(\d+)/g)].map(m=>[Number(m[1]),Number(m[2])]);
-  assert.deepEqual(hundredFires,[...Array.from({length:100},(_,i)=>[i,42+Math.floor(i*30/100)]),...Array.from({length:100},(_,i)=>[i,84])]);
-  assert.equal([...hundredTrace.matchAll(/Treasury100 impact index=/g)].length,200);
+  assert.deepEqual(hundredFires,[...Array.from({length:100},(_,i)=>[i,42+Math.floor(i*15/100)]),...Array.from({length:100},(_,i)=>[i,57+Math.floor(i*15/100)]),...Array.from({length:100},(_,i)=>[i,84])]);
+  assert.equal([...hundredTrace.matchAll(/Treasury100 impact index=/g)].length,300);
   assert.ok(hundredTrace.includes('volley blast tick=86'));assert.ok(removedForBoth(hundredEntries));
   assert.ok(a.entity.position.distanceTo(hundredOrigin)<.01);assert.deepEqual([a.health,b.health],hundredHealth);
-  assert.equal([...output.slice(hundredBegin).matchAll(/Treasury100 explosion index=/g)].length,200);
+  assert.equal([...output.slice(hundredBegin).matchAll(/Treasury100 explosion index=/g)].length,300);
   pass('all hundred gates shoot in thirty rapid ticks then join one hundred-shot volley with a sand/dust blast and full cleanup');
   sceneDisplays.clear();sceneRemoved.clear();const hundredCancel=output.length;a._testLeftClick();
   await waitFor(()=>output.slice(hundredCancel).includes('Treasury100 fire index=0'),'hundred gate rapid before cancel',20000);
@@ -1323,9 +1368,9 @@ generate-structures=false
   await waitFor(()=>sceneRemoved.size===sceneDisplays.size,'Ea/beam/gates cleanup',15000);
   const enumaTrace=output.slice(enumaBegin),enumaEntries=summonTrace('TreasuryEnuma',enumaBegin);
   const enumaFires=[...enumaTrace.matchAll(/TreasuryEnuma fire index=(\d+) tick=(\d+)/g)].map(m=>[Number(m[1]),Number(m[2])]);
-  assert.deepEqual(enumaFires,[...Array.from({length:200},(_,i)=>[i,42+Math.floor(i*30/200)]),...Array.from({length:200},(_,i)=>[i,84])]);
-  assert.equal([...enumaTrace.matchAll(/TreasuryEnuma impact index=/g)].length,400);
-  assert.equal([...enumaTrace.matchAll(/TreasuryEnuma explosion index=/g)].length,400);
+  assert.deepEqual(enumaFires,[...Array.from({length:200},(_,i)=>[i,42+Math.floor(i*15/200)]),...Array.from({length:200},(_,i)=>[i,57+Math.floor(i*15/200)]),...Array.from({length:200},(_,i)=>[i,84])]);
+  assert.equal([...enumaTrace.matchAll(/TreasuryEnuma impact index=/g)].length,600);
+  assert.equal([...enumaTrace.matchAll(/TreasuryEnuma explosion index=/g)].length,600);
   for(const kind of ['bab_ilu','hand_vault','ea']) assert.ok(enumaEntries.some(e=>e.kind===kind));
   assert.equal(enumaEntries.filter(e=>e.kind.startsWith('beam')).length,16);
   assert.equal(enumaEntries.filter(e=>e.kind.startsWith('charge_ring')).length,2);

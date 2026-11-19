@@ -1,8 +1,8 @@
 package dev.aserver.motionrp.core;
 
-/** One rapid pass in thirty ticks, one full volley, then optional Ea. */
+/** Two rapid passes in thirty ticks, one full volley, then optional Ea. */
 public final class TreasuryTimeline {
-    public static final int OPEN=6,DRAW=34,RAPID=42,RAPID_TICKS=30,VOLLEY=84,FLIGHT=2;
+    public static final int OPEN=6,DRAW=34,RAPID=42,RAPID_TICKS=30,RAPID_PASSES=2,VOLLEY=84,FLIGHT=2;
     public static final int KEY=48,KEY_READY=76,BRANCH=76,CONVERGE=172,EA=208,EA_READY=232,STANCE=246,CHARGE=252,THRUST=320,FIRE=332,IMPACT=342,RECOVER=384,SERIOUS_END=420;
     public record Portal(double right,double forward,double height,double scale,boolean surroundsTarget) {}
     private TreasuryTimeline() {}
@@ -10,7 +10,9 @@ public final class TreasuryTimeline {
     public static int end(boolean serious) { return serious?SERIOUS_END:116; }
     private static void check(int index,boolean serious) { if(index<0 || index>=count(serious)) throw new IllegalArgumentException("Invalid treasury gate"); }
     public static int openAt(int index,boolean serious) { check(index,serious);return OPEN+index*20/count(serious); }
-    public static int rapidAt(int index,boolean serious) { check(index,serious);return RAPID+index*RAPID_TICKS/count(serious); }
+    public static int rapidAt(int index,boolean serious) { check(index,serious);return RAPID+index*(RAPID_TICKS/RAPID_PASSES)/count(serious); }
+    public static int rapidAt(int index,boolean serious,int pass){if(pass<0||pass>=RAPID_PASSES)throw new IllegalArgumentException("pass");return rapidAt(index,serious)+pass*(RAPID_TICKS/RAPID_PASSES);}
+    public static boolean rapidFireAt(int index,boolean serious,int tick){for(int pass=0;pass<RAPID_PASSES;pass++)if(tick==rapidAt(index,serious,pass))return true;return false;}
     public static Portal portal(int index,boolean serious) {
         check(index,serious);int i=index%100;double angle=i*Math.PI*(3-Math.sqrt(5));
         if(index<100) {

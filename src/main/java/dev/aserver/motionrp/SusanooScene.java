@@ -1,6 +1,7 @@
 package dev.aserver.motionrp;
 
 import dev.aserver.motionrp.core.SusanooTimeline;
+import dev.aserver.motionrp.core.SusanooPilotPath;
 import kr.toxicity.model.api.animation.AnimationModifier;
 import kr.toxicity.model.api.bukkit.platform.BukkitAdapter;
 import kr.toxicity.model.api.tracker.*;
@@ -34,8 +35,9 @@ final class SusanooScene extends SummonScene {
             armor.scaler(ModelScaler.value(scale));
         }
         if(tick==ARMOR+44) { audience.hide(ribs);ribs=null;trace("complete armor and wings formed tick="+tick);
-            if(!pilot.moveTo(at(0,4.65,51.75),origin)) {plugin.playback().stop(owner.getUniqueId());return;}
+            var seat=SusanooPilotPath.at(tick);if(!pilot.moveTo(at(seat.right(),seat.forward(),seat.height()),origin)) {plugin.playback().stop(owner.getUniqueId());return;}
             trace("pilot seated scale="+SCALE+" y="+owner.getY()); }
+        if(tick>ARMOR+44 && tick<FADE){var seat=SusanooPilotPath.at(tick);Location target=at(seat.right(),seat.forward(),seat.height());target.setYaw(owner.getYaw());target.setPitch(owner.getPitch());if(!pilot.moveTo(target,origin)){plugin.playback().stop(owner.getUniqueId());return;}}
         if(tick==FADE) {pilot.close();trace("pilot returned before fade tick="+tick);}
         if(tick==READY) armor.animate("slash",AnimationModifier.DEFAULT_WITH_PLAY_ONCE);
         if(tick==SLASH || tick==RIGHT_SLASH) {
