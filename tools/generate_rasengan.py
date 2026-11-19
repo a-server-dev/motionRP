@@ -121,7 +121,7 @@ def png_palette():
     return b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('!2I5B',4,4,8,6,0,0,0))+chunk(b'IDAT',zlib.compress(raw))+chunk(b'IEND',b'')
 
 
-def hand_path(model, duration=96):
+def hand_path(model, duration=96, wrist_name="pri_right_item"):
     """Bake the palm attachment from the same hierarchy as the body animation."""
     groups = {g['uuid']: g for g in model['groups']}
     parents = {}
@@ -132,7 +132,7 @@ def hand_path(model, duration=96):
                 visit(node['children'], node['uuid'])
     visit(model['outliner'])
     tracks = model['animations'][0]['animators']
-    wrist = next(g['uuid'] for g in model['groups'] if g['name'] == 'pri_right_item')
+    wrist = next(g['uuid'] for g in model['groups'] if g['name'] == wrist_name)
     def sample(bone, channel, time):
         keys = [k for k in tracks.get(bone, {}).get('keyframes', []) if k['channel'] == channel]
         if not keys: return [0, 0, 0]

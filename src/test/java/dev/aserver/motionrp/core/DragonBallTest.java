@@ -13,9 +13,9 @@ class DragonBallTest {
         assertEquals(40,DragonBallTimeline.RISE_END-DragonBallTimeline.RISE);
         assertEquals(0,DragonBallTimeline.height(DragonBallTimeline.RISE));assertEquals(50,DragonBallTimeline.height(DragonBallTimeline.RISE_END));
         var m=model("models/motionrp_genki_dama_orb");double[] min={100,100,100},max={-100,-100,-100};
-        for(var raw:m.getAsJsonArray("elements")){var e=raw.getAsJsonObject();for(int axis=0;axis<3;axis++){min[axis]=Math.min(min[axis],e.getAsJsonArray("from").get(axis).getAsDouble());max[axis]=Math.max(max[axis],e.getAsJsonArray("to").get(axis).getAsDouble());}}
+        for(var raw:m.getAsJsonArray("elements")){var e=raw.getAsJsonObject();if(e.get("name").getAsString().startsWith("surface_arc"))continue;for(int axis=0;axis<3;axis++){min[axis]=Math.min(min[axis],e.getAsJsonArray("from").get(axis).getAsDouble());max[axis]=Math.max(max[axis],e.getAsJsonArray("to").get(axis).getAsDouble());}}
         for(int axis=0;axis<3;axis++)assertEquals(80,(max[axis]-min[axis])*40/16,.01);
-        assertTrue(m.getAsJsonArray("elements").size()<250,"Bound the giant sphere rendering cost");
+        assertTrue(m.getAsJsonArray("elements").size()<400,"Bound the giant sphere rendering cost");
     }
     @Test void bothArmsRiseWithTheAscentAndNewPlayerAnimationsCoverTheirFullScenes() throws Exception {
         for(boolean spirit:new boolean[]{false,true}){

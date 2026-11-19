@@ -60,6 +60,7 @@ final class NobleScene extends SummonScene {
         }
         if(tick>=NobleTimeline.release(gold) && tick<NobleTimeline.fade(gold)) {
             double progress=Math.clamp((tick-NobleTimeline.release(gold))/(double)(NobleTimeline.impact(gold)-NobleTimeline.release(gold)),0,1);
+            EnergyVisuals.stream(audience.players(),start,focus,tick,true);
             Vector line=focus.toVector().subtract(start.toVector());int visible=(int)Math.ceil(beam.length*progress);
             for(int i=0;i<visible;i++) {
                 Location at=start.clone().add(line.clone().multiply((i+.5)/beam.length));at.setDirection(line);
@@ -72,12 +73,13 @@ final class NobleScene extends SummonScene {
         }
         if(tick==NobleTimeline.impact(gold)) {
             flash(focus);trace("impact reach="+String.format(Locale.ROOT,"%.2f",focus.distance(origin)));
-            if(gold) {pillar=model(SummonAssets.EXCALIBUR_PILLAR,focus,20,"light_pillar");pillar.update(TrackerUpdateAction.viewRange(4));}
+            if(gold) {pillar=model(SummonAssets.EXCALIBUR_PILLAR,focus,20,"light_pillar");pillar.update(TrackerUpdateAction.viewRange(4));loop(pillar,"surge");}
             if(!gold) thorns=model(SummonAssets.GAE_THORNS,focus,2,"heart_thorns");
             particle(focus,Particle.EXPLOSION_EMITTER,gold?5:1,gold?3:.2,0);particle(focus,Particle.DUST_PLUME,gold?60:12,gold?4:1,.06);
             particle(focus,Particle.CLOUD,gold?90:15,gold?4:1,.08);dust(focus,energy,gold?80:40,gold?3:.7);
             sound(focus,Sound.ENTITY_GENERIC_EXPLODE,gold?2.5f:1.1f,gold?.5f:1.4f);
         }
+        if(pillar!=null)EnergyVisuals.stream(audience.players(),focus,focus.clone().add(0,30,0),tick,true);
         if(thorns!=null) thorns.scaler(ModelScaler.value((float)(2+.25*Math.sin(tick*.6))));
         if(tick==NobleTimeline.fade(gold)) {
             for(int i=0;i<beam.length;i++) {audience.hide(beam[i]);beam[i]=null;}

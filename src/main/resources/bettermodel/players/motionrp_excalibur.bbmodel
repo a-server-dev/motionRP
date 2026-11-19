@@ -2949,10 +2949,10 @@
             },
             {
               "channel": "rotation",
-              "time": 4.75,
+              "time": 4.625,
               "interpolation": "linear",
               "color": -1,
-              "uuid": "7dec403b-e703-539a-952f-29d4a92c3ccd",
+              "uuid": "9ee1fb69-6754-506d-9e19-5748dccc6002",
               "data_points": [
                 {
                   "x": "72.89",
@@ -3068,10 +3068,10 @@
             },
             {
               "channel": "rotation",
-              "time": 4.75,
+              "time": 4.625,
               "interpolation": "linear",
               "color": -1,
-              "uuid": "e70b37f4-797e-5d21-af96-b0d3fd326741",
+              "uuid": "c9c3274c-f56b-51f8-a877-3bbd667e7e50",
               "data_points": [
                 {
                   "x": "13.33",
@@ -3187,10 +3187,10 @@
             },
             {
               "channel": "rotation",
-              "time": 4.75,
+              "time": 4.625,
               "interpolation": "linear",
               "color": -1,
-              "uuid": "f947d39c-d552-54b9-8bd0-d6b8144d1348",
+              "uuid": "4fedb633-8acb-5820-8abe-63cb48025cce",
               "data_points": [
                 {
                   "x": "71.94",
@@ -3306,10 +3306,10 @@
             },
             {
               "channel": "rotation",
-              "time": 4.75,
+              "time": 4.625,
               "interpolation": "linear",
               "color": -1,
-              "uuid": "a1a3b419-022d-5bdc-834d-5bfbc2c8af40",
+              "uuid": "f167e5da-441f-5041-8523-54f17992885d",
               "data_points": [
                 {
                   "x": "0",
@@ -3383,10 +3383,10 @@
             },
             {
               "channel": "rotation",
-              "time": 4.75,
+              "time": 4.625,
               "interpolation": "linear",
               "color": -1,
-              "uuid": "bb0c7023-7aee-5d66-8241-906c532f90fc",
+              "uuid": "15b87c23-cac9-59ef-ad3b-d3846779f8ab",
               "data_points": [
                 {
                   "x": "-3",

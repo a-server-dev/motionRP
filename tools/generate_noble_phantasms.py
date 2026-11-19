@@ -49,36 +49,21 @@ def weapon(excalibur):
         m.group('lance_upper',upper,origin=(0,21,0));m.group('lance_lower',lower,origin=(0,-12,0))
     children=m.data['outliner'][:];g=m.group('noble_socket',[]);m.data['outliner']=[dict(uuid=g['uuid'],children=children)]
     a=animation('release' if excalibur else 'throw_sequence',9,{})
-    keys=[(0,(0,0,0)),(3.9,(0,0,0)),(4.15,(-95,0,0)),(9,(-95,0,0))] if excalibur else [(0,(-85,0,0)),(1.3,(-85,0,0)),(2.1,(-50,0,0)),(2.3,(-90,0,0)),(3.9,(-90,0,0)),(4.2,(-55,0,0)),(9,(-55,0,0))]
+    keys=[(0,(0,0,0)),(3.9,(0,0,0)),(4.025,(-95,0,0)),(9,(-95,0,0))] if excalibur else [(0,(-85,0,0)),(1.3,(-85,0,0)),(2.1,(-50,0,0)),(2.3,(-90,0,0)),(3.9,(-90,0,0)),(4.2,(-55,0,0)),(9,(-55,0,0))]
     a['animators'][g['uuid']]=animator(g,keys);m.data['animations']=[a];m.save()
 
 def effects(excalibur):
-    colors=GOLD if excalibur else RED;m=Model('motionrp_excalibur_light' if excalibur else 'motionrp_gae_bolg_trail',colors=colors);parts=[]
-    parts.append(m.cube('brilliant_core',[0,0,0],[7,7,20],7))
-    for side in [-1,1]:
-        parts.append(m.cube('gold_light_shell_x_'+str(side),[side*4,0,0],[1.2,8,20],1))
-        parts.append(m.cube('gold_light_shell_y_'+str(side),[0,side*4,0],[8,1.2,20],6))
-    g=m.group('noble_energy',parts);a=animation('flow',.6,{})
-    a['loop']='loop';a['animators'][g['uuid']]=animator(g,[(0,(0,0,0)),(.6,(0,0,0))]);m.data['animations']=[a];m.save()
     if excalibur:
-        p=Model('motionrp_excalibur_pillar',colors=GOLD)
-        ids=[p.cube('white_light_column',[0,12,0],[5,24,5],7),p.cube('gold_light_column',[0,12,0],[7,24,2],1),p.cube('gold_light_cross',[0,12,0],[2,24,7],6)]
-        p.group('light_column',ids,origin=(0,12,0));p.save()
-    if not excalibur:
-        m=Model('motionrp_gae_bolg_thorns',colors=RED);parts=[]
-        for branch in range(12):
-            a=branch*math.tau/12
-            for j in range(5):
-                r=4+j*.8;parts.append(m.cube(f'crimson_thorn_{branch}_{j}',[r*math.cos(a),-4+j*2,r*math.sin(a)],[1.0,2.8,1.0],4 if j<3 else 3,[0,0,22.5 if branch%2 else -22.5]))
-        m.group('heart_thorns',parts);m.save()
+        from generate_energy import beam,pillar,GOLD_LIGHT
+        beam('motionrp_excalibur_light',GOLD_LIGHT);pillar()
 
 def actors(rig):
     poses={
-      'pra_right_arm':[(0,(0,0,0)),(.6,(-68.59,32.18,.1)),(1.6,(-68.59,32.18,.1)),(3.2,(-145.22,51.5,20.46)),(4.5,(-145.22,51.5,20.46)),(4.75,(-72.89,26.58,.14)),(7.4,(-72.89,26.58,.14)),(8.8,(0,0,0))],
-      'prfa_right_forearm':[(0,(0,0,0)),(.6,(-66.97,0,0)),(1.6,(-66.97,0,0)),(3.2,(-50.38,0,0)),(4.5,(-50.38,0,0)),(4.75,(-13.33,0,0)),(7.4,(-13.33,0,0)),(8.8,(0,0,0))],
-      'pla_left_arm':[(0,(0,0,0)),(.6,(-55.87,-32.89,-.03)),(1.6,(-55.87,-32.89,-.03)),(3.2,(-114.69,-79.82,-4.43)),(4.5,(-114.69,-79.82,-4.43)),(4.75,(-71.94,-27.13,-.21)),(7.4,(-71.94,-27.13,-.21)),(8.8,(0,0,0))],
-      'plfa_left_forearm':[(0,(0,0,0)),(.6,(-73.77,0,0)),(1.6,(-73.77,0,0)),(3.2,(-76.78,0,0)),(4.5,(-76.78,0,0)),(4.75,(0,0,0)),(8.8,(0,0,0))],
-      'h_ph_head':[(0,(0,0,0)),(3.2,(-10,0,0)),(4.5,(-10,0,0)),(4.75,(3,0,0)),(8.8,(0,0,0))]}
+      'pra_right_arm':[(0,(0,0,0)),(.6,(-68.59,32.18,.1)),(1.6,(-68.59,32.18,.1)),(3.2,(-145.22,51.5,20.46)),(4.5,(-145.22,51.5,20.46)),(4.625,(-72.89,26.58,.14)),(7.4,(-72.89,26.58,.14)),(8.8,(0,0,0))],
+      'prfa_right_forearm':[(0,(0,0,0)),(.6,(-66.97,0,0)),(1.6,(-66.97,0,0)),(3.2,(-50.38,0,0)),(4.5,(-50.38,0,0)),(4.625,(-13.33,0,0)),(7.4,(-13.33,0,0)),(8.8,(0,0,0))],
+      'pla_left_arm':[(0,(0,0,0)),(.6,(-55.87,-32.89,-.03)),(1.6,(-55.87,-32.89,-.03)),(3.2,(-114.69,-79.82,-4.43)),(4.5,(-114.69,-79.82,-4.43)),(4.625,(-71.94,-27.13,-.21)),(7.4,(-71.94,-27.13,-.21)),(8.8,(0,0,0))],
+      'plfa_left_forearm':[(0,(0,0,0)),(.6,(-73.77,0,0)),(1.6,(-73.77,0,0)),(3.2,(-76.78,0,0)),(4.5,(-76.78,0,0)),(4.625,(0,0,0)),(8.8,(0,0,0))],
+      'h_ph_head':[(0,(0,0,0)),(3.2,(-10,0,0)),(4.5,(-10,0,0)),(4.625,(3,0,0)),(8.8,(0,0,0))]}
     m=player(rig,'excalibur',8.8,poses);(ROOT/'excalibur-hand-path.csv').write_text(hand_path(m,176))
     poses={
       'pra_right_arm':[(0,(0,0,0)),(.6,(20,0,15)),(1.2,(40,-5,15)),(1.7,(40,-5,15)),(2.5,(-150,-10,0)),(2.7,(-65,0,5)),(3.1,(-85,0,5)),(4.3,(-65,0,5)),(5,(-65,0,5)),(5.8,(0,0,0))],

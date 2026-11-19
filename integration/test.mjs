@@ -149,13 +149,30 @@ if(process.env.MOTIONRP_NOBLE_ONLY==='1') {
     for(const file of ['motionrp_excalibur_pillar','motionrp_susanoo_slash','motionrp_kamehameha_orb','motionrp_kamehameha_beam','motionrp_genki_dama_orb','motionrp_excalibur_blade','motionrp_excalibur_light','motionrp_gae_bolg_spear','motionrp_gae_bolg_trail','motionrp_gae_bolg_thorns','motionrp_susanoo_armor','motionrp_zangetsu_cleaver'])
       fs.copyFileSync(path.join(project,'src/main/resources/bettermodel/models',file+'.bbmodel'),path.join(run,'plugins/BetterModel/models',file+'.bbmodel'));
     for(const id of ['excalibur','gae_bolg','kamehameha','genki_dama'])fs.copyFileSync(path.join(project,'src/main/resources/bettermodel/players','motionrp_'+id+'.bbmodel'),path.join(run,'plugins/BetterModel/players','motionrp_'+id+'.bbmodel'));
+    const energyUpgrade=[];
+    if(process.env.MOTIONRP_VERIFY_ENERGY_UPGRADE==='1')for(const file of fs.readdirSync(path.join(project,'src/test/resources/bundled-0.14.0'))){
+      const relative=file.replace(/^(models|players)_/,'$1/').replace(/\.gz$/,'');
+      const previous=gunzipSync(fs.readFileSync(path.join(project,'src/test/resources/bundled-0.14.0',file)));
+      fs.writeFileSync(path.join(run,'plugins/BetterModel',relative),previous);energyUpgrade.push([relative,previous]);
+    }
     log=fs.createWriteStream(path.join(project,'build/noble-smoke.log'));await startServer();
+    for(const [relative,previous] of energyUpgrade){
+      assert.deepEqual(fs.readFileSync(path.join(run,'plugins/BetterModel',relative)),fs.readFileSync(path.join(project,'src/main/resources/bettermodel',relative)));
+      const hash=createHash('sha256').update(previous).digest('hex');
+      assert.deepEqual(fs.readFileSync(path.join(run,'plugins/MotionRP/model-backups',path.basename(relative)+'.'+hash+'.bak')),previous);
+    }
+    if(energyUpgrade.length)pass('all nine untouched 0.14 energy assets migrate with exact backups');
+
     const a=await connect('MotionTesterA'),b=await connect('MotionTesterB');
+    // Previous smoke throws advance the player. Reset both viewers for repeatable range checks.
+    consoleCommand('tp MotionTesterA 0 -60 0 0 0');consoleCommand('tp MotionTesterB 5 -60 0 0 0');
+    await waitFor(()=>Math.abs(a.entity.position.z-.5)<.01 && Math.abs(b.entity.position.z-.5)<.01 && Math.abs(a.entity.position.y+60)<.01,'repeatable smoke origins');
     const items={owner:new Map(),observer:new Map()},removed={owner:new Set(),observer:new Set()},spawned={owner:new Set(),observer:new Set()};
     const itemIndex=b.registry.entitiesByName.item_display.metadataKeys.indexOf('item_stack');
+    const scales={owner:new Map(),observer:new Map()};const scaleIndex=b.registry.entitiesByName.item_display.metadataKeys.indexOf('scale');
     for(const [bot,role] of [[a,'owner'],[b,'observer']]) {
       bot._client.on('spawn_entity',p=>{if(p.type===b.registry.entitiesByName.item_display.id)spawned[role].add(p.entityId);});
-      bot._client.on('entity_metadata',p=>{for(const e of p.metadata)if(e.key===itemIndex)items[role].set(p.entityId,e.value);});
+      bot._client.on('entity_metadata',p=>{for(const e of p.metadata){if(e.key===itemIndex)items[role].set(p.entityId,e.value);if(e.key===scaleIndex)scales[role].set(p.entityId,e.value);}});
       bot._client.on('entity_destroy',p=>p.entityIds.forEach(id=>removed[role].add(id)));
     }
     await a.equip(a.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');
@@ -173,14 +190,23 @@ if(process.env.MOTIONRP_NOBLE_ONLY==='1') {
       assert.deepEqual([a.health,b.health],health);pass(prefix+' final model reload, release, both-client display and cleanup');
     }
     for(const [slot,id,prefix] of [[11,'kamehameha','Kamehameha'],[12,'genki_dama','GenkiDama']]) {
-      consoleCommand('clear MotionTesterA minecraft:paper');await waitFor(()=>tokens(a)===0,'clear spare tokens');
-      consoleCommand(`motionrp give motion ${id} 1 MotionTesterA`);await waitFor(()=>tokens(a)===1,'Dragon Ball token');
-      await menu(a);await deposit(a);await closeMenu(a);
+      await menu(a);const registeredAlready=a.currentWindow.slots[slot]?.name==='paper';await closeMenu(a);
+      if(!registeredAlready){
+        consoleCommand('clear MotionTesterA minecraft:paper');await waitFor(()=>tokens(a)===0,'clear spare tokens');
+        consoleCommand(`motionrp give motion ${id} 1 MotionTesterA`);await waitFor(()=>tokens(a)===1,'Dragon Ball token');
+        await menu(a);await deposit(a);await closeMenu(a);
+      }
       a.setControlState('sneak',true);await sleep(300);
       for(let i=0;(await readSaved('MotionTesterA')).loadout[6]!==slot && i<18;i++){a._testLeftClick();await sleep(300);}
       a.setControlState('sneak',false);await sleep(300);const base=a.entity.position.clone(),begin=output.length,dragonHealth=[a.health,b.health];
       for(const role of ['owner','observer'])spawned[role].clear();a._testLeftClick();
-      if(id==='genki_dama') {await waitFor(()=>output.slice(begin).includes('rise complete height=50.0 ticks=40 diameter=80'),'Spirit Bomb 50-block ascent');await waitFor(()=>Math.abs(a.entity.position.y-base.y-50)<.1,'client follows full ascent');}
+      if(id==='genki_dama') {await waitFor(()=>output.slice(begin).includes('rise complete height=50.0 ticks=40 diameter=80'),'Spirit Bomb 50-block ascent');await waitFor(()=>Math.abs(a.entity.position.y-base.y-50)<.1,'client follows full ascent');
+        await waitFor(()=>output.slice(begin).includes('sphere ready diameter=80 bottom tracks raised palms'),'full sphere at raised palms');
+        const match=output.slice(begin).match(/GenkiDama displays charge_orb ids=([0-9,]+)/);assert.ok(match);const core=Number(match[1].split(',')[0]);
+        const span=Number(execFileSync('python3',['-c',`import zipfile,json,sys
+z=zipfile.ZipFile(sys.argv[1]);f=next(n for n in z.namelist() if n.endswith('/motionrp_genki_dama_orb_energy_sphere.json') and '/items/' in n);ns,p=json.loads(z.read(f))['model']['model'].split(':');m=json.loads(z.read('assets/'+ns+'/models/'+p+'.json'));print(max(e['to'][0] for e in m['elements'])-min(e['from'][0] for e in m['elements']))`,path.join(run,'plugins/BetterModel/build.zip')],{encoding:'utf8'}));
+        await waitFor(()=>['owner','observer'].every(role=>Math.abs((scales[role].get(core)?.x||0)*span/16-80)<.05),'both clients receive an actual 80-block sphere');
+}
       await waitFor(()=>output.slice(begin).includes(prefix+' phase: FADE'),prefix+' complete',20000);
       assert.ok(a.entity.position.distanceTo(base)<.01);
       const entries=[...output.slice(begin).matchAll(new RegExp(prefix+' displays (\\w+) ids=([0-9,]+)','g'))].map(m=>({kind:m[1],ids:m[2].split(',').map(Number)}));
@@ -199,7 +225,7 @@ if(process.env.MOTIONRP_NOBLE_ONLY==='1') {
     await waitFor(()=>output.slice(seatBegin).includes('Susanoo phase: FADE'),'final neck return',20000);assert.ok(a.entity.position.distanceTo(seatOrigin)<.01);
     await waitFor(()=>['owner','observer'].every(role=>[...spawned[role]].every(id=>removed[role].has(id))),'final full giant cleanup');
     pass('Final complete Susanoo model reload, scale-ten neck seat and grounded return');
-    assert.ok(!/Excalibur scene failed|GaeBolg scene failed/.test(output));
+    assert.ok(!/Excalibur scene failed|GaeBolg scene failed|Kamehameha scene failed|GenkiDama scene failed|Susanoo scene failed/.test(output));
     fs.writeFileSync(path.join(project,'build/noble-smoke-result.json'),JSON.stringify({passed:checks.length,checks},null,2));
   } catch(e) {console.error(e.stack);code=1;}
   finally {for(const bot of bots)bot.quit();await stopServer();if(log)log.end();}
