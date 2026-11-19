@@ -330,12 +330,14 @@ class RasenganAssetsTest {
                     }
                 }
                 var forward=posedOrigin(names.get("pri_right_item"),1.4,a,groups,parents);var back=posedOrigin(names.get("pri_right_item"),2.2,a,groups,parents);
-                assertTrue(forward[2]<-7 && back[2]>7,"Windmill must pass through front and back");
+                assertTrue(forward[2]>7 && back[2]<-7,"Windmill must pass through front and back");
                 var up=posedOrigin(names.get("pri_right_item"),1.8,a,groups,parents);var down=posedOrigin(names.get("pri_right_item"),2.6,a,groups,parents);
                 assertTrue(up[1]>down[1]+15,"Windmill must make a full shoulder circle");
                 var finish=posedOrigin(names.get("pri_right_item"),6.4,a,groups,parents);
                 assertTrue(finish[1]>24,"Kazu final pointing pose missing");
                 assertArrayEquals(finish,posedOrigin(names.get("pri_right_item"),7.9,a,groups,parents),.001,"Kazu final pose must visibly hold");
+                var groin=posedOrigin(names.get("phip_hip"),7,a,groups,parents);var left=posedOrigin(names.get("pli_left_item"),7,a,groups,parents);
+                assertTrue(Math.abs(left[0]-groin[0])<1 && left[1]>groin[1]+.4 && left[1]<groin[1]+2 && left[2]<groin[2]-2,"Kazu finish left hand must rest in front of the groin");
             }
             if(p==Performance.DESTASHA){
                 var forward=posedOrigin(names.get("pri_right_item"),.9,a,groups,parents);var down=posedOrigin(names.get("pri_right_item"),1.5,a,groups,parents);
@@ -357,15 +359,18 @@ class RasenganAssetsTest {
         double lowest=0;
         for(var element:shield.getAsJsonArray("elements"))if(element.getAsJsonObject().has("vertices"))for(var entry:element.getAsJsonObject().getAsJsonObject("vertices").entrySet())lowest=Math.min(lowest,entry.getValue().getAsJsonArray().get(1).getAsDouble());
         assertTrue(2.2+lowest*1.89/16>0,"The largest shield must not bury its lower petals in the floor");
+        double front=0,back=-100;
+        for(var element:shield.getAsJsonArray("elements"))if(element.getAsJsonObject().has("vertices"))for(var vertex:element.getAsJsonObject().getAsJsonObject("vertices").entrySet()){double z=vertex.getValue().getAsJsonArray().get(2).getAsDouble();front=Math.min(front,z);back=Math.max(back,z);}
+        assertTrue(back-front>8,"Rho Aias petals need a rounded dome, not a flat plane");
         var crescent=read("models/motionrp_getsuga_crescent.bbmodel");assertEquals(3,crescent.getAsJsonArray("elements").size());
         for(var raw:crescent.getAsJsonArray("elements")){
             var e=raw.getAsJsonObject();assertEquals("mesh",e.get("type").getAsString());
-            double min=100,max=-100;for(var vertex:e.getAsJsonObject("vertices").entrySet()){double y=vertex.getValue().getAsJsonArray().get(1).getAsDouble();min=Math.min(min,y);max=Math.max(max,y);}
+            double min=100,max=-100;for(var vertex:e.getAsJsonObject("vertices").entrySet()){var xyz=vertex.getValue().getAsJsonArray();double y=xyz.get(0).getAsDouble()*Math.sin(Math.toRadians(35))+xyz.get(1).getAsDouble()*Math.cos(Math.toRadians(35));min=Math.min(min,y);max=Math.max(max,y);}
             assertTrue(max-min>34,"Crescent must be tall and curved");assertTrue(e.getAsJsonObject("faces").size()>100);
         }
         var weapon=read("models/motionrp_getsuga_tensa.bbmodel");var clip=weapon.getAsJsonArray("animations").get(0).getAsJsonObject();
         String socket=weapon.getAsJsonArray("groups").asList().stream().map(JsonElement::getAsJsonObject).filter(g->g.get("name").getAsString().equals("sword_socket")).findFirst().orElseThrow().get("uuid").getAsString();
-        assertEquals(-125,sample(clip,socket,"rotation",(BarrierSlashTimeline.GETSUGA_RELEASE-8)/20.0)[0],.001,"Weapon cut must finish on the crescent release tick");
+        assertEquals(-125,sample(clip,socket,"rotation",(BarrierSlashTimeline.GETSUGA_RELEASE-8)/20.0)[0],.001,"Weapon cut must finish on the crescent release tick");assertEquals(-45,sample(clip,socket,"rotation",(BarrierSlashTimeline.GETSUGA_RELEASE-8)/20.0)[2],.001,"Cut must be diagonal");
         var names=weapon.getAsJsonArray("elements").asList().stream().map(e->e.getAsJsonObject().get("name").getAsString()).toList();
         var grip=weapon.getAsJsonArray("elements").asList().stream().map(JsonElement::getAsJsonObject).filter(e->e.get("name").getAsString().equals("black_wrapped_hilt")).findFirst().orElseThrow();
         assertEquals(0,(grip.getAsJsonArray("from").get(1).getAsDouble()+grip.getAsJsonArray("to").get(1).getAsDouble())/2,.001,"Hold Tensa by the grip rather than the guard");
@@ -379,6 +384,11 @@ class RasenganAssetsTest {
             for(int tick=0;tick<end;tick++){
                 var expected=posedOrigin(names.get(shield?"pli_left_item":"pri_right_item"),tick/20.0,a,groups,parents);var hand=BarrierHandPath.at(shield,tick);
                 assertEquals(expected[0]/16,hand.right(),.000001);assertEquals(-expected[2]/16+.05,hand.forward(),.000001);assertEquals(expected[1]/16+.03,hand.height(),.000001);
+                if(!shield && tick>=28 && tick<=106){
+                    var l=posedOrigin(names.get("pli_left_item"),tick/20.0,a,groups,parents);var r=posedOrigin(names.get("pri_right_item"),tick/20.0,a,groups,parents);double gap=0;for(int k=0;k<3;k++)gap+=(r[k]-l[k])*(r[k]-l[k]);assertEquals(3.5,Math.sqrt(gap),.003,"Both palms must remain on the same sword hilt through the diagonal cut");
+                    var grip=GetsugaBladePath.at(tick).grip();assertEquals((r[0]+l[0])/32,grip.right(),.0001);assertEquals(-(r[2]+l[2])/32+.05,grip.forward(),.0001);assertEquals((r[1]+l[1])/32+.03,grip.height(),.0001);
+                    if(tick<=50){var head=posedOrigin(names.get("h_ph_head"),tick/20.0,a,groups,parents);assertTrue(r[1]>head[1]+6 && l[1]>head[1]+4,"Hold both hands overhead before releasing Getsuga");}
+                }
                 for(boolean right:new boolean[]{true,false}){
                     var foot=posedPoint(names.get(right?"prfl_right_foreleg":"plfl_left_foreleg"),new double[]{right?1.875:-1.875,0,0},tick/20.0,a,groups,parents);assertEquals(0,foot[1],.001,"New motion feet detached from ground");
                 }

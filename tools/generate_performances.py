@@ -63,14 +63,14 @@ def generate(rig):
     poses={b:[(0,(0,0,0))] for b in ['pra_right_arm','pla_left_arm','prfa_right_forearm','plfa_left_forearm','pw_waist','pc_chest','h_ph_head']}
     for t in range(20,117,4):
         phase=(t-20)*360/32;beat=math.sin((t-20)*math.tau/16)
-        poses['pra_right_arm'].append((t,(-phase,0,25*math.cos(math.radians(phase)))))
-        poses['pla_left_arm'].append((t,(-phase-180,0,-25*math.cos(math.radians(phase+180)))))
+        poses['pra_right_arm'].append((t,(phase,0,25*math.cos(math.radians(phase)))))
+        poses['pla_left_arm'].append((t,(phase+180,0,-25*math.cos(math.radians(phase+180)))))
         for bone in ['prfa_right_forearm','plfa_left_forearm']:poses[bone].append((t,(-12,0,0)))
         poses['pw_waist'].append((t,(-6,beat*20,beat*5)))
         poses['pc_chest'].append((t,(0,-beat*8,0)));poses['h_ph_head'].append((t,(-6,-beat*8,0)))
-    finish={'pra_right_arm':(-1230,0,-30),'pla_left_arm':(-1460,0,-75),'prfa_right_forearm':(-5,0,0),'plfa_left_forearm':(-10,0,0),'pw_waist':(-8,-15,0),'pc_chest':(0,0,0),'h_ph_head':(-12,15,0)}
+    finish={'pra_right_arm':(1290,0,-30),'pla_left_arm':(1430,0,25),'prfa_right_forearm':(-5,0,0),'plfa_left_forearm':(-10,0,0),'pw_waist':(-8,-15,0),'pc_chest':(0,0,0),'h_ph_head':(-12,15,0)}
     for bone,keys in poses.items():
-        keys.extend([(128,finish[bone]),(160,finish[bone]),(180,(-1080,0,0) if bone=='pra_right_arm' else (-1440,0,0) if bone=='pla_left_arm' else (0,0,0))])
+        keys.extend([(128,finish[bone]),(160,finish[bone]),(180,(1440,0,0) if bone=='pra_right_arm' else (1440,0,0) if bone=='pla_left_arm' else (0,0,0))])
     make('kazu',180,poses,[(0,(0,0,0,0,0)),(180,(0,0,0,0,0))])
     a=m['animations'][-1];tracks=a['animators'];rkeys=[];lkeys=[];rk=[];lk=[];roots=[]
     for tick in range(181):

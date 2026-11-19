@@ -256,8 +256,13 @@ if(process.env.MOTIONRP_BARRIER_ONLY==='1'){
   let code=0;
   try{
     fs.copyFileSync(path.join(project,`build/libs/motionRP-${version}.jar`),path.join(run,'plugins/MotionRP.jar'));
-    for(const file of ['models/motionrp_rho_aias_shield.bbmodel','models/motionrp_getsuga_crescent.bbmodel','models/motionrp_getsuga_tensa.bbmodel','players/motionrp_rho_aias.bbmodel','players/motionrp_getsuga_tensho.bbmodel'])fs.rmSync(path.join(run,'plugins/BetterModel',file),{force:true});
+    const previous=[];
+    for(const file of ['models/motionrp_rho_aias_shield.bbmodel','models/motionrp_getsuga_crescent.bbmodel','models/motionrp_getsuga_tensa.bbmodel','players/motionrp_rho_aias.bbmodel','players/motionrp_getsuga_tensho.bbmodel']){
+      const old=path.join(project,'src/test/resources/bundled-0.17.0',file.replace('/','_')+'.gz');
+      if(fs.existsSync(old)){const bytes=gunzipSync(fs.readFileSync(old));fs.writeFileSync(path.join(run,'plugins/BetterModel',file),bytes);previous.push([file,bytes]);}else fs.rmSync(path.join(run,'plugins/BetterModel',file),{force:true});
+    }
     log=fs.createWriteStream(path.join(project,'build/barrier-smoke.log'));await startServer();
+    for(const [file,bytes]of previous){assert.deepEqual(fs.readFileSync(path.join(run,'plugins/BetterModel',file)),fs.readFileSync(path.join(project,'src/main/resources/bettermodel',file)));const hash=createHash('sha256').update(bytes).digest('hex');assert.deepEqual(fs.readFileSync(path.join(run,'plugins/MotionRP/model-backups',path.basename(file)+'.'+hash+'.bak')),bytes);}pass('0.17.0 shield, katana, crescent and two-handed player assets migrate with exact backups');
     const suffix=String(Date.now()).slice(-6),an='ArtsA'+suffix,bn='ArtsB'+suffix;
     const a=await connect(an),b=await connect(bn);consoleCommand(`tp ${an} 0 -60 0 0 0`);consoleCommand(`tp ${bn} 5 -60 0 0 0`);await sleep(400);
     const spawned=[new Set(),new Set()],removed=[new Set(),new Set()],items=[new Map(),new Map()],particles=[0,0];
@@ -287,10 +292,10 @@ if(process.env.MOTIONRP_BARRIER_ONLY==='1'){
     for(const s of spawned)s.clear();begin=output.length;a._testLeftClick();await waitFor(()=>output.slice(begin).includes('RhoAias phase: HOLD'),'shield cancellation hold');a._testLeftClick();await waitFor(cleanup,'cancel shield cleanup');await sleep(400);const cancelParticles=particles[0];await sleep(650);assert.equal(particles[0],cancelParticles);pass('cancelling Rho Aias destroys every layer and stops future particles');
     a.setControlState('sneak',true);await sleep(250);a._testLeftClick();await sleep(250);a.setControlState('sneak',false);await sleep(250);
     for(const s of spawned)s.clear();begin=output.length;a._testLeftClick();await waitFor(()=>output.slice(begin).includes('GetsugaTensho phase: FADE'),'complete Bankai crescent');
-    const slash=entries('GetsugaTensho',begin);assert.deepEqual(slash.map(e=>e.kind),['tensa_zangetsu','crescent']);await waitFor(()=>visible(slash),'katana and curved slash reach both clients');await waitFor(cleanup,'Getsuga cleanup');
+    const slash=entries('GetsugaTensho',begin);assert.deepEqual(slash.map(e=>e.kind),['tensa_zangetsu','crescent','crescent_trail0','crescent_trail1']);assert.ok(output.slice(begin).includes('two-handed overhead charge; blade aura=45 foot aura=3'));await waitFor(()=>visible(slash),'katana and curved slash reach both clients');await waitFor(cleanup,'Getsuga cleanup');
     assert.ok(output.slice(begin).includes('crescent impact distance=32'));assert.deepEqual([a.health,b.health],health);assert.ok(a.entity.position.distanceTo(anchor)<.01);pass('Tensa Zangetsu launches one curved black/red slash and impacts thirty-two blocks ahead without moving or damaging players');
-    for(const phase of ['CHARGE','FLIGHT']){
-      for(const s of spawned)s.clear();begin=output.length;a._testLeftClick();await waitFor(()=>output.slice(begin).includes('GetsugaTensho phase: '+phase),'Getsuga '+phase);a._testLeftClick();await waitFor(cleanup,'cancel '+phase);await sleep(2100);assert.ok(!output.slice(begin).includes('crescent impact'));pass('Getsuga cancellation during '+phase+' prevents impact and removes owned displays');
+    for(const phase of ['CHARGE','FLIGHT','TRAILS']){
+      for(const s of spawned)s.clear();begin=output.length;a._testLeftClick();await waitFor(()=>output.slice(begin).includes(phase==='TRAILS'?'GetsugaTensho displays crescent_trail1':'GetsugaTensho phase: '+phase),'Getsuga '+phase);a._testLeftClick();await waitFor(cleanup,'cancel '+phase);await sleep(2100);assert.ok(cleanup(),'late model after cancelling');assert.ok(!output.slice(begin).includes('crescent impact'));pass('Getsuga cancellation during '+phase+' prevents impact and removes owned displays');
     }
     consoleCommand('fill -2 -60 8 2 -56 8 minecraft:stone');await sleep(300);begin=output.length;a._testLeftClick();await waitFor(()=>output.slice(begin).includes('crescent impact distance='),'wall blocks crescent');
     const hit=Number(output.slice(begin).match(/crescent impact distance=([0-9.]+)/)[1]);assert.ok(hit>0 && hit<8);await waitFor(cleanup,'wall impact cleanup');consoleCommand('fill -2 -60 8 2 -56 8 minecraft:air');pass('crescent hits the nearby wall instead of passing through it');
@@ -374,11 +379,11 @@ if(process.env.MOTIONRP_PERFORMANCE_ONLY==='1') {
   try {
     assert.ok(fs.existsSync(path.join(run,'server.properties')),'Run full integration first');
     fs.copyFileSync(path.join(project,`build/libs/motionRP-${version}.jar`),path.join(run,'plugins/MotionRP.jar'));
-    const oldPerformance=gunzipSync(fs.readFileSync(path.join(project,'src/test/resources/bundled-0.16.2/players_motionrp_performances.bbmodel.gz')));
+    const oldPerformance=gunzipSync(fs.readFileSync(path.join(project,'src/test/resources/bundled-0.17.0/players_motionrp_performances.bbmodel.gz')));
     fs.writeFileSync(path.join(run,'plugins/BetterModel/players/motionrp_performances.bbmodel'),oldPerformance);
     log=fs.createWriteStream(path.join(project,'build/performance-smoke.log'));await startServer();
     assert.deepEqual(fs.readFileSync(path.join(run,'plugins/BetterModel/players/motionrp_performances.bbmodel')),fs.readFileSync(path.join(project,'src/main/resources/bettermodel/players/motionrp_performances.bbmodel')));
-    const oldHash=createHash('sha256').update(oldPerformance).digest('hex');assert.deepEqual(fs.readFileSync(path.join(run,'plugins/MotionRP/model-backups/motionrp_performances.bbmodel.'+oldHash+'.bak')),oldPerformance);pass('0.16.2 performance model migrates with exact backup');
+    const oldHash=createHash('sha256').update(oldPerformance).digest('hex');assert.deepEqual(fs.readFileSync(path.join(run,'plugins/MotionRP/model-backups/motionrp_performances.bbmodel.'+oldHash+'.bak')),oldPerformance);pass('0.17.0 performance model migrates with exact backup');
     const a=await connect('MotionTesterA'),b=await connect('MotionTesterB');
     consoleCommand('tp MotionTesterA 0 -60 0 0 0');consoleCommand('tp MotionTesterB 5 -60 0 0 0');
     await waitFor(()=>Math.abs(a.entity.position.z-.5)<.01 && Math.abs(a.entity.position.y+60)<.01,'celebration origins');
