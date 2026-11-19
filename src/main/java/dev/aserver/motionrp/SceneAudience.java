@@ -10,6 +10,8 @@ import java.util.*;
 
 /** Owns the bounded recipients and display trackers of a cosmetic scene. */
 final class SceneAudience implements AutoCloseable {
+    private final MotionPlugin plugin=org.bukkit.plugin.java.JavaPlugin.getPlugin(MotionPlugin.class);
+    private final java.util.Set<org.bukkit.entity.Entity> nativeEntities=new java.util.LinkedHashSet<>();
     private final Player owner;
     private MotionVisibility visibility;
     SceneAudience filtered(MotionVisibility value){visibility=value;return this;}
@@ -28,14 +30,16 @@ final class SceneAudience implements AutoCloseable {
                     || (!p.getUniqueId().equals(owner.getUniqueId()) && p.getLocation().distanceSquared(anchor==null?owner.getLocation():anchor) > Math.pow(visibility==null?range:visibility.range(range),2))) continue;
             eligible.add(p.getUniqueId());
             Player old = viewers.put(p.getUniqueId(), p);
-            if (old != null && old != p) for (var t : trackers) t.remove(BukkitAdapter.adapt(old));
+            if (old != null && old != p){for (var t : trackers) t.remove(BukkitAdapter.adapt(old));for(var e:nativeEntities)if(old.isOnline())old.hideEntity(plugin,e);}
         }
         viewers.entrySet().removeIf(e -> {
             if (eligible.contains(e.getKey())) return false;
             for (var t : trackers) t.remove(BukkitAdapter.adapt(e.getValue()));
+            for(var entity:nativeEntities)if(e.getValue().isOnline())e.getValue().hideEntity(plugin,entity);
             return true;
         });
         for (var t : trackers) for (var p : viewers.values()) spawn(t, p);
+        for(var e:nativeEntities)for(var p:viewers.values())p.showEntity(plugin,e);
     }
     void show(DummyTracker tracker, MotionPlugin plugin, String kind) {
         show(tracker,plugin,"Rasenshuriken",kind);
@@ -47,6 +51,8 @@ final class SceneAudience implements AutoCloseable {
                 + tracker.getPipeline().stream().filter(b -> b.getDisplay() != null)
                 .map(b -> Integer.toString(b.getDisplay().id())).collect(java.util.stream.Collectors.joining(",")));
     }
+    void showNative(org.bukkit.entity.Entity e){nativeEntities.add(e);for(var p:players())p.showEntity(plugin,e);}
+    void hideNative(org.bukkit.entity.Entity e){nativeEntities.remove(e);e.remove();}
     void hide(DummyTracker tracker) {
         if (tracker == null) return;
         trackers.remove(tracker);
@@ -61,6 +67,7 @@ final class SceneAudience implements AutoCloseable {
     @Override public void close() {
         RuntimeException first = null;
         for (var t : trackers) try { t.close(); } catch (RuntimeException e) { if (first == null) first = e; }
+        for(var e:nativeEntities)e.remove();nativeEntities.clear();
         trackers.clear(); viewers.clear();
         if (first != null) throw first;
     }

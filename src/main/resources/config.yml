@@ -15,7 +15,7 @@ motions:
     model: motionrp_getsuga_tensho
     animation: getsuga_tensho
     effect: getsuga_tensho
-    max-ticks: 142
+    max-ticks: 174
   kamehameha:
     name: かめはめ波
     model: motionrp_kamehameha

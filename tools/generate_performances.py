@@ -112,6 +112,10 @@ def generate(rig):
       'plfa_left_forearm':[(0,(0,0,0)),(16,(-20,0,0)),(78,(-20,0,0)),(100,(0,0,0))],
       'h_ph_head':[(0,(0,0,0)),(30,(-12,-5,0)),(78,(-12,-5,0)),(100,(0,0,0))]},
       [(0,(0,0,0,0,0)),(16,(-12,24,-12,24,12)),(30,(-6,12,-6,12,14)),(78,(-6,12,-6,12,14)),(100,(0,0,0,0,0))])
+    # Same choreography at exactly twice the speed, including the held finish.
+    kazu=next(a for a in m['animations'] if a['name']=='kazu');kazu['length']/=2
+    for track in kazu['animators'].values():
+        for key in track['keyframes']:key['time']/=2
     save('players/motionrp_performances.bbmodel',m)
 if __name__=='__main__':
     raw=Path(sys.argv[1]).read_bytes()

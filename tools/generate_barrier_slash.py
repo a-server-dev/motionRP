@@ -7,6 +7,7 @@ from pathlib import Path
 from generate_summons import Model,ROOT,RIG_SHA,player,save,animator,animation,player_animator
 from generate_energy import mesh_model,add_mesh,glow
 from generate_rasengan import hand_path
+from hollow_kinematics import sampler,matrix,mul,vector,euler
 PINK=[(188,34,119,255),(232,66,157,255),(255,139,210,255),(255,210,241,255),(138,22,94,255),(246,104,185,255),(255,173,228,255),(255,244,253,255)]
 DARK=[(9,5,15,255),(35,8,28,255),(110,9,37,255),(235,22,65,255),(255,77,101,255),(160,16,47,255),(255,163,175,255),(255,230,231,255)]
 def shield():
@@ -86,32 +87,62 @@ def actors(rig):
              'prfa_right_forearm':[(0,(0,0,0)),(.4,(-30,0,0)),(1.4,(-44.92547122,0,0)),(2.5,(-44.92547122,0,0)),(2.8,(-40.82488903,0,0)),(5.3,(-40.82488903,0,0)),(6.6,(0,0,0))],
              'pla_left_arm':[(0,(0,0,0))]+[(t,q) for t,q,f in left_keys]+[(5.3,left_keys[-1][1]),(6.6,(0,0,0))],
              'plfa_left_forearm':[(0,(0,0,0))]+[(t,(f,0,0)) for t,q,f in left_keys]+[(5.3,(left_keys[-1][2],0,0)),(6.6,(0,0,0))]}
-            bends=[(0,0),(1.4,35),(2.5,35),(2.8,25),(5.3,25),(6.6,0)]
+            poses['pw_waist']=[(0,(0,0,0)),(.4,(0,0,0)),(1.4,(-10,-18,0)),(2.5,(-10,-18,0)),(2.8,(28,24,-5)),(3.2,(18,15,-3)),(4.1,(12,10,0)),(5.3,(12,10,0)),(6.6,(0,0,0))]
+            poses['pc_chest']=[(0,(0,0,0)),(1.4,(-4,-10,0)),(2.5,(-4,-10,0)),(2.8,(14,12,-3)),(3.2,(8,8,-2)),(4.1,(5,5,0)),(5.3,(5,5,0)),(6.6,(0,0,0))]
+            poses['h_ph_head']=[(0,(0,0,0)),(1.4,(-8,28,0)),(2.5,(-8,28,0)),(2.8,(10,-36,8)),(3.2,(5,-23,5)),(5.3,(0,-15,0)),(6.6,(0,0,0))]
+            bends=[(0,0),(1.4,35),(2.5,35),(2.8,52),(3.2,42),(4.1,30),(5.3,30),(6.6,0)]
         m=player(rig,name,end/20,poses);g={g['name']:g for g in m['groups']};tracks=m['animations'][0]['animators'];drop=[]
         for side,leg,knee in [(1,'prl_right_leg','prfl_right_foreleg'),(-1,'pll_left_leg','plfl_left_foreleg')]:
             tracks[g[leg]['uuid']]=player_animator(g[leg],[(t,(-a,0,side*12*a/35)) for t,a in bends]);tracks[g[knee]['uuid']]=player_animator(g[knee],[(t,(a*2,0,0)) for t,a in bends])
         for tick in range(end+1):
             t=tick/20;lo=max((x for x in bends if x[0]<=t),default=bends[0]);hi=min((x for x in bends if x[0]>=t),default=bends[-1]);f=(t-lo[0])/(hi[0]-lo[0]) if hi[0]!=lo[0] else 0;a=lo[1]*(1-f)+hi[1]*f
             drop.append((t,(0,-11.25*(1-math.cos(math.radians(a))*math.cos(math.radians(12*a/35))),0)))
-        tracks[g['player_root']['uuid']]=animator(g['player_root'],drop,'position');save('players/motionrp_'+name+'.bbmodel',m)
+        tracks[g['player_root']['uuid']]=animator(g['player_root'],drop,'position')
+        if not shield:
+            prefix=[(12,(-118.83057,34.42578,-77.72337),-25.90309),(14,(-106.65096,29.72642,-76.52480),-48.74212),(16,(-95.57199,28.12860,-80.06693),-63.55864),(18,(-85.15057,26.88720,-85.38078),-75.10598),(20,(-75.01839,25.46008,-92.38223),-84.56594),(22,(-65.16199,23.46188,-101.26309),-92.39072),(24,(-55.98555,20.49292,-112.11064),-98.75500),(26,(-48.41147,16.26454,-124.57339),-103.69703)]
+            for bone,track in list(tracks.items()):
+                for key in track['keyframes']:key['time']+=1.6
+                if track['name'] in ['pla_left_arm','plfa_left_forearm']:
+                    upper=track['name']=='pla_left_arm';values=[(0,(0,0,0))]+[(t/20,q if upper else (f,0,0)) for t,q,f in prefix]
+                    for key in track['keyframes']:
+                        if key['time']==1.6:
+                            q=prefix[-1][1] if upper else (prefix[-1][2],0,0);key['data_points'][0].update(x=str(-q[0]),y=str(q[1]),z=str(q[2]))
+                    track['keyframes']=player_animator(g[track['name']],values)['keyframes']+track['keyframes']
+                else:
+                    channel=track['keyframes'][0]['channel'];neutral=animator(g[track['name']],[(0,(0,0,0))],channel);track['keyframes']=neutral['keyframes']+track['keyframes']
+            end+=32;m['animations'][0]['length']=end/20
+        save('players/motionrp_'+name+'.bbmodel',m)
         (ROOT/(name+'-hand-path.csv')).write_text(hand_path(m,end,'pli_left_item' if shield else 'pri_right_item'))
         if not shield:
             right=[[float(x) for x in line.split(',')] for line in hand_path(m,end).splitlines()]
             left=hand_path(m,end,'pli_left_item');(ROOT/'getsuga_tensho-left-hand-path.csv').write_text(left)
-            rows=[]
+            rotation=sampler(m);head=hand_path(m,end,'h_ph_head');head_rows=[]
+            for line in head.splitlines():
+                xyz=[float(x) for x in line.split(',')];xyz[1]-=.05;xyz[2]-=.03;head_rows.append(','.join(f'{v:.8f}' for v in xyz))
+            (ROOT/'getsuga_tensho-head-path.csv').write_text('\n'.join(head_rows)+'\n')
+            rows=[];weapon_keys=[];previous=None
             for tick,palm in enumerate(right):
+                global_tick=tick;tick=max(0,tick-32)
                 if tick<28:f=max(0,min(1,(tick-8)/20));pitch=-20+55*f;roll=-25*f
                 elif tick<=50:pitch=35;roll=-25
                 elif tick<=56:f=(tick-50)/6;pitch=35-160*f;roll=-25-20*f
                 elif tick<=106:pitch=-125;roll=-45
                 else:f=(tick-106)/26;pitch=-125+105*f;roll=-45+45*f
-                x,z=math.radians(pitch),math.radians(roll)
-                # Rz*Rx acting on the sword's up axis, converted into world-relative coordinates.
-                axis=[-math.sin(z)*math.cos(x),-math.sin(x),math.cos(z)*math.cos(x)]
-                grip=[v-a*1.75/16 for v,a in zip(palm,axis)]
-                tip=[v+a*(35.7*.65/16) for v,a in zip(grip,axis)]
+                total=mul(rotation('pc_chest',global_tick/20),matrix(pitch,0,roll));axis_source=vector(total,[0,1,0]);axis=[axis_source[0],-axis_source[2],axis_source[1]]
+                grip=[v-a*1.75/16 for v,a in zip(palm,axis)];tip=[v+a*(35.7*.65/16) for v,a in zip(grip,axis)]
                 rows.append(','.join(f'{v:.8f}' for v in grip+tip))
+                if global_tick>=40:
+                    angles=euler(total)
+                    if previous:
+                        for i in range(3):
+                            while angles[i]-previous[i]>180:angles[i]-=360
+                            while angles[i]-previous[i]<-180:angles[i]+=360
+                    previous=angles;weapon_keys.append(((global_tick-40)/20,angles))
             (ROOT/'getsuga_tensho-blade-path.csv').write_text('\n'.join(rows)+'\n')
+            blade=json.loads((ROOT/'models/motionrp_getsuga_tensa.bbmodel').read_text());groups={x['name']:x for x in blade['groups']};clip=blade['animations'][0];clip['animators'][groups['sword_socket']['uuid']]=animator(groups['sword_socket'],weapon_keys);save('models/motionrp_getsuga_tensa.bbmodel',blade)
+            from generate_hollow_mask import generate
+            generate(m,end)
+
 
 if __name__=='__main__':
     raw=Path(sys.argv[1]).read_bytes()

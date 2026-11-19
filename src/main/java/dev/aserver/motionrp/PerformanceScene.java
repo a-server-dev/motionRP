@@ -16,7 +16,7 @@ final class PerformanceScene extends SummonScene {
         body.rotation(()->new ModelRotation(0,origin.getYaw()));
         body.update(TrackerUpdateAction.moveDuration(0));
     }
-    @Override String phase(){return tick<performance.highlight()?"PREPARE":tick<performance.ticks()-20?"CELEBRATE":"RECOVER";}
+    @Override String phase(){return tick<performance.highlight()?"PREPARE":tick<performance.ticks()-(performance==Performance.KAZU?10:20)?"CELEBRATE":"RECOVER";}
     @Override public boolean ownsMove(Location from,Location to){return travel.owns(from,to);}
     @Override void onClose(){travel.close();}
     @Override void update(){

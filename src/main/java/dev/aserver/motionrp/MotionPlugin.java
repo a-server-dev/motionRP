@@ -75,6 +75,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
             getConfig().set("titan.use-bundled-skin",true);saveConfig();
         }
         if(!getConfig().contains("visibility.range",true)){getConfig().set("visibility.range",48);saveConfig();}
+        if("motionrp_getsuga_tensho".equals(getConfig().getString("motions.getsuga_tensho.model")) && "getsuga_tensho".equals(getConfig().getString("motions.getsuga_tensho.effect")) && getConfig().getInt("motions.getsuga_tensho.max-ticks",0)<dev.aserver.motionrp.core.BarrierSlashTimeline.GETSUGA_END){getConfig().set("motions.getsuga_tensho.max-ticks",174);saveConfig();}
         catalog = MotionCatalog.read(getConfig());
         items = new MotionItems(this);
         loadouts = new PlayerLoadouts(this, items);

@@ -9,7 +9,7 @@ import java.util.zip.*;
 
 /** Disable directional cube shading only for MotionRP energy items, including mesh triangle copies. */
 public final class EnergyPackLighting {
-    private static final List<String> IDS=List.of("motionrp_rho_aias_shield_","motionrp_getsuga_crescent_","motionrp_genki_dama_orb_","motionrp_kamehameha_orb_","motionrp_kamehameha_beam_","motionrp_excalibur_light_","motionrp_excalibur_pillar_","motionrp_excalibur_charge_","motionrp_excalibur_wave_");
+    private static final List<String> IDS=List.of("motionrp_hollow_mask_","motionrp_rho_aias_shield_","motionrp_getsuga_crescent_","motionrp_genki_dama_orb_","motionrp_kamehameha_orb_","motionrp_kamehameha_beam_","motionrp_excalibur_light_","motionrp_excalibur_pillar_","motionrp_excalibur_charge_","motionrp_excalibur_wave_");
     private EnergyPackLighting() {}
     public static synchronized boolean prepare(Path path)throws IOException{
         var before=Files.readAttributes(path,java.nio.file.attribute.BasicFileAttributes.class);

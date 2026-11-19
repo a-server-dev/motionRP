@@ -15,8 +15,31 @@ class RasenganAssetsTest {
         }
     }
 
+    @Test void maskRevealsDiagonallyAndHasWhiteRedEyeDetails() throws Exception {
+        var mask=read("models/motionrp_hollow_mask.bbmodel");
+        assertEquals(8,mask.getAsJsonArray("elements").size());
+        double previousX=10,previousY=20;
+        for(var element:mask.getAsJsonArray("elements")){
+            var mesh=element.getAsJsonObject();double x=0,y=0;int n=0;
+            for(var vertex:mesh.getAsJsonObject("vertices").entrySet()){
+                var v=vertex.getValue().getAsJsonArray();x+=v.get(0).getAsDouble();y+=v.get(1).getAsDouble();n++;
+            }
+            assertTrue(x/n<previousX && y/n<previousY,"Reveal must move from right forehead to left jaw");previousX=x/n;previousY=y/n;
+        }
+        var image=ImageIO.read(getClass().getResourceAsStream("/bettermodel/textures/motionrp_hollow_mask.png"));
+        int white=0,red=0,dark=0,clear=0;
+        for(int y=0;y<image.getHeight();y++)for(int x=0;x<image.getWidth();x++){
+            int c=image.getRGB(x,y),r=c>>>16&255,g=c>>>8&255,b=c&255;
+            if((c>>>24)==0){clear++;continue;}
+            if(r>180&&g>180&&b>180)white++;
+            if(r>130&&g<50&&b<80)red++;
+            if(r<50&&g<50&&b<50)dark++;
+        }
+        assertTrue(white>5000&&red>1000&&dark>100&&clear>1000);
+    }
+
     @Test void allAnimatedBonesAndOutlinerEntriesResolveToRealModelParts() throws Exception {
-        for (String file : List.of("players/motionrp_rho_aias.bbmodel","players/motionrp_getsuga_tensho.bbmodel","models/motionrp_rho_aias_shield.bbmodel","models/motionrp_getsuga_crescent.bbmodel","models/motionrp_getsuga_tensa.bbmodel","players/motionrp_performances.bbmodel","players/motionrp_excalibur.bbmodel","players/motionrp_gae_bolg.bbmodel","models/motionrp_excalibur_blade.bbmodel","models/motionrp_excalibur_light.bbmodel","models/motionrp_gae_bolg_spear.bbmodel","models/motionrp_gae_bolg_trail.bbmodel","models/motionrp_gae_bolg_thorns.bbmodel","players/motionrp_zangetsu_bankai.bbmodel", "models/motionrp_zangetsu_cleaver.bbmodel", "models/motionrp_tensa_zangetsu.bbmodel", "models/motionrp_bankai_cocoon.bbmodel", "models/motionrp_bankai_wave.bbmodel", "models/motionrp_bankai_coat.bbmodel", "players/motionrp_rasengan.bbmodel", "models/motionrp_rasengan_orb.bbmodel",
+        for (String file : List.of("models/motionrp_hollow_mask.bbmodel","players/motionrp_rho_aias.bbmodel","players/motionrp_getsuga_tensho.bbmodel","models/motionrp_rho_aias_shield.bbmodel","models/motionrp_getsuga_crescent.bbmodel","models/motionrp_getsuga_tensa.bbmodel","players/motionrp_performances.bbmodel","players/motionrp_excalibur.bbmodel","players/motionrp_gae_bolg.bbmodel","models/motionrp_excalibur_blade.bbmodel","models/motionrp_excalibur_light.bbmodel","models/motionrp_gae_bolg_spear.bbmodel","models/motionrp_gae_bolg_trail.bbmodel","models/motionrp_gae_bolg_thorns.bbmodel","players/motionrp_zangetsu_bankai.bbmodel", "models/motionrp_zangetsu_cleaver.bbmodel", "models/motionrp_tensa_zangetsu.bbmodel", "models/motionrp_bankai_cocoon.bbmodel", "models/motionrp_bankai_wave.bbmodel", "models/motionrp_bankai_coat.bbmodel", "players/motionrp_rasengan.bbmodel", "models/motionrp_rasengan_orb.bbmodel",
                 "players/motionrp_rasenshuriken.bbmodel", "models/motionrp_rasenshuriken_orb.bbmodel",
                 "players/motionrp_gate_of_babylon.bbmodel", "players/motionrp_susanoo.bbmodel",
                 "models/motionrp_golden_gate.bbmodel", "models/motionrp_treasury_sword.bbmodel",
@@ -322,21 +345,22 @@ class RasenganAssetsTest {
                 assertTrue(r[1]>head[1]+3 && l[1]>head[1]+3,"Wide V must stay above head");
             }
             if(p==Performance.KAZU){
+                assertEquals(4.5,a.get("length").getAsDouble(),.0001,"Kazu choreography should run at double speed");
                 for(int cycle=0;cycle<3;cycle++)for(int step=0;step<4;step++){
                     int frame=28+cycle*32+step*8;double[] expected=step==0?new double[]{-4,cycle==0?0:4}:step==1?new double[]{-4,-4}:step==2?new double[]{4,-4}:new double[]{4,4};
                     for(int side=0;side<2;side++){
-                        var foot=posedPoint(names.get(side==0?"prfl_right_foreleg":"plfl_left_foreleg"),new double[]{side==0?1.875:-1.875,0,0},frame/20.0,a,groups,parents);
+                        var foot=posedPoint(names.get(side==0?"prfl_right_foreleg":"plfl_left_foreleg"),new double[]{side==0?1.875:-1.875,0,0},frame/40.0,a,groups,parents);
                         assertEquals(expected[side],foot[2],.001,"Kazu must step right forward, left forward, right back, left back");
                     }
                 }
-                var forward=posedOrigin(names.get("pri_right_item"),1.4,a,groups,parents);var back=posedOrigin(names.get("pri_right_item"),2.2,a,groups,parents);
+                var forward=posedOrigin(names.get("pri_right_item"),.7,a,groups,parents);var back=posedOrigin(names.get("pri_right_item"),1.1,a,groups,parents);
                 assertTrue(forward[2]>7 && back[2]<-7,"Windmill must pass through front and back");
-                var up=posedOrigin(names.get("pri_right_item"),1.8,a,groups,parents);var down=posedOrigin(names.get("pri_right_item"),2.6,a,groups,parents);
+                var up=posedOrigin(names.get("pri_right_item"),.9,a,groups,parents);var down=posedOrigin(names.get("pri_right_item"),1.3,a,groups,parents);
                 assertTrue(up[1]>down[1]+15,"Windmill must make a full shoulder circle");
-                var finish=posedOrigin(names.get("pri_right_item"),6.4,a,groups,parents);
+                var finish=posedOrigin(names.get("pri_right_item"),3.2,a,groups,parents);
                 assertTrue(finish[1]>24,"Kazu final pointing pose missing");
-                assertArrayEquals(finish,posedOrigin(names.get("pri_right_item"),7.9,a,groups,parents),.001,"Kazu final pose must visibly hold");
-                var groin=posedOrigin(names.get("phip_hip"),7,a,groups,parents);var left=posedOrigin(names.get("pli_left_item"),7,a,groups,parents);
+                assertArrayEquals(finish,posedOrigin(names.get("pri_right_item"),3.95,a,groups,parents),.001,"Kazu final pose must visibly hold");
+                var groin=posedOrigin(names.get("phip_hip"),3.5,a,groups,parents);var left=posedOrigin(names.get("pli_left_item"),3.5,a,groups,parents);
                 assertTrue(Math.abs(left[0]-groin[0])<1 && left[1]>groin[1]+.4 && left[1]<groin[1]+2 && left[2]<groin[2]-2,"Kazu finish left hand must rest in front of the groin");
             }
             if(p==Performance.DESTASHA){
@@ -370,7 +394,9 @@ class RasenganAssetsTest {
         }
         var weapon=read("models/motionrp_getsuga_tensa.bbmodel");var clip=weapon.getAsJsonArray("animations").get(0).getAsJsonObject();
         String socket=weapon.getAsJsonArray("groups").asList().stream().map(JsonElement::getAsJsonObject).filter(g->g.get("name").getAsString().equals("sword_socket")).findFirst().orElseThrow().get("uuid").getAsString();
-        assertEquals(-125,sample(clip,socket,"rotation",(BarrierSlashTimeline.GETSUGA_RELEASE-8)/20.0)[0],.001,"Weapon cut must finish on the crescent release tick");assertEquals(-45,sample(clip,socket,"rotation",(BarrierSlashTimeline.GETSUGA_RELEASE-8)/20.0)[2],.001,"Cut must be diagonal");
+        double[] rot=sample(clip,socket,"rotation",(BarrierSlashTimeline.GETSUGA_RELEASE-40)/20.0);double rx=Math.toRadians(rot[0]),ry=Math.toRadians(rot[1]),rz=Math.toRadians(rot[2]);
+        double x=Math.cos(rz)*Math.sin(ry)*Math.sin(rx)-Math.sin(rz)*Math.cos(rx),y=Math.sin(rz)*Math.sin(ry)*Math.sin(rx)+Math.cos(rz)*Math.cos(rx);
+        assertTrue(x<-.2 && y<-.6,"Forceful sword cut must finish diagonally down-left");
         var names=weapon.getAsJsonArray("elements").asList().stream().map(e->e.getAsJsonObject().get("name").getAsString()).toList();
         var grip=weapon.getAsJsonArray("elements").asList().stream().map(JsonElement::getAsJsonObject).filter(e->e.get("name").getAsString().equals("black_wrapped_hilt")).findFirst().orElseThrow();
         assertEquals(0,(grip.getAsJsonArray("from").get(1).getAsDouble()+grip.getAsJsonArray("to").get(1).getAsDouble())/2,.001,"Hold Tensa by the grip rather than the guard");
@@ -381,14 +407,22 @@ class RasenganAssetsTest {
             String id=shield?"rho_aias":"getsuga_tensho";int end=BarrierSlashTimeline.end(shield);var model=read("players/motionrp_"+id+".bbmodel");var a=model.getAsJsonArray("animations").get(0).getAsJsonObject();
             Map<String,JsonObject> groups=new HashMap<>();Map<String,String> names=new HashMap<>(),parents=new HashMap<>();
             for(var raw:model.getAsJsonArray("groups")){var g=raw.getAsJsonObject();String uid=g.get("uuid").getAsString();groups.put(uid,g);names.put(g.get("name").getAsString(),uid);}parentTree(model.getAsJsonArray("outliner"),null,parents);
+            if(!shield){
+                var ready=posedOrigin(names.get("h_ph_head"),82/20.0,a,groups,parents);
+                var cut=posedOrigin(names.get("h_ph_head"),88/20.0,a,groups,parents);
+                assertTrue(ready[1]-cut[1]>1,"Upper body must sink into the cut");
+                var first=BarrierHandPath.left(12);var last=BarrierHandPath.left(26);
+                assertTrue(first.right()>last.right() && first.height()>last.height(),"Left hand sweeps from forehead toward the opposite jaw");
+            }
             for(int tick=0;tick<end;tick++){
                 var expected=posedOrigin(names.get(shield?"pli_left_item":"pri_right_item"),tick/20.0,a,groups,parents);var hand=BarrierHandPath.at(shield,tick);
                 assertEquals(expected[0]/16,hand.right(),.000001);assertEquals(-expected[2]/16+.05,hand.forward(),.000001);assertEquals(expected[1]/16+.03,hand.height(),.000001);
-                if(!shield && tick>=28 && tick<=106){
+                if(!shield && tick>=60 && tick<=138){
                     var l=posedOrigin(names.get("pli_left_item"),tick/20.0,a,groups,parents);var r=posedOrigin(names.get("pri_right_item"),tick/20.0,a,groups,parents);double gap=0;for(int k=0;k<3;k++)gap+=(r[k]-l[k])*(r[k]-l[k]);assertEquals(3.5,Math.sqrt(gap),.003,"Both palms must remain on the same sword hilt through the diagonal cut");
                     var grip=GetsugaBladePath.at(tick).grip();assertEquals((r[0]+l[0])/32,grip.right(),.0001);assertEquals(-(r[2]+l[2])/32+.05,grip.forward(),.0001);assertEquals((r[1]+l[1])/32+.03,grip.height(),.0001);
-                    if(tick<=50){var head=posedOrigin(names.get("h_ph_head"),tick/20.0,a,groups,parents);assertTrue(r[1]>head[1]+6 && l[1]>head[1]+4,"Hold both hands overhead before releasing Getsuga");}
+                    if(tick<=82){var head=posedOrigin(names.get("h_ph_head"),tick/20.0,a,groups,parents);assertTrue(r[1]>head[1]+6 && l[1]>head[1]+4,"Hold both hands overhead before releasing Getsuga");}
                 }
+                if(!shield){var head=posedOrigin(names.get("h_ph_head"),tick/20.0,a,groups,parents);var anchor=HollowHeadPath.at(tick);assertEquals(head[0]/16,anchor.right(),.000001);assertEquals(-head[2]/16,anchor.forward(),.000001);assertEquals(head[1]/16,anchor.height(),.000001);}
                 for(boolean right:new boolean[]{true,false}){
                     var foot=posedPoint(names.get(right?"prfl_right_foreleg":"plfl_left_foreleg"),new double[]{right?1.875:-1.875,0,0},tick/20.0,a,groups,parents);assertEquals(0,foot[1],.001,"New motion feet detached from ground");
                 }
