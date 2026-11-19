@@ -282,9 +282,9 @@ class RasenganAssetsTest {
         Map<String,JsonObject> groups=new HashMap<>();Map<String,String> names=new HashMap<>(),parents=new HashMap<>();
         for(var raw:model.getAsJsonArray("groups")){var g=raw.getAsJsonObject();String id=g.get("uuid").getAsString();groups.put(id,g);names.put(g.get("name").getAsString(),id);}
         parentTree(model.getAsJsonArray("outliner"),null,parents);
-        assertEquals(4,model.getAsJsonArray("animations").size());
+        assertEquals(5,model.getAsJsonArray("animations").size());
         for(var raw:model.getAsJsonArray("animations")){
-            var a=raw.getAsJsonObject();var p=Performance.find(a.get("name").getAsString().matches("ronaldo|mbappe")?"goal":"hr",a.get("name").getAsString()).orElseThrow();
+            var a=raw.getAsJsonObject();var p=Performance.find(a.get("name").getAsString().matches("ronaldo|mbappe|kneeslide")?"goal":"hr",a.get("name").getAsString()).orElseThrow();
             assertEquals(p.ticks()/20.0,a.get("length").getAsDouble(),.001);
             double highest=0;
             for(int tick=0;tick<=p.ticks();tick++){
@@ -297,7 +297,8 @@ class RasenganAssetsTest {
                 assertTrue(min>-.001,p.id()+" feet below ground at "+tick);highest=Math.max(highest,min);
                 if(p!=Performance.RONALDO && p!=Performance.MBAPPE)assertEquals(0,min,.001);
             }
-            if(p==Performance.RONALDO)assertTrue(highest>15.9,"Siu jump missing");
+            if(p==Performance.RONALDO)assertEquals(0,highest,.001,"Physical jump must not be doubled in model");
+            if(p==Performance.KNEESLIDE)assertTrue(posedOrigin(names.get("phip_hip"),2,a,groups,parents)[1]<6,"Knees not lowered to ground");
             if(p==Performance.MBAPPE){
                 var r=posedOrigin(names.get("pri_right_item"),2,a,groups,parents);var l=posedOrigin(names.get("pli_left_item"),2,a,groups,parents);
                 assertTrue(r[0]<0 && l[0]>0,"Arms do not cross");assertTrue(r[1]>l[1],"Forearms overlap");assertTrue(r[2]<-4 && l[2]<-4,"Hands buried in chest");

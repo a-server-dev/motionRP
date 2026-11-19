@@ -146,8 +146,11 @@ if(process.env.MOTIONRP_PERFORMANCE_ONLY==='1') {
   try {
     assert.ok(fs.existsSync(path.join(run,'server.properties')),'Run full integration first');
     fs.copyFileSync(path.join(project,`build/libs/motionRP-${version}.jar`),path.join(run,'plugins/MotionRP.jar'));
-    fs.copyFileSync(path.join(project,'src/main/resources/bettermodel/players/motionrp_performances.bbmodel'),path.join(run,'plugins/BetterModel/players/motionrp_performances.bbmodel'));
+    const oldPerformance=gunzipSync(fs.readFileSync(path.join(project,'src/test/resources/bundled-0.15.0/players_motionrp_performances.bbmodel.gz')));
+    fs.writeFileSync(path.join(run,'plugins/BetterModel/players/motionrp_performances.bbmodel'),oldPerformance);
     log=fs.createWriteStream(path.join(project,'build/performance-smoke.log'));await startServer();
+    assert.deepEqual(fs.readFileSync(path.join(run,'plugins/BetterModel/players/motionrp_performances.bbmodel')),fs.readFileSync(path.join(project,'src/main/resources/bettermodel/players/motionrp_performances.bbmodel')));
+    const oldHash=createHash('sha256').update(oldPerformance).digest('hex');assert.deepEqual(fs.readFileSync(path.join(run,'plugins/MotionRP/model-backups/motionrp_performances.bbmodel.'+oldHash+'.bak')),oldPerformance);pass('0.15.0 performance model migrates with exact backup');
     const a=await connect('MotionTesterA'),b=await connect('MotionTesterB');
     consoleCommand('tp MotionTesterA 0 -60 0 0 0');consoleCommand('tp MotionTesterB 5 -60 0 0 0');
     await waitFor(()=>Math.abs(a.entity.position.z-.5)<.01 && Math.abs(a.entity.position.y+60)<.01,'celebration origins');
@@ -160,19 +163,25 @@ if(process.env.MOTIONRP_PERFORMANCE_ONLY==='1') {
       bot._client.on('spawn_entity',p=>{if(p.type===bot.registry.entitiesByName.item_display.id)spawned[i].add(p.entityId);});
       bot._client.on('entity_destroy',p=>p.entityIds.forEach(id=>removed[i].add(id)));
     }
-    for(const [command,id] of [['goalperformance ronaldo','ronaldo'],['goalperformance mbappe','mbappe'],['HRperformance yamakawa','yamakawa'],['HRperformance matsuda','matsuda']]){
-      for(const s of spawned)s.clear();const start=output.length;a.chat('/'+command);
+    for(const [command,id] of [['goalperformance ronaldo','ronaldo'],['goalperformance mbappe','mbappe'],['goalperformance kneeslide','kneeslide'],['HRperformance yamakawa','yamakawa'],['HRperformance matsuda','matsuda']]){
+      a._testLook(0,0);await sleep(150);for(const s of spawned)s.clear();const origin=a.entity.position.clone();let highest=origin.y;
+      const sampler=setInterval(()=>{highest=Math.max(highest,a.entity.position.y);},20);
+      const start=output.length;a.chat('/'+command);
       await waitFor(()=>output.slice(start).includes(`Performance-${id} phase: PREPARE`),id+' direct start');
       if(id==='ronaldo'){a._testStep(.3,.42,.2);await sleep(250);assert.ok(Math.abs(a.entity.position.y+60)<.02,'jump input moved player');}
       await waitFor(()=>output.slice(start).includes(`Performance-${id} phase: RECOVER`),id+' full animation',10000);
+      clearInterval(sampler);
+      if(id==='ronaldo'){assert.ok(highest-origin.y>1.1,'Siu did not physically jump');assert.ok(Math.abs(a.entity.position.z-origin.z-6)<.05,'Siu did not run forward six blocks');assert.ok(output.slice(start).includes('travel complete distance=6.0 yaw=180.0'));}
+      if(id==='kneeslide')assert.ok(Math.abs(a.entity.position.z-origin.z-7)<.05,'Slide did not travel seven blocks');
       assert.ok(output.slice(start).includes(`Performance-${id} signature tick=`));
       assert.ok(spawned.every(s=>s.size>0),'body not sent to both players');
       await waitFor(()=>spawned.every((s,i)=>[...s].every(id=>removed[i].has(id))),id+' body cleanup');
       assert.equal(inventory(),expectedItems,'command touched inventory');
       assert.deepEqual([a.health,b.health],health);assert.deepEqual((await readSaved('MotionTesterA')).loadout,before);
+      assert.ok(!(await readSaved('MotionTesterA')).data.BukkitValues?.['motionrp:aerial_return_v1'],'travel journal left behind');
       pass(command+' plays empty-handed for owner and observer, finishes and preserves loadout');
     }
-    for(const [command,allowed] of [['goalperformance',['ronaldo','mbappe']],['HRperformance',['yamakawa','matsuda']]]){
+    for(const [command,allowed] of [['goalperformance',['ronaldo','mbappe','kneeslide']],['HRperformance',['yamakawa','matsuda']]]){
       const start=output.length;a.chat('/'+command);await waitFor(()=>/Performance-\w+ phase: PREPARE/.test(output.slice(start)),'random choice');
       const id=output.slice(start).match(/Performance-(\w+) phase: PREPARE/)[1];assert.ok(allowed.includes(id));
       a.chat('/'+command+' stop');await sleep(500);pass(command+' chooses within category and stops');
@@ -186,6 +195,15 @@ if(process.env.MOTIONRP_PERFORMANCE_ONLY==='1') {
     start=output.length;a.chat('/goalperformance mbappe');await waitFor(()=>output.slice(start).includes('Performance-mbappe phase: PREPARE'),'cancel source');
     consoleCommand('tp MotionTesterA 1 -60 0');await sleep(700);
     assert.ok(!output.slice(start).includes('Performance-mbappe signature'),'external teleport failed to cancel');
+    consoleCommand('tp MotionTesterA 0 -60 0 0 0');await sleep(400);
+    start=output.length;a.chat('/goalperformance ronaldo');await waitFor(()=>a.entity.position.y>-59,'Siu airborne cancellation');
+    a.chat('/goalperformance stop');await sleep(500);assert.ok(Math.abs(a.entity.position.y+60)<.02 && Math.abs(a.entity.position.z-.5)<.02,'airborne cancellation did not restore origin');
+    pass('airborne Siu stop restores safe ground position');
+    consoleCommand('setblock 0 -60 2 minecraft:stone');consoleCommand('setblock 0 -59 2 minecraft:stone');await sleep(400);
+    start=output.length;a.chat('/goalperformance kneeslide');await waitFor(()=>a._testMessages.some(m=>m.includes('進行先に障害物')),'slide obstruction');
+    assert.ok(a.entity.position.z<2,'slide passed through wall');
+    consoleCommand('setblock 0 -60 2 minecraft:air');consoleCommand('setblock 0 -59 2 minecraft:air');
+    pass('sliding stops before a solid wall');
     consoleCommand('goalperformance ronaldo');await waitFor(()=>output.includes('プレイヤーがゲーム内で実行してください。'),'console rejection');
     pass('external teleport cancels; console gets a clear player-only response');
     for(const bot of bots)await disconnect(bot);await stopServer();

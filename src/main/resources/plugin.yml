@@ -11,7 +11,7 @@ commands:
     usage: /motionrp [gui|give|reload|status|pack]
   goalperformance:
     description: ゴールパフォーマンスを直接再生
-    usage: /goalperformance [ronaldo|mbappe|stop]
+    usage: /goalperformance [ronaldo|mbappe|kneeslide|stop]
   hrperformance:
     description: ホームランパフォーマンスを直接再生
     usage: /hrperformance [yamakawa|matsuda|stop]
