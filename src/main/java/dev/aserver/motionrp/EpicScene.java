@@ -49,7 +49,7 @@ final class EpicScene extends SummonScene {
   for(int i=0;i<armGhosts.length;i++){
    int lane=i/2,side=i%2==0?1:-1,birth=104+(lane+(i%2)*2)%4;
    if(tick==birth){armGhosts[i]=playerArmGhost(side,i);loop(armGhosts[i],"rapid_punch");}
-   if(armGhosts[i]!=null&&tick<168){var p=at(side*(.4+lane*.15),-.12-lane*.09,1.42+lane*.12).add(owner.getLocation().toVector().subtract(origin.toVector()));locate(armGhosts[i],p);armGhosts[i].scaler(ModelScaler.value(1.15f+lane*.08f));}
+   if(armGhosts[i]!=null&&tick<168){var offset=EpicTimeline.armGhostOffset(i,tick);var p=at(offset[0],offset[1],offset[2]).add(owner.getLocation().toVector().subtract(origin.toVector()));locate(armGhosts[i],p);armGhosts[i].scaler(ModelScaler.value(1.15f+lane*.08f));}
    if(tick==168){audience.hide(armGhosts[i]);armGhosts[i]=null;}
   }
 
@@ -62,17 +62,17 @@ final class EpicScene extends SummonScene {
   if(tick==224){for(int i=0;i<16;i++){audience.hide(parts[i]);parts[i]=null;}}
   if(tick==232){audience.hide(main);main=null;audience.hide(stand);stand=null;}
  }
- private Location dragonPoint(double d){return at(Math.sin(d*.35)*Math.min(1.6,d*.2),d,1.8+Math.sin(d*.5)*.7);}
+ private Location dragonPoint(double d){var p=EpicTimeline.dragonOffset(d);return at(p[0],d,p[1]);}
  private void dragon(){
   if(tick>=16&&tick<50){dust(palm(),BLACK,5,.12);dust(palm(),PURPLE,4,.13);particle(palm(),Particle.SOUL_FIRE_FLAME,2,.1,.01);if(tick==16)cue(palm(),Sound.ENTITY_WARDEN_SONIC_CHARGE,1,.6f);}
-  if(tick==50){stopCue(Sound.ENTITY_WARDEN_SONIC_CHARGE);main=model("motionrp_black_dragon_head",dragonPoint(0),2.8f,"dragon_head");for(int i=0;i<18;i++)parts[i]=model("motionrp_black_dragon_body",dragonPoint(0),(float)(1.8-i*.045),"dragon_segment"+i);cue(origin,Sound.ENTITY_ENDER_DRAGON_GROWL,2,.7f);}
-  if(tick>=50&&tick<96){double distance=EpicTimeline.dragonDistance(tick);for(int i=-1;i<18;i++){double d=Math.max(0,distance-(i+1)*1.15);Location p=dragonPoint(d);p.setDirection(dragonPoint(d+.1).toVector().subtract(p.toVector()));var t=i<0?main:parts[i];locate(t,p);TreasuryScene.point(t,p);if(i%3==0){dust(p,BLACK,3,.3);dust(p,PURPLE,2,.2);particle(p,Particle.SOUL_FIRE_FLAME,1,.15,.03);}}}
+  if(tick==50){stopCue(Sound.ENTITY_WARDEN_SONIC_CHARGE);main=model("motionrp_black_dragon_head",dragonPoint(0),3.2f,"dragon_head");loop(main,"flame");for(int i=0;i<18;i++){parts[i]=model("motionrp_black_dragon_body",dragonPoint(0),.01f,"dragon_segment"+i);loop(parts[i],"flame");}cue(origin,Sound.ENTITY_ENDER_DRAGON_GROWL,2,.7f);}
+  if(tick>=50&&tick<96){double distance=EpicTimeline.dragonDistance(tick);for(int i=-1;i<18;i++){double d=Math.max(0,distance-(i+1)*1.15);Location p=dragonPoint(d);p.setDirection(dragonPoint(d+.1).toVector().subtract(p.toVector()));var t=i<0?main:parts[i];locate(t,p);TreasuryScene.point(t,p);if(i>=0)t.scaler(ModelScaler.value((float)((2.35-i*.08)*Math.clamp((distance-(i+1)*1.15)/2,0.01,1)*(1+.05*Math.sin(tick*1.7+i)))));if((i<0||i%3==0)&&distance>(i+1)*1.15){dust(p,BLACK,5,.4);dust(p,PURPLE,2,.35);particle(p,Particle.SOUL_FIRE_FLAME,3,.3,.04);particle(p,Particle.SMOKE,2,.25,.03);}}}
   if(tick==96){audience.hide(main);main=null;for(int i=0;i<18;i++){audience.hide(parts[i]);parts[i]=null;}var p=at(0,36,.8);blast(p,5);dust(p,PURPLE,140,4);particle(p,Particle.SOUL_FIRE_FLAME,100,3,.15);trace("black dragon impact");}
  }
  private void myoo(){
-  if(tick==16){main=model("motionrp_tengen_myoo",at(0,-7,0),.1f,"tengen_myoo");cue(origin,Sound.ENTITY_WITHER_SPAWN,1,.5f);}
-  if(main!=null){float scale=(float)(.1+13.9*Math.clamp((tick-16)/38.0,0,1));if(tick>=196)scale*=Math.max(.01,(220-tick)/24.0);main.scaler(ModelScaler.value(scale));}
-  if(tick==54){main.animate("slam",AnimationModifier.DEFAULT_WITH_PLAY_ONCE);trace("giant mirrors sword windup");}
+  if(tick==16){main=model("motionrp_tengen_myoo",at(0,-7,0),.1f,"tengen_myoo");loop(main,"idle");cue(origin,Sound.ENTITY_WITHER_SPAWN,1,.5f);}
+  if(main!=null){float scale=(float)(.1+9.9*Math.clamp((tick-16)/38.0,0,1));if(tick>=196)scale*=Math.max(.01,(220-tick)/24.0);main.scaler(ModelScaler.value(scale));}
+  if(tick==54){main.stopAnimation("idle");main.animate("slam",AnimationModifier.DEFAULT_WITH_PLAY_ONCE);trace("giant mirrors sword windup");}
   if(tick==124){cue(origin,Sound.ENTITY_PLAYER_ATTACK_SWEEP,4,.5f);cue(origin,Sound.ENTITY_IRON_GOLEM_ATTACK,4,.5f);}
   if(tick>=124&&tick<=148&&tick%3==1){double d=12+(tick-124)*1.6;for(int j=-2;j<=2;j++){Location p=ground(at(j*3,d,0));if(p!=null){particle(p,Particle.EXPLOSION_EMITTER,1,.4,0);particle(p,Particle.DUST_PLUME,16,2,.1);particle(p,Particle.GUST,3,1,.1);}}if(tick==124){cue(at(0,20,0),Sound.ENTITY_GENERIC_EXPLODE,6,.5f);trace("myoo sword impact and ground shockwave");}}
  }

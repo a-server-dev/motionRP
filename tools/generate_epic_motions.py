@@ -171,5 +171,7 @@ def generate(rig):
  humanoid('motionrp_the_world',GOLD,True);humanoid('motionrp_tengen_myoo',SAMURAI,False);roller();dragon();sphere('motionrp_gravity_core',DARK);sphere('motionrp_rock_moon',ROCK,True);fused();actors(rig);fusion(rig)
  from generate_epic_revision import revise
  revise(rig)
+ from generate_epic_refinement import generate as refine
+ refine()
 if __name__=='__main__':
  raw=Path(sys.argv[1]).read_bytes();assert hashlib.sha256(raw).hexdigest()==RIG_SHA;generate(json.loads(raw))

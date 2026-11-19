@@ -129,4 +129,16 @@ class EpicAssetsTest {
   }
  }
 
+ @Test void flameDragonSpiralsAndMyooHasItsReferenceArmor()throws Exception{
+  double min=100,max=-100;for(int i=0;i<=360;i++){var p=EpicTimeline.dragonOffset(i/10.0);assertTrue(p[1]>=1.8&&p[1]<6.3);min=Math.min(min,p[0]);max=Math.max(max,p[0]);}assertTrue(min<-2&&max>2,"Dragon must coil around its flight axis");
+  var dragon=model("models/motionrp_black_dragon_head");assertTrue(dragon.getAsJsonArray("elements").asList().stream().noneMatch(e->e.getAsJsonObject().get("name").getAsString().contains("tooth")));
+  var giant=model("models/motionrp_tengen_myoo");for(String detail:List.of("rounded_pauldron","closed_visor_slit","crimson_face_veil","white_sash_tail","waist_rope","giant_sword_blade"))assertTrue(giant.getAsJsonArray("elements").asList().stream().anyMatch(e->e.getAsJsonObject().get("name").getAsString().startsWith(detail)),detail);
+  double low=1000,high=-1000,left=1000,right=-1000;for(var raw:giant.getAsJsonArray("elements")){var e=raw.getAsJsonObject();low=Math.min(low,e.getAsJsonArray("from").get(1).getAsDouble());high=Math.max(high,e.getAsJsonArray("to").get(1).getAsDouble());left=Math.min(left,e.getAsJsonArray("from").get(0).getAsDouble());right=Math.max(right,e.getAsJsonArray("to").get(0).getAsDouble());}assertTrue(high>108&&right-left>70,"Broad shoulders and giant proportions");
+ }
+
+ @Test void armAfterimagesSpreadInFrontAndBehindAndChangePosition(){
+  double front=-100,back=100;for(int tick=104;tick<168;tick++)for(int i=0;i<12;i++){var p=EpicTimeline.armGhostOffset(i,tick);front=Math.max(front,p[1]);back=Math.min(back,p[1]);assertTrue(p[2]>.9&&p[2]<2.2);}
+  assertTrue(front>.8&&back<-.8,"Arms must occupy both front and rear volumes");assertFalse(java.util.Arrays.equals(EpicTimeline.armGhostOffset(0,104),EpicTimeline.armGhostOffset(0,107)));
+ }
+
 }

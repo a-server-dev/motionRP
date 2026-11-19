@@ -15,5 +15,7 @@ public final class EpicTimeline {
  public static double rockRadius(int index){return switch(rockLayer(index)){case 0->1.2;case 1->3.9;default->6.6;};}
  public static double rockScale(int index){return switch(rockLayer(index)){case 0->2.8;case 1->4.0;default->4.8;};}
  public static double[] rockNormal(int index){int layer=rockLayer(index),count=24*(layer+1),offset=layer==0?0:layer==1?24:72;double y=1-2*(index-offset+.5)/count,a=index*2.399963229728653,r=Math.sqrt(1-y*y);return new double[]{r*Math.cos(a),y,r*Math.sin(a)};}
+ public static double[] armGhostOffset(int index,int tick){if(index<0||index>=12)throw new IllegalArgumentException("arm");double phase=(tick-104)*.7+index*2.399963,spread=.42+((index*7)%9)*.105;int side=index%2==0?1:-1;return new double[]{side*spread+Math.sin(phase)*.22,-.85+((index*5)%13)*.14+Math.cos(phase*.8)*.25,1.25+((index*3)%7)*.12+Math.sin(phase*.6)*.13};}
+ public static double[] dragonOffset(double d){double r=2.2*(1-Math.exp(-Math.max(0,d)/5)),a=d*.30;return new double[]{r*Math.sin(a),1.8+r*(1-Math.cos(a))};}
  public static double dragonDistance(int tick){return Math.clamp((tick-50)*.8,0,36);}
 }
