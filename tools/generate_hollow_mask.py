@@ -39,20 +39,25 @@ def texture():
   for x in range(w):mp[x,y]=255 if abs((x-(w-1)/2)/((w-1)/2))<=half else 0
  im.putalpha(mask);out=io.BytesIO();im.save(out,format='PNG');(ROOT/'textures').mkdir(exist_ok=True);(ROOT/'textures/motionrp_hollow_mask.png').write_bytes(out.getvalue());return out.getvalue()
 def generate(actor,end=164):
- m=Model('motionrp_hollow_mask');m.data['resolution']={'width':128,'height':160};m.data['textures'][0].update(name='hollow_mask.png',width=128,height=160,uv_width=128,uv_height=160,source='data:image/png;base64,'+base64.b64encode(texture()).decode())
- cols,rows=16,20;elements=[]
+ m=Model('motionrp_hollow_mask',False,[(238,238,244,255),(191,8,35,255),(15,14,23,255),(253,252,251,255),(215,215,224,255),(107,107,124,255),(230,230,237,255),(244,244,249,255)]);art=Image.open(io.BytesIO(texture()))
+ cols,rows=32,40;elements=[]
+ ranks=[(x+.5)/cols+(y+.5)/rows for y in range(rows) for x in range(cols) if art.getpixel((min(127,int((x+.5)*128/cols)),min(159,int((y+.5)*160/rows))))[3]];low,high=min(ranks),max(ranks)
  for band in range(8):
   verts={};faces={}
   for y in range(rows):
    for x in range(cols):
     # u=0 is the wearer's right. Reveal that upper forehead first, left jaw last.
-    if min(7,int(((x+.5)/cols+(y+.5)/rows)*4))!=band:continue
+    if min(7,max(0,int((((x+.5)/cols+(y+.5)/rows)-low)/(high-low)*8)))!=band:continue
+    pixel=art.getpixel((min(127,int((x+.5)*128/cols)),min(159,int((y+.5)*160/rows))))
+    if pixel[3]==0:continue
+    r,g,b,_=pixel;color=1 if r>130 and g<50 else 2 if r<50 else 5 if r<150 else 4 if r<225 else 0
     ids=[]
     for xx,yy in [(x,y),(x,y+1),(x+1,y+1),(x+1,y)]:
      key=f'{xx}_{yy}';u,v=xx/cols,yy/rows;px=4.3-8.6*u;py=8.0-8.3*v;nose=.7*math.exp(-((u-.5)/.11)**2-((v-.53)/.25)**2);z=-4.15-.58*math.sin(math.pi*u)*math.sin(math.pi*v)-nose
      verts[key]=[px,py,z];ids.append(key)
     for tri in [[ids[0],ids[1],ids[2]],[ids[0],ids[2],ids[3]]]:
-     uv={key:[int(key.split('_')[0])*128/cols,int(key.split('_')[1])*160/rows] for key in tri}
+     # BetterModel mesh UVs use the fixed Minecraft 0..16 range, unlike cube UVs.
+     uv={tri[0]:[(color+.15)*2,.15*16],tri[1]:[(color+.15)*2,.85*16],tri[2]:[(color+.85)*2,.85*16]}
      for order in [tri,list(reversed(tri))]:faces[str(len(faces))]={'vertices':order,'uv':uv,'texture':0}
   uid=ident(m.name+'/band_'+str(band));m.data['elements'].append({'name':'mask_surface_'+str(band),'uuid':uid,'type':'mesh','origin':[0,0,0],'rotation':[0,0,0],'vertices':verts,'faces':faces,'light_emission':15});m.group('mask_band_'+str(band),[uid])
  children=m.data['outliner'][:];g=m.group('mask_socket',[]);m.data['outliner']=[{'uuid':g['uuid'],'children':children}]

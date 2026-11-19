@@ -58,11 +58,23 @@ final class SusanooScene extends SummonScene {
                 dust(at(Math.cos(a)*1.4,Math.sin(a)*.8,1+(tick%24)/8.0),VIOLET,2,.04);
             }
         }
-        if(tick==LEFT_IMPACT || tick==IMPACT) {
-            Location point=ground(at(0,70,0));if(point==null) point=at(0,70,.2);
-            particle(point,Particle.EXPLOSION_EMITTER,3,2,0);particle(point,Particle.DUST_PLUME,55,4,.08);
-            particle(point,Particle.CLOUD,80,4,.08);dust(point,VIOLET,65,3);
-            sound(point,Sound.ENTITY_GENERIC_EXPLODE,6,.5f);sound(point,Sound.ENTITY_BREEZE_WIND_BURST,6,.6f);trace("impact tick="+tick);
+        if(tick==READY)trace("draw left waist scabbard; both hands on blade and sheath");
+        if(tick==READY+23)trace("blade clears scabbard; draw cut begins");
+        for(int strike:new int[]{LEFT_IMPACT,IMPACT}){
+            int age=tick-strike;
+            if(age>=0 && age<=16 && age%2==0) groundBlast(age,strike==LEFT_IMPACT);
         }
+        if(tick==LEFT_IMPACT || tick==IMPACT)trace("impact tick="+tick);
+
+    }
+    private void groundBlast(int age,boolean draw){
+        double distance=10+age*4;
+        for(int j=-4;j<=4;j++){
+            double side=j*(2+age*.22);Location point=ground(at(side,distance+Math.abs(j)*1.1,0));if(point==null)continue;
+            particle(point,Particle.EXPLOSION_EMITTER,1,.5,0);particle(point,Particle.DUST_PLUME,12,1.7,.13);
+            particle(point,Particle.CLOUD,16,2,.22);particle(point,Particle.GUST,2,1,.1);dust(point,VIOLET,4,1);
+            if(j%2==0)for(Player viewer:audience.players())viewer.spawnParticle(Particle.BLOCK,point,10,1,1,1,.16,point.clone().subtract(0,.1,0).getBlock().getBlockData());
+        }
+        if(age==0){sound(at(0,18,0),Sound.ENTITY_GENERIC_EXPLODE,6,.5f);sound(at(0,18,0),Sound.ENTITY_BREEZE_WIND_BURST,6,.5f);trace((draw?"draw-cut":"kesa")+" ground blast and wind start");}
     }
 }

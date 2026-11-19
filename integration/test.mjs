@@ -252,16 +252,36 @@ async function verifyTitanRecovery(a,b,{sceneDisplays,sceneRemoved,removedByRole
   return {a,b};
 }
 
+function checkMaskPack(){
+  execFileSync('python3',['-c',`import zipfile,json,sys,collections
+z=zipfile.ZipFile(sys.argv[1]);c=collections.Counter()
+def walk(d):
+ if isinstance(d,list):
+  for x in d:walk(x)
+ elif isinstance(d,dict):
+  for tint in d.get('tints',[]):c[tint['value']&0xffffff]+=1
+  for v in d.values():walk(v)
+for n in z.namelist():
+ if '/items/' in n and 'motionrp_hollow_mask_' in n:walk(json.loads(z.read(n)))
+white=sum(n for rgb,n in c.items() if min(rgb>>16&255,rgb>>8&255,rgb&255)>180)
+red=sum(n for rgb,n in c.items() if rgb>>16&255>130 and rgb>>8&255<50)
+dark=sum(n for rgb,n in c.items() if max(rgb>>16&255,rgb>>8&255,rgb&255)<50)
+assert white>red>0 and white>dark*3,(white,red,dark,c)
+assert c[0]==0,c
+`,path.join(run,'plugins/BetterModel/build.zip')]);
+  pass('compiled mask keeps a predominantly white face, red markings and limited black eye details');
+}
+
 if(process.env.MOTIONRP_BARRIER_ONLY==='1'){
   let code=0;
   try{
     fs.copyFileSync(path.join(project,`build/libs/motionRP-${version}.jar`),path.join(run,'plugins/MotionRP.jar'));
     const previous=[];
     for(const file of ['models/motionrp_hollow_mask.bbmodel','models/motionrp_rho_aias_shield.bbmodel','models/motionrp_getsuga_crescent.bbmodel','models/motionrp_getsuga_tensa.bbmodel','players/motionrp_rho_aias.bbmodel','players/motionrp_getsuga_tensho.bbmodel']){
-      const old=path.join(project,'src/test/resources/bundled-0.17.0',file.replace('/','_')+'.gz');
+      const latest=path.join(project,'src/test/resources/bundled-0.18.0',file.replace('/','_')+'.gz');const old=fs.existsSync(latest)?latest:path.join(project,'src/test/resources/bundled-0.17.0',file.replace('/','_')+'.gz');
       if(fs.existsSync(old)){const bytes=gunzipSync(fs.readFileSync(old));fs.writeFileSync(path.join(run,'plugins/BetterModel',file),bytes);previous.push([file,bytes]);}else fs.rmSync(path.join(run,'plugins/BetterModel',file),{force:true});
     }
-    log=fs.createWriteStream(path.join(project,'build/barrier-smoke.log'));await startServer();
+    log=fs.createWriteStream(path.join(project,'build/barrier-smoke.log'));await startServer();checkMaskPack();
     for(const [file,bytes]of previous){assert.deepEqual(fs.readFileSync(path.join(run,'plugins/BetterModel',file)),fs.readFileSync(path.join(project,'src/main/resources/bettermodel',file)));const hash=createHash('sha256').update(bytes).digest('hex');assert.deepEqual(fs.readFileSync(path.join(run,'plugins/MotionRP/model-backups',path.basename(file)+'.'+hash+'.bak')),bytes);}pass('0.17.0 shield, katana, crescent and two-handed player assets migrate with exact backups');
     const suffix=String(Date.now()).slice(-6),an='ArtsA'+suffix,bn='ArtsB'+suffix;
     const a=await connect(an),b=await connect(bn);consoleCommand(`tp ${an} 0 -60 0 0 0`);consoleCommand(`tp ${bn} 5 -60 0 0 0`);await sleep(400);
@@ -452,7 +472,7 @@ if(process.env.MOTIONRP_NOBLE_ONLY==='1') {
   try {
     assert.ok(fs.existsSync(path.join(run,'world/players/data',uuid('MotionTesterA')+'.dat')),'Run the full integration suite first');
     fs.copyFileSync(path.join(project,`build/libs/motionRP-${version}.jar`),path.join(run,'plugins/MotionRP.jar'));
-    for(const file of ['motionrp_excalibur_charge','motionrp_excalibur_wave','motionrp_excalibur_pillar','motionrp_susanoo_slash','motionrp_kamehameha_orb','motionrp_kamehameha_beam','motionrp_genki_dama_orb','motionrp_excalibur_blade','motionrp_excalibur_light','motionrp_gae_bolg_spear','motionrp_gae_bolg_trail','motionrp_gae_bolg_thorns','motionrp_susanoo_armor','motionrp_zangetsu_cleaver'])
+    for(const file of ['motionrp_hollow_mask','motionrp_excalibur_charge','motionrp_excalibur_wave','motionrp_excalibur_pillar','motionrp_susanoo_slash','motionrp_kamehameha_orb','motionrp_kamehameha_beam','motionrp_genki_dama_orb','motionrp_excalibur_blade','motionrp_excalibur_light','motionrp_gae_bolg_spear','motionrp_gae_bolg_trail','motionrp_gae_bolg_thorns','motionrp_susanoo_armor','motionrp_zangetsu_cleaver'])
       fs.copyFileSync(path.join(project,'src/main/resources/bettermodel/models',file+'.bbmodel'),path.join(run,'plugins/BetterModel/models',file+'.bbmodel'));
     for(const id of ['excalibur','gae_bolg','kamehameha','genki_dama'])fs.copyFileSync(path.join(project,'src/main/resources/bettermodel/players','motionrp_'+id+'.bbmodel'),path.join(run,'plugins/BetterModel/players','motionrp_'+id+'.bbmodel'));
     const energyUpgrade=[];
@@ -471,7 +491,9 @@ if(process.env.MOTIONRP_NOBLE_ONLY==='1') {
       const relative=file.replace(/^(models|players)_/,'$1/').replace(/\.gz$/,'');const old=gunzipSync(fs.readFileSync(path.join(project,'src/test/resources/bundled-0.14.2',file)));
       fs.writeFileSync(path.join(run,'plugins/BetterModel',relative),old);surfaceUpgrade.push([relative,old]);
     }
-    log=fs.createWriteStream(path.join(project,'build/noble-smoke.log'));await startServer();
+    const oldArmor=gunzipSync(fs.readFileSync(path.join(project,'src/test/resources/bundled-0.18.0/models_motionrp_susanoo_armor.bbmodel.gz')));fs.writeFileSync(path.join(run,'plugins/BetterModel/models/motionrp_susanoo_armor.bbmodel'),oldArmor);
+    log=fs.createWriteStream(path.join(project,'build/noble-smoke.log'));await startServer();checkMaskPack();
+    assert.deepEqual(fs.readFileSync(path.join(run,'plugins/BetterModel/models/motionrp_susanoo_armor.bbmodel')),fs.readFileSync(path.join(project,'src/main/resources/bettermodel/models/motionrp_susanoo_armor.bbmodel')));pass('0.18.0 Susanoo armor migrates to the new sheath and articulated arms');
     for(const [relative,old] of surfaceUpgrade){assert.deepEqual(fs.readFileSync(path.join(run,'plugins/BetterModel',relative)),fs.readFileSync(path.join(project,'src/main/resources/bettermodel',relative)));const h=createHash('sha256').update(old).digest('hex');assert.deepEqual(fs.readFileSync(path.join(run,'plugins/MotionRP/model-backups',path.basename(relative)+'.'+h+'.bak')),old);}
     if(surfaceUpgrade.length)pass('0.14.2 sphere, pillar and arm assets migrate with exact backups');
     await waitFor(()=>fs.existsSync(path.join(run,'plugins/BetterModel/build.zip')) && fs.readFileSync(path.join(run,'plugins/BetterModel/build.zip')).includes(Buffer.from('assets/motionrp/models/energy/')),'energy pack is prepared for manual distribution');
@@ -576,7 +598,8 @@ m=json.load(open(sys.argv[2]));mesh=next(e for e in m['elements'] if e['name']==
     await waitFor(()=>output.slice(seatBegin).includes('pilot seated scale=10.0'),'final neck seat');assert.ok(a.entity.position.y>seatOrigin.y+50);
     await waitFor(()=>output.slice(seatBegin).includes('Susanoo phase: FADE'),'final neck return',20000);assert.ok(a.entity.position.distanceTo(seatOrigin)<.01);
     await waitFor(()=>['owner','observer'].every(role=>[...spawned[role]].every(id=>removed[role].has(id))),'final full giant cleanup');
-    pass('Final complete Susanoo model reload, scale-ten neck seat and grounded return');
+    for(const phrase of ['draw left waist scabbard','blade clears scabbard','draw-cut ground blast and wind start','kesa ground blast and wind start'])assert.ok(output.slice(seatBegin).includes(phrase),phrase);
+    pass('Final complete Susanoo sheath draw, two ground blasts, scale-ten neck seat and grounded return');
     assert.ok(!/Excalibur scene failed|GaeBolg scene failed|Kamehameha scene failed|GenkiDama scene failed|Susanoo scene failed/.test(output));
     fs.writeFileSync(path.join(project,'build/noble-smoke-result.json'),JSON.stringify({passed:checks.length,checks},null,2));
   } catch(e) {console.error(e.stack);code=1;}

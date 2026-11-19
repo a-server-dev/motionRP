@@ -10,6 +10,12 @@ import static org.junit.jupiter.api.Assertions.*;
 class EnergyRevisionTest {
     @TempDir Path root;
     private JsonObject model(String path)throws Exception{try(var in=Objects.requireNonNull(getClass().getResourceAsStream("/bettermodel/"+path+".bbmodel"))){return JsonParser.parseString(new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();}}
+    @Test void beamTravelDoublesWithoutRetimingTheCast(){
+        assertEquals(56,DragonBallTimeline.KAME_RELEASE);assertEquals(8,DragonBallTimeline.KAME_IMPACT-DragonBallTimeline.KAME_RELEASE);assertEquals(128,DragonBallTimeline.KAME_END);
+        assertEquals(93,NobleTimeline.release(true));assertEquals(6,NobleTimeline.impact(true)-NobleTimeline.release(true));assertEquals(176,NobleTimeline.end(true));
+        assertEquals(332,TreasuryTimeline.FIRE);assertEquals(10,TreasuryTimeline.IMPACT-TreasuryTimeline.FIRE);assertEquals(420,TreasuryTimeline.SERIOUS_END);
+    }
+
     @Test void sphereLowerEdgeFollowsRaisedPalmsThroughoutTheRiseAndGrowth(){
         for(int tick=DragonBallTimeline.RISE;tick<DragonBallTimeline.SPIRIT_RELEASE;tick++){
             var palms=EnergyHandPath.at(true,tick);assertTrue(palms.right().height()>2 && palms.left().height()>2,"Both arms stay above the head while charging");
@@ -32,7 +38,7 @@ class EnergyRevisionTest {
         var release=EnergyHandPath.at(false,56);for(var palm:List.of(release.right(),release.left()))assertTrue(Math.abs(palm.right())<.15 && palm.forward()>.6);
     }
     @Test void fasterExcaliburCutAndBeamUseEmissiveRoundCoreAndMovingFilaments()throws Exception{
-        assertEquals(11,NobleTimeline.impact(true)-NobleTimeline.release(true));
+        assertEquals(6,NobleTimeline.impact(true)-NobleTimeline.release(true));
         var weapon=model("models/motionrp_excalibur_blade");var keys=weapon.getAsJsonArray("animations").get(0).getAsJsonObject().getAsJsonObject("animators").entrySet().iterator().next().getValue().getAsJsonObject().getAsJsonArray("keyframes");
         assertEquals(2.5,(keys.get(2).getAsJsonObject().get("time").getAsDouble()-keys.get(1).getAsJsonObject().get("time").getAsDouble())*20,1e-8);
         for(String id:List.of("excalibur_light","excalibur_pillar","kamehameha_beam","kamehameha_orb","genki_dama_orb")){

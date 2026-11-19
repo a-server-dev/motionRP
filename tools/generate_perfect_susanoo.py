@@ -7,6 +7,7 @@ sys.dont_write_bytecode=True
 import json,math,hashlib
 from pathlib import Path
 from collections import defaultdict
+from hollow_kinematics import matrix,mul,vector,euler
 from generate_summons import Model,ROOT,RIG_SHA,player,save,animator,animation
 BLUE=[(17,65,150,255),(164,242,255,255),(10,34,92,255),(222,255,255,255),
       (39,154,235,255),(73,169,245,255),(31,95,187,255),(101,218,255,255)]
@@ -135,39 +136,43 @@ def complete():
     a.joint('tengu_helmet',(0,85,0))
     arm_joints=[]
     for side in [-1,1]:
-        x=side*28
+        x=side*24
         for j in range(5):
             c(f'shoulder_scale_{side}_{j}',[side*(21+j*.7),83-j*2.1,1],[17+j*.9,3.1,20-j*.4],6 if j%2 else 5,[0,0,-side*22.5])
             c(f'shoulder_trim_{side}_{j}',[side*(21+j*.7),83.8-j*2.1,-8.5+j*.25],[15+j*.7,.6,.9],7,[0,0,-side*22.5])
-        for j in range(3):
-            c(f'pauldron_crest_{side}_{j}',[side*(19+j*4),86+j*.8,-1],[5.5,5-j*.7,15],0,[0,0,-side*22.5])
-        c(f'bracer_center_plate_{side}',[x,57,-7.2],[6,13,1.8],0)
-        c(f'bracer_inlaid_diamond_{side}',[x,58,-8.3],[3.5,5,.6],4,[0,0,45])
-        c(f'upper_arm_{side}',[x,69,0],[8,19,9],5)
-        for j in range(5):
-            c(f'forearm_lamella_{side}_{j}',[x,50+j*3.2,-1],[10,3.5,11],6 if j%2 else 5)
-            c(f'bracer_ring_{side}_{j}',[x,51+j*3.2,-6.8],[10.5,.8,.8],7)
-        c(f'palm_{side}',[x,44,-2],[8,7,7],6)
+        a.joint(f'pauldron_{side}',(side*22,81,0))
+        c(f'upper_arm_{side}',[x,71,0],[8,20,9],5)
+        upper_parts=a.parts[:];a.parts=[]
+        for j in range(6):
+            c(f'forearm_lamella_{side}_{j}',[x,42+j*3.2,-1],[10,3.5,11],6 if j%2 else 5)
+            c(f'bracer_ring_{side}_{j}',[x,43+j*3.2,-6.8],[10.5,.8,.8],7)
+        c(f'bracer_center_plate_{side}',[x,49,-7.2],[6,13,1.8],0)
+        c(f'bracer_inlaid_diamond_{side}',[x,50,-8.3],[3.5,5,.6],4,[0,0,45])
+        c(f'palm_{side}',[x,36,0],[8,7,7],6)
         for digit in range(4):
-            c(f'finger_{side}_{digit}',[x-3+digit*2,40.5,-4],[1.5,6,2.5],7)
-            c(f'finger_joint_{side}_{digit}',[x-3+digit*2,42.5,-5.5],[1.6,1.5,1.5],1)
-        # Katana points forward; the shoulder raises it into the windup.
-        c(f'katana_hilt_{side}',[x,44,-9],[2.2,2.2,13],0)
-        for j in range(6):c(f'hilt_wrap_{side}_{j}',[x,44,-4-j*1.8],[2.7,2.7,.6],7)
-        c(f'katana_guard_{side}',[x,44,-16],[12,3,2.5],7)
-        for j in range(18):
-            t=j/17;w=5.1*(1-.85*t*t);z=-19-j*3.1;curve=side*3*t*t
-            c(f'katana_blade_{side}_{j}',[x+curve,44,z],[w,1.1,3.5],5)
-            c(f'katana_edge_{side}_{j}',[x+curve-side*w/2,44,z],[.55,1.5,3.5],3)
-            if j%3==0:c(f'blade_hamon_{side}_{j}',[x+curve,44.7,z],[w*.45,.3,2],1)
-        arm_joints.append(a.joint('sword_arm' if side==1 else 'guard_arm',(side*22,81,0)))
-    # Rear arms and paired sheaths at the wing roots distinguish the complete form.
+            c(f'finger_{side}_{digit}',[x-3+digit*2,32.5,-2],[1.5,6,2.5],7)
+            c(f'finger_joint_{side}_{digit}',[x-3+digit*2,34.5,-3.5],[1.6,1.5,1.5],1)
+        fore=a.joint(f'forearm_{side}',(x,61,0));node=a.m.data['outliner'].pop()
+        a.parts=upper_parts;upper=a.joint('sword_arm' if side==1 else 'guard_arm',(x,81,0));a.m.data['outliner'][-1]['children'].append(node)
+        arm_joints.append((side,upper,fore))
+    # Both swords begin sheathed at the waist. Only the left blade is drawn.
+    weapons={}
     for side in [-1,1]:
-        for j in range(5):
-            c(f'rear_arm_{side}_{j}',[side*(17+j*2.2),75-j*3,11],[6,5,7],5)
-            c(f'rear_arm_joint_{side}_{j}',[side*(17+j*2.2),75-j*3,15],[4,2,2],7)
-        for j in range(12):c(f'paired_scabbard_{side}_{j}',[side*25,58+j*.6,17+j*3],[4,4,3.5],6)
-        a.joint(f'rear_arm_and_scabbard_{side}',(side*15,78,10))
+        for j in range(18):
+            z=-10-j*2.9;t=j/17;w=5.1*(1-.85*t*t)
+            c(f'katana_blade_{side}_{j}',[side*2*t*t,0,z],[w,1.1,3.2],5)
+            c(f'katana_edge_{side}_{j}',[side*2*t*t-w/2,0,z],[.55,1.5,3.2],3)
+            if j%3==0:c(f'blade_hamon_{side}_{j}',[side*2*t*t,.7,z],[w*.45,.3,2],1)
+        c(f'katana_hilt_{side}',[0,0,0],[2.2,2.2,13],0)
+        for j in range(6):c(f'hilt_wrap_{side}_{j}',[0,0,-5+j*1.8],[2.7,2.7,.6],7)
+        c(f'katana_guard_{side}',[0,0,-7],[12,3,2.5],7)
+        weapons[f'blade_{side}']=a.joint(f'waist_blade_{side}',(0,0,0))
+        for j in range(18):
+            z=-10-j*2.9;w=6*(1-.7*(j/17)**2)
+            c(f'paired_scabbard_{side}_{j}',[0,0,z],[w,3,3.3],0)
+            c(f'scabbard_inlay_{side}_{j}',[0,-1.6,z],[1.2,.4,3.3],7)
+        c(f'scabbard_mouth_{side}',[0,0,-8],[7,4,2],7)
+        weapons[f'sheath_{side}']=a.joint(f'waist_scabbard_{side}',(0,0,0))
     wings=[]
     for side in [-1,1]:
         for j in range(10):
@@ -180,13 +185,68 @@ def complete():
                 c(f'feather_spine_{side}_{feather}_{j}',[xx,yy,zz-.95],[.65,5.5,.6],7,[0,0,-side*22.5])
         wings.append(a.joint('right_wing' if side==1 else 'left_wing',(side*17,82,10)))
     slash=animation('slash',5.2,{})
-    for side,g in zip([-1,1],arm_joints):
-        keys=([(0,(0,0,0)),(1.4,(0,-65,-12)),(2.2,(0,65,12)),(3.2,(0,65,12)),(5.2,(0,0,0))] if side==-1 else
-              [(0,(0,0,0)),(2.2,(0,0,0)),(3.2,(70,-20,-35)),(4.2,(-35,25,25)),(5.2,(0,0,0))])
-        slash['animators'][g['uuid']]=animator(g,keys)
+    choreograph(a.m,slash,arm_joints,weapons)
     unfold=animation('unfurl',3.4,{})
     for side,g in zip([-1,1],wings):unfold['animators'][g['uuid']]=animator(g,[(0,(0,side*65,side*28)),(1,(0,side*35,side*15)),(3.4,(0,0,0))])
+    unfold['animators'].update(a.m.idle_tracks)
     a.m.data['animations']=[slash,unfold];a.m.save()
+
+def interp(keys,t):
+    lo=max((k for k in keys if k[0]<=t),key=lambda k:k[0],default=keys[0]);hi=min((k for k in keys if k[0]>=t),key=lambda k:k[0],default=keys[-1]);f=(t-lo[0])/(hi[0]-lo[0]) if hi[0]!=lo[0] else 0
+    return [a*(1-f)+b*f for a,b in zip(lo[1],hi[1])]
+def normalized(v):
+    d=math.sqrt(sum(x*x for x in v));return [x/d for x in v]
+def cross(a,b):return [a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]]
+def direction_rotation(direction,down=False):
+    axis=normalized(direction);y=[-v for v in axis] if down else [0,1,0]
+    if down:
+        z=normalized([0,-y[2],y[1]]) if abs(y[1])+abs(y[2])>.001 else [0,0,1];x=normalized(cross(y,z));z=cross(x,y)
+    else:
+        z=[-v for v in axis];ref=[0,1,0] if abs(z[1])<.95 else [0,0,1];x=normalized(cross(ref,z));y=cross(z,x)
+    return [[x[i],y[i],z[i]] for i in range(3)]
+def transpose(m):return [list(v) for v in zip(*m)]
+def continuous(keys):
+    out=[]
+    for t,rot in keys:
+        if out:
+            for i in range(3):
+                while rot[i]-out[-1][1][i]>180:rot[i]-=360
+                while rot[i]-out[-1][1][i]<-180:rot[i]+=360
+        out.append((t,rot))
+    return out
+def choreograph(m,slash,arms,weapons):
+    hilt=[(0,(-18,59,-7)),(.45,(-18,59,-7)),(.8,(-7,68,-12)),(1.15,(26,72,-32)),(1.4,(19,62,-28)),(1.8,(-9,61,-23)),(2.5,(17,85,-17)),(3.2,(21,99,-5)),(3.5,(8,55,-23)),(4.2,(5,54,-20)),(5.2,(24,44,-2))]
+    axis=[(0,(0,-.24,.97)),(.45,(0,-.24,.97)),(.8,(-.8,0,.6)),(1.15,(-.8,0,.6)),(1.4,(-.95,-.10,-.28)),(1.8,(-.8,-.05,-.6)),(2.5,(-.1,.97,-.15)),(3.2,(-.3,.9,-.3)),(3.5,(-.4,-.65,-.64)),(4.2,(-.35,-.65,-.68)),(5.2,(0,-.2,-.98))]
+    sheath=[(0,(-18,59,-7)),(.45,(-18,59,-7)),(.8,(-7,68,-12)),(1.15,(-31,67,9)),(1.8,(-31,67,9)),(2.3,(-18,59,-7)),(5.2,(-18,59,-7))]
+    sheath_axis=[(0,(0,-.24,.97)),(.45,(0,-.24,.97)),(.8,(-.8,0,.6)),(1.8,(-.8,0,.6)),(2.3,(0,-.24,.97)),(5.2,(0,-.24,.97))]
+    tracks={}
+    def track(g,ch,keys):
+        # Keep raw source Euler angles: these are model joints, not the player rig.
+        part=animator(g,continuous(keys) if ch=='rotation' else keys,ch)
+        target=tracks.setdefault(g['uuid'],{'name':g['name'],'type':'bone','keyframes':[]});target['keyframes']+=part['keyframes'];target['keyframes'].sort(key=lambda k:k['time'])
+    for side,upper,fore in arms:
+        ur=[];fr=[]
+        for tick in range(105):
+            t=tick/20;h=interp(hilt,t);d=normalized(interp(axis,t));sh=interp(sheath,t);sd=normalized(interp(sheath_axis,t))
+            if side==1:hand=interp([(0,(26,44,-2)),(.45,(-12,63,-7)),(.8,(-7,68,-12))],t) if t<.8 else h
+            else:hand=interp([(0,(-26,44,-2)),(.45,(-18,59,-7)),(.8,tuple(sh[i]+sd[i]*14 for i in range(3)))],t) if t<.8 else [sh[i]+sd[i]*14 for i in range(3)]
+            shoulder=[side*24,81,0];delta=[hand[i]-shoulder[i] for i in range(3)];dist=math.sqrt(sum(v*v for v in delta));assert dist<45.01,(side,t,dist)
+            aim=normalized(delta);along=(20*20-25*25+dist*dist)/(2*dist);height=math.sqrt(max(0,400-along*along));ref=[side,0,.45];dot=sum(ref[i]*aim[i] for i in range(3));bend=normalized([ref[i]-dot*aim[i] for i in range(3)])
+            elbow=[shoulder[i]+aim[i]*along+bend[i]*height for i in range(3)]
+            a=direction_rotation([elbow[i]-shoulder[i] for i in range(3)],True);b=direction_rotation([hand[i]-elbow[i] for i in range(3)],True)
+            ur.append((t,euler(a)));fr.append((t,euler(mul(transpose(a),b))))
+        track(upper,'rotation',ur);track(fore,'rotation',fr)
+    for name,g in weapons.items():
+        positions=[];rotations=[]
+        for tick in range(105):
+            t=tick/20
+            if name.endswith('_1'):p=[18,59,-7];d=[0,-.24,.97]
+            else:p=interp(sheath if name.startswith('sheath') else hilt,t);d=interp(sheath_axis if name.startswith('sheath') else axis,t)
+            positions.append((t,p));rotations.append((t,euler(direction_rotation(d))))
+        track(g,'position',positions);track(g,'rotation',rotations)
+    slash['animators']=tracks
+    # An explicit held idle clip keeps both weapons at the waist during formation.
+    m.idle_tracks={uid:{**track,'keyframes':[dict(k,time=0) for k in track['keyframes'] if k['time']==0]} for uid,track in tracks.items()}
 
 def scaffold():
     a=Armor('motionrp_susanoo_ribs')

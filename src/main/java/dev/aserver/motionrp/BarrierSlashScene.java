@@ -35,7 +35,7 @@ final class BarrierSlashScene extends SummonScene {
         for(int i=0;i<7;i++){
             if(i>0){
                 if(tick==layerStart(i)){
-                    translucent[i]=new TranslucentShield(audience,at(0,2.1+i*.13,2.2),layerScale(i)*18/16);
+                    translucent[i]=new TranslucentShield(audience,at(0,layerForward(i),4.3),layerScale(i)*18/16);
                     trace("translucent layer="+i+" alpha=42 ids="+translucent[i].ids());sound(palm(),Sound.BLOCK_AMETHYST_BLOCK_RESONATE,.5f,1.2f+i*.1f);
                 }
                 if(translucent[i]!=null){
@@ -46,7 +46,7 @@ final class BarrierSlashScene extends SummonScene {
                 continue;
             }
             if(tick==layerStart(i)){
-                layers[i]=model("motionrp_rho_aias_shield",at(0,2.1,2.2),.05f,"layer0");
+                layers[i]=model("motionrp_rho_aias_shield",at(0,layerForward(0),4.3),.05f,"layer0");
                 layers[i].animate("bloom",AnimationModifier.DEFAULT_WITH_PLAY_ONCE);sound(palm(),Sound.BLOCK_AMETHYST_BLOCK_RESONATE,.55f,1.2f);
             }
             var layer=layers[i];if(layer==null)continue;
@@ -119,7 +119,7 @@ final class BarrierSlashScene extends SummonScene {
         if(mask!=null){mask.location(BukkitAdapter.adapt(head));mask.forceUpdate(true);}
         if(tick>=MASK_START && tick<=MASK_COMPLETE){
             if((tick-MASK_START)%2==0){int band=(tick-MASK_START)/2;mask.update(TrackerUpdateAction.togglePart(true),b->b.name().rawName().equals("mask_band_"+band));trace("mask band="+band+" tick="+tick);}
-            var hand=BarrierHandPath.left(tick);Location trace=at(hand.right(),hand.forward(),hand.height());dust(trace,BLACK,18,.16);particle(trace,Particle.SQUID_INK,3,.11,.02);particle(trace,Particle.LARGE_SMOKE,3,.12,.02);
+            var hand=BarrierHandPath.left(tick);Location trace=at(hand.right(),hand.forward(),hand.height());dust(trace,BLACK,3,.09);particle(trace,Particle.SQUID_INK,1,.06,.01);if(tick%3==0)particle(trace,Particle.SMOKE,1,.06,.01);
             if(tick==MASK_COMPLETE){for(Player viewer:maskHeard)if(viewer.isOnline())viewer.stopSound(Sound.ENTITY_ENDERMAN_STARE,SoundCategory.PLAYERS);maskHeard.addAll(audience.players());sound(head,Sound.ENTITY_WITHER_AMBIENT,.7f,1.5f);trace("mask complete; forehead-right to jaw-left");}
         }
     }

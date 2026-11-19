@@ -22,11 +22,11 @@ final class EnergyVisuals {
         Vector u=axis.clone().crossProduct(reference).normalize(),v=axis.clone().crossProduct(u).normalize();
         var dust=new Particle.DustTransition(Color.WHITE,gold?Color.fromRGB(255,228,112):Color.fromRGB(90,205,255),1.2f);
         for(int j=0;j<24;j++){
-            double distance=(tick*1.9+j*length/24)%length,angle=tick*.65+j*.9,r=.6+.2*Math.sin(j+tick*.5);
+            double distance=(tick*3.8+j*length/24)%length,angle=tick*.65+j*.9,r=.6+.2*Math.sin(j+tick*.5);
             Location p=start.clone().add(axis.clone().multiply(distance)).add(u.clone().multiply(r*Math.cos(angle))).add(v.clone().multiply(r*Math.sin(angle)));
             for(Player viewer:viewers){
                 viewer.spawnParticle(Particle.DUST_COLOR_TRANSITION,p,1,.015,.015,.015,0,dust,true);
-                if(j%3==0)viewer.spawnParticle(Particle.END_ROD,p,0,axis.getX(),axis.getY(),axis.getZ(),.35,null,true);
+                if(j%3==0)viewer.spawnParticle(Particle.END_ROD,p,0,axis.getX(),axis.getY(),axis.getZ(),.7,null,true);
             }
         }
     }

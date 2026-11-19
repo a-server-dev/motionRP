@@ -18,13 +18,13 @@ class RasenganAssetsTest {
     @Test void maskRevealsDiagonallyAndHasWhiteRedEyeDetails() throws Exception {
         var mask=read("models/motionrp_hollow_mask.bbmodel");
         assertEquals(8,mask.getAsJsonArray("elements").size());
-        double previousX=10,previousY=20;
+        double previousRank=-1;
         for(var element:mask.getAsJsonArray("elements")){
             var mesh=element.getAsJsonObject();double x=0,y=0;int n=0;
             for(var vertex:mesh.getAsJsonObject("vertices").entrySet()){
                 var v=vertex.getValue().getAsJsonArray();x+=v.get(0).getAsDouble();y+=v.get(1).getAsDouble();n++;
             }
-            assertTrue(x/n<previousX && y/n<previousY,"Reveal must move from right forehead to left jaw");previousX=x/n;previousY=y/n;
+            double rank=(4.3-x/n)/8.6+(8-y/n)/8.3;assertTrue(rank>previousRank,"Reveal must move from right forehead to left jaw");previousRank=rank;
         }
         var image=ImageIO.read(getClass().getResourceAsStream("/bettermodel/textures/motionrp_hollow_mask.png"));
         int white=0,red=0,dark=0,clear=0;

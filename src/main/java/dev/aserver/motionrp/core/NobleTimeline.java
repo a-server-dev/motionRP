@@ -5,7 +5,7 @@ public final class NobleTimeline {
     private NobleTimeline() {}
     public static int draw(boolean excalibur) {return excalibur?12:8;}
     public static int release(boolean excalibur) {return excalibur?93:GaeBolgTimeline.THROW;}
-    public static int impact(boolean excalibur) {return excalibur?104:GaeBolgTimeline.IMPACT;}
+    public static int impact(boolean excalibur) {return excalibur?99:GaeBolgTimeline.IMPACT;}
     public static int fade(boolean excalibur) {return excalibur?148:GaeBolgTimeline.FADE;}
     public static int end(boolean excalibur) {return excalibur?176:GaeBolgTimeline.END;}
     public static double reach(boolean excalibur) {return excalibur?30:18;}
