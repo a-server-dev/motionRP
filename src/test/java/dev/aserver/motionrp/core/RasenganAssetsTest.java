@@ -308,7 +308,15 @@ class RasenganAssetsTest {
                 assertTrue(posedOrigin(names.get("pri_right_item"),2,a,groups,parents)[1]>24,"Atsuo fist not raised");
                 var chest=posedOrigin(names.get("pc_chest"),2,a,groups,parents);var hip=posedOrigin(names.get("phip_hip"),2,a,groups,parents);assertTrue(chest[2]>hip[2]+1.5,"Torso not arched backwards");
             }
-            if(p==Performance.YAMAKAWA)for(String wrist:List.of("pri_right_item","pli_left_item"))assertTrue(posedOrigin(names.get(wrist),2,a,groups,parents)[1]>24,"Dosukoi arms not raised in V");
+            if(p==Performance.YAMAKAWA)for(int frame=28;frame<=62;frame++){
+                double t=frame/20.0;
+                var r=posedOrigin(names.get("pri_right_item"),t,a,groups,parents);var l=posedOrigin(names.get("pli_left_item"),t,a,groups,parents);
+                var re=posedOrigin(names.get("prfa_right_forearm"),t,a,groups,parents);var le=posedOrigin(names.get("plfa_left_forearm"),t,a,groups,parents);
+                var head=posedOrigin(names.get("h_ph_head"),t,a,groups,parents);
+                assertTrue(r[0]-l[0]>22,"Dosukoi hands converge above head instead of spreading outward");
+                assertTrue(r[0]>re[0]+2 && l[0]<le[0]-2,"Forearms point inward");
+                assertTrue(r[1]>head[1]+3 && l[1]>head[1]+3,"Wide V must stay above head");
+            }
             if(p==Performance.KAZU){
                 var right=posedOrigin(names.get("prfl_right_foreleg"),.8,a,groups,parents);var left=posedOrigin(names.get("plfl_left_foreleg"),.8,a,groups,parents);assertTrue(right[1]>left[1]+1,"Kazu knee not raised");
                 right=posedOrigin(names.get("prfl_right_foreleg"),1.3,a,groups,parents);left=posedOrigin(names.get("plfl_left_foreleg"),1.3,a,groups,parents);assertTrue(left[1]>right[1]+1,"Kazu knees not alternating");

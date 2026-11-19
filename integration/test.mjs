@@ -325,11 +325,11 @@ if(process.env.MOTIONRP_PERFORMANCE_ONLY==='1') {
   try {
     assert.ok(fs.existsSync(path.join(run,'server.properties')),'Run full integration first');
     fs.copyFileSync(path.join(project,`build/libs/motionRP-${version}.jar`),path.join(run,'plugins/MotionRP.jar'));
-    const oldPerformance=gunzipSync(fs.readFileSync(path.join(project,'src/test/resources/bundled-0.15.1/players_motionrp_performances.bbmodel.gz')));
+    const oldPerformance=gunzipSync(fs.readFileSync(path.join(project,'src/test/resources/bundled-0.16.0/players_motionrp_performances.bbmodel.gz')));
     fs.writeFileSync(path.join(run,'plugins/BetterModel/players/motionrp_performances.bbmodel'),oldPerformance);
     log=fs.createWriteStream(path.join(project,'build/performance-smoke.log'));await startServer();
     assert.deepEqual(fs.readFileSync(path.join(run,'plugins/BetterModel/players/motionrp_performances.bbmodel')),fs.readFileSync(path.join(project,'src/main/resources/bettermodel/players/motionrp_performances.bbmodel')));
-    const oldHash=createHash('sha256').update(oldPerformance).digest('hex');assert.deepEqual(fs.readFileSync(path.join(run,'plugins/MotionRP/model-backups/motionrp_performances.bbmodel.'+oldHash+'.bak')),oldPerformance);pass('0.15.1 performance model migrates with exact backup');
+    const oldHash=createHash('sha256').update(oldPerformance).digest('hex');assert.deepEqual(fs.readFileSync(path.join(run,'plugins/MotionRP/model-backups/motionrp_performances.bbmodel.'+oldHash+'.bak')),oldPerformance);pass('0.16.0 performance model migrates with exact backup');
     const a=await connect('MotionTesterA'),b=await connect('MotionTesterB');
     consoleCommand('tp MotionTesterA 0 -60 0 0 0');consoleCommand('tp MotionTesterB 5 -60 0 0 0');
     await waitFor(()=>Math.abs(a.entity.position.z-.5)<.01 && Math.abs(a.entity.position.y+60)<.01,'celebration origins');
