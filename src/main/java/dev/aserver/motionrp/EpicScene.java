@@ -11,7 +11,7 @@ import java.util.*;
 final class EpicScene extends SummonScene {
  private final String effect;private final EntityTracker body;private final AerialAnchor pilot;
  private final Map<Sound,Set<Player>> heard=new HashMap<>();
- private DummyTracker main,stand;private final DummyTracker[] armGhosts=new DummyTracker[8];private final DummyTracker[] parts=new DummyTracker[EpicTimeline.ROCK_COUNT];
+ private DummyTracker main,stand;private final DummyTracker[] armGhosts=new DummyTracker[12];private final DummyTracker[] parts=new DummyTracker[EpicTimeline.ROCK_COUNT];
  private static final Particle.DustOptions PURPLE=new Particle.DustOptions(Color.fromRGB(108,20,178),1.5f),BLACK=new Particle.DustOptions(Color.fromRGB(12,5,18),1.5f),GOLD=new Particle.DustOptions(Color.fromRGB(255,220,83),1.2f);
  EpicScene(MotionPlugin plugin,Player owner,EntityTracker body,String effect){super(plugin,owner,effect,EpicTimeline.end(effect),128,true);this.effect=effect;this.body=body;pilot=new AerialAnchor(plugin,owner);body.rotation(()->new ModelRotation(0,origin.getYaw()));}
  @Override String phase(){return EpicTimeline.phase(effect,tick);}
@@ -29,6 +29,12 @@ final class EpicScene extends SummonScene {
  private boolean movePilot(Location p){p.setYaw(owner.getYaw());p.setPitch(owner.getPitch());if(owner.collidesAt(p)||!pilot.moveTo(p,origin)){plugin.playback().stop(owner.getUniqueId());return false;}return true;}
  private void blast(Location p,int amount){flash(p,Color.fromRGB(255,235,204));particle(p,Particle.EXPLOSION_EMITTER,amount,3,0);particle(p,Particle.DUST_PLUME,70,5,.12);particle(p,Particle.CLOUD,100,5,.15);particle(p,Particle.GUST,12,3,.1);cue(p,Sound.ENTITY_GENERIC_EXPLODE,4,.55f);}
  private void followUpperStand(){if(stand!=null){var p=owner.getLocation().clone();double yaw=Math.toRadians(origin.getYaw());p.add(Math.sin(yaw)*.25,.08,-Math.cos(yaw)*.25);locate(stand,p);}}
+ private DummyTracker playerArmGhost(int side,int index){
+  var renderer=Objects.requireNonNull(kr.toxicity.model.api.BetterModel.limbOrNull("motionrp_player_arm_"+(side==1?"right":"left")));
+  var profile=kr.toxicity.model.api.profile.ModelProfile.of(BukkitAdapter.adapt(owner));
+  var tracker=renderer.create(BukkitAdapter.adapt(owner.getLocation()),profile,MODIFIER,t->t.update(TrackerUpdateAction.brightness(15,15)));
+  audience.show(tracker,plugin,prefix,"arm_afterimage"+index);return tracker;
+ }
  private void roller(){
   if(tick==12){stand=model("motionrp_the_world",at(1.0,-.4,0),1.1f,"the_world");loop(stand,"world_idle");cue(origin,Sound.BLOCK_RESPAWN_ANCHOR_CHARGE,1,.6f);trace("World humanoid scale=1.1");}
   if(tick==32){flash(origin,Color.fromRGB(255,238,155));cue(origin,Sound.BLOCK_BELL_RESONATE,2,.5f);trace("time-stop flash (cosmetic)");}
@@ -42,8 +48,8 @@ final class EpicScene extends SummonScene {
   if(tick>=104&&tick<232)followUpperStand();
   for(int i=0;i<armGhosts.length;i++){
    int lane=i/2,side=i%2==0?1:-1,birth=104+(lane+(i%2)*2)%4;
-   if(tick==birth){armGhosts[i]=model("motionrp_world_arm_afterimage",owner.getLocation(),1,"arm_afterimage"+i);loop(armGhosts[i],"rapid_punch");}
-   if(armGhosts[i]!=null&&tick<168){var p=at(side*(.36+lane*.11),-.12-lane*.07,1.42+lane*.11).add(owner.getLocation().toVector().subtract(origin.toVector()));locate(armGhosts[i],p);armGhosts[i].scaler(ModelScaler.value(.82f+lane*.06f));}
+   if(tick==birth){armGhosts[i]=playerArmGhost(side,i);loop(armGhosts[i],"rapid_punch");}
+   if(armGhosts[i]!=null&&tick<168){var p=at(side*(.4+lane*.15),-.12-lane*.09,1.42+lane*.12).add(owner.getLocation().toVector().subtract(origin.toVector()));locate(armGhosts[i],p);armGhosts[i].scaler(ModelScaler.value(1.15f+lane*.08f));}
    if(tick==168){audience.hide(armGhosts[i]);armGhosts[i]=null;}
   }
 

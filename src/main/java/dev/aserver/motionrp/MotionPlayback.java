@@ -25,6 +25,7 @@ public final class MotionPlayback {
         for(String required:SummonAssets.models(definition.effect())) {
             if(BetterModel.modelOrNull(required)==null) return "演出モデルが未読込: "+required;
         }
+        if(definition.effect().equals("road_roller"))for(String side:java.util.List.of("left","right")){var arm=BetterModel.limbOrNull("motionrp_player_arm_"+side);if(arm==null||arm.animation("rapid_punch").isEmpty())return "プレイヤーの腕の残像モデルが未読込";}
         if(definition.effect().startsWith("gate_of_babylon_") && BetterModel.modelOrNull(SummonAssets.MASS_GATE).animation("spin").isEmpty()) return "大規模門の回転が未登録";
         if(definition.effect().equals("gate_of_babylon_enuma") && (BetterModel.modelOrNull(SummonAssets.ENUMA_RING).animation("spin").isEmpty() || BetterModel.modelOrNull(SummonAssets.EA).animation("spin").isEmpty() || BetterModel.modelOrNull(SummonAssets.EA).animation("level").isEmpty() || BetterModel.modelOrNull(SummonAssets.ENUMA).animation("vortex").isEmpty())) return "エアの回転・射出が未登録";
         if(definition.effect().equals("excalibur") && (BetterModel.modelOrNull(SummonAssets.EXCALIBUR).animation("release").isEmpty() || BetterModel.modelOrNull(SummonAssets.EXCALIBUR_LIGHT).animation("flow").isEmpty())) return "聖剣の解放が未登録";

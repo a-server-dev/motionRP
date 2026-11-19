@@ -49,8 +49,10 @@ def fusion(rig):
    ex=along*dx/d-bend*h*dy/d;ey=along*dy/d+bend*h*dx/d
    uz=math.degrees(math.atan2(ey,ex)+math.pi/2);fz=math.degrees(math.atan2(dy-ey,dx-ex)-math.atan2(-5.625,side*.625))-uz
    uz=(uz+180)%360-180;fz=(fz+180)%360-180
-   put_track(m,upper,[(0,(0,0,0)),(.7,(0,0,-role*90)),(1.8,(0,0,-role*90)),(2.5,(0,0,-role*180)),(3.5,(0,0,-role*270)),(3.95,(90,0,0)),(4.35,(90,role*90,0)),(4.55,(90,role*90,0)),(4.95,(0,0,uz)),(9.7,(0,0,uz))])
-   put_track(m,fore,[(0,(0,0,0)),(4.55,(0,0,0)),(4.95,(0,0,fz)),(9.7,(0,0,fz))])
+   arm_keys=[(0,(0,0,0)),(.7,(0,0,-role*90)),(1.8,(0,0,-role*90)),(2.5,(0,0,-role*180)),(3.5,(0,0,-role*270)),(3.95,(90,0,0)),(4.35,(90,role*90,0)),(4.55,(90,role*90,0))]
+   if outer:arm_keys.append((4.72,(90,role*90,-role*90)))
+   arm_keys.extend([(4.95,(0,0,uz)),(9.7,(0,0,uz))]);put_track(m,upper,arm_keys)
+   put_track(m,fore,[(0,(0,0,0)),(4.72 if outer else 4.55,(0,0,0)),(4.95,(0,0,fz)),(9.7,(0,0,fz))])
   for side,bone,shin in [(1,'prl_right_leg','prfl_right_foreleg'),(-1,'pll_left_leg','plfl_left_foreleg')]:
    inner=side*role==1;offset=0 if inner else .22;keys=[(0,(0,0,0)),(1.8,(0,0,0))]
    for n in range(3):
@@ -66,10 +68,10 @@ def fusion(rig):
 
 def punch_pose(tick):
  progress=max(0,min(1,(tick-104)/64));phase=(tick-104)%8;strength=(1+math.cos(phase*math.tau/8))/2
- chest=-20-15*progress;result={}
+ chest=-25-17*progress;result={}
  for side,upper,fore in [(1,'pra_right_arm','prfa_right_forearm'),(-1,'pla_left_arm','plfa_left_forearm')]:
   p=strength if side==1 else 1-strength
-  gy=21*(1-p)+(13-2.85*progress)*p;gz=-7*(1-p)+(-8+progress)*p
+  gy=23*(1-p)+(13-2.85*progress)*p;gz=-8*(1-p)+(-8+progress)*p
   if tick>=168:
    wind=min(1,(tick-168)/16);cut=max(0,min(1,(tick-184)/8));chest=-10 if cut==0 else -10-35*cut
    gy=(25+(31.8-25)*wind)*(1-cut)+9.9*cut;gz=(2-4*wind)*(1-cut)-6*cut
@@ -200,6 +202,32 @@ def roller():
  a.m.data['animations']=[clip];a.m.save()
  a=palette_model('motionrp_roller_debris',GOLD);a.cube('torn_yellow_sheet',(0,0,0),(6,1,5),0);a.cube('dark_broken_frame',(1,1,0),(2,3,4),6);a.joint('debris',(0,0,0));a.m.save()
 
+def player_arm_afterimages(rig):
+ # Keep the original limb tags and skin UVs: BetterModel supplies the actor's skin.
+ for side,label,upper_name,fore_name in [(1,'right','pra_right_arm','prfa_right_forearm'),(-1,'left','pla_left_arm','plfa_left_forearm')]:
+  m=copy.deepcopy(rig);groups={g['name']:g for g in m['groups']};upper=groups[upper_name];fore=groups[fore_name];nodes={}
+  def walk(ns):
+   for n in ns:
+    if isinstance(n,dict):nodes[n['uuid']]=n;walk(n['children'])
+  walk(m['outliner']);tree=nodes[upper['uuid']];allowed={upper['uuid'],fore['uuid']};elements=set()
+  def prune(node):
+   children=[]
+   for c in node['children']:
+    if isinstance(c,str):elements.add(c);children.append(c)
+    elif c['uuid']in allowed:prune(c);children.append(c)
+   node['children']=children
+  prune(tree);m['outliner']=[tree];m['groups']=[g for g in m['groups']if g['uuid']in allowed];m['elements']=[e for e in m['elements']if e['uuid']in elements]
+  offset=upper['origin'][:]
+  for g in m['groups']:g['origin']=[v-o for v,o in zip(g['origin'],offset)]
+  for e in m['elements']:
+   for key in ['from','to','origin']:
+    if key in e:e[key]=[v-o for v,o in zip(e[key],offset)]
+  clip=animation('rapid_punch',.2,{});clip['loop']='loop'
+  clip['animators'][upper['uuid']]=animator(upper,[(0,(-40,0,-side*15)),(.1,(50,0,side*10)),(.2,(-40,0,-side*15))])
+  clip['animators'][fore['uuid']]=animator(fore,[(0,(110,0,0)),(.1,(10,0,0)),(.2,(110,0,0))])
+  m['animations']=[clip];m['name']=m['model_identifier']='motionrp_player_arm_'+label
+  save('players/motionrp_player_arm_'+label+'.bbmodel',m)
+
 def arm_afterimage():
  a=palette_model('motionrp_world_arm_afterimage',GOLD);c=a.cube
  c('ghost_gauntlet',(0,-8.2,0),(4.2,5.5,4.4),1)
@@ -230,4 +258,4 @@ def gravity_actor():
  save('players/motionrp_chibaku_tensei.bbmodel',m);(ROOT/'chibaku_tensei-hand-path.csv').write_text(hand_path(m,312))
 
 def revise(rig):
- fusion(rig);fused_skin(rig);the_world(rig);roller();road_actor(rig);arm_afterimage();moon();gravity_actor()
+ fusion(rig);fused_skin(rig);the_world(rig);roller();road_actor(rig);player_arm_afterimages(rig);moon();gravity_actor()

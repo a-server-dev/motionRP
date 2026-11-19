@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class EpicAssetsTest {
  private JsonObject model(String file)throws Exception{try(var in=Objects.requireNonNull(getClass().getResourceAsStream("/bettermodel/"+file+".bbmodel"))){return JsonParser.parseString(new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();}}
  @Test void everyNewModelHasValidTreeAndBoundedAnimationKeys()throws Exception{
-  var files=new ArrayList<String>();for(String id:EpicTimeline.EFFECTS)files.add("players/motionrp_"+id);files.addAll(List.of("players/motionrp_fusion_left","players/motionrp_fusion_right"));
+  var files=new ArrayList<String>();for(String id:EpicTimeline.EFFECTS)files.add("players/motionrp_"+id);files.addAll(List.of("players/motionrp_fusion_left","players/motionrp_fusion_right","players/motionrp_player_arm_left","players/motionrp_player_arm_right"));
   for(String id:List.of("the_world","road_roller","black_dragon_head","black_dragon_body","tengen_myoo","gravity_core","gravity_rock","rock_moon","fusion_warrior","roller_debris","the_world_upper","world_arm_afterimage"))files.add("models/motionrp_"+id);
   for(String file:files){var m=model(file);Set<String> ids=new HashSet<>();for(var raw:m.getAsJsonArray("groups"))assertTrue(ids.add(raw.getAsJsonObject().get("uuid").getAsString()));for(var raw:m.getAsJsonArray("elements"))assertTrue(ids.add(raw.getAsJsonObject().get("uuid").getAsString()));tree(m.getAsJsonArray("outliner"),ids);
    for(var raw:m.getAsJsonArray("animations")){var a=raw.getAsJsonObject();for(var track:a.getAsJsonObject("animators").entrySet()){assertTrue(ids.contains(track.getKey()));double previous=-1;for(var frame:track.getValue().getAsJsonObject().getAsJsonArray("keyframes")){double t=frame.getAsJsonObject().get("time").getAsDouble();assertTrue(t>=previous&&t>=0&&t<=a.get("length").getAsDouble(),file+" timeline");previous=t;}}}
@@ -118,6 +118,15 @@ class EpicAssetsTest {
    }
   }
   var ghost=model("models/motionrp_world_arm_afterimage");assertEquals(.2,ghost.getAsJsonArray("animations").get(0).getAsJsonObject().get("length").getAsDouble());assertEquals("loop",ghost.getAsJsonArray("animations").get(0).getAsJsonObject().get("loop").getAsString());
+ }
+
+ @Test void playerAfterimagesKeepOriginalSkinUvsAndFinalFusionArmPassesOverhead()throws Exception{
+  var source=model("players/motionrp_road_roller");Map<String,JsonObject> original=new HashMap<>();for(var raw:source.getAsJsonArray("elements")){var e=raw.getAsJsonObject();original.put(e.get("uuid").getAsString(),e);}
+  for(String side:List.of("left","right")){
+   var arm=model("players/motionrp_player_arm_"+side);assertEquals(2,arm.getAsJsonArray("groups").size());assertEquals(4,arm.getAsJsonArray("elements").size());for(var raw:arm.getAsJsonArray("elements")){var e=raw.getAsJsonObject();assertEquals(original.get(e.get("uuid").getAsString()).get("faces"),e.get("faces"));}
+   var m=model("players/motionrp_fusion_"+side);var clip=m.getAsJsonArray("animations").get(0).getAsJsonObject();var math=new RasenganAssetsTest();Map<String,JsonObject> groups=new HashMap<>();Map<String,String> names=new HashMap<>(),parents=new HashMap<>();for(var raw:m.getAsJsonArray("groups")){var g=raw.getAsJsonObject();String uid=g.get("uuid").getAsString();groups.put(uid,g);names.put(g.get("name").getAsString(),uid);}math.parentTree(m.getAsJsonArray("outliner"),null,parents);
+   var wrist=math.posedOrigin(names.get(side.equals("left")?"pli_left_item":"pri_right_item"),4.72,clip,groups,parents);var head=math.posedOrigin(names.get("h_ph_head"),4.72,clip,groups,parents);assertTrue(wrist[1]>head[1]+5,"Final outer arm must pass above the head");
+  }
  }
 
 }

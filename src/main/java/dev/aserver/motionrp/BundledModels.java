@@ -52,6 +52,7 @@ public final class BundledModels {
                 files.add("players/motionrp_"+effect+".bbmodel");
                 for(String model:SummonAssets.models(effect)) files.add("models/"+model+".bbmodel");
             }
+            files.add("players/motionrp_player_arm_left.bbmodel");files.add("players/motionrp_player_arm_right.bbmodel");
             for (String file : new java.util.LinkedHashSet<>(files)) {
                 Path target = root.resolve(file);
                 String resource = file.startsWith("LICENSE") ? "bettermodel/LICENSE-BetterModel.txt" : "bettermodel/" + file;
