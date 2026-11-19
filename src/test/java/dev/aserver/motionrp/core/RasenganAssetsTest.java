@@ -16,7 +16,7 @@ class RasenganAssetsTest {
     }
 
     @Test void allAnimatedBonesAndOutlinerEntriesResolveToRealModelParts() throws Exception {
-        for (String file : List.of("players/motionrp_excalibur.bbmodel","players/motionrp_gae_bolg.bbmodel","models/motionrp_excalibur_blade.bbmodel","models/motionrp_excalibur_light.bbmodel","models/motionrp_gae_bolg_spear.bbmodel","models/motionrp_gae_bolg_trail.bbmodel","models/motionrp_gae_bolg_thorns.bbmodel","players/motionrp_zangetsu_bankai.bbmodel", "models/motionrp_zangetsu_cleaver.bbmodel", "models/motionrp_tensa_zangetsu.bbmodel", "models/motionrp_bankai_cocoon.bbmodel", "models/motionrp_bankai_wave.bbmodel", "models/motionrp_bankai_coat.bbmodel", "players/motionrp_rasengan.bbmodel", "models/motionrp_rasengan_orb.bbmodel",
+        for (String file : List.of("players/motionrp_performances.bbmodel","players/motionrp_excalibur.bbmodel","players/motionrp_gae_bolg.bbmodel","models/motionrp_excalibur_blade.bbmodel","models/motionrp_excalibur_light.bbmodel","models/motionrp_gae_bolg_spear.bbmodel","models/motionrp_gae_bolg_trail.bbmodel","models/motionrp_gae_bolg_thorns.bbmodel","players/motionrp_zangetsu_bankai.bbmodel", "models/motionrp_zangetsu_cleaver.bbmodel", "models/motionrp_tensa_zangetsu.bbmodel", "models/motionrp_bankai_cocoon.bbmodel", "models/motionrp_bankai_wave.bbmodel", "models/motionrp_bankai_coat.bbmodel", "players/motionrp_rasengan.bbmodel", "models/motionrp_rasengan_orb.bbmodel",
                 "players/motionrp_rasenshuriken.bbmodel", "models/motionrp_rasenshuriken_orb.bbmodel",
                 "players/motionrp_gate_of_babylon.bbmodel", "players/motionrp_susanoo.bbmodel",
                 "models/motionrp_golden_gate.bbmodel", "models/motionrp_treasury_sword.bbmodel",
@@ -274,6 +274,36 @@ class RasenganAssetsTest {
                     assertTrue(foot[1] > -.6 && foot[1] < 1, "Foot off ground: " + Arrays.toString(foot));
                 }
             }
+        }
+    }
+
+    @Test void celebrationsKeepFeetPlantedAndHaveDistinctSignaturePoses() throws Exception {
+        var model=read("players/motionrp_performances.bbmodel");
+        Map<String,JsonObject> groups=new HashMap<>();Map<String,String> names=new HashMap<>(),parents=new HashMap<>();
+        for(var raw:model.getAsJsonArray("groups")){var g=raw.getAsJsonObject();String id=g.get("uuid").getAsString();groups.put(id,g);names.put(g.get("name").getAsString(),id);}
+        parentTree(model.getAsJsonArray("outliner"),null,parents);
+        assertEquals(4,model.getAsJsonArray("animations").size());
+        for(var raw:model.getAsJsonArray("animations")){
+            var a=raw.getAsJsonObject();var p=Performance.find(a.get("name").getAsString().matches("ronaldo|mbappe")?"goal":"hr",a.get("name").getAsString()).orElseThrow();
+            assertEquals(p.ticks()/20.0,a.get("length").getAsDouble(),.001);
+            double highest=0;
+            for(int tick=0;tick<=p.ticks();tick++){
+                double time=tick/20.0,min=Double.POSITIVE_INFINITY;
+                for(boolean right:new boolean[]{true,false}){
+                    String thigh=names.get(right?"prl_right_leg":"pll_left_leg"),shin=names.get(right?"prfl_right_foreleg":"plfl_left_foreleg");
+                    double x=groups.get(thigh).getAsJsonArray("origin").get(0).getAsDouble();
+                    var foot=posedPoint(shin,new double[]{x,0,0},time,a,groups,parents);min=Math.min(min,foot[1]);
+                }
+                assertTrue(min>-.001,p.id()+" feet below ground at "+tick);highest=Math.max(highest,min);
+                if(p!=Performance.RONALDO && p!=Performance.MBAPPE)assertEquals(0,min,.001);
+            }
+            if(p==Performance.RONALDO)assertTrue(highest>15.9,"Siu jump missing");
+            if(p==Performance.MBAPPE){
+                var r=posedOrigin(names.get("pri_right_item"),2,a,groups,parents);var l=posedOrigin(names.get("pli_left_item"),2,a,groups,parents);
+                assertTrue(r[0]<0 && l[0]>0,"Arms do not cross");assertTrue(r[1]>l[1],"Forearms overlap");assertTrue(r[2]<-4 && l[2]<-4,"Hands buried in chest");
+            }
+            if(p==Performance.YAMAKAWA)assertTrue(posedOrigin(names.get("phip_hip"),1.4,a,groups,parents)[1]<7,"Dosukoi stance too tall");
+            if(p==Performance.MATSUDA)assertTrue(posedOrigin(names.get("pri_right_item"),2,a,groups,parents)[1]>26,"Atsuo fist not raised");
         }
     }
 

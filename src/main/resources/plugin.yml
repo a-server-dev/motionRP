@@ -9,7 +9,16 @@ commands:
     description: モーションの登録・管理
     aliases: [mrp]
     usage: /motionrp [gui|give|reload|status|pack]
+  goalperformance:
+    description: ゴールパフォーマンスを直接再生
+    usage: /goalperformance [ronaldo|mbappe|stop]
+  hrperformance:
+    description: ホームランパフォーマンスを直接再生
+    usage: /hrperformance [yamakawa|matsuda|stop]
 permissions:
+  motionrp.performance:
+    description: ゴール・ホームランパフォーマンスのコマンド再生
+    default: true
   motionrp.use:
     description: モーションの登録・再生
     default: true

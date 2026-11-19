@@ -78,6 +78,7 @@ public final class MotionPlayback {
             UUID uuid = player.getUniqueId();
             var timeout = Bukkit.getScheduler().runTaskLater(plugin, () -> finish(uuid, owned), definition.maxTicks());
             MotionScene scene = switch (definition.effect()) {
+                case "performance" -> new PerformanceScene(plugin,player,owned,java.util.Arrays.stream(dev.aserver.motionrp.core.Performance.values()).filter(p->p.id().equals(definition.animation())).findFirst().orElseThrow());
                 case "rasengan" -> new RasenganScene(plugin, player, definition.model());
                 case "rasenshuriken" -> new RasenshurikenScene(plugin, player, definition.model());
                 case "kamehameha" -> new DragonBallScene(plugin,player,owned,false);

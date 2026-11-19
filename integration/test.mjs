@@ -140,6 +140,61 @@ async function readSaved(name) {
   return { data, loadout: Buffer.from(bytes) };
 }
 
+// Command celebrations use the same disposable Paper fixture, without tokens or GUI input.
+if(process.env.MOTIONRP_PERFORMANCE_ONLY==='1') {
+  let code=0;
+  try {
+    assert.ok(fs.existsSync(path.join(run,'server.properties')),'Run full integration first');
+    fs.copyFileSync(path.join(project,`build/libs/motionRP-${version}.jar`),path.join(run,'plugins/MotionRP.jar'));
+    fs.copyFileSync(path.join(project,'src/main/resources/bettermodel/players/motionrp_performances.bbmodel'),path.join(run,'plugins/BetterModel/players/motionrp_performances.bbmodel'));
+    log=fs.createWriteStream(path.join(project,'build/performance-smoke.log'));await startServer();
+    const a=await connect('MotionTesterA'),b=await connect('MotionTesterB');
+    consoleCommand('tp MotionTesterA 0 -60 0 0 0');consoleCommand('tp MotionTesterB 5 -60 0 0 0');
+    await waitFor(()=>Math.abs(a.entity.position.z-.5)<.01 && Math.abs(a.entity.position.y+60)<.01,'celebration origins');
+    const before=(await readSaved('MotionTesterA')).loadout,health=[a.health,b.health];
+    const inventory=()=>JSON.stringify(a.inventory.items().map(i=>[i.slot,i.name,i.count]));
+    await a.unequip('hand');await sleep(300);
+    const expectedItems=inventory();assert.equal(a.heldItem,null,'commands run empty handed');
+    const spawned=[new Set(),new Set()],removed=[new Set(),new Set()];
+    for(const [i,bot] of [a,b].entries()){
+      bot._client.on('spawn_entity',p=>{if(p.type===bot.registry.entitiesByName.item_display.id)spawned[i].add(p.entityId);});
+      bot._client.on('entity_destroy',p=>p.entityIds.forEach(id=>removed[i].add(id)));
+    }
+    for(const [command,id] of [['goalperformance ronaldo','ronaldo'],['goalperformance mbappe','mbappe'],['HRperformance yamakawa','yamakawa'],['HRperformance matsuda','matsuda']]){
+      for(const s of spawned)s.clear();const start=output.length;a.chat('/'+command);
+      await waitFor(()=>output.slice(start).includes(`Performance-${id} phase: PREPARE`),id+' direct start');
+      if(id==='ronaldo'){a._testStep(.3,.42,.2);await sleep(250);assert.ok(Math.abs(a.entity.position.y+60)<.02,'jump input moved player');}
+      await waitFor(()=>output.slice(start).includes(`Performance-${id} phase: RECOVER`),id+' full animation',10000);
+      assert.ok(output.slice(start).includes(`Performance-${id} signature tick=`));
+      assert.ok(spawned.every(s=>s.size>0),'body not sent to both players');
+      await waitFor(()=>spawned.every((s,i)=>[...s].every(id=>removed[i].has(id))),id+' body cleanup');
+      assert.equal(inventory(),expectedItems,'command touched inventory');
+      assert.deepEqual([a.health,b.health],health);assert.deepEqual((await readSaved('MotionTesterA')).loadout,before);
+      pass(command+' plays empty-handed for owner and observer, finishes and preserves loadout');
+    }
+    for(const [command,allowed] of [['goalperformance',['ronaldo','mbappe']],['HRperformance',['yamakawa','matsuda']]]){
+      const start=output.length;a.chat('/'+command);await waitFor(()=>/Performance-\w+ phase: PREPARE/.test(output.slice(start)),'random choice');
+      const id=output.slice(start).match(/Performance-(\w+) phase: PREPARE/)[1];assert.ok(allowed.includes(id));
+      a.chat('/'+command+' stop');await sleep(500);pass(command+' chooses within category and stops');
+    }
+    let start=output.length;a.chat('/goalperformance ronaldo');await waitFor(()=>output.slice(start).includes('Performance-ronaldo phase: PREPARE'),'replacement source');
+    a.chat('/HRperformance matsuda');await waitFor(()=>output.slice(start).includes('Performance-matsuda phase: PREPARE'),'replacement target');
+    a.chat('/goalperformance yamakawa');await sleep(300);
+    assert.ok(a._testMessages.some(m=>m.includes('使い方: /goalperformance')));
+    await waitFor(()=>output.slice(start).includes('Performance-matsuda phase: RECOVER'),'invalid selection leaves current running',10000);
+    await sleep(1500);pass('commands replace playback safely; wrong category does not cancel current playback');
+    start=output.length;a.chat('/goalperformance mbappe');await waitFor(()=>output.slice(start).includes('Performance-mbappe phase: PREPARE'),'cancel source');
+    consoleCommand('tp MotionTesterA 1 -60 0');await sleep(700);
+    assert.ok(!output.slice(start).includes('Performance-mbappe signature'),'external teleport failed to cancel');
+    consoleCommand('goalperformance ronaldo');await waitFor(()=>output.includes('プレイヤーがゲーム内で実行してください。'),'console rejection');
+    pass('external teleport cancels; console gets a clear player-only response');
+    for(const bot of bots)await disconnect(bot);await stopServer();
+    assert.ok(!/Performance-.*scene failed|Could not pass event|Could not load.*motionrp_performances|Error occurred while enabling MotionRP/.test(output));
+  }catch(error){code=1;console.error(error.stack);}
+  finally{for(const bot of bots)try{bot.quit();}catch{}try{await stopServer();}catch{}log?.end();fs.writeFileSync(path.join(project,'build/performance-smoke-result.json'),JSON.stringify({passed:code===0,version,checks},null,2));}
+  process.exit(code);
+}
+
 // Short verification against a fixture created by the full suite; never touches a real server.
 if(process.env.MOTIONRP_NOBLE_ONLY==='1') {
   let code=0;

@@ -84,6 +84,9 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
         var command = Objects.requireNonNull(getCommand("motionrp"));
         command.setExecutor(this);
         command.setTabCompleter(this);
+        var performances=new PerformanceCommands(this);
+        getServer().getPluginManager().registerEvents(performances,this);
+        for(String name:java.util.List.of("goalperformance","hrperformance")){var c=Objects.requireNonNull(getCommand(name));c.setExecutor(performances);c.setTabCompleter(performances);}
         getLogger().info("MotionRP enabled: " + catalog.motions().size() + " motion(s), 18 slots per player.");
         new BundledModels(this).install();
         energyPack=new EnergyPackService(this);

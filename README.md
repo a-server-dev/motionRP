@@ -4,6 +4,25 @@ Minecraft **Paper 26.3 / Java 25 / BetterModel 3.6.0** 用のプレイヤーモ�
 
 リポジトリ: https://github.com/a-server-dev/motionRP
 
+## 0.15.0：ゴール・ホームランパフォーマンス
+
+アイテムやGUIを使わず、コマンドで自分のスキンのまま再生します。選手の特徴的な動きを参考にした演出で、本人の音声やスキンは含みません。
+
+| コマンド | モーション |
+| --- | --- |
+| `/goalperformance ronaldo` | ロナウドのSiu：助走風の動き、ジャンプと半回転、両腕を開いて着地 |
+| `/goalperformance mbappe` | エムバペ：小さく跳ねて胸の前で腕組み |
+| `/hrperformance yamakawa` | 山川穂高のどすこい：腰を落として両手を押し出す |
+| `/hrperformance matsuda` | 松田宣浩の熱男：右拳を高く上げる |
+
+引数なしの `/goalperformance`・`/hrperformance` は、それぞれ2種類からランダム再生します。`/goalperformance stop` または `/hrperformance stop` で現在の再生を停止できます。名前はTab補完に対応し、`siu` / `cr7`、`dosukoi`、`atsuo` も指定できます。権限 `motionrp.performance` は初期状態で全員が利用できます。
+
+周囲のプレイヤーにも表示されます。再生中は通常のモーションと同じく移動・ジャンプ入力を抑止し、視線は動かせます。別の再生コマンドでは現在の演出を片付けて切り替えます。ダメージ・外部テレポート・ログアウトなどでは中断して元に戻ります。ジャンプ・回転は表示モデル上の演出で、実際のプレイヤー座標は移動させません。持ち物や登録済みモーションは変更しません。
+
+`motionRP-0.15.0.jar` へ差し替えて再起動し、新しいプレイヤーモデルを含むリソースパックも更新してください。GitHub自動配布を設定済みの場合は、生成後の `mortionRP.zip` へ反映されます。生成元は `tools/generate_performances.py`、モデルは `src/main/resources/bettermodel/players/motionrp_performances.bbmodel` です。
+
+専用の結合テストは、通常の結合テストが作る使い捨てPaper環境に対して `MOTIONRP_PERFORMANCE_ONLY=1 npm --prefix integration test` で実行できます。同時実行しないでください。2クライアントへの送信と後片付けを検証しますが、描画の見た目の確認は実クライアントで行ってください。
+
 ## 0.14.3：球体・光柱のメッシュ化と位置・タイミング修正
 
 元気玉とかめはめ波の玉は、立方体を積んだ段差のある形から、BetterModel 3.6.0の三角形メッシュで作る滑らかな球面へ変更しました。色は単純な明暗グラデーションからプラズマ状の筋へ変え、球面と外側の光が別々に流れます。元気玉本体の直径80ブロックと、形成中の両手への追従は継続しています。
