@@ -78,6 +78,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
         }
         if(!getConfig().contains("visibility.range",true)){getConfig().set("visibility.range",48);saveConfig();}
         if("motionrp_getsuga_tensho".equals(getConfig().getString("motions.getsuga_tensho.model")) && "getsuga_tensho".equals(getConfig().getString("motions.getsuga_tensho.effect")) && getConfig().getInt("motions.getsuga_tensho.max-ticks",0)<dev.aserver.motionrp.core.BarrierSlashTimeline.GETSUGA_END){getConfig().set("motions.getsuga_tensho.max-ticks",186);saveConfig();}
+        for(String id:java.util.List.of("road_roller","chibaku_tensei"))if(("motionrp_"+id).equals(getConfig().getString("motions."+id+".model"))&&id.equals(getConfig().getString("motions."+id+".effect"))&&getConfig().getInt("motions."+id+".max-ticks",0)<dev.aserver.motionrp.core.EpicTimeline.end(id)){getConfig().set("motions."+id+".max-ticks",dev.aserver.motionrp.core.EpicTimeline.end(id)+10);saveConfig();}
         catalog = MotionCatalog.read(getConfig());
         items = new MotionItems(this);
         loadouts = new PlayerLoadouts(this, items);

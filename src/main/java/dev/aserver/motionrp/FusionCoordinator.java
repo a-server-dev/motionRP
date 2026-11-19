@@ -1,5 +1,6 @@
 package dev.aserver.motionrp;
 import dev.aserver.motionrp.core.PairSessions;
+import static dev.aserver.motionrp.core.FusionTimeline.*;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import java.util.*;
@@ -9,7 +10,7 @@ final class FusionCoordinator implements AutoCloseable {
  private record Run(Player left,Player right,AerialAnchor leftAnchor,AerialAnchor rightAnchor,Location center){}
  private final MotionPlugin plugin;private final PairSessions sessions=new PairSessions();private final Map<UUID,Run> runs=new HashMap<>();private final Set<UUID> starting=new HashSet<>();
  FusionCoordinator(MotionPlugin plugin){this.plugin=plugin;}
- private MotionCatalog.Definition definition(boolean left){String id=left?"fusion_left":"fusion_right";return new MotionCatalog.Definition(id,"フュージョン", "motionrp_"+id,id,170,null,id);}
+ private MotionCatalog.Definition definition(boolean left){String id=left?"fusion_left":"fusion_right";return new MotionCatalog.Definition(id,"フュージョン", "motionrp_"+id,id,END+10,null,id);}
  boolean command(Player player,String[] args){
   if(!player.hasPermission("motionrp.use")){plugin.tell(player,"権限がありません。");return true;}
   if(args.length==1||args.length>3){usage(player);return true;}
@@ -29,7 +30,7 @@ final class FusionCoordinator implements AutoCloseable {
  private boolean ready(Player p){return p.isOnline()&&!p.isDead()&&!p.isGliding()&&!p.isInsideVehicle()&&!p.isSleeping()&&!p.getLocation().clone().subtract(0,.15,0).getBlock().isPassable();}
  private Location offset(Location center,double right){double yaw=Math.toRadians(center.getYaw());return center.clone().add(-Math.cos(yaw)*right,0,-Math.sin(yaw)*right);}
  private void start(Player left,Player right){
-  Location center=left.getLocation().clone();center.setPitch(0);Location lp=offset(center,-1.1),rp=offset(center,1.1);
+  Location center=left.getLocation().clone();center.setPitch(0);Location lp=offset(center,-HALF_SPACING),rp=offset(center,HALF_SPACING);
   var la=new AerialAnchor(plugin,left);var ra=new AerialAnchor(plugin,right);
   starting.add(left.getUniqueId());starting.add(right.getUniqueId());
   try{

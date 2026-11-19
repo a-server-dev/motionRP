@@ -284,17 +284,19 @@ if(process.env.MOTIONRP_EPIC_ONLY==='1'){
  try{
   fs.copyFileSync(path.join(project,`build/libs/motionRP-${version}.jar`),path.join(run,'plugins/MotionRP.jar'));
   for(const id of ['road_roller','kokuryuha','kokujo_tengen_myoo','chibaku_tensei','fusion_left','fusion_right'])fs.copyFileSync(path.join(project,'src/main/resources/bettermodel/players/motionrp_'+id+'.bbmodel'),path.join(run,'plugins/BetterModel/players/motionrp_'+id+'.bbmodel'));
-  for(const id of ['the_world','road_roller','black_dragon_head','black_dragon_body','tengen_myoo','gravity_core','gravity_rock','rock_moon','fusion_warrior'])fs.copyFileSync(path.join(project,'src/main/resources/bettermodel/models/motionrp_'+id+'.bbmodel'),path.join(run,'plugins/BetterModel/models/motionrp_'+id+'.bbmodel'));
+  for(const id of ['the_world','road_roller','black_dragon_head','black_dragon_body','tengen_myoo','gravity_core','gravity_rock','rock_moon','fusion_warrior','roller_debris'])fs.copyFileSync(path.join(project,'src/main/resources/bettermodel/models/motionrp_'+id+'.bbmodel'),path.join(run,'plugins/BetterModel/models/motionrp_'+id+'.bbmodel'));
   const old=gunzipSync(fs.readFileSync(path.join(project,'src/test/resources/bundled-0.20.0/models_motionrp_susanoo_armor.bbmodel.gz')));fs.writeFileSync(path.join(run,'plugins/BetterModel/models/motionrp_susanoo_armor.bbmodel'),old);
   log=fs.createWriteStream(path.join(project,'build/epic-smoke.log'));await startServer();await checkMaskPack();
   const suffix=String(Date.now()).slice(-6),an='EpicA'+suffix,bn='EpicB'+suffix,cn='EpicC'+suffix;
   const a=await connect(an);let b=await connect(bn);const c=await connect(cn);c.chat('/motionrp view off');
   consoleCommand(`tp ${an} 0 -60 0 0 0`);consoleCommand(`tp ${bn} 5 -60 0 0 0`);consoleCommand(`tp ${cn} 8 -60 0 0 0`);await sleep(500);
-  const spawned=[new Set(),new Set(),new Set()],removed=[new Set(),new Set(),new Set()],particles=[0,0,0];
+  const spawned=[new Set(),new Set(),new Set()],removed=[new Set(),new Set(),new Set()],particles=[0,0,0],items=[new Map(),new Map(),new Map()];
   for(const [i,bot]of[a,b,c].entries()){
    bot._client.on('spawn_entity',p=>{if(p.type===bot.registry.entitiesByName.item_display.id){spawned[i].add(p.entityId);removed[i].delete(p.entityId);}});
    bot._client.on('entity_destroy',p=>p.entityIds.forEach(id=>removed[i].add(id)));
    bot._client.on('world_particles',()=>particles[i]++);
+   const itemIndex=bot.registry.entitiesByName.item_display.metadataKeys.indexOf('item_stack');
+   bot._client.on('entity_metadata',p=>{for(const m of p.metadata)if(m.key===itemIndex)items[i].set(p.entityId,m.value);});
   }
   const cleanup=(offline=-1)=>spawned.every((set,i)=>i===offline||[...set].every(id=>removed[i].has(id)));
   const clear=()=>{for(const s of spawned)s.clear();};
@@ -305,10 +307,11 @@ if(process.env.MOTIONRP_EPIC_ONLY==='1'){
   }
   pass('all four new motions stack to 64 and register in the expanded 27-slot GUI');
   await a.equip(a.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');const health=[a.health,b.health],anchor=a.entity.position.clone();
-  const essential={road_roller:['the_world','road_roller'],kokuryuha:['dragon_head','dragon_segment17'],kokujo_tengen_myoo:['tengen_myoo'],chibaku_tensei:['gravity_core','rock_moon','attracted_rock47']};
+  const essential={road_roller:['the_world','road_roller'],kokuryuha:['dragon_head','dragon_segment17'],kokujo_tengen_myoo:['tengen_myoo'],chibaku_tensei:['gravity_core','rock_moon','attracted_rock95']};
   for(const [i,id]of ids.entries()){
    clear();const begin=output.length,off=particles[2];a._testLeftClick();await waitFor(()=>output.slice(begin).includes(id+' phase: FADE'),id+' completes',30000);await waitFor(cleanup,id+' cleanup');
-   for(const kind of essential[id])assert.ok(output.slice(begin).includes(id+' displays '+kind),id+' '+kind);
+   for(const kind of essential[id]){const match=output.slice(begin).match(new RegExp(id+' displays '+kind+' ids=([0-9,]+)'));assert.ok(match,id+' '+kind);const entityIds=match[1].split(',').map(Number);assert.ok(items.slice(0,2).every(map=>entityIds.some(e=>(map.get(e)?.itemCount||0)>0)),kind+' has rendered items for both ON viewers');}
+   if(id==='chibaku_tensei')assert.equal((output.slice(begin).match(/rock retained on shell index=/g)||[]).length,96);
    assert.ok(spawned[0].size>0&&spawned[1].size>0);assert.equal(spawned[2].size,0);assert.equal(particles[2],off);assert.deepEqual([a.health,b.health],health);assert.ok(a.entity.position.distanceTo(anchor)<.01);
    assert.ok(!(await readSaved(an)).data.BukkitValues?.['motionrp:aerial_return_v1']);pass(id+' renders for two ON viewers, remains hidden from OFF, finishes without damage and cleans up');
    clear();const cancel=output.length;a._testLeftClick();await waitFor(()=>id==='road_roller'?a.entity.position.y>anchor.y+5:output.slice(cancel).includes(id+' displays '),'cancel '+id+' during effect');a._testLeftClick();await waitFor(cleanup,id+' cancelled cleanup');await sleep(600);assert.ok(cleanup());assert.ok(a.entity.position.distanceTo(anchor)<.01);pass(id+' cancellation clears every model and restores any flight state');

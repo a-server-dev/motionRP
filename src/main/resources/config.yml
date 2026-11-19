@@ -9,7 +9,7 @@ motions:
     model: motionrp_road_roller
     animation: road_roller
     effect: road_roller
-    max-ticks: 230
+    max-ticks: 254
   kokuryuha:
     name: 邪王炎殺黒龍波
     model: motionrp_kokuryuha
@@ -27,7 +27,7 @@ motions:
     model: motionrp_chibaku_tensei
     animation: chibaku_tensei
     effect: chibaku_tensei
-    max-ticks: 230
+    max-ticks: 270
   rho_aias:
     name: 熾天覆う七つの円環（ロー・アイアス）
     model: motionrp_rho_aias

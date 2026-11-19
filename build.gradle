@@ -1,7 +1,7 @@
 plugins { id 'java' }
 
 group = 'dev.aserver.motionrp'
-version = '0.21.0'
+version = '0.22.0'
 
 repositories {
     mavenCentral()
@@ -44,7 +44,7 @@ tasks.register('sourceBundle', Zip) {
     archiveFileName = "${rootProject.name}-${project.version}-source.zip"
     destinationDirectory = layout.buildDirectory.dir('distributions')
     from(projectDir) {
-        include 'src/**', 'tools/**', 'gradle/**', '.github/**'
+        include 'src/**', 'tools/**', 'docs/**', 'gradle/**', '.github/**'
         include 'integration/*.mjs', 'integration/package*.json'
         include 'README.md', '.gitignore', '.gitattributes', 'build.gradle', 'settings.gradle', 'gradlew', 'gradlew.bat'
     }

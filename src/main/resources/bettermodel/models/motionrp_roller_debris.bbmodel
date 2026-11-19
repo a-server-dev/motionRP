@@ -1,0 +1,231 @@
+{
+  "meta": {
+    "format_version": "5.0",
+    "model_format": "free",
+    "box_uv": false
+  },
+  "name": "motionrp_roller_debris",
+  "model_identifier": "motionrp_roller_debris",
+  "resolution": {
+    "width": 8,
+    "height": 1
+  },
+  "elements": [
+    {
+      "name": "torn_yellow_sheet_0_0_0",
+      "uuid": "edcbbf6e-84b9-539e-b325-4d00f16b7e4d",
+      "type": "cube",
+      "box_uv": false,
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "from": [
+        -3.0,
+        -0.5,
+        -2.5
+      ],
+      "to": [
+        3.0,
+        0.5,
+        2.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.05,
+            0.05,
+            0.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0.05,
+            0.05,
+            0.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0.05,
+            0.05,
+            0.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0.05,
+            0.05,
+            0.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0.05,
+            0.05,
+            0.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0.05,
+            0.05,
+            0.95,
+            0.95
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "dark_broken_frame_0_0_0",
+      "uuid": "0f3b1bf2-92ea-54a6-bb31-4df1c2187a66",
+      "type": "cube",
+      "box_uv": false,
+      "origin": [
+        1.0,
+        1.0,
+        0.0
+      ],
+      "from": [
+        0.0,
+        -0.5,
+        -2.0
+      ],
+      "to": [
+        2.0,
+        2.5,
+        2.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            6.05,
+            0.05,
+            6.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            6.05,
+            0.05,
+            6.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            6.05,
+            0.05,
+            6.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            6.05,
+            0.05,
+            6.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            6.05,
+            0.05,
+            6.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            6.05,
+            0.05,
+            6.95,
+            0.95
+          ],
+          "texture": 0
+        }
+      }
+    }
+  ],
+  "groups": [
+    {
+      "name": "debris_mesh_0",
+      "uuid": "9e0714f5-a025-5018-bf62-12f424a86a7f",
+      "origin": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "export": true,
+      "isOpen": true
+    },
+    {
+      "name": "debris",
+      "uuid": "8be147df-6a6e-5925-95c4-54bc4ea79cfd",
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "export": true,
+      "isOpen": true
+    }
+  ],
+  "outliner": [
+    {
+      "uuid": "8be147df-6a6e-5925-95c4-54bc4ea79cfd",
+      "children": [
+        {
+          "uuid": "9e0714f5-a025-5018-bf62-12f424a86a7f",
+          "children": [
+            "edcbbf6e-84b9-539e-b325-4d00f16b7e4d",
+            "0f3b1bf2-92ea-54a6-bb31-4df1c2187a66"
+          ]
+        }
+      ]
+    }
+  ],
+  "animations": [],
+  "textures": [
+    {
+      "name": "summon_palette.png",
+      "id": "0",
+      "uuid": "58538822-b03f-5f24-bc56-825643bc63e9",
+      "width": 8,
+      "height": 1,
+      "uv_width": 8,
+      "uv_height": 1,
+      "internal": true,
+      "source": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAABCAYAAADjAO9DAAAALElEQVR4nAEhAN7/ANOtO///7pX/clws/0WuXv+xiSr/58tw/ytKSP///9z/XMoVnnipu/oAAAAASUVORK5CYII="
+    }
+  ]
+}
