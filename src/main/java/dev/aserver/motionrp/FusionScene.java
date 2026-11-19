@@ -6,7 +6,7 @@ import static dev.aserver.motionrp.core.FusionTimeline.*;
 final class FusionScene extends SummonScene {
  private final EntityTracker body;private final boolean left;private DummyTracker warrior;
  FusionScene(MotionPlugin plugin,Player owner,EntityTracker body,boolean left){super(plugin,owner,left?"FusionLeft":"FusionRight",END);this.body=body;this.left=left;body.rotation(()->new ModelRotation(0,origin.getYaw()));}
- @Override String phase(){return tick<36?"ARMS":tick<80?"STEPS":tick<104?"KNEE":tick<CONTACT?"POINT":tick<FUSED?"CONTACT":tick<FADE?"FUSED":"FADE";}
+ @Override String phase(){return tick<36?"ARMS":tick<80?"STEPS":tick<92?"KNEE":tick<CONTACT?"POINT":tick<FUSED?"CONTACT":tick<FADE?"FUSED":"FADE";}
  @Override void update(){
   body.update(TrackerUpdateAction.togglePart(false),b->java.util.Set.of("pri_right_item","pli_left_item").contains(b.name().rawName()));
   var center=plugin.fusion().center(owner.getUniqueId());if(center==null){plugin.playback().stop(owner.getUniqueId());return;}

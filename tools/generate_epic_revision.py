@@ -36,11 +36,11 @@ def fusion(rig):
  # Reference: both arms outside -> overhead arc with side steps -> inside,
  # inside knee lift -> wide lunge, outer arm arched above the head.
  for role in [1,-1]:
-  name='fusion_left'if role==1 else'fusion_right';m=player(rig,name,11.4,{})
+  name='fusion_left'if role==1 else'fusion_right';m=player(rig,name,9.7,{})
   waist=-role*55
-  put_track(m,'pw_waist',[(0,(0,0,0)),(5.2,(0,0,0)),(6.5,(0,0,waist)),(11.4,(0,0,waist))])
-  put_track(m,'h_ph_head',[(0,(0,0,0)),(5.2,(0,0,0)),(6.5,(0,-role*15,role*45)),(11.4,(0,-role*15,role*45))])
-  put_track(m,'player_root',[(0,(0,0,0)),(1.8,(0,0,0)),(4,(role*15.2,0,0)),(5.2,(role*15.2,0,0)),(6.5,(role*15.2,-2,0)),(11.4,(role*15.2,-2,0))],'position')
+  put_track(m,'pw_waist',[(0,(0,0,0)),(4.55,(0,0,0)),(4.95,(0,0,waist)),(9.7,(0,0,waist))])
+  put_track(m,'h_ph_head',[(0,(0,0,0)),(4.55,(0,0,0)),(4.95,(0,-role*15,role*45)),(9.7,(0,-role*15,role*45))])
+  put_track(m,'player_root',[(0,(0,0,0)),(1.8,(0,0,0)),(4,(role*15.2,0,0)),(4.55,(role*15.2,0,0)),(4.95,(role*15.2,-2,0)),(9.7,(role*15.2,-2,0))],'position')
   for side,upper,fore in [(1,'pra_right_arm','prfa_right_forearm'),(-1,'pla_left_arm','plfa_left_forearm')]:
    outer=side*role==-1;target=(role*12.8,27.0 if outer else 18.0)
    v=math.radians(waist);tx=math.cos(v)*target[0]+math.sin(v)*(target[1]-15);ty=-math.sin(v)*target[0]+math.cos(v)*(target[1]-15)+15
@@ -49,33 +49,33 @@ def fusion(rig):
    ex=along*dx/d-bend*h*dy/d;ey=along*dy/d+bend*h*dx/d
    uz=math.degrees(math.atan2(ey,ex)+math.pi/2);fz=math.degrees(math.atan2(dy-ey,dx-ex)-math.atan2(-5.625,side*.625))-uz
    uz=(uz+180)%360-180;fz=(fz+180)%360-180
-   put_track(m,upper,[(0,(0,0,0)),(.7,(0,0,-role*90)),(1.8,(0,0,-role*90)),(2.5,(0,0,-role*180)),(3.5,(0,0,-role*270)),(5.2,(0,0,-role*270)),(6.5,(0,0,uz)),(11.4,(0,0,uz))])
-   put_track(m,fore,[(0,(0,0,0)),(5.2,(0,0,0)),(6.5,(0,0,fz)),(11.4,(0,0,fz))])
+   put_track(m,upper,[(0,(0,0,0)),(.7,(0,0,-role*90)),(1.8,(0,0,-role*90)),(2.5,(0,0,-role*180)),(3.5,(0,0,-role*270)),(3.95,(0,0,-role*180)),(4.35,(0,0,-role*90)),(4.55,(0,0,-role*90)),(4.95,(0,0,uz)),(9.7,(0,0,uz))])
+   put_track(m,fore,[(0,(0,0,0)),(4.55,(0,0,0)),(4.95,(0,0,fz)),(9.7,(0,0,fz))])
   for side,bone,shin in [(1,'prl_right_leg','prfl_right_foreleg'),(-1,'pll_left_leg','plfl_left_foreleg')]:
    inner=side*role==1;offset=0 if inner else .22;keys=[(0,(0,0,0)),(1.8,(0,0,0))]
    for n in range(3):
     t=1.85+n*.6+offset;keys.extend([(t,(0,0,0)),(t+.15,(30,0,0)),(t+.3,(0,0,0))])
-   keys.extend([(4,(0,0,0)),(4.6,(-65 if inner else 0,0,0)),(5.2,(-65 if inner else 0,0,0))])
+   keys.extend([(4,(0,0,0)),(4.4,(-65 if inner else 0,0,0)),(4.55,(-65 if inner else 0,0,0))])
    # Feet stay planted in the final lunge despite the lowered pelvis.
    dx=side*(6 if inner else 7)-side*1.875;dy=2-11.25;d=math.hypot(dx,dy);along=d/2;h=math.sqrt(5.625**2-along**2);bend=role
    ex=along*dx/d-bend*h*dy/d;ey=along*dy/d+bend*h*dx/d
    uz=math.degrees(math.atan2(ey,ex)+math.pi/2);fz=math.degrees(math.atan2(dy-ey,dx-ex)+math.pi/2)-uz
-   keys.extend([(6.5,(0,0,uz)),(11.4,(0,0,uz))]);put_track(m,bone,keys)
-   put_track(m,shin,[(0,(0,0,0)),(4,(0,0,0)),(4.6,(100 if inner else 0,0,0)),(5.2,(100 if inner else 0,0,0)),(6.5,(0,0,fz)),(11.4,(0,0,fz))])
-  save('players/motionrp_'+name+'.bbmodel',m);(ROOT/(name+'-hand-path.csv')).write_text(hand_path(m,228))
+   keys.extend([(4.95,(0,0,uz)),(9.7,(0,0,uz))]);put_track(m,bone,keys)
+   put_track(m,shin,[(0,(0,0,0)),(4,(0,0,0)),(4.4,(100 if inner else 0,0,0)),(4.55,(100 if inner else 0,0,0)),(4.95,(0,0,fz)),(9.7,(0,0,fz))])
+  save('players/motionrp_'+name+'.bbmodel',m);(ROOT/(name+'-hand-path.csv')).write_text(hand_path(m,194))
 
 def punch_pose(tick):
  progress=max(0,min(1,(tick-104)/64));phase=(tick-104)%8;strength=(1+math.cos(phase*math.tau/8))/2
  chest=-20-15*progress;result={}
  for side,upper,fore in [(1,'pra_right_arm','prfa_right_forearm'),(-1,'pla_left_arm','plfa_left_forearm')]:
   p=strength if side==1 else 1-strength
-  gy=25*(1-p)+(13-2.85*progress)*p;gz=2*(1-p)+(-8+progress)*p
+  gy=21*(1-p)+(13-2.85*progress)*p;gz=-7*(1-p)+(-8+progress)*p
   if tick>=168:
    wind=min(1,(tick-168)/16);cut=max(0,min(1,(tick-184)/8));chest=-10 if cut==0 else -10-35*cut
    gy=(25+(31.8-25)*wind)*(1-cut)+9.9*cut;gz=(2-4*wind)*(1-cut)-6*cut
   angle=math.radians(-chest);dy=(gy-15)*math.cos(angle)-gz*math.sin(angle)+15-22;dz=(gy-15)*math.sin(angle)+gz*math.cos(angle)
   d=math.hypot(dy,dz);l1,l2=5.5,5.625;assert abs(l1-l2)<d<l1+l2,(tick,side,d)
-  along=(l1*l1-l2*l2+d*d)/(2*d);h=math.sqrt(l1*l1-along*along);ey=along*dy/d-h*dz/d;ez=along*dz/d+h*dy/d
+  along=(l1*l1-l2*l2+d*d)/(2*d);h=math.sqrt(l1*l1-along*along);ey=along*dy/d+h*dz/d;ez=along*dz/d-h*dy/d
   a=math.degrees(math.atan2(-ez,-ey));b=math.degrees(math.atan2(-(dz-ez),-(dy-ey)))-a;b=(b+180)%360-180
   result[upper]=(a,0,0);result[fore]=(b,0,0)
  result['pw_waist']=(chest,0,0);result['h_ph_head']=(12+4*progress,0,0)
@@ -87,6 +87,7 @@ def road_actor(rig):
   if name in ['pra_right_arm','pla_left_arm']:first=[(0,(0,0,0)),(.8,(90,0,(-15 if name.startswith('pra') else 15))),(2,(165,0,0)),(4.1,(165,0,0)),(4.9,(0,0,0))]
   else:first=[(0,(0,0,0)),(4.8,(0,0,0))]
   keys=first+[(t/20,punch_pose(t)[name])for t in range(104,193)]+[(9.9,punch_pose(192)[name]),(10.7,(0,0,0)),(13,(0,0,0))];put_track(m,name,keys)
+ put_track(m,'player_root',[(0,(0,0,0)),(3.4,(0,0,0)),(3.9,(180,0,0)),(4.7,(180,0,0)),(5.2,(360,0,0)),(13,(360,0,0))])
  save('players/motionrp_road_roller.bbmodel',m);(ROOT/'road_roller-hand-path.csv').write_text(hand_path(m,260))
 
 def world_skin():
@@ -133,6 +134,29 @@ def the_world(rig):
   cube(f'backpack_tank_{side}',(side*2.3,18.5,3.4),(1.8,6,1.8),6,'pc_chest')
   for y in [16.2,20.8]:cube(f'tank_strap_{side}_{y}',(side*2.3,y,3.4),(2.1,.7,2.1),4,'pc_chest')
  cube('belt_heart',(0,12.7,-2.3),(1.8,1.8,.6),3,'pw_waist',(0,0,45));save('models/motionrp_the_world.bbmodel',m)
+ upper=copy.deepcopy(m);removed=set()
+ def collect(node):
+  if isinstance(node,str):removed.add(node)
+  else:
+   removed.add(node['uuid'])
+   for child in node['children']:collect(child)
+ def prune(nodes):
+  out=[]
+  for node in nodes:
+   if isinstance(node,dict):
+    if node['uuid'] in {g[n]['uuid']for n in ['prl_right_leg','pll_left_leg']}:collect(node);continue
+    if node['uuid']==g['phip_hip']['uuid']:
+     for child in node['children']:
+      if isinstance(child,str):collect(child)
+     node['children']=[child for child in node['children']if isinstance(child,dict)]
+    node['children']=prune(node['children'])
+   out.append(node)
+  return out
+ upper['outliner']=prune(upper['outliner']);upper['groups']=[x for x in upper['groups']if x['uuid']not in removed];upper['elements']=[x for x in upper['elements']if x['uuid']not in removed]
+ upper['name']=upper['model_identifier']='motionrp_the_world_upper'
+ for clip in upper['animations']:
+  for uid in removed:clip['animators'].pop(uid,None)
+ save('models/motionrp_the_world_upper.bbmodel',upper)
 
 def roller():
  a=palette_model('motionrp_road_roller',GOLD);c=a.cube
