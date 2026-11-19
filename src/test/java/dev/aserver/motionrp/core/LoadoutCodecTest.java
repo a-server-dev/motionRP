@@ -69,6 +69,15 @@ class LoadoutCodecTest {
         assertEquals(expanded,codec.decode(codec.encode(expanded)));assertEquals(17,expanded.next().selected());
     }
 
+    @Test void eighteenSlotV2PreservesEveryItemAndSelectionWhenExpandingToTwentySeven()throws Exception{
+        var bytes=new java.io.ByteArrayOutputStream();var out=new java.io.DataOutputStream(bytes);
+        out.writeInt(0x4D525031);out.writeByte(2);out.writeByte(18);out.writeByte(17);
+        for(int i=0;i<18;i++){out.writeBoolean(true);out.writeUTF("old_"+i);out.writeInt(2);out.write(new byte[]{(byte)i,99});}
+        out.writeLong(0);byte[] old=bytes.toByteArray();resign(old);var expanded=codec.decode(old);assertEquals(18,expanded.count());assertEquals(17,expanded.selected());
+        for(int i=0;i<18;i++)assertArrayEquals(new byte[]{(byte)i,99},expanded.slot(i).item());assertNull(expanded.slot(26));
+        var withNew=expanded.deposit(26,new StoredMotion("road_roller",new byte[]{1}));assertEquals(withNew,codec.decode(codec.encode(withNew)));assertEquals(26,withNew.next().selected());
+    }
+
     private static void resign(byte[] data) {
         var crc = new CRC32();
         crc.update(data, 0, data.length - 8);

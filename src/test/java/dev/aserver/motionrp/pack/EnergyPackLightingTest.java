@@ -22,7 +22,7 @@ class EnergyPackLightingTest {
             for(int sign:new int[]{1,-1}){
                 var item=JsonParser.parseString(new String(zip.getInputStream(zip.getEntry("assets/bettermodel/items/motionrp_hollow_mask_band_"+sign+".json")).readAllBytes())).getAsJsonObject().getAsJsonObject("model");
                 String ref=item.get("model").getAsString();var model=JsonParser.parseString(new String(zip.getInputStream(zip.getEntry("assets/motionrp/models/"+ref.split(":")[1]+".json")).readAllBytes())).getAsJsonObject();
-                assertEquals(Set.of(sign<0?"north":"south"),model.getAsJsonArray("elements").get(0).getAsJsonObject().getAsJsonObject("faces").keySet());
+                assertEquals(Set.of(sign<0?"south":"north"),model.getAsJsonArray("elements").get(0).getAsJsonObject().getAsJsonObject("faces").keySet());
             }
         }
         byte[] repaired=Files.readAllBytes(pack);assertFalse(EnergyPackLighting.prepare(pack));assertArrayEquals(repaired,Files.readAllBytes(pack));

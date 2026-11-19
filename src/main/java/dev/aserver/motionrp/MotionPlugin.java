@@ -21,12 +21,14 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
     private EnergyPackService energyPack;
     private TerrainOverlayManager terrain;
 
+    private FusionCoordinator fusion;
+    FusionCoordinator fusion(){return fusion;}
     private MotionVisibility visibility;
     MotionVisibility visibility(){return visibility;}
     @Override public void onEnable() {
         saveDefaultConfig();
         // Add only the new built-in definition during upgrade; keep user entries.
-        for (String builtIn : java.util.List.of("rasengan", "rasenshuriken", "gate_of_babylon", "susanoo", "senbonzakura","titan_transform","gate_of_babylon_100","gate_of_babylon_enuma","zangetsu_bankai","excalibur","gae_bolg","kamehameha","genki_dama","rho_aias","getsuga_tensho")) {
+        for (String builtIn : java.util.List.of("rasengan", "rasenshuriken", "gate_of_babylon", "susanoo", "senbonzakura","titan_transform","gate_of_babylon_100","gate_of_babylon_enuma","zangetsu_bankai","excalibur","gae_bolg","kamehameha","genki_dama","rho_aias","getsuga_tensho","road_roller","kokuryuha","kokujo_tengen_myoo","chibaku_tensei")) {
             if (!getConfig().contains("assets." + builtIn + "-definition-installed", true)) {
                 if (!getConfig().contains("motions." + builtIn, true)) {
                     for (var entry : Objects.requireNonNull(getConfig().getDefaults())
@@ -82,7 +84,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
         menu = new LoadoutMenu(this, loadouts, items);
         terrain=new TerrainOverlayManager();Bukkit.getPluginManager().registerEvents(terrain,this);
         visibility=new MotionVisibility(this);Bukkit.getPluginManager().registerEvents(visibility,this);
-        playback = new MotionPlayback(this);
+        playback = new MotionPlayback(this);fusion=new FusionCoordinator(this);
         Bukkit.getPluginManager().registerEvents(menu, this);
         Bukkit.getPluginManager().registerEvents(new ControllerListener(this), this);
         for(Player player:Bukkit.getOnlinePlayers()) {TitanState.recover(this,player);AerialAnchor.recover(this,player);}
@@ -92,13 +94,14 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
         var performances=new PerformanceCommands(this);
         getServer().getPluginManager().registerEvents(performances,this);
         for(String name:java.util.List.of("goalperformance","hrperformance")){var c=Objects.requireNonNull(getCommand(name));c.setExecutor(performances);c.setTabCompleter(performances);}
-        getLogger().info("MotionRP enabled: " + catalog.motions().size() + " motion(s), 18 slots per player.");
+        getLogger().info("MotionRP enabled: " + catalog.motions().size() + " motion(s), 27 slots per player.");
         new BundledModels(this).install();
         energyPack=new EnergyPackService(this);
         configureResourcePack();
     }
 
     @Override public void onDisable() {
+        if(fusion!=null)fusion.close();
         if(energyPack!=null)energyPack.close();
         if(resourcePack!=null) resourcePack.close();
         try { if (playback != null) playback.stopAll(); }
@@ -132,6 +135,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
     }
 
     @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if(args.length>0&&args[0].equalsIgnoreCase("fusion")){if(sender instanceof Player p)return fusion.command(p,args);tell(sender,"プレイヤーのみ実行できます。");return true;}
         if(args.length>0 && args[0].equalsIgnoreCase("view")){
             if(!(sender instanceof Player player)){tell(sender,"プレイヤーのみ実行できます。");return true;}
             if(!player.hasPermission("motionrp.use")){tell(sender,"権限がありません。");return true;}
@@ -209,6 +213,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
 
     private void usage(CommandSender sender) {
         tell(sender, "/motionrp gui | view [on|off] | status | reload | pack status | pack publish");
+        tell(sender, "/motionrp fusion <相手> | fusion accept <招待者> | fusion cancel");
         tell(sender, "/motionrp give controller [プレイヤー]");
         tell(sender, "/motionrp give motion <ID> [個数1〜64] [プレイヤー]");
     }
@@ -216,8 +221,9 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
     @Override public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         List<String> choices = new ArrayList<>();
         if (args.length == 1) {
-            choices.add("gui");choices.add("view");
+            choices.add("gui");choices.add("view");choices.add("fusion");
             if (sender.hasPermission("motionrp.admin")) choices.addAll(List.of("give", "reload", "status", "pack"));
+        } else if((args.length==2||args.length==3)&&args[0].equalsIgnoreCase("fusion")){choices.addAll(List.of("accept","cancel"));Bukkit.getOnlinePlayers().forEach(p->choices.add(p.getName()));
         } else if(args.length==2 && args[0].equalsIgnoreCase("view")){choices.addAll(List.of("on","off"));
         } else if(sender.hasPermission("motionrp.admin") && args[0].equalsIgnoreCase("pack") && args.length==2) {
             choices.addAll(List.of("status","publish"));

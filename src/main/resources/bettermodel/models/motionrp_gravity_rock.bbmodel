@@ -1,0 +1,356 @@
+{
+  "meta": {
+    "format_version": "5.0",
+    "model_format": "free",
+    "box_uv": false
+  },
+  "name": "motionrp_gravity_rock",
+  "model_identifier": "motionrp_gravity_rock",
+  "resolution": {
+    "width": 8,
+    "height": 1
+  },
+  "elements": [
+    {
+      "name": "rock_core_0_0_0",
+      "uuid": "eb02d217-aff1-589b-be98-8f2452b90e0e",
+      "type": "cube",
+      "box_uv": false,
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "from": [
+        -5.0,
+        -4.5,
+        -5.5
+      ],
+      "to": [
+        5.0,
+        4.5,
+        5.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            1.05,
+            0.05,
+            1.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            1.05,
+            0.05,
+            1.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            1.05,
+            0.05,
+            1.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            1.05,
+            0.05,
+            1.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            1.05,
+            0.05,
+            1.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            1.05,
+            0.05,
+            1.95,
+            0.95
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "rock_stratum_0_0_0",
+      "uuid": "989485d1-33a5-57fc-bec4-7b2a1e7ce688",
+      "type": "cube",
+      "box_uv": false,
+      "origin": [
+        1.0,
+        2.0,
+        -1.0
+      ],
+      "from": [
+        -5.0,
+        1.0,
+        -6.0
+      ],
+      "to": [
+        7.0,
+        3.0,
+        4.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            3.05,
+            0.05,
+            3.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            3.05,
+            0.05,
+            3.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            3.05,
+            0.05,
+            3.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            3.05,
+            0.05,
+            3.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            3.05,
+            0.05,
+            3.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            3.05,
+            0.05,
+            3.95,
+            0.95
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "rock_chip_0_0_0",
+      "uuid": "532a010c-8e5a-5df2-addd-59b0afb3b50b",
+      "type": "cube",
+      "box_uv": false,
+      "origin": [
+        -2.0,
+        4.0,
+        1.0
+      ],
+      "from": [
+        -5.5,
+        2.5,
+        -2.0
+      ],
+      "to": [
+        1.5,
+        5.5,
+        4.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2.05,
+            0.05,
+            2.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            2.05,
+            0.05,
+            2.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            2.05,
+            0.05,
+            2.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            2.05,
+            0.05,
+            2.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            2.05,
+            0.05,
+            2.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            2.05,
+            0.05,
+            2.95,
+            0.95
+          ],
+          "texture": 0
+        }
+      },
+      "rotation": [
+        0,
+        0,
+        22.5
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "name": "rock_mesh_0",
+      "uuid": "2bb8651c-b25d-5d67-9bb6-33962b6ce425",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "export": true,
+      "isOpen": true
+    },
+    {
+      "name": "rock_mesh_1",
+      "uuid": "aa686cd1-d588-58b5-900f-b8dc791c9beb",
+      "origin": [
+        1.0,
+        2.0,
+        -1.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "export": true,
+      "isOpen": true
+    },
+    {
+      "name": "rock_mesh_2",
+      "uuid": "78ab6296-6fc0-524a-8d99-d9afab7e47a1",
+      "origin": [
+        -2.0,
+        4.0,
+        1.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "export": true,
+      "isOpen": true
+    },
+    {
+      "name": "rock",
+      "uuid": "d033a5a0-757f-5a61-90ac-745ad5c826c1",
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "export": true,
+      "isOpen": true
+    }
+  ],
+  "outliner": [
+    {
+      "uuid": "d033a5a0-757f-5a61-90ac-745ad5c826c1",
+      "children": [
+        {
+          "uuid": "2bb8651c-b25d-5d67-9bb6-33962b6ce425",
+          "children": [
+            "eb02d217-aff1-589b-be98-8f2452b90e0e"
+          ]
+        },
+        {
+          "uuid": "aa686cd1-d588-58b5-900f-b8dc791c9beb",
+          "children": [
+            "989485d1-33a5-57fc-bec4-7b2a1e7ce688"
+          ]
+        },
+        {
+          "uuid": "78ab6296-6fc0-524a-8d99-d9afab7e47a1",
+          "children": [
+            "532a010c-8e5a-5df2-addd-59b0afb3b50b"
+          ]
+        }
+      ]
+    }
+  ],
+  "animations": [],
+  "textures": [
+    {
+      "name": "summon_palette.png",
+      "id": "0",
+      "uuid": "86921083-0b73-5c72-8941-7ec10fbbc426",
+      "width": 8,
+      "height": 1,
+      "uv_width": 8,
+      "uv_height": 1,
+      "internal": true,
+      "source": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAABCAYAAADjAO9DAAAAKklEQVR4nGNwtjb9nxnp+b+rIv6/l7fvfw0V1f/LZjb/z87N/39ky4z/AAPFEYSCPJ4xAAAAAElFTkSuQmCC"
+    }
+  ]
+}

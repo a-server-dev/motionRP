@@ -4,6 +4,30 @@ debug-input: false
 # BetterModel/players にあるプレイヤーモデルを指定します。
 # 標準の steve.bbmodel に含まれる roll を初期モーションとして使用します。
 motions:
+  road_roller:
+    name: ロードローラーだッ！（ザ・ワールド）
+    model: motionrp_road_roller
+    animation: road_roller
+    effect: road_roller
+    max-ticks: 230
+  kokuryuha:
+    name: 邪王炎殺黒龍波
+    model: motionrp_kokuryuha
+    animation: kokuryuha
+    effect: kokuryuha
+    max-ticks: 174
+  kokujo_tengen_myoo:
+    name: 黒縄天譴明王
+    model: motionrp_kokujo_tengen_myoo
+    animation: kokujo_tengen_myoo
+    effect: kokujo_tengen_myoo
+    max-ticks: 230
+  chibaku_tensei:
+    name: 地爆天星
+    model: motionrp_chibaku_tensei
+    animation: chibaku_tensei
+    effect: chibaku_tensei
+    max-ticks: 230
   rho_aias:
     name: 熾天覆う七つの円環（ロー・アイアス）
     model: motionrp_rho_aias

@@ -2,7 +2,7 @@ package dev.aserver.motionrp.core;
 
 import java.util.*;
 
-/** Main-thread building block for future two-player scenes. No player is moved by an invitation. */
+/** Main-thread invitation/session state for two-player scenes. Invitations never move players. */
 public final class PairSessions {
     public record Session(UUID id,UUID leader,UUID partner) {}
     private record Invite(UUID from,UUID to,long expires) {}

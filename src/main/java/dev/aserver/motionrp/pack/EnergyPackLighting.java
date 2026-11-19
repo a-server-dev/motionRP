@@ -68,12 +68,12 @@ public final class EnergyPackLighting {
                     String face="north";
                     if(mask){
                         // Mesh conversion can use mirrored affine triangles. Choose the winding
-                        // whose normal points toward the mask exterior (+Z in exported item space).
+                        // that matches Minecraft item rendering (the exported mesh winding is reversed).
                         double determinant=1;
                         if(obj.has("transformation") && obj.get("transformation").isJsonArray()){
                             var t=obj.getAsJsonArray("transformation");if(t.size()==16)determinant=t.get(0).getAsDouble()*t.get(5).getAsDouble()-t.get(1).getAsDouble()*t.get(4).getAsDouble();
                         }
-                        face=determinant<0?"north":"south";
+                        face=determinant<0?"south":"north";
                         boolean correct=true;
                         for(var raw:model.getAsJsonArray("elements")){var faces=raw.getAsJsonObject().getAsJsonObject("faces");if(faces==null || faces.size()!=1 || !faces.has(face))correct=false;}
                         if(ref.startsWith("motionrp:energy/") && correct)continue;

@@ -86,6 +86,8 @@ public final class MotionPlayback {
             UUID uuid = player.getUniqueId();
             var timeout = Bukkit.getScheduler().runTaskLater(plugin, () -> finish(uuid, owned), definition.maxTicks());
             MotionScene scene = switch (definition.effect()) {
+                case "road_roller","kokuryuha","kokujo_tengen_myoo","chibaku_tensei" -> new EpicScene(plugin,player,owned,definition.effect());
+                case "fusion_left","fusion_right" -> new FusionScene(plugin,player,owned,definition.effect().equals("fusion_left"));
                 case "rho_aias","getsuga_tensho" -> new BarrierSlashScene(plugin,player,owned,definition.effect().equals("rho_aias"));
                 case "performance" -> new PerformanceScene(plugin,player,owned,java.util.Arrays.stream(dev.aserver.motionrp.core.Performance.values()).filter(p->p.id().equals(definition.animation())).findFirst().orElseThrow());
                 case "rasengan" -> new RasenganScene(plugin, player, definition.model());
@@ -125,6 +127,7 @@ public final class MotionPlayback {
 
     public void stop(UUID player) {
         var current = playing.remove(player);
+        if(plugin.fusion()!=null)plugin.fusion().stopping(player);
         if (current == null) return;
         current.timeout.cancel();
         try { if (current.scene != null) current.scene.close(); }

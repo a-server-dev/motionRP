@@ -114,8 +114,10 @@ public final class ControllerListener implements Listener {
     @EventHandler public void death(PlayerDeathEvent event) { plugin.playback().stop(event.getEntity().getUniqueId()); }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void teleport(PlayerTeleportEvent event) {
-        if (!plugin.playback().ownsMove(event.getPlayer(), event.getFrom(), event.getTo()))
+        if (!plugin.playback().ownsMove(event.getPlayer(), event.getFrom(), event.getTo())) {
+            if(plugin.fusion()!=null)plugin.fusion().externalTeleport(event.getPlayer().getUniqueId());
             plugin.playback().stop(event.getPlayer().getUniqueId());
+        }
     }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void held(PlayerItemHeldEvent event) { plugin.playback().stop(event.getPlayer().getUniqueId()); }

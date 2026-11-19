@@ -112,7 +112,7 @@ async function connect(name) {
   return bot;
 }
 function tokens(bot) { return bot.inventory.items().filter(item => item.name === 'paper').reduce((sum, item) => sum + item.count, 0); }
-function registered(bot) { return bot.currentWindow.slots.slice(0, 18).filter(item => item?.name === 'paper').length; }
+function registered(bot) { return bot.currentWindow.slots.slice(0, bot.currentWindow.inventoryStart).filter(item => item?.name === 'paper').length; }
 async function menu(bot) {
   bot.chat('/motionrp gui');
   await waitFor(() => bot.currentWindow !== null, 'registration GUI');
@@ -128,11 +128,12 @@ async function click(bot, slot, button = 0, mode = 0) {
   await sleep(300);
 }
 async function deposit(bot) {
-  const index = bot.currentWindow.slots.findIndex((item, i) => i >= 18 && item?.name === 'paper');
-  assert.ok(index >= 18, 'Motion token missing from storage');
+  const index = bot.currentWindow.slots.findIndex((item, i) => i >= bot.currentWindow.inventoryStart && item?.name === 'paper');
+  assert.ok(index >= bot.currentWindow.inventoryStart, 'Motion token missing from storage');
   await click(bot, index);
 }
 async function disconnect(bot) { bot.quit(); await sleep(500); }
+async function readPlayerData(name){const {parsed}=await nbt.parse(fs.readFileSync(path.join(run,'world/players/data',uuid(name)+'.dat')));return nbt.simplify(parsed);}
 async function readSaved(name) {
   const { parsed } = await nbt.parse(fs.readFileSync(path.join(run, 'world/players/data', uuid(name) + '.dat')));
   const data = nbt.simplify(parsed);
@@ -263,7 +264,7 @@ def walk(d):
   ref=d.get('model')
   if isinstance(ref,str) and ref.startswith('motionrp:energy/'):
    model=json.loads(z.read('assets/motionrp/models/'+ref.split(':')[1]+'.json'))
-   t=d.get('transformation',[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);det=t[0]*t[5]-t[1]*t[4];side='north' if det<0 else 'south'
+   t=d.get('transformation',[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);det=t[0]*t[5]-t[1]*t[4];side='south' if det<0 else 'north'
    for element in model['elements']:assert set(element['faces'])=={side},'Mask must render only the exterior winding'
   for tint in d.get('tints',[]):c[tint['value']&0xffffff]+=1
   for v in d.values():walk(v)
@@ -276,6 +277,62 @@ assert white>red>0 and white>dark*3,(white,red,dark,c)
 assert c[0]==0,c
 `,path.join(run,'plugins/BetterModel/build.zip')]);
   pass('compiled mask keeps a predominantly white face, red markings and limited black eye details');
+}
+
+if(process.env.MOTIONRP_EPIC_ONLY==='1'){
+ let code=0;
+ try{
+  fs.copyFileSync(path.join(project,`build/libs/motionRP-${version}.jar`),path.join(run,'plugins/MotionRP.jar'));
+  for(const id of ['road_roller','kokuryuha','kokujo_tengen_myoo','chibaku_tensei','fusion_left','fusion_right'])fs.copyFileSync(path.join(project,'src/main/resources/bettermodel/players/motionrp_'+id+'.bbmodel'),path.join(run,'plugins/BetterModel/players/motionrp_'+id+'.bbmodel'));
+  for(const id of ['the_world','road_roller','black_dragon_head','black_dragon_body','tengen_myoo','gravity_core','gravity_rock','rock_moon','fusion_warrior'])fs.copyFileSync(path.join(project,'src/main/resources/bettermodel/models/motionrp_'+id+'.bbmodel'),path.join(run,'plugins/BetterModel/models/motionrp_'+id+'.bbmodel'));
+  const old=gunzipSync(fs.readFileSync(path.join(project,'src/test/resources/bundled-0.20.0/models_motionrp_susanoo_armor.bbmodel.gz')));fs.writeFileSync(path.join(run,'plugins/BetterModel/models/motionrp_susanoo_armor.bbmodel'),old);
+  log=fs.createWriteStream(path.join(project,'build/epic-smoke.log'));await startServer();await checkMaskPack();
+  const suffix=String(Date.now()).slice(-6),an='EpicA'+suffix,bn='EpicB'+suffix,cn='EpicC'+suffix;
+  const a=await connect(an);let b=await connect(bn);const c=await connect(cn);c.chat('/motionrp view off');
+  consoleCommand(`tp ${an} 0 -60 0 0 0`);consoleCommand(`tp ${bn} 5 -60 0 0 0`);consoleCommand(`tp ${cn} 8 -60 0 0 0`);await sleep(500);
+  const spawned=[new Set(),new Set(),new Set()],removed=[new Set(),new Set(),new Set()],particles=[0,0,0];
+  for(const [i,bot]of[a,b,c].entries()){
+   bot._client.on('spawn_entity',p=>{if(p.type===bot.registry.entitiesByName.item_display.id){spawned[i].add(p.entityId);removed[i].delete(p.entityId);}});
+   bot._client.on('entity_destroy',p=>p.entityIds.forEach(id=>removed[i].add(id)));
+   bot._client.on('world_particles',()=>particles[i]++);
+  }
+  const cleanup=(offline=-1)=>spawned.every((set,i)=>i===offline||[...set].every(id=>removed[i].has(id)));
+  const clear=()=>{for(const s of spawned)s.clear();};
+  consoleCommand(`motionrp give controller ${an}`);
+  const ids=['road_roller','kokuryuha','kokujo_tengen_myoo','chibaku_tensei'];
+  for(const [i,id]of ids.entries()){
+   consoleCommand(`clear ${an} minecraft:paper`);await sleep(200);consoleCommand(`motionrp give motion ${id} 64 ${an}`);await waitFor(()=>tokens(a)===64,id+' token stack');await menu(a);assert.equal(a.currentWindow.inventoryStart,27);await deposit(a);assert.equal(registered(a),i+1);assert.equal(tokens(a),63);await closeMenu(a);
+  }
+  pass('all four new motions stack to 64 and register in the expanded 27-slot GUI');
+  await a.equip(a.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');const health=[a.health,b.health],anchor=a.entity.position.clone();
+  const essential={road_roller:['the_world','road_roller'],kokuryuha:['dragon_head','dragon_segment17'],kokujo_tengen_myoo:['tengen_myoo'],chibaku_tensei:['gravity_core','rock_moon','attracted_rock47']};
+  for(const [i,id]of ids.entries()){
+   clear();const begin=output.length,off=particles[2];a._testLeftClick();await waitFor(()=>output.slice(begin).includes(id+' phase: FADE'),id+' completes',30000);await waitFor(cleanup,id+' cleanup');
+   for(const kind of essential[id])assert.ok(output.slice(begin).includes(id+' displays '+kind),id+' '+kind);
+   assert.ok(spawned[0].size>0&&spawned[1].size>0);assert.equal(spawned[2].size,0);assert.equal(particles[2],off);assert.deepEqual([a.health,b.health],health);assert.ok(a.entity.position.distanceTo(anchor)<.01);
+   assert.ok(!(await readSaved(an)).data.BukkitValues?.['motionrp:aerial_return_v1']);pass(id+' renders for two ON viewers, remains hidden from OFF, finishes without damage and cleans up');
+   clear();const cancel=output.length;a._testLeftClick();await waitFor(()=>id==='road_roller'?a.entity.position.y>anchor.y+5:output.slice(cancel).includes(id+' displays '),'cancel '+id+' during effect');a._testLeftClick();await waitFor(cleanup,id+' cancelled cleanup');await sleep(600);assert.ok(cleanup());assert.ok(a.entity.position.distanceTo(anchor)<.01);pass(id+' cancellation clears every model and restores any flight state');
+   if(i<ids.length-1){a.setControlState('sneak',true);await sleep(250);a._testLeftClick();await sleep(250);a.setControlState('sneak',false);await sleep(250);}
+  }
+  const aBase=a.entity.position.clone(),bBase=b.entity.position.clone();clear();
+  b.chat('/motionrp fusion accept '+an);await sleep(400);assert.ok(a.entity.position.distanceTo(aBase)<.01&&b.entity.position.distanceTo(bBase)<.01);assert.ok(cleanup());pass('Fusion cannot start without a valid invitation');
+  a.chat('/motionrp fusion '+bn);await waitFor(()=>b._testMessages.some(m=>m.includes('fusion accept '+an)),'partner invitation');assert.ok(a.entity.position.distanceTo(aBase)<.01&&b.entity.position.distanceTo(bBase)<.01);
+  let begin=output.length;b.chat('/motionrp fusion accept '+an);await waitFor(()=>output.slice(begin).includes('FusionLeft phase: ARMS')&&output.slice(begin).includes('FusionRight phase: ARMS'),'both fusion roles start');
+  await waitFor(()=>output.slice(begin).includes('temporary fused warrior revealed'),'fused warrior',15000);await waitFor(cleanup,'fusion full cleanup',12000);
+  assert.ok(a.entity.position.distanceTo(aBase)<.01&&b.entity.position.distanceTo(bBase)<.01);assert.equal(spawned[2].size,0);assert.deepEqual([a.health,b.health],health);pass('consenting Fusion mirrors two actors, reveals a temporary warrior and restores both positions');
+  for(const end of ['cancel','teleport','quit']){
+   clear();a.chat('/motionrp fusion '+bn);await sleep(300);begin=output.length;b.chat('/motionrp fusion accept '+an);await waitFor(()=>output.slice(begin).includes('FusionRight phase: ARMS'),'fusion '+end+' starts');
+   if(end==='cancel')b.chat('/motionrp fusion cancel');else if(end==='teleport')consoleCommand(`tp ${bn} 6.0 -60.0 0.0`);else await disconnect(b);
+   await waitFor(()=>cleanup(end==='quit'?1:-1),'both roles stop on '+end);await sleep(600);assert.ok(!output.slice(begin).includes('temporary fused warrior'));assert.ok(a.entity.position.distanceTo(aBase)<.01);
+   if(end==='teleport'){assert.ok(Math.abs(b.entity.position.x-6)<.01,JSON.stringify(b.entity.position));consoleCommand(`tp ${bn} ${bBase.x} ${bBase.y} ${bBase.z}`);await sleep(400);}
+   if(end==='quit'){b=await connect(bn);await waitFor(()=>b.entity.position.distanceTo(bBase)<.01,'fusion reconnect recovery');}
+   assert.ok(!(await readSaved(an)).data.BukkitValues?.['motionrp:aerial_return_v1']);assert.ok(!(await readPlayerData(bn)).BukkitValues?.['motionrp:aerial_return_v1']);
+   pass('Fusion '+end+' stops both roles and clears their recovery journals');
+  }
+  assert.ok(!/scene failed|Motion playback failed/.test(output));await disconnect(a);await disconnect(b);await disconnect(c);await stopServer();
+ }catch(e){code=1;console.error(e.stack);}
+ finally{for(const bot of bots)try{bot.quit();}catch{}try{await stopServer();}catch{}log?.end();fs.writeFileSync(path.join(project,'build/epic-smoke-result.json'),JSON.stringify({passed:code===0,version,checks},null,2));}
+ process.exit(code);
 }
 
 if(process.env.MOTIONRP_TREASURY_ONLY==='1'){
@@ -569,6 +626,7 @@ if(process.env.MOTIONRP_NOBLE_ONLY==='1') {
       bot._client.on('entity_destroy',p=>p.entityIds.forEach(id=>removed[role].add(id)));
     }
     await a.equip(a.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');
+    if(process.env.MOTIONRP_SUSANOO_ONLY!=='1'){
     for(const [slot,prefix,segments] of [[9,'Excalibur',14],[10,'GaeBolg',0]]) {
       a.setControlState('sneak',true);await sleep(300);
       for(let i=0;(await readSaved('MotionTesterA')).loadout[6]!==slot && i<18;i++) {a._testLeftClick();await sleep(300);}
@@ -636,6 +694,7 @@ m=json.load(open(sys.argv[2]));mesh=next(e for e in m['elements'] if e['name']==
     await waitFor(()=>output.slice(airBegin).includes('GenkiDama phase: THROW'),'cancel a thrown Spirit Bomb');assert.ok(a.entity.position.y>airBase.y+49);a._testLeftClick();
     await waitFor(()=>a.entity.position.distanceTo(airBase)<.01,'throw cancellation returns to ground');await sleep(1800);assert.ok(!output.slice(airBegin).includes('GenkiDama impact'));
     pass('cancelling after the throw returns the airborne player and prevents the impact');
+    }
     a.setControlState('sneak',true);await sleep(300);
     for(let i=0;(await readSaved('MotionTesterA')).loadout[6]!==3 && i<18;i++) {a._testLeftClick();await sleep(300);}
     a.setControlState('sneak',false);await sleep(300);const seatOrigin=a.entity.position.clone(),seatBegin=output.length;

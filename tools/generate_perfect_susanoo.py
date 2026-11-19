@@ -55,6 +55,11 @@ def complete():
         for j in range(4):
             c(f'thigh_plate_{side}_{j}',[x,34+j*4,0],[9.5,4.4,10],6 if j%2 else 5)
             c(f'thigh_trim_{side}_{j}',[x,35.5+j*4,-5.2],[9.7,.7,.8],7)
+        for j in range(7):
+            for sx in [-1,1]:
+                c(f'greave_rivet_{side}_{j}_{sx}',[x+sx*3.1,9+j*5,-5.1],[.65,.65,.65],1)
+                c(f'ankle_lace_{side}_{j}_{sx}',[x+sx*2,3+j*.7,-10.9],[.5,.45,.4],0)
+        c(f'knee_engraving_{side}',[x,29,-7.9],[.65,4,.45],1)
         a.joint(f'armored_leg_{side}',(x,51,0))
     # Broad lamellar skirt with an open center and separate side tassets.
     for side in [-1,1]:
@@ -77,6 +82,11 @@ def complete():
         for side in [-1,1]:
             c(f'chest_flute_{side}_{j}',[side*(w*.32),y,-8.4],[1.3,2.8,.8],1)
             c(f'breastplate_bevel_{side}_{j}',[side*w/2,y,-5.5],[2.3,3.5,4],4,[0,0,side*22.5])
+    for side in [-1,1]:
+        for row in range(7):
+            for col in range(4):
+                c(f'cuirass_rivet_{side}_{row}_{col}',[side*(3+col*3.4),58+row*3.2,-8.8],[.55,.55,.5],1)
+        c(f'chest_inner_ridge_{side}',[side*4,69,-8.8],[.7,19,.6],0)
     c('neck_chakra_core',[0,84,-1.7],[12,10,11],5)
     c('neck_collar_edge',[0,83,-7.6],[13,1.5,1],7)
     c('belt',[0,54,0],[25,4,16],0);c('belt_crest',[0,54,-8.5],[7,5,1.5],7)
@@ -140,6 +150,8 @@ def complete():
         for j in range(5):
             c(f'shoulder_scale_{side}_{j}',[side*(21+j*.7),83-j*2.1,1],[17+j*.9,3.1,20-j*.4],6 if j%2 else 5,[0,0,-side*22.5])
             c(f'shoulder_trim_{side}_{j}',[side*(21+j*.7),83.8-j*2.1,-8.5+j*.25],[15+j*.7,.6,.9],7,[0,0,-side*22.5])
+        for row in range(4):
+            for col in range(5):c(f'pauldron_lacing_{side}_{row}_{col}',[side*(16+col*3),82-row*2,-9.2],[.65,.65,.7],1)
         a.joint(f'pauldron_{side}',(side*22,81,0))
         c(f'upper_arm_{side}',[x,71,0],[8,20,9],5)
         upper_parts=a.parts[:];a.parts=[]
@@ -148,6 +160,8 @@ def complete():
             c(f'bracer_ring_{side}_{j}',[x,43+j*3.2,-6.8],[10.5,.8,.8],7)
         c(f'bracer_center_plate_{side}',[x,49,-7.2],[6,13,1.8],0)
         c(f'bracer_inlaid_diamond_{side}',[x,50,-8.3],[3.5,5,.6],4,[0,0,45])
+        for row in range(6):
+            for edge in [-1,1]:c(f'bracer_stud_{side}_{row}_{edge}',[x+edge*4.3,43+row*3.2,-7],[.6,.6,.65],1)
         c(f'palm_{side}',[x,36,0],[8,7,7],6)
         for digit in range(4):
             c(f'finger_{side}_{digit}',[x-3+digit*2,32.5,-2],[1.5,6,2.5],7)
@@ -219,6 +233,7 @@ def choreograph(m,slash,arms,weapons):
     hilt=[(0,(-18,59,-7)),(.45,(-18,59,-7)),(.8,(-7,68,-12)),(1.15,(26,72,-32)),(1.3,(26,72,-32)),(1.5,(43,65,-8)),(1.8,(30,60,-10)),(2.05,(34,78,-18)),(2.3,(18,97,12)),(2.7,(10,112,10)),(3.3,(10,112,10)),(3.5,(-6,58,-20)),(4.2,(-6,58,-20)),(5.2,(24,44,-2))]
     axis=[(0,(0,-.24,.97)),(.45,(0,-.24,.97)),(.8,(-.8,0,.6)),(1.3,(-.8,0,.6)),(1.5,(.98,-.04,-.2)),(1.8,(.85,-.12,-.5)),(2.3,(.05,.5,.87)),(2.7,(.15,.8,.58)),(3.3,(.15,.8,.58)),(3.5,(-.55,-.45,-.70)),(4.2,(-.55,-.45,-.70)),(5.2,(0,-.2,-.98))]
     torso=[(0,(0,-12,0)),(.8,(0,-22,-4)),(1.15,(-4,-38,-6)),(1.3,(-4,-38,-6)),(1.5,(12,40,8)),(1.8,(8,35,5)),(2.25,(-6,10,0)),(2.7,(-14,-20,-6)),(3.3,(-18,-28,-6)),(3.5,(22,30,12)),(4.2,(14,22,8)),(5.2,(0,0,0))]
+    torso=[(t,(x*(.15 if 2.25<=t<=4.2 else .3),y*(.25 if 2.25<=t<=4.2 else .4),z*.2)) for t,(x,y,z) in torso]
     sheath=[(0,(-18,59,-7)),(.45,(-18,59,-7)),(.8,(-7,68,-12)),(1.15,(-31,67,9)),(1.8,(-31,67,9)),(2.3,(-18,59,-7)),(5.2,(-18,59,-7))]
     sheath_axis=[(0,(0,-.24,.97)),(.45,(0,-.24,.97)),(.8,(-.8,0,.6)),(1.8,(-.8,0,.6)),(2.3,(0,-.24,.97)),(5.2,(0,-.24,.97))]
     tracks={}
