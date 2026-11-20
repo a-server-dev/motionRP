@@ -136,7 +136,6 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
     }
 
     @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if(args.length>0&&args[0].equalsIgnoreCase("finalbattle")){if(sender instanceof Player p)return fusion.finalBattle(p,args);tell(sender,"プレイヤーのみ実行できます。");return true;}
         if(args.length>0&&args[0].equalsIgnoreCase("fusion")){if(sender instanceof Player p)return fusion.command(p,args);tell(sender,"プレイヤーのみ実行できます。");return true;}
         if(args.length>0 && args[0].equalsIgnoreCase("view")){
             if(!(sender instanceof Player player)){tell(sender,"プレイヤーのみ実行できます。");return true;}
@@ -215,7 +214,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
 
     private void usage(CommandSender sender) {
         tell(sender, "/motionrp gui | view [on|off] | status | reload | pack status | pack publish");
-        tell(sender, "/motionrp fusion <相手> | fusion accept <招待者> | fusion cancel");tell(sender,"/motionrp finalbattle <相手> | finalbattle accept <招待者> | finalbattle cancel");
+        tell(sender, "/motionrp fusion <相手> | fusion accept <招待者> | fusion cancel");
         tell(sender, "/motionrp give controller [プレイヤー]");
         tell(sender, "/motionrp give motion <ID> [個数1〜64] [プレイヤー]");
     }
@@ -223,9 +222,9 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
     @Override public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         List<String> choices = new ArrayList<>();
         if (args.length == 1) {
-            choices.add("gui");choices.add("view");choices.add("fusion");choices.add("finalbattle");
+            choices.add("gui");choices.add("view");choices.add("fusion");
             if (sender.hasPermission("motionrp.admin")) choices.addAll(List.of("give", "reload", "status", "pack"));
-        } else if((args.length==2||args.length==3)&&(args[0].equalsIgnoreCase("fusion")||args[0].equalsIgnoreCase("finalbattle"))){if(args.length==2)choices.addAll(List.of("accept","cancel"));
+        } else if((args.length==2||args.length==3)&&args[0].equalsIgnoreCase("fusion")){if(args.length==2)choices.addAll(List.of("accept","cancel"));
             if(args.length==2||args[1].equalsIgnoreCase("accept"))Bukkit.getOnlinePlayers().stream().filter(p->p!=sender&&(!(sender instanceof Player viewer)||viewer.canSee(p))).forEach(p->choices.add(p.getName()));
         } else if(args.length==2 && args[0].equalsIgnoreCase("view")){choices.addAll(List.of("on","off"));
         } else if(sender.hasPermission("motionrp.admin") && args[0].equalsIgnoreCase("pack") && args.length==2) {
