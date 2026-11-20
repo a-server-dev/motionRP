@@ -8,6 +8,7 @@ from generate_summons import Model,ROOT,save,animation,animator
 from generate_epic_revision import palette_model,put_track
 from generate_rasengan import hand_path
 from generate_summons import player
+from generate_battle_visuals import fox as sculpt_fox,susanoo as sculpt_susanoo,material_texture,tube
 from generate_energy import mesh_model,add_mesh,ribbon as base_ribbon,glow
 GOLD=[(255,164,25,255),(255,220,72,255),(255,244,144,255),(70,38,17,255),(255,116,17,255),(255,253,218,255),(255,194,44,255),(255,255,250,255)]
 PURPLE=[(68,48,142,255),(117,86,193,255),(161,136,228,255),(35,24,79,255),(96,65,167,255),(218,204,255,255),(128,104,207,255),(248,237,255,255)]
@@ -89,7 +90,7 @@ def kurama(asura=False):
   charge['animators'][u['uuid']]=animator(u,[(0,(0,0,0)),(2,(target,0,-side*12)),(7.65,(target,0,-side*12)),(8,(105,0,-side*18))])
   charge['animators'][f['uuid']]=animator(f,[(0,(10,0,0)),(2,(bend,0,0)),(7.65,(bend,0,0)),(8,(5,0,0))])
   exchange['animators'][u['uuid']]=animator(u,[(0,(0,0,0)),(.8,(110,side*15,0)),(1.2,(85,-side*15,0)),(2.4,(40,0,0)),(4,(0,0,0))])
- a.m.data['animations']=[idle,charge,exchange];a.m.save()
+ a.m.data['animations']=[idle,charge,exchange];a.m.data=sculpt_fox(a.m.data,asura,GOLD);a.m.save()
 
 def susanoo(indra=False):
  a=palette_model('motionrp_duel_indra_susanoo'if indra else'motionrp_duel_susanoo',INDRA if indra else PURPLE);c=a.cube
@@ -150,17 +151,17 @@ def susanoo(indra=False):
   draw['animators'][u['uuid']]=animator(u,[(0,(0,0,0)),(2,(90,90 if side==1 else 0,0)),(7,(90,90 if side==1 else 0,0)),(8,(75,0,0))]);draw['animators'][f['uuid']]=animator(f,[(0,(0,0,0)),(8,(0,0,0))])
   exchange['animators'][u['uuid']]=animator(u,[(0,(0,0,0)),(.8,(90,-side*20,0)),(1.2,(110,side*15,0)),(2.4,(40,0,0)),(4,(0,0,0))])
  for side,g in zip([-1,1],wings):draw['animators'][g['uuid']]=animator(g,[(0,(0,0,side*4)),(2,(0,-side*18,side*12)),(7.7,(0,-side*18,side*12)),(8,(0,-side*8,side*4))])
- a.m.data['animations']=[idle,draw,exchange];a.m.save()
+ a.m.data['animations']=[idle,draw,exchange];a.m.data=sculpt_susanoo(a.m.data,indra,INDRA if indra else PURPLE);a.m.save()
 
 def round_mesh(m,name,radius,palette_mode='bright'):
- vs={};fs=[];lat,lon=14,28
+ vs={};fs=[];lat,lon=24,48
  for j in range(lat+1):
   p=math.pi*j/lat
   for k in range(lon):
    q=k*math.tau/lon;vs[f'{j}_{k}']=[radius*math.sin(p)*math.cos(q),radius*math.cos(p),radius*math.sin(p)*math.sin(q)]
  for j in range(lat):
   for k in range(lon):
-   ids=[f'{j}_{k}',f'{j}_{(k+1)%lon}',f'{j+1}_{(k+1)%lon}',f'{j+1}_{k}'];color=(7 if (k+j*3)%9<2 else 2 if (k-j)%5<2 else 1)if palette_mode=='bright'else(0 if (k+j)%7>1 else 4)
+   ids=[f'{j}_{k}',f'{j}_{(k+1)%lon}',f'{j+1}_{(k+1)%lon}',f'{j+1}_{k}'];phi=math.pi*(j+.5)/lat;theta=(k+.5)*math.tau/lon;flow=abs(math.sin(theta*4+2*math.sin(phi*3)+.7*math.sin(theta*2-phi*5)));color=(5 if flow<.12 else 2 if flow<.32 else 1 if flow<.76 else 0)if palette_mode=='bright'else(4 if flow<.10 else 2 if flow<.28 else 1 if flow<.55 else 0)
    if j==0:ids=[ids[0],ids[2],ids[3]]
    elif j==lat-1:ids=[ids[0],ids[1],ids[2]]
    fs.append((ids,color))
@@ -170,7 +171,7 @@ def shuriken(dark=False):
  # The clip shows a broad luminous wind disk around a gold / purple sphere.
  palette=([*DARK[:6],(162,96,230,96),(236,214,255,118)] if dark else [*GOLD[:6],(255,230,142,80),(255,255,240,108)])
  m=mesh_model('motionrp_duel_dark_rasenshuriken'if dark else'motionrp_duel_gold_rasenshuriken',palette)
- uid=round_mesh(m,'rotating_chakra_core',12,'dark'if dark else'bright');core=m.group('chakra_core',[uid]);ids=[]
+ uid=round_mesh(m,'rotating_chakra_core',15,'dark'if dark else'bright');core=m.group('chakra_core',[uid]);ids=[]
  for side in range(4):
   a=side*math.pi/2;pts=[(10,-2),(32,-1),(24,3),(14,7),(9,3)]
   vs={str(i):[r*math.cos(a)-t*math.sin(a),0,r*math.sin(a)+t*math.cos(a)]for i,(r,t)in enumerate(pts)}
@@ -185,9 +186,14 @@ def shuriken(dark=False):
  for strand in range(4):
   pts=[]
   for j in range(65):
-   q=j*math.tau/64;p=math.pi/2+.9*math.sin(2*q+strand*1.8);pts.append((12.4*math.sin(p)*math.cos(q),12.4*math.cos(p),12.4*math.sin(p)*math.sin(q)))
-  uid=ribbon(m,'swirling_current_'+str(strand),pts,.45,5);g=m.group('current_'+str(strand),[uid]);spin['animators'][g['uuid']]=animator(g,[(0,(0,0,0)),(.4,(0,-360,0))])
- m.data['animations']=[spin];glow(m)
+   q=j*math.tau/64;p=math.pi/2+.9*math.sin(2*q+strand*1.8);pts.append((15.35*math.sin(p)*math.cos(q),15.35*math.cos(p),15.35*math.sin(p)*math.sin(q)))
+  uid=ribbon(m,'swirling_current_'+str(strand),pts,.22 if strand%2 else .4,5);g=m.group('current_'+str(strand),[uid]);spin['animators'][g['uuid']]=animator(g,[(0,(0,0,0)),(.4,(0,-360,0))])
+ for strand in range(3):
+  pts=[]
+  for j in range(97):
+   q=j*math.tau/96;r=17+strand*2+1.5*math.sin(q*3);pts.append((r*math.cos(q),r*.28*math.sin(q+strand),r*math.sin(q)))
+  uid=ribbon(m,'inclined_wind_corona_'+str(strand),pts,.35,5);g=m.group('orbiting_wind_'+str(strand),[uid]);spin['animators'][g['uuid']]=animator(g,[(0,(0,0,0)),(.4,(0,360,0))])
+ m.data['animations']=[spin];material_texture(m,palette,True);glow(m)
 
 def arrow():
  # A large lightning spear and flaring four-point head, with translucent corona.
@@ -204,7 +210,12 @@ def arrow():
   for j in range(37):
    q=j*.7+strand*math.tau/5;r=5+(j%4)*.7;pts.append((math.cos(q)*r,math.sin(q)*r,8-j*2))
   uid=ribbon(m,'crackling_arrow_corona_'+str(strand),pts,.85,1);g=m.group('arrow_arc_'+str(strand),[uid]);clip['animators'][g['uuid']]=animator(g,[(0,(0,0,0)),(.4,(0,0,360))])
- m.data['animations']=[clip];glow(m)
+ for branch in range(7):
+  points=[]
+  for j in range(9):
+   q=branch*math.tau/7;t=j/8;r=(2+7*t)*(1 if j%2 else .5);points.append((r*math.cos(q+.2*math.sin(j*2.1)),r*math.sin(q+.2*math.sin(j*2.1)),-branch*7-j*2))
+  uid=tube(m,'branching_lightning_'+str(branch),points,[.38*(1-j/10)for j in range(9)],7,5);m.group('forked_arc_'+str(branch),[uid])
+ m.data['animations']=[clip];material_texture(m,CYAN[:6]+[(69,194,255,80),(240,255,255,255)],True);glow(m)
 
 def storm():
  # Wide storm funnel and spiralling cloud belts reaching from the clash to ground.
@@ -225,11 +236,18 @@ def storm():
   for j in range(17):
    t=j/16;q=bolt*math.tau/5+.3*math.sin(j*1.7);r=18+70*t;pts.append((r*math.cos(q),230*(1-t)+5,r*math.sin(q)))
   uid=ribbon(m,'storm_lightning_'+str(bolt),pts,1.1,7);g=m.group('storm_bolt_'+str(bolt),[uid]);a['animators'][g['uuid']]=animator(g,[(0,(1,1,1)),(.15,(.001,.001,.001)),(.4,(1,1,1)),(.5,(.001,.001,.001)),(1,(1,1,1)),(1.2,(.001,.001,.001)),(1.9,(1,1,1)),(2,(1,1,1))],'scale')
- m.data['animations']=[a];glow(m)
+ m.data['animations']=[a];material_texture(m,palette,True);glow(m)
 
 def clash_orb():
- m=mesh_model('motionrp_duel_clash_orb',CYAN);uid=round_mesh(m,'radiant_collision',16);g=m.group('collision_sphere',[uid]);a=animation('surge',1,{});a['loop']='loop';a['animators'][g['uuid']]=animator(g,[(0,(0,0,0)),(1,(90,180,90))]);m.data['animations']=[a];glow(m)
- m=mesh_model('motionrp_duel_chakra_spark',GOLD);uid=round_mesh(m,'gathered_bijuu_chakra',5);m.group('chakra_spark',[uid]);m.save()
+ palette=[(31,100,187,255),(84,191,246,255),(175,240,255,255),(242,253,255,255),(117,85,211,255),(255,254,233,255),(129,211,255,70),(231,251,255,100)]
+ m=mesh_model('motionrp_duel_clash_orb',palette);uid=round_mesh(m,'radiant_collision',16);g=m.group('collision_sphere',[uid]);a=animation('surge',1,{});a['loop']='loop';a['animators'][g['uuid']]=animator(g,[(0,(0,0,0)),(1,(30,90,30))])
+ for layer in range(3):
+  pts=[]
+  for j in range(97):
+   q=j*math.tau/96;p=math.pi/2+.5*math.sin(q*3+layer*2);r=16.3+layer*.3;pts.append((r*math.sin(p)*math.cos(q),r*math.cos(p),r*math.sin(p)*math.sin(q)))
+  uid=ribbon(m,'collision_surface_current_'+str(layer),pts,.16,5);g=m.group('clash_filament_'+str(layer),[uid]);a['animators'][g['uuid']]=animator(g,[(0,(0,0,0)),(1,(90,-180,0))])
+ m.data['animations']=[a];material_texture(m,palette,True);glow(m)
+ m=mesh_model('motionrp_duel_chakra_spark',GOLD);uid=round_mesh(m,'gathered_bijuu_chakra',5);m.group('chakra_spark',[uid]);material_texture(m,GOLD,True);glow(m)
 
 def actors(rig):
  for naruto in [True,False]:
