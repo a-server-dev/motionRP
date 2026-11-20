@@ -4,6 +4,12 @@ debug-input: false
 # BetterModel/players にあるプレイヤーモデルを指定します。
 # 標準の steve.bbmodel に含まれる roll を初期モーションとして使用します。
 motions:
+  infinity_castle:
+    name: 無限城への落下
+    model: motionrp_infinity_castle
+    animation: infinity_castle
+    effect: infinity_castle
+    max-ticks: 224
   fusion:
     name: フュージョン（二人用）
     model: motionrp_fusion_left

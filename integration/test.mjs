@@ -279,6 +279,34 @@ assert c[0]==0,c
   pass('compiled mask keeps a predominantly white face, red markings and limited black eye details');
 }
 
+if(process.env.MOTIONRP_CASTLE_ONLY==='1'){
+ let code=0;
+ try{
+  fs.copyFileSync(path.join(project,`build/libs/motionRP-${version}.jar`),path.join(run,'plugins/MotionRP.jar'));
+  log=fs.createWriteStream(path.join(project,'build/castle-smoke.log'));await startServer();
+  const statusBegin=output.length,statusTimer=setInterval(()=>consoleCommand('motionrp status'),500);try{await waitFor(()=>output.slice(statusBegin).includes('infinity_castle: 利用可能'),'castle assets loaded',60000);}finally{clearInterval(statusTimer);}
+  const suffix=String(Date.now()).slice(-6),an='CastleA'+suffix,bn='CastleB'+suffix,cn='CastleC'+suffix;
+  let a=await connect(an);const b=await connect(bn),c=await connect(cn);c.chat('/motionrp view off');
+  consoleCommand('fill -3 -60 -3 10 -53 5 air');consoleCommand('fill -3 -61 -3 10 -61 5 grass_block');
+  for(const [name,x]of [[an,.5],[bn,4.5],[cn,7.5]])consoleCommand(`tp ${name} ${x} -60.0 0.5 0 0`);await sleep(500);
+  consoleCommand('motionrp give controller '+an);consoleCommand('motionrp give motion infinity_castle 64 '+an);await waitFor(()=>tokens(a)===64,'castle paper stack');await a.equip(a.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');await menu(a);await deposit(a);await closeMenu(a);
+  const origin=a.entity.position.clone(),health=a.health,spawns=[new Set(),new Set(),new Set()],removed=[new Set(),new Set(),new Set()],poses=[];
+  function watch(bot,i){bot._client.on('spawn_entity',p=>{if(p.type===bot.registry.entitiesByName.item_display.id)spawns[i].add(p.entityId);});bot._client.on('entity_destroy',p=>p.entityIds.forEach(id=>removed[i].add(id)));if(i===0)bot._client.on('position',p=>poses.push({x:p.x,y:p.y,z:p.z}));} [a,b,c].forEach(watch);
+  const cleanup=(offline=-1)=>spawns.every((ids,i)=>i===offline||[...ids].every(id=>removed[i].has(id)));
+  async function restored(){await waitFor(()=>a.entity.position.distanceTo(origin)<.02,'origin restored');assert.ok(!(await readPlayerData(an)).BukkitValues?.['motionrp:aerial_return_v1']);assert.equal(a.health,health);}
+  async function start(){spawns.forEach(s=>s.clear());const begin=output.length;a._testLookUp();await sleep(150);a._testLeftClick();try{await waitFor(()=>output.slice(begin).includes('InfinityCastle phase: FUSUMA'),'fusuma begins');}catch(e){throw new Error(e.message+' messages='+JSON.stringify(a._testMessages.slice(-8)));}return begin;}
+  consoleCommand('setblock 0 -58 0 stone');await sleep(200);const refused=a._testMessages.length;a._testLook(0,-20);await sleep(150);a._testLeftClick();await waitFor(()=>a._testMessages.slice(refused).some(m=>m.includes('3ブロック上')),'blocked exit is rejected');await restored();consoleCommand('setblock 0 -58 0 air');await sleep(250);pass('An obstructed three-block return path is rejected without moving the player or leaving a return journal');
+  let begin=await start();await waitFor(()=>output.slice(begin).includes('fall begins'),'castle falling');assert.ok(a.entity.position.y>120);const firstY=a.entity.position.y;await sleep(1000);assert.ok(a.entity.position.y<firstY-5,'Actual player must descend during castle scene');await waitFor(()=>output.slice(begin).includes('return height=3 elapsedFallTicks=160'),'eight second return',15000);assert.ok(poses.some(p=>Math.abs(p.y-origin.y-3)<1e-6&&Math.abs(p.x-origin.x)<.02),'Exit teleport must be exactly three blocks above origin');await waitFor(()=>output.slice(begin).includes('InfinityCastle phase: CLOSE'),'land after exiting');await waitFor(cleanup,'all castle models removed');await restored();
+  const entries=[...output.slice(begin).matchAll(/InfinityCastle displays (\w+) ids=([0-9,]+)/g)].map(m=>({kind:m[1],ids:m[2].split(',').map(Number)}));for(const kind of ['entrance','all_around_castle','moving_platform0','moving_platform11','moving_fusuma0','moving_fusuma7','return_portal']){const e=entries.find(e=>e.kind===kind);assert.ok(e,kind);for(const i of [0,1])assert.ok(e.ids.some(id=>spawns[i].has(id)),kind+' reaches ON viewer '+i);}assert.equal(spawns[2].size,0);pass('A registered stackable castle item opens fusuma, falls through all-around moving scenery for 160 ticks, exits at +3 and restores the ground position without health loss');
+  for(const phase of ['FUSUMA','FALL']){begin=await start();await waitFor(()=>output.slice(begin).includes('InfinityCastle phase: '+phase),'cancel '+phase);await sleep(250);a._testLeftClick();await waitFor(cleanup,'cancel models '+phase);await restored();pass('Cancellation during '+phase+' restores position and flight journal and removes all models');}
+  begin=await start();await waitFor(()=>output.slice(begin).includes('fall begins'),'external teleport begins');consoleCommand(`tp ${an} 8.5 -60.0 0.5`);await waitFor(()=>Math.abs(a.entity.position.x-8.5)<.02,'external teleport preserved');await waitFor(cleanup,'external teleport cleanup');assert.ok(!(await readPlayerData(an)).BukkitValues?.['motionrp:aerial_return_v1']);consoleCommand(`tp ${an} ${origin.x} ${origin.y} ${origin.z}`);await sleep(300);pass('External teleport keeps its destination and restores the temporary flight state');
+  begin=await start();await waitFor(()=>output.slice(begin).includes('fall begins'),'quit while falling');await disconnect(a);await waitFor(()=>cleanup(0),'quit scene cleanup');a=await connect(an);watch(a,0);await restored();pass('Disconnect during the fall recovers the original ground position on reconnect');
+  assert.ok(!/InfinityCastle scene failed|Motion playback failed/.test(output));for(const bot of [a,b,c])await disconnect(bot);await stopServer();
+ }catch(e){code=1;console.error(e.stack);}
+ finally{for(const bot of bots)try{bot.quit();}catch{}try{await stopServer();}catch{}log?.end();fs.writeFileSync(path.join(project,'build/castle-smoke-result.json'),JSON.stringify({passed:code===0,version,checks},null,2));}
+ process.exit(code);
+}
+
 if(process.env.MOTIONRP_PAIR_ITEMS_ONLY==='1'){
  let code=0;
  try{

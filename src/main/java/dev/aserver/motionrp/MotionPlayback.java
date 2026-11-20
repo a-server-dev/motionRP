@@ -62,6 +62,8 @@ public final class MotionPlayback {
         return current != null && current.scene != null && current.scene.ownsMove(from, to);
     }
 
+    void externalTeleport(Player player){var current=playing.get(player.getUniqueId());if(current!=null&&current.scene!=null)current.scene.externalTeleport();}
+
     public void play(Player player, MotionCatalog.Definition definition) {
         var pair=dev.aserver.motionrp.core.PairMotion.fromEffect(definition.effect());if(pair.isPresent()){plugin.fusion().inviteNearest(player,pair.get().command());return;}
         String error = unavailable(definition);
@@ -91,8 +93,8 @@ public final class MotionPlayback {
                     });
             EntityTracker owned = tracker;
             UUID uuid = player.getUniqueId();
-            var timeout = Bukkit.getScheduler().runTaskLater(plugin, () -> finish(uuid, owned), definition.maxTicks());
             MotionScene scene = switch (definition.effect()) {
+                case "infinity_castle" -> new InfinityCastleScene(plugin,player,owned);
                 case "road_roller","kokuryuha","kokujo_tengen_myoo","chibaku_tensei" -> new EpicScene(plugin,player,owned,definition.effect());
                 case "final_battle_naruto","final_battle_sasuke" -> new FinalBattleScene(plugin,player,owned,definition.effect().equals("final_battle_naruto"));
                 case "broly_attacker","broly_victim" -> new BrolyScene(plugin,player,owned,definition.effect().equals("broly_attacker"));
@@ -114,6 +116,7 @@ public final class MotionPlayback {
                 case "titan_transform" -> new TitanScene(plugin,player,definition.model(),owned,Objects.requireNonNull(titan));
                 default -> null;
             };
+            var timeout = Bukkit.getScheduler().runTaskLater(plugin, () -> finish(uuid, owned), definition.maxTicks());
             playing.put(uuid, new Playing(owned, timeout, scene,!definition.effect().equals("performance")));
             boolean started = owned.animate(definition.animation(), AnimationModifier.DEFAULT_WITH_PLAY_ONCE, () -> {
                 // Broly replaces phase clips at variable collision times; its scene and timeout own the end clock.
@@ -124,6 +127,7 @@ public final class MotionPlayback {
         } catch (RuntimeException failure) {
             stop(player.getUniqueId());
             if (tracker != null && !tracker.isClosed()) tracker.close();
+            if(definition.effect().equals("infinity_castle") && failure instanceof IllegalArgumentException){plugin.tell(player,failure.getMessage());return;}
             plugin.getLogger().log(java.util.logging.Level.WARNING, "Motion playback failed for " + player.getUniqueId(), failure);
             plugin.tell(player, "モーション再生に失敗しました。管理者に連絡してください。");
         }

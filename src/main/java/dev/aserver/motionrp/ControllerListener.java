@@ -122,6 +122,7 @@ public final class ControllerListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void teleport(PlayerTeleportEvent event) {
         if (!plugin.playback().ownsMove(event.getPlayer(), event.getFrom(), event.getTo())) {
+            plugin.playback().externalTeleport(event.getPlayer());
             if(plugin.fusion()!=null)plugin.fusion().externalTeleport(event.getPlayer().getUniqueId());
             plugin.playback().stop(event.getPlayer().getUniqueId());
         }
