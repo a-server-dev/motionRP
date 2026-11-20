@@ -11,7 +11,7 @@ import java.nio.file.attribute.FileTime;
 import java.util.*;
 import java.util.concurrent.*;
 
-/** Watches the completed BetterModel ZIP, publishes off-thread, then offers only this plugin's pack. */
+/** Publishes completed ZIPs off-thread; delivery requires each player's explicit reload. */
 final class AutomaticResourcePack implements Listener,AutoCloseable {
     private static final UUID PACK_ID=UUID.nameUUIDFromBytes("MotionRP:server-resource-pack".getBytes(java.nio.charset.StandardCharsets.UTF_8));
     private final MotionPlugin plugin;
@@ -20,7 +20,7 @@ final class AutomaticResourcePack implements Listener,AutoCloseable {
     private final Path source,folder;
     private final ScheduledExecutorService worker;
     private final GitHubPackPublisher publisher;
-    private final Map<UUID,String> offered=new HashMap<>();
+    private final Set<UUID> requested=new HashSet<>();
     private volatile PackSnapshot current;
     private volatile String status;
     private volatile boolean closed;
@@ -50,6 +50,17 @@ final class AutomaticResourcePack implements Listener,AutoCloseable {
         if(!enabled || closed) return false;
         worker.execute(()->{ forcePublish=true;processed=null;candidate=null;retryAfter=0;check(); });return true;
     }
+    void reload(Player player) {
+        if(!enabled || closed){plugin.tell(player,"リソースパック配布が無効です。管理者に連絡してください。");return;}
+        if(current!=null){offer(player);return;}
+        requested.add(player.getUniqueId());
+        plugin.tell(player,"リソースパックの準備待ちです。準備後にあなたへ適用します。");
+        worker.execute(this::check);
+    }
+    private void deliverRequested() {
+        for(UUID id:new HashSet<>(requested)){Player player=Bukkit.getPlayer(id);if(player!=null)offer(player);}
+        requested.clear();
+    }
     private void check() {
         if(closed || System.currentTimeMillis()<retryAfter) return;
         try {
@@ -73,9 +84,9 @@ final class AutomaticResourcePack implements Listener,AutoCloseable {
             }
             saveCache(snapshot);
             current=snapshot;processed=stamp;failures=0;retryAfter=0;
-            boolean resend=forcePublish;forcePublish=false;
+            forcePublish=false;
             setStatus("配布可能: "+snapshot.sha1());
-            onMain(()->{ if(resend) offered.clear();Bukkit.getOnlinePlayers().forEach(this::offer); });
+            onMain(this::deliverRequested);
         } catch(InterruptedException interrupted) { Thread.currentThread().interrupt(); }
         catch(Exception failure) {
             if(closed) return;
@@ -108,7 +119,7 @@ final class AutomaticResourcePack implements Listener,AutoCloseable {
             var pack=PackSnapshot.read(folder.resolve("mortionRP.zip"));
             if(!pack.sha1().equals(info.getProperty("sha1")) || !pack.sha256().equals(info.getProperty("sha256"))) return;
             current=pack;setStatus("前回公開したパックを配布可能: "+pack.sha1());
-            onMain(()->Bukkit.getOnlinePlayers().forEach(this::offer));
+            onMain(this::deliverRequested);
         } catch(Exception invalid) { setStatus("前回のパック情報を使用できません。再公開を待ちます。"); }
     }
     private void saveCache(PackSnapshot snapshot) throws IOException {
@@ -133,20 +144,17 @@ final class AutomaticResourcePack implements Listener,AutoCloseable {
     }
     private void offer(Player player) {
         PackSnapshot pack=current;
-        if(closed || pack==null || !player.isOnline() || pack.sha1().equals(offered.get(player.getUniqueId()))) return;
+        if(closed || pack==null || !player.isOnline()) return;
         player.removeResourcePack(PACK_ID); // Leave server.properties and other plugins' packs alone.
         player.addResourcePack(PACK_ID,pack.url(repository),HexFormat.of().parseHex(pack.sha1()),prompt,required);
-        offered.put(player.getUniqueId(),pack.sha1());
+        requested.remove(player.getUniqueId());
     }
-    @EventHandler public void join(PlayerJoinEvent event) {
-        Bukkit.getScheduler().runTaskLater(plugin,()->offer(event.getPlayer()),40);
-    }
-    @EventHandler public void quit(PlayerQuitEvent event) { offered.remove(event.getPlayer().getUniqueId()); }
+    @EventHandler public void quit(PlayerQuitEvent event) { requested.remove(event.getPlayer().getUniqueId()); }
     @EventHandler public void packStatus(PlayerResourcePackStatusEvent event) {
         if(!PACK_ID.equals(event.getID())) return;
         String state=event.getStatus().name();
         if(state.equals("FAILED_DOWNLOAD") || state.equals("FAILED_RELOAD") || state.equals("INVALID_URL") || state.equals("DECLINED")) {
-            plugin.tell(event.getPlayer(),"パックの適用に失敗・拒否されました。サーバーリソースパックを有効にして再接続してください。");
+            plugin.tell(event.getPlayer(),"パックの適用に失敗・拒否されました。サーバーリソースパックを有効にして /motionrp reload を実行してください。");
             plugin.getLogger().warning("Resource pack "+state+" for "+event.getPlayer().getUniqueId());
         }
     }
@@ -154,6 +162,6 @@ final class AutomaticResourcePack implements Listener,AutoCloseable {
         closed=true;HandlerList.unregisterAll(this);
         if(worker!=null) worker.shutdownNow();
         if(publisher!=null) publisher.close();
-        offered.clear();
+        requested.clear();
     }
 }

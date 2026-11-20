@@ -50,6 +50,17 @@ public final class MotionItems {
         return stack;
     }
 
+    public void refreshName(ItemStack stack) {
+        String id=motionId(stack);if(id==null)return;
+        var meta=stack.getItemMeta();if(meta.displayName()==null)return;
+        String old=net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(meta.displayName());
+        String next=MotionNames.updated(id,old);
+        if(!old.equals(next)){meta.displayName(text(next,NamedTextColor.AQUA));stack.setItemMeta(meta);}
+    }
+    public void refreshNames(org.bukkit.entity.Player player) {
+        for(ItemStack stack:player.getInventory().getContents())if(stack!=null)refreshName(stack);
+    }
+
     public boolean controller(ItemStack stack) { return isKind(stack, "controller"); }
     public String motionId(ItemStack stack) {
         if (!isKind(stack, "motion")) return null;

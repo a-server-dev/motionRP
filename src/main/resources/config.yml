@@ -11,13 +11,13 @@ motions:
     effect: pair_fusion
     max-ticks: 204
   broly:
-    name: ブロリー 岩盤（二人用）
+    name: 岩盤
     model: motionrp_broly_attacker
     animation: broly_attacker
     effect: pair_broly
     max-ticks: 154
   road_roller:
-    name: ロードローラーだッ！（ザ・ワールド）
+    name: ロードローラー
     model: motionrp_road_roller
     animation: road_roller
     effect: road_roller
@@ -71,25 +71,25 @@ motions:
     effect: excalibur
     max-ticks: 220
   gae_bolg:
-    name: 突き穿つ死翔の槍（ゲイ・ボルク）
+    name: 突き穿つ死翔の槍
     model: motionrp_gae_bolg
     animation: gae_bolg
     effect: gae_bolg
     max-ticks: 180
   zangetsu_bankai:
-    name: 斬月・卍解（天鎖斬月）
+    name: 卍解・天鎖斬月
     model: motionrp_zangetsu_bankai
     animation: zangetsu_bankai
     effect: zangetsu_bankai
     max-ticks: 280
   gate_of_babylon_100:
-    name: 王の財宝・百門
+    name: 王の財宝
     model: motionrp_gate_of_babylon_100
     animation: gate_of_babylon_100
     effect: gate_of_babylon_100
     max-ticks: 160
   gate_of_babylon_enuma:
-    name: 王の財宝・本気（エヌマエリシュ）
+    name: 王の財宝(本気)
     model: motionrp_gate_of_babylon_enuma
     animation: gate_of_babylon_enuma
     effect: gate_of_babylon_enuma
@@ -101,13 +101,13 @@ motions:
     effect: titan_transform
     max-ticks: 260
   senbonzakura:
-    name: 千本桜景厳
+    name: 卍解・千本桜景義
     model: motionrp_senbonzakura
     animation: senbonzakura
     effect: senbonzakura
     max-ticks: 260
   gate_of_babylon:
-    name: 王の財宝
+    name: 王の財宝(慢心)
     model: motionrp_gate_of_babylon
     animation: gate_of_babylon
     effect: gate_of_babylon
@@ -149,7 +149,8 @@ titan:
   use-bundled-skin: true
   skin-url: https://textures.minecraft.net/texture/1c6cd7202c34e78f3073090349f7d973b288af5e5b7334dd249010b3f27078f9
 
-# 追加ポート不要。生成した実パックを公開GitHub Releasesへ自動配布します。
+# 追加ポート不要。生成パックをGitHub Releasesへ公開します。
+# 適用は各プレイヤーが /motionrp reload を実行したときのみ。設定再読込は /motionrp configreload。
 resource-pack:
   enabled: false
   repository: a-server-dev/motionRP

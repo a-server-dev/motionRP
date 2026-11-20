@@ -14,7 +14,7 @@ const fixture=process.env.MOTIONRP_PAPER_FIXTURE || '/workspace/runtime/paper';
 const previous=path.join(project,'build/integration-server');
 const run=path.join(project,'build/pack-test-server'),port=25577;
 const version=fs.readFileSync(path.join(project,'build.gradle'),'utf8').match(/^version = '([^']+)'/m)[1];
-let server,bot,output='';const checks=[],offers=[],removals=[],messages=[];
+let server,bot,other,output='';const checks=[],offers=[],removals=[],messages=[];
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function waitFor(predicate,label,timeout=20000) {const end=Date.now()+timeout;while(Date.now()<end){if(predicate())return;await sleep(100);}throw Error('Timeout: '+label+'\n'+output.slice(-2000));}
 const pass=s=>{checks.push(s);console.log('PASS:',s);};
@@ -41,7 +41,7 @@ try {
   fs.mkdirSync(pluginDir,{recursive:true});
   const configPath=path.join(pluginDir,'config.yml');
   const config=fs.readFileSync(path.join(project,'src/main/resources/config.yml'),'utf8').replace('enabled: false','enabled: true');
-  fs.writeFileSync(configPath,config);
+  fs.writeFileSync(configPath,config.replace('name: ロードローラー\n','name: ロードローラーだッ！（ザ・ワールド）\n').replace('name: 岩盤\n','name: ブロリー 岩盤（二人用）\n').replace('name: 王の財宝(慢心)\n','name: 王の財宝\n').replace('name: 王の財宝(本気)\n','name: 王の財宝・本気（エヌマエリシュ）\n'));
   const initial=publication('initial');
   let properties=fs.readFileSync(path.join(previous,'server.properties'),'utf8').replace(/^server-port=.*$/m,`server-port=${port}`)
     .replace(/^resource-pack=.*$/m,'resource-pack=https://example.invalid/base.zip').replace(/^resource-pack-sha1=.*$/m,'resource-pack-sha1='+'1'.repeat(40));
@@ -70,40 +70,56 @@ try {
     }
   });
   bot._client.on('remove_resource_pack',packet=>removals.push(packet));
-  await waitFor(()=>offers.some(p=>p.url===initial.url),'automatic join offer');
+  await waitFor(()=>bot.entity,'first player spawn');
+  const otherOffers=[];
+  other=mineflayer.createBot({host:'127.0.0.1',port,username:'PackOther',auth:'offline',version:'26.1',physicsEnabled:false});other.physicsEnabled=false;
+  other.on('error',e=>console.error(e.message));
+  other._client.on('add_resource_pack',p=>{otherOffers.push(p);if(other._client.state==='configuration'){other._client.write('resource_pack_receive',{uuid:p.uuid,result:3});other._client.write('resource_pack_receive',{uuid:p.uuid,result:0});}});
+  await waitFor(()=>other.entity,'second player spawn');await sleep(3000);
+  assert.ok(!offers.some(p=>p.url===initial.url));assert.ok(!otherOffers.some(p=>p.url===initial.url));
+  pass('Neither joining player receives the MotionRP pack automatically');
+  bot.chat('/motionrp reload');await waitFor(()=>offers.some(p=>p.url===initial.url),'individual reload offer');
   const first=offers.find(p=>p.url===initial.url);assert.equal(first.hash,initial.sha1);assert.equal(first.forced,false);
   assert.ok(offers.some(p=>p.url==='https://example.invalid/base.zip'));
   assert.ok(removals.every(p=>p.uuid===first.uuid),'Another plugin/server pack was removed');
-  pass('Paper sends the cached public mortionRP.zip with its SHA-1 on join while preserving the base pack');
-  await sleep(6500);assert.equal(offers.filter(p=>p.url===initial.url).length,1);
-  assert.ok(output.includes('GitHub認証未設定'));
-  pass('unchanged packs are not resent and missing credentials retain the last verified publication');
+  assert.ok(!otherOffers.some(p=>p.url===initial.url));
+  pass('A non-admin reload sends the verified pack only to its requester and preserves the base pack');
+  bot.chat('/motionrp reload');await waitFor(()=>offers.filter(p=>p.url===initial.url).length===2,'explicit reapply of unchanged pack');await sleep(1000);
+  assert.ok(!otherOffers.some(p=>p.url===initial.url));pass('Explicit reload reapplies an unchanged pack without sending to anyone else');
+  const migrated=fs.readFileSync(configPath,'utf8');for(const label of ['ロードローラー','岩盤','王の財宝(慢心)','王の財宝(本気)','卍解・天鎖斬月','卍解・千本桜景義','突き穿つ死翔の槍'])assert.ok(migrated.includes('name: '+label));
+  pass('Existing shipped motion names migrate to the requested labels');
+  bot.chat('/motionrp view on');await sleep(250);
+  const displays=new Set(),destroyed=new Set();bot._client.on('spawn_entity',p=>{if(p.type===bot.registry.entitiesByName.item_display.id)displays.add(p.entityId);});bot._client.on('entity_destroy',p=>p.entityIds.forEach(id=>destroyed.add(id)));
+  const before=messages.length;bot.chat('/goalperformance kazu');await waitFor(()=>displays.size>0,'performance visibly begins');assert.ok(!messages.slice(before).some(m=>m.includes('再生:')));
+  const active=[...displays],offerCount=offers.length;bot.chat('/motionrp reload');await waitFor(()=>offers.length>offerCount,'reload during performance');await sleep(250);assert.ok(active.some(id=>!destroyed.has(id)),'Personal reload must leave the active motion running');bot.chat('/goalperformance stop');
+  pass('Successful playback stays silent and a personal pack reload leaves its active model running');
   command('motionrp pack publish');await waitFor(()=>output.includes('パックの確認と公開を予約しました'),'manual publication command');
   command('motionrp pack status');await waitFor(()=>output.includes('リソースパック: GitHub認証未設定'),'manual status command');
   pass('manual publication/status commands schedule work without blocking or exposing credentials');
   bot._client.write('resource_pack_receive',{uuid:first.uuid,result:2});
   await waitFor(()=>messages.some(m=>m.includes('パックの適用に失敗')),'download failure message');
   pass('failed downloads produce actionable player feedback');
-  const next=publication('next');command('motionrp reload');
+  const next=publication('next');const count=offers.length;command('motionrp configreload');await sleep(1500);assert.equal(offers.length,count);assert.ok(!otherOffers.some(p=>p.url===next.url));bot.chat('/motionrp reload');
   await waitFor(()=>offers.some(p=>p.url===next.url),'updated cached publication offer');
   const second=offers.find(p=>p.url===next.url);assert.equal(second.uuid,first.uuid);assert.equal(second.hash,next.sha1);
   assert.ok(removals.every(p=>p.uuid===first.uuid));assert.ok(!removals.some(p=>p.uuid===undefined));
-  pass('a new publication replaces only MotionRP own UUID, changes URL/hash and reaches online players');
-  fs.writeFileSync(path.join(pluginDir,'github-token.txt'),'TEST_SECRET_NEVER_LOG\ninvalid-second-line');command('motionrp reload');
+  assert.ok(!otherOffers.some(p=>p.url===next.url));pass('A new cached publication stays unsent after config reload and reaches only the player who requests it');
+  fs.writeFileSync(path.join(pluginDir,'github-token.txt'),'TEST_SECRET_NEVER_LOG\ninvalid-second-line');command('motionrp configreload');
   await waitFor(()=>output.includes('自動公開失敗（IOException）'),'invalid credential rejected');
   assert.ok(!output.includes('TEST_SECRET_NEVER_LOG'));
   pass('invalid token files are rejected without exposing their contents');
   fs.unlinkSync(path.join(pluginDir,'github-token.txt'));
-  fs.writeFileSync(configPath,config.replace(`repository: ${repository}`,'repository: ../invalid'));command('motionrp reload');
+  fs.writeFileSync(configPath,config.replace(`repository: ${repository}`,'repository: ../invalid'));command('motionrp configreload');
   await waitFor(()=>output.includes('Resource pack settings are invalid'),'invalid optional config');
   command('motionrp status');await waitFor(()=>output.includes('BetterModel プレイヤーモデル'),'motion service still enabled');
   pass('invalid automatic-pack configuration does not disable the motion plugin');
-  bot.quit();bot=undefined;command('stop');await waitFor(()=>server.exitCode!==null,'shutdown',30000);assert.equal(server.exitCode,0);
+  bot.quit();bot=undefined;other.quit();other=undefined;command('stop');await waitFor(()=>server.exitCode!==null,'shutdown',30000);assert.equal(server.exitCode,0);
   fs.writeFileSync(path.join(project,'build/pack-integration-result.json'),JSON.stringify({passed:checks.length,checks,limitations:['Previously verified cache is simulated. Real GitHub upload and anonymous download use the local fake API in Java tests. Minecraft visual rendering is not tested.']},null,2));
   console.log('Pack integration checks completed:',checks.length);
 } catch(error) {console.error(error.stack);process.exitCode=1;}
 finally {
   if(bot){bot.quit();bot._client.socket?.destroy();}
+  if(other){other.quit();other._client.socket?.destroy();}
   if(server && server.exitCode===null) {command('stop');try{await waitFor(()=>server.exitCode!==null,'cleanup',30000);}catch{server.kill('SIGKILL');}}
   fs.writeFileSync(path.join(project,'build/pack-integration-server.log'),output);
   process.exit(process.exitCode||0);

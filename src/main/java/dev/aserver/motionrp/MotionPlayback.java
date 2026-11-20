@@ -121,7 +121,6 @@ public final class MotionPlayback {
             });
             if (!started) { stop(uuid); plugin.tell(player, "モーションを開始できませんでした。"); return; }
             if (scene != null) scene.start();
-            plugin.tell(player, "再生: " + definition.name());
         } catch (RuntimeException failure) {
             stop(player.getUniqueId());
             if (tracker != null && !tracker.isClosed()) tracker.close();

@@ -14,7 +14,7 @@ final class FusionCoordinator implements AutoCloseable {
  private record Run(Player left,Player right,AerialAnchor leftAnchor,AerialAnchor rightAnchor,Location center,boolean battle,BrolyState broly){}
  private final MotionPlugin plugin;private final PairSessions sessions=new PairSessions();private final Map<UUID,Run> runs=new HashMap<>();private final Set<UUID> starting=new HashSet<>();
  FusionCoordinator(MotionPlugin plugin){this.plugin=plugin;}
- private MotionCatalog.Definition definition(boolean left,String kind){boolean battle=kind.equals("finalbattle"),broly=kind.equals("broly");String id=broly?(left?"broly_attacker":"broly_victim"):battle?(left?"final_battle_naruto":"final_battle_sasuke"):(left?"fusion_left":"fusion_right");return new MotionCatalog.Definition(id,broly?"ブロリー 岩盤":battle?"ナルト VS サスケ 最終決戦":"フュージョン", "motionrp_"+id,id,(broly?dev.aserver.motionrp.core.BrolyTimeline.END:battle?dev.aserver.motionrp.core.FinalBattleTimeline.END:END)+10,null,id);}
+ private MotionCatalog.Definition definition(boolean left,String kind){boolean battle=kind.equals("finalbattle"),broly=kind.equals("broly");String id=broly?(left?"broly_attacker":"broly_victim"):battle?(left?"final_battle_naruto":"final_battle_sasuke"):(left?"fusion_left":"fusion_right");return new MotionCatalog.Definition(id,broly?"岩盤":battle?"ナルト VS サスケ 最終決戦":"フュージョン", "motionrp_"+id,id,(broly?dev.aserver.motionrp.core.BrolyTimeline.END:battle?dev.aserver.motionrp.core.FinalBattleTimeline.END:END)+10,null,id);}
  boolean command(Player player,String[] args){return command(player,args,"fusion");}
  boolean finalBattle(Player player,String[] args){return command(player,args,"finalbattle");}
  boolean broly(Player player,String[] args){return command(player,args,"broly");}
@@ -36,7 +36,7 @@ final class FusionCoordinator implements AutoCloseable {
   return runs.containsKey(player.getUniqueId()); // A repeated right-click must not open a GUI and cancel a running pair.
  }
  private boolean command(Player player,String[] args,String command){
-  boolean battle=command.equals("finalbattle"),broly=command.equals("broly");String title=broly?"ブロリーの岩盤":battle?"最終決戦":"フュージョン";
+  boolean battle=command.equals("finalbattle"),broly=command.equals("broly");String title=broly?"岩盤":battle?"最終決戦":"フュージョン";
   if(!player.hasPermission("motionrp.use")){plugin.tell(player,"権限がありません。");return true;}
   if(args.length==1&&!battle)return inviteNearest(player,command);
   if(args.length==2&&args[1].equalsIgnoreCase("accept")&&!battle){var invite=sessions.incoming(player.getUniqueId(),System.currentTimeMillis());if(invite.isEmpty()||!invite.get().kind().equals(command)){plugin.tell(player,"この演出の有効な招待がありません。");return true;}return acceptCurrent(player,null);}
@@ -71,8 +71,8 @@ final class FusionCoordinator implements AutoCloseable {
    if(left.collidesAt(lp)||right.collidesAt(rp)||!la.moveTo(lp,left.getLocation())||!ra.moveTo(rp,right.getLocation()))throw new IllegalStateException("並ぶ場所に障害物があります。");
    plugin.playback().play(left,definition(true,kind));plugin.playback().play(right,definition(false,kind));
    if(!plugin.playback().active(left.getUniqueId())||!plugin.playback().active(right.getUniqueId()))throw new IllegalStateException("二人のモデルを開始できませんでした。");
-   var run=new Run(left,right,la,ra,center,battle,broly?new BrolyState(center,rp):null);runs.put(left.getUniqueId(),run);runs.put(right.getUniqueId(),run);plugin.tell(left,broly?"ブロリーの岩盤：攻撃側を開始しました。":battle?"最終決戦：ナルト役を開始しました。":"二人用フュージョンを開始しました。");plugin.tell(right,broly?"ブロリーの岩盤：相手役を開始しました。":battle?"最終決戦：サスケ役を開始しました。":"二人用フュージョンを開始しました。");
-  }catch(RuntimeException e){sessions.cancel(left.getUniqueId());plugin.playback().stop(left.getUniqueId());plugin.playback().stop(right.getUniqueId());la.close();ra.close();plugin.tell(left,"開始できません: "+e.getMessage());plugin.tell(right,(broly?"ブロリーの岩盤":battle?"最終決戦":"フュージョン")+"を開始できませんでした。");}
+   var run=new Run(left,right,la,ra,center,battle,broly?new BrolyState(center,rp):null);runs.put(left.getUniqueId(),run);runs.put(right.getUniqueId(),run);
+  }catch(RuntimeException e){sessions.cancel(left.getUniqueId());plugin.playback().stop(left.getUniqueId());plugin.playback().stop(right.getUniqueId());la.close();ra.close();plugin.tell(left,"開始できません: "+e.getMessage());plugin.tell(right,(broly?"岩盤":battle?"最終決戦":"フュージョン")+"を開始できませんでした。");}
   finally{starting.remove(left.getUniqueId());starting.remove(right.getUniqueId());}
  }
  void externalTeleport(UUID id){var run=runs.get(id);if(run!=null)(id.equals(run.left.getUniqueId())?run.leftAnchor:run.rightAnchor).finishAtCurrent();}

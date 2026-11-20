@@ -38,6 +38,7 @@ public final class PlayerLoadouts {
         if (stack.getAmount() != 1 || !slot.id().equals(items.motionId(stack))) {
             throw new IllegalArgumentException("Saved item does not match slot");
         }
+        items.refreshName(stack);
         return stack;
     }
 

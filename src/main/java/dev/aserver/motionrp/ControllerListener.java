@@ -114,7 +114,7 @@ public final class ControllerListener implements Listener {
         plugin.playback().stop(event.getPlayer().getUniqueId());
         lastInput.remove(event.getPlayer().getUniqueId());
     }
-    @EventHandler public void join(PlayerJoinEvent event) { TitanState.recover(plugin,event.getPlayer());AerialAnchor.recover(plugin,event.getPlayer()); }
+    @EventHandler public void join(PlayerJoinEvent event) { plugin.items().refreshNames(event.getPlayer()); TitanState.recover(plugin,event.getPlayer());AerialAnchor.recover(plugin,event.getPlayer()); }
     @EventHandler public void respawn(PlayerRespawnEvent event) {
         Bukkit.getScheduler().runTask(plugin,()->{TitanState.recover(plugin,event.getPlayer());AerialAnchor.recover(plugin,event.getPlayer());});
     }

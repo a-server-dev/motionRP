@@ -998,7 +998,7 @@ generate-structures=false
   a._testLookUp();
   await sleep(300);
   a._testLeftClick();
-  await waitFor(() => a._testMessages.some(m => m.includes('再生:')), 'controller playback');
+  assert.ok(!a._testMessages.some(m => m.includes('再生:')), 'Successful playback stays silent');
   await waitFor(() => seenDisplays.size > 0, 'other player receives model displays');
   await waitFor(() => removedDisplays.size === seenDisplays.size, 'completed animation removes its displays');
   pass('left-click starts BetterModel playback; another client receives and then removes model display entities');

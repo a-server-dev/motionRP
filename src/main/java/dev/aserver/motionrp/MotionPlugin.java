@@ -79,6 +79,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
         if(!getConfig().contains("visibility.range",true)){getConfig().set("visibility.range",48);saveConfig();}
         if("motionrp_getsuga_tensho".equals(getConfig().getString("motions.getsuga_tensho.model")) && "getsuga_tensho".equals(getConfig().getString("motions.getsuga_tensho.effect")) && getConfig().getInt("motions.getsuga_tensho.max-ticks",0)<dev.aserver.motionrp.core.BarrierSlashTimeline.GETSUGA_END){getConfig().set("motions.getsuga_tensho.max-ticks",186);saveConfig();}
         for(String id:java.util.List.of("road_roller","chibaku_tensei","kokuryuha"))if(("motionrp_"+id).equals(getConfig().getString("motions."+id+".model"))&&id.equals(getConfig().getString("motions."+id+".effect"))&&getConfig().getInt("motions."+id+".max-ticks",0)<dev.aserver.motionrp.core.EpicTimeline.end(id)){getConfig().set("motions."+id+".max-ticks",dev.aserver.motionrp.core.EpicTimeline.end(id)+10);saveConfig();}
+        if(MotionNames.migrate(getConfig()))saveConfig();
         catalog = MotionCatalog.read(getConfig());
         items = new MotionItems(this);
         loadouts = new PlayerLoadouts(this, items);
@@ -88,7 +89,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
         playback = new MotionPlayback(this);fusion=new FusionCoordinator(this);
         Bukkit.getPluginManager().registerEvents(menu, this);
         Bukkit.getPluginManager().registerEvents(new ControllerListener(this), this);
-        for(Player player:Bukkit.getOnlinePlayers()) {TitanState.recover(this,player);AerialAnchor.recover(this,player);}
+        for(Player player:Bukkit.getOnlinePlayers()) {items.refreshNames(player);TitanState.recover(this,player);AerialAnchor.recover(this,player);}
         var command = Objects.requireNonNull(getCommand("motionrp"));
         command.setExecutor(this);
         command.setTabCompleter(this);
@@ -154,11 +155,18 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
             else tell(sender, "プレイヤーのみ実行できます。");
             return true;
         }
+        if(args[0].equalsIgnoreCase("reload")){
+            if(!(sender instanceof Player player)){tell(sender,"ゲーム内で /motionrp reload を実行してください。設定の再読込は /motionrp configreload です。");return true;}
+            if(!player.hasPermission("motionrp.use")){tell(sender,"権限がありません。");return true;}
+            if(args.length!=1){tell(sender,"/motionrp reload（自分のリソースパックのみ再適用）");return true;}
+            if(resourcePack==null)tell(sender,packStatus());else resourcePack.reload(player);
+            return true;
+        }
         if (!sender.hasPermission("motionrp.admin")) { tell(sender, "管理者権限が必要です。"); return true; }
         try {
             switch (args[0].toLowerCase(Locale.ROOT)) {
-                case "reload" -> {
-                    reloadConfig();visibility.reload(this);
+                case "configreload" -> {
+                    reloadConfig();if(MotionNames.migrate(getConfig()))saveConfig();visibility.reload(this);
                     MotionCatalog updated = MotionCatalog.read(getConfig());
                     playback.stopAll();
                     catalog = updated;
@@ -217,7 +225,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
     }
 
     private void usage(CommandSender sender) {
-        tell(sender, "/motionrp gui | view [on|off] | status | reload | pack status | pack publish");
+        tell(sender, "/motionrp gui | view [on|off] | reload | status | configreload | pack status | pack publish");
         tell(sender, "/motionrp broly [相手] | broly accept [招待者] | broly cancel");
         tell(sender,"/motionrp accept — 届いている招待に参加");
         tell(sender, "/motionrp fusion [相手] | fusion accept [招待者] | fusion cancel");
@@ -228,8 +236,8 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
     @Override public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         List<String> choices = new ArrayList<>();
         if (args.length == 1) {
-            choices.add("gui");choices.add("view");choices.add("fusion");choices.add("broly");choices.add("accept");
-            if (sender.hasPermission("motionrp.admin")) choices.addAll(List.of("give", "reload", "status", "pack"));
+            choices.add("gui");choices.add("view");choices.add("fusion");choices.add("broly");choices.add("accept");choices.add("reload");
+            if (sender.hasPermission("motionrp.admin")) choices.addAll(List.of("give", "configreload", "status", "pack"));
         } else if((args.length==2||args.length==3)&&(args[0].equalsIgnoreCase("fusion")||args[0].equalsIgnoreCase("broly"))){if(args.length==2)choices.addAll(List.of("accept","cancel"));
             if(args.length==2||args[1].equalsIgnoreCase("accept"))Bukkit.getOnlinePlayers().stream().filter(p->p!=sender&&(!(sender instanceof Player viewer)||viewer.canSee(p))).forEach(p->choices.add(p.getName()));
         } else if(args.length==2 && args[0].equalsIgnoreCase("view")){choices.addAll(List.of("on","off"));
