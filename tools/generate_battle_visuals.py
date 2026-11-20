@@ -58,6 +58,12 @@ class Sculpt:
   g=copy.deepcopy(self.groups[name]);self.m.data['groups'].append(g);node={'uuid':g['uuid'],'children':ids};self.nodes[name]=node
   (self.nodes[parent]['children'] if parent else self.m.data['outliner']).append(node)
  def finish(self):
+  fox='kurama' in self.old['name'];roots=self.m.data['outliner'][:];names={g['uuid']:g['name']for g in self.m.data['groups']}
+  upper=[n for n in roots if not names[n['uuid']].startswith(('fox_leg_','nine_tail_','susanoo_leg_'))]
+  torso=self.m.group('combat_torso',[],origin=(0,42 if fox else 64,0));self.m.data['outliner']=[n for n in roots if n not in upper]+[{'uuid':torso['uuid'],'children':upper}]
+  from generate_summons import animator
+  for clip in self.m.data['animations']:
+   if clip['name']=='release':clip['animators'][torso['uuid']]=animator(torso,[(0,(0,0,0)),(.4,(0,0,0)),(.7,(12,0,0)if fox else(-5,-8,0)),(1.2,(8,0,0)if fox else(-3,-5,0)),(2,(0,0,0))])
   for g in self.m.data['groups']:g['light_emission']=8
   for e in self.m.data['elements']:e['light_emission']=8
   palette=self.palette;material_texture(self.m,palette);return self.m.data
@@ -109,7 +115,7 @@ def fox(old,asura,palette):
   seam=[(p[0],p[1],p[2]-r*.96)for p,r in zip(pts,rs)];ids.append(tube(m,'flowing_tail_seal_'+str(i),seam,[max(.03,r*.14)for r in rs],3,5));a.attach('nine_tail_'+str(i),ids)
  for row in range(3 if asura else 1):
   for side in [-1,1]:
-   x=side*(19+row*1.7);y=81-row*13;ids=[oval(m,'deltoid_'+str(row)+'_'+str(side),(x,y-3,0),(5.7,6,5.5),1),tube(m,'bicep_'+str(row)+'_'+str(side),[(x,y-3,0),(x+side*.7,y-10,-.3),(x,y-20,0)],[4.5,5,3.2],1,12)]
+   x=side*19;y=81;ids=[oval(m,'deltoid_'+str(row)+'_'+str(side),(x,y-3,0),(5.7,6,5.5),1),tube(m,'bicep_'+str(row)+'_'+str(side),[(x,y-3,0),(x+side*.7,y-10,-.3),(x,y-20,0)],[4.5,5,3.2],1,12)]
    upper='fox_upper_'+str(row)+'_'+str(side);a.attach(upper,ids)
    ids=[tube(m,'tapered_forearm_'+str(row)+'_'+str(side),[(x,y-20,0),(x,y-27,-.3),(x,y-37,-1)],[3.3,4.5,3],1,12),oval(m,'anatomical_palm_'+str(row)+'_'+str(side),(x,y-40,-1),(5.6,5,4),1,8,12)]
    for finger in range(4):
@@ -137,7 +143,7 @@ def susanoo(old,indra,palette):
   ids.append(tube(m,'collar_contour_'+str(side),[(side*2,86,-5),(side*9,85,-8),(side*18,81,-5)],[1.5,1.3,1],2,8))
  for row in range(4):ids.append(plate(m,'abdominal_armor_'+str(row),[(-5,58+row*4,-10),(5,58+row*4,-10),(4,54+row*4,-10),(-4,54+row*4,-10)],1.1,1))
  if indra:ids.append(oval(m,'luminous_chest_chakra',(0,75,-13),(2.2,6.5,1.2),5,8,10))
- a.attach('susanoo_chest',ids)
+ ids.append(tube(m,'armored_neck',[(0,83,2),(0,95,2)],[7,6.8],1,10));a.attach('susanoo_chest',ids)
  ids=[oval(m,'tengu_helmet_shell',(0,98,1),(11,12,9),1,12,16)]
  for side in [-1,1]:
   ids.append(plate(m,'swept_tengu_brow_'+str(side),[(side*.5,103,-8),(side*11,106,-4),(side*9,99,-9),(side*3,98,-10)],2.3,2))
@@ -166,7 +172,17 @@ def susanoo(old,indra,palette):
   a.attach('susanoo_forearm_'+str(side),ids,upper)
  pts=[(-26,81+46*math.sin(math.radians(-100+j*200/48)),-30-14*math.cos(math.radians(-100+j*200/48)))for j in range(49)];ids=[tube(m,'continuous_chakra_bow',pts,[1.6+1.0*math.sin(math.pi*j/48)for j in range(49)],5 if indra else 2,10)]
  for segment,(p,q)in enumerate([((-26,126,-28),(-18,81,0)),((-18,81,0),(-26,36,-28))]):ids.append(tube(m,'taut_bowstring_'+str(segment),[p,q],[.22,.22],7,6))
- a.attach('indra_bow',ids);return a.finish()
+ a.attach('indra_bow',ids)
+ def proportions(p,head=False,leg=False):
+  x,y,z=p
+  if head:return[x*.75*.84,107+(y-97)*.75,z*.75]
+  return[x*.84,y*1.2 if leg else y+10,z]
+ head_ids=set(a.nodes['sasuke_mask']['children']);leg_ids=set(a.nodes['susanoo_leg_-1']['children']+a.nodes['susanoo_leg_1']['children'])
+ for e in m.data['elements']:
+  for key,v in e['vertices'].items():e['vertices'][key]=proportions(v,e['uuid']in head_ids,e['uuid']in leg_ids)
+ for g in m.data['groups']:
+  g['origin']=proportions(g['origin'],g['name']=='sasuke_mask',g['name'].startswith('susanoo_leg_'))
+ return a.finish()
 
 def material_texture(m,palette,energy=False):
  """Vanilla cutout-compatible perforated veils; partial alpha is not relied on."""

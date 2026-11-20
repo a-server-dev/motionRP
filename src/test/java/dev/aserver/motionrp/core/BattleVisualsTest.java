@@ -14,14 +14,24 @@ class BattleVisualsTest {
  private byte[] current(String name)throws Exception{try(var in=Objects.requireNonNull(getClass().getResourceAsStream("/bettermodel/models/motionrp_duel_"+name+".bbmodel"))){return in.readAllBytes();}}
  private byte[] previous(String name)throws Exception{try(var in=new GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.29.0/models_motionrp_duel_"+name+".bbmodel.gz")))){return in.readAllBytes();}}
  private JsonObject json(byte[] b){return JsonParser.parseString(new String(b,java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();}
- @Test void visualReplacementKeepsAllAnimatedPivotsAndTheSharedTiming()throws Exception{
-  for(String name:List.of("kurama","asura_kurama","susanoo","indra_susanoo")){
-   var old=json(previous(name));var now=json(current(name));Map<String,JsonObject> prior=new HashMap<>(),bones=new HashMap<>();
-   for(var raw:old.getAsJsonArray("groups")){var g=raw.getAsJsonObject();prior.put(g.get("uuid").getAsString(),g);}for(var raw:now.getAsJsonArray("groups")){var g=raw.getAsJsonObject();bones.put(g.get("uuid").getAsString(),g);}
-   assertEquals(old.get("animations"),now.get("animations"),"Visual polish must preserve the paired choreography");
-   for(var raw:now.getAsJsonArray("animations"))for(String id:raw.getAsJsonObject().getAsJsonObject("animators").keySet()){
-    assertNotNull(bones.get(id));assertEquals(prior.get(id).get("origin"),bones.get(id).get("origin"));assertEquals(prior.get(id).get("rotation"),bones.get(id).get("rotation"));
-   }
+ @Test void allSixArmsShareTheSameLeftOrRightShoulder()throws Exception{
+  var m=json(current("asura_kurama"));var groups=new HashMap<String,JsonObject>();for(var raw:m.getAsJsonArray("groups")){var g=raw.getAsJsonObject();groups.put(g.get("name").getAsString(),g);}
+  for(int side:List.of(-1,1))for(int row=1;row<3;row++)assertEquals(groups.get("fox_upper_0_"+side).get("origin"),groups.get("fox_upper_"+row+"_"+side).get("origin"));
+ }
+ @Test void susanooHasLongerLegsAndASmallerHeadThan030()throws Exception{
+  for(String name:List.of("susanoo","indra_susanoo")){
+   JsonObject old;try(var in=new GZIPInputStream(getClass().getResourceAsStream("/bundled-0.30.0/models_motionrp_duel_"+name+".bbmodel.gz"))){old=json(in.readAllBytes());}var now=json(current(name));
+   for(var raw:now.getAsJsonArray("groups")){var g=raw.getAsJsonObject();if(g.get("name").getAsString().equals("susanoo_leg_1"))assertEquals(60,g.getAsJsonArray("origin").get(1).getAsDouble());}
+   double[] widths=new double[2];int i=0;for(var m:List.of(old,now)){for(var raw:m.getAsJsonArray("elements")){var e=raw.getAsJsonObject();if(e.get("name").getAsString().equals("tengu_helmet_shell")){double lo=1e9,hi=-1e9;for(var v:e.getAsJsonObject("vertices").entrySet()){double x=v.getValue().getAsJsonArray().get(0).getAsDouble();lo=Math.min(lo,x);hi=Math.max(hi,x);}widths[i]=hi-lo;}}i++;}assertTrue(widths[1]<widths[0]*.7);
+  }
+ }
+ @Test void chargeAndReleaseAreDistinctClipsAndShareTheLaunchClock()throws Exception{
+  assertTrue(FinalBattleTimeline.TECHNIQUES>FinalBattleTimeline.CHARGE+40);assertEquals(8,FinalBattleTimeline.RELEASE-FinalBattleTimeline.WINDUP);assertEquals(3,FinalBattleTimeline.EXPLOSION_SCALE);
+  for(String name:List.of("asura_kurama","indra_susanoo")){var m=json(current(name));var clips=new HashMap<String,JsonObject>();for(var raw:m.getAsJsonArray("animations")){var a=raw.getAsJsonObject();clips.put(a.get("name").getAsString(),a);}assertTrue(clips.containsKey("gather"));assertFalse(clips.containsKey("exchange"));assertEquals(2,clips.get("release").get("length").getAsInt());assertEquals(8,clips.get("charge").get("length").getAsInt());}
+ }
+ @Test void shipped030AvatarsAndActorsMigrateToNewPivotsWithBackups()throws Exception{
+  var root=Files.createTempDirectory("motionrp-031-migrate");for(String file:List.of("models/motionrp_duel_kurama.bbmodel","models/motionrp_duel_asura_kurama.bbmodel","models/motionrp_duel_susanoo.bbmodel","models/motionrp_duel_indra_susanoo.bbmodel","players/motionrp_final_battle_naruto.bbmodel","players/motionrp_final_battle_sasuke.bbmodel")){
+   byte[] old,now;try(var in=new GZIPInputStream(getClass().getResourceAsStream("/bundled-0.30.0/"+file.replace('/','_')+".gz"))){old=in.readAllBytes();}try(var in=getClass().getResourceAsStream("/bettermodel/"+file)){now=in.readAllBytes();}var target=root.resolve(file);Files.createDirectories(target.getParent());Files.write(target,old);var u=new BundledAssetUpdater();var hashes=BundledAssetVersions.knownHashes(file,Set.of());assertEquals(BundledAssetUpdater.Result.UPDATED,u.install(target,now,hashes,root.resolve("backups"),root.resolve("updates")));assertTrue(Files.exists(root.resolve("backups").resolve(target.getFileName()+"."+BundledAssetUpdater.sha256(old)+".bak")));Files.writeString(target,"custom");assertEquals(BundledAssetUpdater.Result.CUSTOM_PRESERVED,u.install(target,now,hashes,root.resolve("backups"),root.resolve("updates")));
   }
  }
  private void collect(JsonArray nodes,Map<String,Integer> refs){for(var raw:nodes)if(raw.isJsonPrimitive())refs.merge(raw.getAsString(),1,Integer::sum);else collect(raw.getAsJsonObject().getAsJsonArray("children"),refs);}

@@ -37,7 +37,7 @@ final class FusionCoordinator implements AutoCloseable {
   var la=new AerialAnchor(plugin,left);var ra=new AerialAnchor(plugin,right);
   starting.add(left.getUniqueId());starting.add(right.getUniqueId());
   try{
-   if(battle&&center.getY()+72>center.getWorld().getMaxHeight()-2)throw new IllegalStateException("上空72ブロックの高さが必要です。");
+   if(battle&&center.getY()+80>center.getWorld().getMaxHeight()-2)throw new IllegalStateException("上空80ブロックの高さが必要です。");
    if(left.collidesAt(lp)||right.collidesAt(rp)||!la.moveTo(lp,left.getLocation())||!ra.moveTo(rp,right.getLocation()))throw new IllegalStateException("並ぶ場所に障害物があります。");
    plugin.playback().play(left,definition(true,battle));plugin.playback().play(right,definition(false,battle));
    if(!plugin.playback().active(left.getUniqueId())||!plugin.playback().active(right.getUniqueId()))throw new IllegalStateException("二人のモデルを開始できませんでした。");

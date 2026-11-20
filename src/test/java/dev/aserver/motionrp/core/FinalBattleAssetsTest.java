@@ -15,7 +15,7 @@ class FinalBattleAssetsTest {
   for(String role:List.of("naruto","sasuke"))assertEquals(44,load("players/motionrp_final_battle_"+role).getAsJsonArray("animations").get(0).getAsJsonObject().get("length").getAsDouble());
  }
  @Test void sharedClockReturnsBothRolesAndKeepsTheirProjectilesSynchronized(){
-  assertEquals(0,FinalBattleTimeline.projectile(559));assertEquals(1,FinalBattleTimeline.projectile(600));assertEquals("COLLISION",FinalBattleTimeline.phase(600));assertEquals("RETURN",FinalBattleTimeline.phase(800));assertEquals(0,FinalBattleTimeline.groundReturn(880));assertEquals(1,FinalBattleTimeline.form(140));assertEquals(20,FinalBattleTimeline.lift(320));assertEquals(58,FinalBattleTimeline.distance(240));assertEquals(38,FinalBattleTimeline.distance(180));
+  assertEquals(0,FinalBattleTimeline.projectile(559));assertEquals(1,FinalBattleTimeline.projectile(600));assertEquals("COLLISION",FinalBattleTimeline.phase(600));assertEquals("RETURN",FinalBattleTimeline.phase(800));assertEquals(0,FinalBattleTimeline.groundReturn(880));assertEquals(1,FinalBattleTimeline.form(140));assertEquals(20,FinalBattleTimeline.lift(320));assertEquals(58,FinalBattleTimeline.distance(240));assertEquals(58,FinalBattleTimeline.distance(180));
  }
  @Test void invitationForOneSceneCannotBeAcceptedAsTheOtherScene(){
   var sessions=new PairSessions();var a=UUID.randomUUID();var b=UUID.randomUUID();assertTrue(sessions.invite(a,b,0,"finalbattle"));assertTrue(sessions.accept(b,a,1,"fusion").isEmpty());assertEquals("finalbattle",sessions.accept(b,a,2,"finalbattle").orElseThrow().kind());assertEquals(Set.of(a,b),sessions.cancel(a));

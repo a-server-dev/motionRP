@@ -25,6 +25,21 @@ def two_sided(m,uid):
 def ribbon(m,name,points,width,color):
  return two_sided(m,base_ribbon(m,name,points,width,color))
 
+def battle_actions(data,fox):
+ groups={g['name']:g for g in data['groups']};clips=data['animations'];clips[:]=[a for a in clips if a['name']!='exchange']
+ gather=animation('gather',4,{});release=animation('release',2,{})
+ for side in [-1,1]:
+  for row in range(3 if fox and 'asura' in data['name'] else 1):
+   upper=groups[('fox_upper_'+str(row)+'_'+str(side))if fox else('susanoo_arm_'+str(side))];fore=groups[('fox_fore_'+str(row)+'_'+str(side))if fox else('susanoo_forearm_'+str(side))]
+   gather['animators'][upper['uuid']]=animator(upper,[(0,(0,0,0)),(1,(35,side*20,-side*12)),(3,(35,side*20,-side*12)),(4,(0,0,0))])
+   gather['animators'][fore['uuid']]=animator(fore,[(0,(0,0,0)),(1,(85,0,0)),(3,(85,0,0)),(4,(0,0,0))])
+   start=(165 if row==0 else 115 if row==1 else 75,0,-side*12)if fox else(90,90 if side==1 else 0,0)
+   end=(60 if row==0 else 85,side*8,-side*15)if fox else(90,100 if side==1 else -12,0)
+   release['animators'][upper['uuid']]=animator(upper,[(0,start),(.25,(start[0]+(10 if fox else 0),start[1],start[2])),(.4,end),(1,end),(2,(30,0,0))])
+   release['animators'][fore['uuid']]=animator(fore,[(0,(-20 if fox and row==0 else 15 if fox else 0,0,0)),(.25,(-30 if fox and row==0 else 0,0,0)),(.4,(5 if fox else 65 if side==1 else 0,0,0)),(1,(5 if fox else 65 if side==1 else 0,0,0)),(2,(10,0,0))])
+ for a in clips+[gather,release]:a['override']=True
+ clips.extend([gather,release])
+
 def fox_head(a,x,y,z,size,label):
  c=a.cube
  for j in range(6):
@@ -71,7 +86,7 @@ def kurama(asura=False):
  arms=[]
  for row in range(3 if asura else 1):
   for side in [-1,1]:
-   x=side*(19+row*1.7);y=81-row*13
+   x=side*19;y=81
    c('chakra_upper_arm_'+str(row)+'_'+str(side),(x,y-10,0),(8,20,9),1)
    c('arm_seal_'+str(row)+'_'+str(side),(x,y-7,-5),(6,1.2,.8),3)
    upper=a.joint('fox_upper_'+str(row)+'_'+str(side),(x,y,0));u=a.m.data['outliner'].pop()
@@ -84,13 +99,12 @@ def kurama(asura=False):
    fore=a.joint('fox_fore_'+str(row)+'_'+str(side),(x,y-20,0));u['children'].append(a.m.data['outliner'].pop());a.m.data['outliner'].append(u);arms.append((row,side,upper,fore))
  idle=animation('idle',2,{});idle['loop']='loop'
  for i,g in enumerate(tails):idle['animators'][g['uuid']]=animator(g,[(j*.5,(math.sin(j*math.pi/2+i)*4,math.cos(j*math.pi/2+i)*3,math.sin(j*math.pi/2+i)*5))for j in range(5)])
- charge=animation('charge',8,{});exchange=animation('exchange',4,{})
+ charge=animation('charge',8,{})
  for row,side,u,f in arms:
   target=165 if row==0 else (115 if row==1 else 75);bend=-20 if row==0 else 15
-  charge['animators'][u['uuid']]=animator(u,[(0,(0,0,0)),(2,(target,0,-side*12)),(7.65,(target,0,-side*12)),(8,(105,0,-side*18))])
-  charge['animators'][f['uuid']]=animator(f,[(0,(10,0,0)),(2,(bend,0,0)),(7.65,(bend,0,0)),(8,(5,0,0))])
-  exchange['animators'][u['uuid']]=animator(u,[(0,(0,0,0)),(.8,(110,side*15,0)),(1.2,(85,-side*15,0)),(2.4,(40,0,0)),(4,(0,0,0))])
- a.m.data['animations']=[idle,charge,exchange];a.m.data=sculpt_fox(a.m.data,asura,GOLD);a.m.save()
+  charge['animators'][u['uuid']]=animator(u,[(0,(0,0,0)),(2,(target,0,-side*12)),(8,(target,0,-side*12))])
+  charge['animators'][f['uuid']]=animator(f,[(0,(10,0,0)),(2,(bend,0,0)),(8,(bend,0,0))])
+ a.m.data['animations']=[idle,charge];battle_actions(a.m.data,True);a.m.data=sculpt_fox(a.m.data,asura,GOLD);a.m.save()
 
 def susanoo(indra=False):
  a=palette_model('motionrp_duel_indra_susanoo'if indra else'motionrp_duel_susanoo',INDRA if indra else PURPLE);c=a.cube
@@ -146,12 +160,11 @@ def susanoo(indra=False):
    t=j/19;c('taut_bowstring_'+str(segment)+'_'+str(j),tuple(x*(1-t)+y*t for x,y in zip(p,q)),(.55,2,.55),7)
  bow=a.joint('indra_bow',(0,0,0));idle=animation('idle',2,{});idle['loop']='loop';idle['animators'][bow['uuid']]=animator(bow,[(0,(.001,.001,.001)),(2,(.001,.001,.001))],'scale')
  for side,g in zip([-1,1],wings):idle['animators'][g['uuid']]=animator(g,[(0,(0,0,side*4)),(1,(0,side*4,side*8)),(2,(0,0,side*4))])
- draw=animation('charge',8,{});draw['animators'][bow['uuid']]=animator(bow,[(0,(.001,.001,.001)),(1.5,(1,1,1)),(8,(1,1,1))],'scale');exchange=animation('exchange',4,{})
+ draw=animation('charge',8,{});draw['animators'][bow['uuid']]=animator(bow,[(0,(.001,.001,.001)),(1.5,(1,1,1)),(8,(1,1,1))],'scale')
  for side,u,f in arms:
-  draw['animators'][u['uuid']]=animator(u,[(0,(0,0,0)),(2,(90,90 if side==1 else 0,0)),(7,(90,90 if side==1 else 0,0)),(8,(75,0,0))]);draw['animators'][f['uuid']]=animator(f,[(0,(0,0,0)),(8,(0,0,0))])
-  exchange['animators'][u['uuid']]=animator(u,[(0,(0,0,0)),(.8,(90,-side*20,0)),(1.2,(110,side*15,0)),(2.4,(40,0,0)),(4,(0,0,0))])
- for side,g in zip([-1,1],wings):draw['animators'][g['uuid']]=animator(g,[(0,(0,0,side*4)),(2,(0,-side*18,side*12)),(7.7,(0,-side*18,side*12)),(8,(0,-side*8,side*4))])
- a.m.data['animations']=[idle,draw,exchange];a.m.data=sculpt_susanoo(a.m.data,indra,INDRA if indra else PURPLE);a.m.save()
+  draw['animators'][u['uuid']]=animator(u,[(0,(0,0,0)),(2,(90,90 if side==1 else 0,0)),(8,(90,90 if side==1 else 0,0))]);draw['animators'][f['uuid']]=animator(f,[(0,(0,0,0)),(8,(0,0,0))])
+ for side,g in zip([-1,1],wings):draw['animators'][g['uuid']]=animator(g,[(0,(0,0,side*4)),(2,(0,-side*18,side*12)),(8,(0,-side*18,side*12))])
+ a.m.data['animations']=[idle,draw];battle_actions(a.m.data,False);a.m.data=sculpt_susanoo(a.m.data,indra,INDRA if indra else PURPLE);a.m.save()
 
 def round_mesh(m,name,radius,palette_mode='bright'):
  vs={};fs=[];lat,lon=24,48
@@ -254,8 +267,8 @@ def actors(rig):
   name='final_battle_naruto'if naruto else'final_battle_sasuke';m=player(rig,name,44,{})
   for side,upper,fore in [(1,'pra_right_arm','prfa_right_forearm'),(-1,'pla_left_arm','plfa_left_forearm')]:
    ready=(165,0,-side*12)if naruto else(90,90 if side==1 else 0,0)
-   put_track(m,upper,[(0,(0,0,0)),(2,(0,0,0)),(7,(0,0,0)),(8,(110,side*15,0)),(9,(85,-side*15,0)),(12,(0,0,0)),(20,(0,0,0)),(22,ready),(27.8,ready),(28.3,(75,0,0)),(36,(20,0,0)),(40,(0,0,0)),(44,(0,0,0))])
-   put_track(m,fore,[(0,(0,0,0)),(20,(0,0,0)),(22,(-20 if naruto else 0,0,0)),(27.8,(-20 if naruto else 0,0,0)),(28.3,(10,0,0)),(44,(0,0,0))])
+   put_track(m,upper,[(0,(0,0,0)),(2,(0,0,0)),(7,(0,0,0)),(8,(35,side*20,-side*12)),(10,(35,side*20,-side*12)),(12,(0,0,0)),(20,(0,0,0)),(22,ready),(27.6,ready),(27.9,(175 if naruto else ready[0],ready[1],ready[2])),(28.0,(60,0,-side*15)if naruto else(90,100 if side==1 else -12,0)),(29,(60,0,-side*15)if naruto else(90,100 if side==1 else -12,0)),(36,(20,0,0)),(40,(0,0,0)),(44,(0,0,0))])
+   put_track(m,fore,[(0,(0,0,0)),(8,(85,0,0)),(10,(85,0,0)),(12,(0,0,0)),(20,(0,0,0)),(22,(-20 if naruto else 0,0,0)),(27.6,(-20 if naruto else 0,0,0)),(27.9,(-30 if naruto else 0,0,0)),(28.0,(5 if naruto else 65 if side==1 else 0,0,0)),(29,(5 if naruto else 65 if side==1 else 0,0,0)),(44,(0,0,0))])
   put_track(m,'pc_chest',[(0,(0,0,0)),(20,(0,0,0)),(22,(-9,0,0)),(27.7,(-9,0,0)),(28.2,(18,-8 if naruto else 12,0)),(29,(7,0,0)),(36,(0,0,0)),(44,(0,0,0))])
   save('players/motionrp_'+name+'.bbmodel',m)
 
