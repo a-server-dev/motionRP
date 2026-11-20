@@ -22,6 +22,7 @@ final class SummonAssets {
             case "kokuryuha" -> List.of("motionrp_black_dragon_head","motionrp_black_dragon_body","motionrp_black_dragon_cloak");
             case "kokujo_tengen_myoo" -> List.of("motionrp_tengen_myoo");
             case "chibaku_tensei" -> List.of("motionrp_gravity_core","motionrp_gravity_rock","motionrp_rock_moon");
+            case "broly_attacker","broly_victim" -> List.of("motionrp_broly_wall","motionrp_broly_crater","motionrp_gravity_rock");
             case "fusion_left","fusion_right" -> List.of("motionrp_fusion_warrior");
             case "rho_aias" -> List.of("motionrp_rho_aias_shield");
             case "getsuga_tensho" -> List.of("motionrp_getsuga_tensa","motionrp_getsuga_crescent","motionrp_hollow_mask");

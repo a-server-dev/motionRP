@@ -91,6 +91,7 @@ public final class MotionPlayback {
             MotionScene scene = switch (definition.effect()) {
                 case "road_roller","kokuryuha","kokujo_tengen_myoo","chibaku_tensei" -> new EpicScene(plugin,player,owned,definition.effect());
                 case "final_battle_naruto","final_battle_sasuke" -> new FinalBattleScene(plugin,player,owned,definition.effect().equals("final_battle_naruto"));
+                case "broly_attacker","broly_victim" -> new BrolyScene(plugin,player,owned,definition.effect().equals("broly_attacker"));
                 case "fusion_left","fusion_right" -> new FusionScene(plugin,player,owned,definition.effect().equals("fusion_left"));
                 case "rho_aias","getsuga_tensho" -> new BarrierSlashScene(plugin,player,owned,definition.effect().equals("rho_aias"));
                 case "performance" -> new PerformanceScene(plugin,player,owned,java.util.Arrays.stream(dev.aserver.motionrp.core.Performance.values()).filter(p->p.id().equals(definition.animation())).findFirst().orElseThrow());
@@ -111,7 +112,8 @@ public final class MotionPlayback {
             };
             playing.put(uuid, new Playing(owned, timeout, scene,!definition.effect().equals("performance")));
             boolean started = owned.animate(definition.animation(), AnimationModifier.DEFAULT_WITH_PLAY_ONCE, () -> {
-                if (plugin.isEnabled()) Bukkit.getScheduler().runTask(plugin, () -> finish(uuid, owned));
+                // Broly replaces phase clips at variable collision times; its scene and timeout own the end clock.
+                if (plugin.isEnabled() && !Set.of("broly_attacker","broly_victim").contains(definition.effect())) Bukkit.getScheduler().runTask(plugin, () -> finish(uuid, owned));
             });
             if (!started) { stop(uuid); plugin.tell(player, "モーションを開始できませんでした。"); return; }
             if (scene != null) scene.start();
