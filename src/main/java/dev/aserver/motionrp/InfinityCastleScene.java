@@ -28,10 +28,10 @@ final class InfinityCastleScene extends SummonScene {
  @Override void onClose(){flight.close();owner.setFallDistance(0);}
  private Location seat(Location p){p.setYaw(owner.getYaw());p.setPitch(owner.getPitch()==0?0:owner.getPitch());return p;}
  private boolean move(Location p){if(flight.moveTo(seat(p),home))return true;plugin.tell(owner,"進行先に障害物があるため無限城を終了しました。");plugin.playback().stop(owner.getUniqueId());return false;}
- private DummyTracker hatch(Location p,String kind){var t=model("motionrp_castle_fusuma",p,1,kind);t.rotation(()->new ModelRotation(-90,home.getYaw()));t.animate("open",AnimationModifier.DEFAULT_WITH_PLAY_ONCE);return t;}
+ private DummyTracker hatch(Location p,String kind){var t=model("motionrp_castle_hatch",p,1,kind);t.rotator(ModelRotator.DEFAULT);t.rotation(()->new ModelRotation(0,home.getYaw()));t.animate("open",AnimationModifier.DEFAULT_WITH_PLAY_ONCE);return t;}
  private void position(DummyTracker t,Location p){t.location(BukkitAdapter.adapt(p));}
  @Override void update(){
-  if(tick==0){entrance=hatch(home.clone().add(0,.04,0),"entrance");sound(home,Sound.BLOCK_WOODEN_DOOR_OPEN,1,.65f);}
+  if(tick==0){entrance=hatch(home.clone().add(0,.12,0),"entrance");sound(home,Sound.BLOCK_WOODEN_DOOR_OPEN,1,.65f);}
   if(tick==FALL){
    if(!move(stage.clone()))return;
    castle=model("motionrp_castle_chamber",stage.clone().subtract(0,36,0),1,"all_around_castle");castle.rotation(()->new ModelRotation(0,home.getYaw()));

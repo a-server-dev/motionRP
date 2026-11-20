@@ -31,4 +31,4 @@ for e in m['elements']:
 im=Image.new('RGB',(w,h),(9,6,10));d=ImageDraw.Draw(im)
 for _,points,c in sorted(faces,reverse=True,key=lambda f:f[0]):d.polygon(points,fill=c)
 d.rectangle((0,h-34,w,h),fill=(12,9,15));d.text((15,h-24),'Infinity Castle | actual model geometry preview | not an in-game screenshot',fill=(240,214,173))
-p=ROOT/'docs/images/infinity-castle-037.png';im.save(p);print(p)
+p=ROOT/'docs/images/infinity-castle-038.png';im.save(p);print(p)
