@@ -206,6 +206,8 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
         if (args[1].equalsIgnoreCase("controller") && args.length <= 3) {
             item = items.controller(catalog);
             targetName = args.length == 3 ? args[2] : null;
+        } else if(args[1].equalsIgnoreCase("all")&&args.length<=3){
+            item=items.completeController(catalog);targetName=args.length==3?args[2]:null;
         } else if (args[1].equalsIgnoreCase("motion") && args.length >= 3 && args.length <= 5) {
             var definition = catalog.motions().get(args[2]);
             if (definition == null) throw new IllegalArgumentException("Unknown motion: " + args[2]);
@@ -229,7 +231,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
         tell(sender, "/motionrp broly [相手] | broly accept [招待者] | broly cancel");
         tell(sender,"/motionrp accept — 届いている招待に参加");
         tell(sender, "/motionrp fusion [相手] | fusion accept [招待者] | fusion cancel");
-        tell(sender, "/motionrp give controller [プレイヤー]");
+        tell(sender, "/motionrp give controller [プレイヤー] | give all [プレイヤー]");
         tell(sender, "/motionrp give motion <ID> [個数1〜64] [プレイヤー]");
     }
 
@@ -244,10 +246,10 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
         } else if(sender.hasPermission("motionrp.admin") && args[0].equalsIgnoreCase("pack") && args.length==2) {
             choices.addAll(List.of("status","publish"));
         } else if (sender.hasPermission("motionrp.admin") && args[0].equalsIgnoreCase("give")) {
-            if (args.length == 2) choices.addAll(List.of("controller", "motion"));
+            if (args.length == 2) choices.addAll(List.of("controller", "motion", "all"));
             else if (args.length == 3 && args[1].equalsIgnoreCase("motion")) choices.addAll(catalog.motions().keySet());
             else if (args.length == 4 && args[1].equalsIgnoreCase("motion")) choices.addAll(List.of("1", "16", "64"));
-            else if ((args.length == 3 && args[1].equalsIgnoreCase("controller")) || (args.length == 5 && args[1].equalsIgnoreCase("motion"))) {
+            else if ((args.length == 3 && (args[1].equalsIgnoreCase("controller")||args[1].equalsIgnoreCase("all"))) || (args.length == 5 && args[1].equalsIgnoreCase("motion"))) {
                 Bukkit.getOnlinePlayers().forEach(p -> choices.add(p.getName()));
             }
         }

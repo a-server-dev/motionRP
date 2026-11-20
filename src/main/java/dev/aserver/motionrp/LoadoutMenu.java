@@ -26,8 +26,11 @@ public final class LoadoutMenu implements Listener {
 
     public static final class Holder implements InventoryHolder {
         private final UUID owner;
+        private final String setId;
+        private final int heldSlot;
         private final Inventory inventory;
-        private Holder(Player player) {
+        private Holder(Player player,String setId) {
+            this.setId=setId;heldSlot=player.getInventory().getHeldItemSlot();
             owner = player.getUniqueId();
             inventory = Bukkit.createInventory(this, Loadout.SIZE, Component.text("モーション登録（下のアイテムで登録）"));
         }
@@ -43,7 +46,7 @@ public final class LoadoutMenu implements Listener {
         try {
             Loadout state = loadouts.read(player);
             plugin.playback().stop(player.getUniqueId());
-            Holder holder = new Holder(player);
+            Holder holder = new Holder(player,items.setId(player.getInventory().getItemInMainHand()));
             render(holder, state);
             player.openInventory(holder.inventory);
             plugin.tell(player, "下のモーションアイテムをクリック: 1個登録 / 上の登録枠をクリック: 返却");
@@ -84,6 +87,7 @@ public final class LoadoutMenu implements Listener {
         ClickType click = event.getClick();
         if (click != ClickType.LEFT && click != ClickType.RIGHT && click != ClickType.SHIFT_LEFT && click != ClickType.SHIFT_RIGHT) return;
         try {
+            if(holder.heldSlot!=player.getInventory().getHeldItemSlot()||!Objects.equals(holder.setId,items.setId(player.getInventory().getItemInMainHand()))){player.closeInventory();plugin.tell(player,"持ち替えたため登録GUIを閉じました。セットを持って開き直してください。");return;}
             Loadout state = loadouts.read(player);
             if (event.getClickedInventory() == holder.inventory) {
                 int index = event.getSlot();

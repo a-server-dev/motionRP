@@ -19,10 +19,15 @@ public final class PlayerLoadouts {
     }
 
     public Loadout read(Player player) {
-        var pdc = player.getPersistentDataContainer();
-        if (!pdc.has(key)) return Loadout.empty();
-        byte[] bytes = pdc.get(key, PersistentDataType.BYTE_ARRAY);
-        if (bytes == null) throw new IllegalStateException("Invalid loadout data type");
+        ItemStack held=player.getInventory().getItemInMainHand();byte[] bytes;
+        if(items.embedded(held)){
+            if(items.setId(held)==null)throw new IllegalStateException("Invalid controller identity");
+            bytes=items.setData(held);
+        }else{
+            var pdc=player.getPersistentDataContainer();if(!pdc.has(key))return Loadout.empty();
+            bytes=pdc.get(key,PersistentDataType.BYTE_ARRAY);
+        }
+        if(bytes==null)throw new IllegalStateException("Invalid loadout data type");
         try {
             Loadout state = codec.decode(bytes);
             // Validate all saved items before allowing any transfer or replacement.
@@ -52,7 +57,9 @@ public final class PlayerLoadouts {
 
     /** Call after the corresponding inventory mutation, on the server thread only. */
     public void write(Player player, Loadout state) {
-        player.getPersistentDataContainer().set(key, PersistentDataType.BYTE_ARRAY, codec.encode(state));
+        var held=player.getInventory().getItemInMainHand();byte[] bytes=codec.encode(state);
+        if(items.embedded(held)){items.setData(held,bytes);player.getInventory().setItemInMainHand(held);}
+        else player.getPersistentDataContainer().set(key,PersistentDataType.BYTE_ARRAY,bytes);
     }
 
     public void save(Player player, Loadout state) {

@@ -12,10 +12,12 @@ import java.util.List;
 public final class MotionItems {
     private final NamespacedKey kind;
     private final NamespacedKey motion;
+    private final NamespacedKey controllerData,controllerId;
 
     public MotionItems(MotionPlugin plugin) {
         kind = new NamespacedKey(plugin, "kind");
         motion = new NamespacedKey(plugin, "motion_id");
+        controllerData=new NamespacedKey(plugin,"controller_loadout_v1");controllerId=new NamespacedKey(plugin,"controller_set_id");
     }
 
     public ItemStack controller(MotionCatalog catalog) {
@@ -30,6 +32,24 @@ public final class MotionItems {
         if (catalog.controllerModel() != null) meta.setItemModel(catalog.controllerModel());
         stack.setItemMeta(meta);
         return stack;
+    }
+
+    public ItemStack completeController(MotionCatalog catalog) {
+        if(catalog.motions().size()>dev.aserver.motionrp.core.Loadout.SIZE)throw new IllegalArgumentException("全種セットは27種類までです。現在の設定数: "+catalog.motions().size());
+        var state=dev.aserver.motionrp.core.Loadout.empty();
+        for(var d:catalog.motions().values())state=state.deposit(state.firstEmpty(),new dev.aserver.motionrp.core.StoredMotion(d.id(),token(d,1).serializeAsBytes()));
+        ItemStack stack=controller(catalog);var meta=stack.getItemMeta();
+        meta.displayName(text(catalog.controllerName()+"（全部入り）",NamedTextColor.GOLD));
+        var lore=new java.util.ArrayList<Component>(meta.lore());lore.add(text("このアイテム専用の登録内容 / 全種プリセット",NamedTextColor.YELLOW));meta.lore(lore);
+        meta.getPersistentDataContainer().set(controllerId,PersistentDataType.STRING,java.util.UUID.randomUUID().toString());
+        meta.getPersistentDataContainer().set(controllerData,PersistentDataType.BYTE_ARRAY,new dev.aserver.motionrp.core.LoadoutCodec().encode(state));stack.setItemMeta(meta);return stack;
+    }
+    boolean embedded(ItemStack stack){return controller(stack)&&(stack.getItemMeta().getPersistentDataContainer().has(controllerData)||stack.getItemMeta().getPersistentDataContainer().has(controllerId));}
+    String setId(ItemStack stack){return embedded(stack)?stack.getItemMeta().getPersistentDataContainer().get(controllerId,PersistentDataType.STRING):null;}
+    byte[] setData(ItemStack stack){return stack.getItemMeta().getPersistentDataContainer().get(controllerData,PersistentDataType.BYTE_ARRAY);}
+    void setData(ItemStack stack,byte[] data){
+        if(setId(stack)==null)throw new IllegalStateException("Invalid controller identity");
+        var meta=stack.getItemMeta();meta.getPersistentDataContainer().set(controllerData,PersistentDataType.BYTE_ARRAY,data);stack.setItemMeta(meta);
     }
 
     public ItemStack token(MotionCatalog.Definition definition, int amount) {
