@@ -18144,7 +18144,8 @@
           },
           "texture": 0
         }
-      }
+      },
+      "light_emission": 15
     }
   ],
   "groups": [
@@ -18162,7 +18163,8 @@
         0
       ],
       "export": true,
-      "isOpen": true
+      "isOpen": true,
+      "light_emission": 15
     }
   ],
   "outliner": [

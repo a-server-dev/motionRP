@@ -17,7 +17,7 @@ final class SummonAssets {
     static final String EXCALIBUR_CHARGE="motionrp_excalibur_charge",EXCALIBUR_WAVE="motionrp_excalibur_wave";
     static List<String> models(String effect) {
         return switch(effect) {
-            case "final_battle_naruto","final_battle_sasuke" -> List.of("motionrp_duel_kurama","motionrp_duel_asura_kurama","motionrp_duel_susanoo","motionrp_duel_indra_susanoo","motionrp_duel_gold_rasenshuriken","motionrp_duel_dark_rasenshuriken","motionrp_duel_indra_arrow","motionrp_duel_clash_orb","motionrp_duel_chakra_spark");
+            case "final_battle_naruto","final_battle_sasuke" -> List.of("motionrp_duel_kurama","motionrp_duel_asura_kurama","motionrp_duel_susanoo","motionrp_duel_indra_susanoo","motionrp_duel_gold_rasenshuriken","motionrp_duel_dark_rasenshuriken","motionrp_duel_indra_arrow","motionrp_duel_clash_orb","motionrp_duel_chakra_spark","motionrp_duel_chakra_storm");
             case "road_roller" -> List.of("motionrp_the_world","motionrp_the_world_upper","motionrp_road_roller","motionrp_roller_debris");
             case "kokuryuha" -> List.of("motionrp_black_dragon_head","motionrp_black_dragon_body","motionrp_black_dragon_cloak");
             case "kokujo_tengen_myoo" -> List.of("motionrp_tengen_myoo");

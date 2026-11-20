@@ -76,7 +76,7 @@ final class EpicScene extends SummonScene {
   if(cloak!=null){locate(cloak,owner.getLocation());cloak.rotation(()->new ModelRotation(0,owner.getLocation().getYaw()));if(tick>=288)cloak.scaler(ModelScaler.value((float)Math.max(.01,(320-tick)/32.0)));if(tick%3==0){dust(owner.getLocation().clone().add(0,1.2,0),BLACK,6,.8);particle(owner.getLocation().clone().add(0,1.5,0),Particle.SOUL_FIRE_FLAME,3,.6,.02);}}
  }
  private Location returningDragon(double time){if(time<172){double p=Math.clamp((time-112)/60,0,1);return at(2.5*Math.sin(p*Math.PI*4)*(1-p),36*(1-p)*(1-p),1.8+18*Math.sin(Math.PI*p)+10*p);}double p=Math.clamp((time-172)/16,0,1);return owner.getLocation().clone().add(0,11.8-10.1*p,0);}
- private Location myooBase(){var p=owner.getLocation().clone();double yaw=Math.toRadians(p.getYaw());return p.add(Math.sin(yaw)*6,0,-Math.cos(yaw)*6);}
+ private Location myooBase(){var p=owner.getLocation().clone();double yaw=Math.toRadians(p.getYaw());p.add(Math.sin(yaw)*6,0,-Math.cos(yaw)*6);var surface=ground(p);if(surface!=null)p.setY(surface.getY()-.12);return p;}
  private void myoo(){
   var current=owner.getLocation();boolean moving=lastOwnerPosition!=null&&lastOwnerPosition.getWorld()==current.getWorld()&&lastOwnerPosition.distanceSquared(current)>.0005;lastOwnerPosition=current;
   if(moving!=walking){walking=moving;if(walking){body.animate("myoo_walk",AnimationModifier.builder().type(kr.toxicity.model.api.animation.AnimationIterator.Type.LOOP).build());if(main!=null)loop(main,"walk");}else{body.stopAnimation("myoo_walk");body.animate("myoo_stand",AnimationModifier.DEFAULT_WITH_PLAY_ONCE);if(main!=null){main.stopAnimation("walk");main.animate("stand_legs",AnimationModifier.DEFAULT_WITH_PLAY_ONCE);}}}

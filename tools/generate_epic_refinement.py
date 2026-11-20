@@ -142,6 +142,20 @@ def myoo():
  for side in [-1,1]:
   leg=groups['armored_leg_'+str(side)];walk['animators'][leg['uuid']]=animator(leg,[(0,(0,0,0)),(.2,(side*18,0,0)),(.4,(0,0,0)),(.6,(-side*18,0,0)),(.8,(0,0,0))]);stand['animators'][leg['uuid']]=animator(leg,[(0,(0,0,0)),(.15,(0,0,0))])
  for action in [clip,idle,walk,stand]:action['override']=True
- a.m.data['animations']=[clip,idle,walk,stand];a.m.save()
+ a.m.data['animations']=[clip,idle,walk,stand]
+ # The visible waist is the ground anchor, including during summon/fade scaling.
+ # Keep empty leg nodes so old walk clips remain compatible, never floating legs.
+ removed=set()
+ def discard_geometry(nodes):
+  for node in nodes:
+   if isinstance(node,dict):discard_geometry(node['children']);node['children']=[]
+   else:removed.add(node)
+ discard_geometry(a.m.data['outliner'][:3])
+ a.m.data['elements']=[e for e in a.m.data['elements'] if e['uuid'] not in removed]
+ for e in a.m.data['elements']:
+  for key in ['from','to','origin']:
+   if key in e:e[key][1]-=54
+ for g in a.m.data['groups']:g['origin'][1]-=54
+ a.m.save()
 
 def generate():flame_dragon();myoo()
