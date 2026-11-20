@@ -5,7 +5,7 @@ import org.bukkit.util.Vector;
 import static dev.aserver.motionrp.core.BrolyTimeline.*;
 /** The recipient starts at the actual acceptance position, not a staged teleport. */
 final class BrolyState {
- final Location origin,victimStart;final Vector direction;Location attacker,victim,impact,impactVictim;int impactTick=-1;boolean realBlock,fleeBlocked;double distance;
+ final Location origin,victimStart;final Vector direction;Location attacker,victim,impact,impactVictim;int impactTick=-1;boolean realBlock,fleeBlocked;double distance,flightY=Double.NaN;
  String failure="進行先に障害物があるため演出を終了しました。";
  BrolyState(Location center,Location recipient){
   origin=center.clone();victimStart=recipient.clone();direction=recipient.toVector().subtract(center.toVector()).setY(0);
@@ -41,12 +41,13 @@ final class BrolyState {
   if(tick<GRAB){var end=victim.clone().subtract(direction.clone().multiply(.9));var base=origin.clone().add(0,HOVER_HEIGHT,0);var desired=base.clone().add(end.toVector().subtract(base.toVector()).multiply(chargeProgress(tick)));desired.setYaw(origin.getYaw());var safe=clear(source,attacker,desired);if(safe==null||safe.blocked)return false;attacker=safe.point;return true;}
   if(tick<LAUNCH){double p=Math.clamp((tick-GRAB)/(double)(LAUNCH-GRAB),0,1);var desired=victim.clone();desired.setY(victimStart.getY()+HOVER_HEIGHT+.1*p);var safe=clear(target,victim,desired);if(safe==null||safe.blocked)return false;victim=safe.point;var end=victim.clone().subtract(direction.clone().multiply(.9));end.setYaw(origin.getYaw());safe=clear(source,attacker,end);if(safe==null||safe.blocked)return false;attacker=safe.point;return true;}
   if(impactTick>=0){
-   if(!realBlock){var desired=impactVictim.clone().add(direction.clone().multiply(DENT_DEPTH*dentProgress(tick-impactTick)));var safe=clear(target,victim,desired);if(safe==null||safe.blocked)return false;victim=safe.point;var chase=victim.clone().subtract(direction.clone().multiply(1.05));chase.setYaw(origin.getYaw());safe=clear(source,attacker,chase);if(safe==null||safe.blocked)return false;attacker=safe.point;}
+   double p=dentProgress(tick-impactTick);var desired=impactVictim.clone().add(direction.clone().multiply(realBlock?0:DENT_DEPTH*p));desired.setY(impactVictim.getY()+(victimStart.getY()+IMPACT_HEIGHT-impactVictim.getY())*p);var safe=clear(target,victim,desired);if(safe==null||safe.blocked)return false;victim=safe.point;var chase=victim.clone().subtract(direction.clone().multiply(1.05));chase.setYaw(origin.getYaw());safe=clear(source,attacker,chase);if(safe==null||safe.blocked)return false;attacker=safe.point;
    return true;
   }
+  if(Double.isNaN(flightY))flightY=victim.getY();
   double next=nextDistance(distance),step=next-distance;var hit=contact(victim,step);if(hit!=null&&hit.travel<0){failure="読み込み済みの範囲を超えるため演出を終了しました。";return false;}double travel=hit==null?step:safeTravel(step,hit.travel);
-  var before=victim.clone();var proposed=victim.clone().add(direction.clone().multiply(travel));var safe=clear(target,before,proposed);if(safe==null)return false;
-  if(safe.blocked){proposed=safe.point;travel=before.distance(proposed);if(hit==null)hit=new Contact(travel,proposed.clone().add(direction.clone().multiply(.5)).add(0,1,0));}
+  var before=victim.clone();var proposed=victim.clone().add(direction.clone().multiply(travel));proposed.setY(flightY+(victimStart.getY()+IMPACT_HEIGHT-flightY)*Math.clamp((distance+travel)/MAX_DISTANCE,0,1));var safe=clear(target,before,proposed);if(safe==null)return false;
+  if(safe.blocked){proposed=safe.point;travel=proposed.toVector().subtract(before.toVector()).dot(direction);if(hit==null)hit=new Contact(travel,proposed.clone().add(direction.clone().multiply(.5)).add(0,1,0));}
   victim=proposed;distance+=travel;var chase=victim.clone().subtract(direction.clone().multiply(1.05));chase.setYaw(origin.getYaw());safe=clear(source,attacker,chase);if(safe==null||safe.blocked)return false;attacker=safe.point;
   if(hit!=null||next>=MAX_DISTANCE){impactTick=tick;realBlock=hit!=null;impact=hit==null?victim.clone().add(direction.clone().multiply(.55)).add(0,1.3,0):hit.point.clone();impact.setY(victim.getY()+1.3);impactVictim=victim.clone();}
   return true;

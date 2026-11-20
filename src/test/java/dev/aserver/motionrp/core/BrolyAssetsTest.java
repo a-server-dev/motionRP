@@ -21,7 +21,7 @@ class BrolyAssetsTest {
  }
 
  @Test void bothRolesRiseSmoothlyAndTheDentHasABoundedDepth(){
-  double last=0;for(int t=0;t<40;t++){double h=BrolyTimeline.lift(t);assertTrue(h>=last&&h<=1.15);last=h;}assertEquals(1.15,last);assertEquals(0,BrolyTimeline.dentProgress(0));assertEquals(1,BrolyTimeline.dentProgress(8));assertEquals(2.4,BrolyTimeline.DENT_DEPTH);
+  double last=0;for(int t=0;t<40;t++){double h=BrolyTimeline.lift(t);assertTrue(h>=last&&h<=1.15);last=h;}assertEquals(1.15,last);assertEquals(0,BrolyTimeline.dentProgress(0));assertEquals(1,BrolyTimeline.dentProgress(8));assertEquals(2.4,BrolyTimeline.DENT_DEPTH);assertTrue(BrolyTimeline.IMPACT_HEIGHT+1.3-20*BrolyTimeline.WALL_SCALE/16>0,"The complete circular opening must remain above the original ground");
  }
  @Test void largeGreyWallHasARealCircularBowlAndASeparateUnbrokenFace()throws Exception{
   var flat=load("models/motionrp_broly_wall");var dent=load("models/motionrp_broly_dented_wall");var e=dent.getAsJsonArray("elements").get(0).getAsJsonObject();var v=e.getAsJsonObject("vertices");assertEquals(-12,v.getAsJsonArray("0_0").get(2).getAsDouble(),1e-6);

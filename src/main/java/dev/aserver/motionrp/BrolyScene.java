@@ -28,7 +28,7 @@ final class BrolyScene extends SummonScene {
   body.update(TrackerUpdateAction.togglePart(false),b->Set.of("pri_right_item","pli_left_item").contains(b.name().rawName()));
   if(attacker){
    var target=Bukkit.getPlayer(partner);if(target==null){plugin.playback().stop(owner.getUniqueId());return;}
-   if(tick==LAUNCH&&state.contact(state.victim,MAX_DISTANCE)==null){makeWall(state.victim.clone().add(state.direction.clone().multiply(MAX_DISTANCE+.55)).add(0,1.3,0),state);trace("maximum-distance fallback rock wall prepared");}
+   if(tick==LAUNCH&&state.contact(state.victim,MAX_DISTANCE)==null){var front=state.victim.clone().add(state.direction.clone().multiply(MAX_DISTANCE+.55));front.setY(state.victimStart.getY()+IMPACT_HEIGHT+1.3);makeWall(front,state);trace("maximum-distance fallback rock wall prepared");}
    if(!state.advance(tick,owner,target)){plugin.tell(owner,state.failure);plugin.playback().stop(owner.getUniqueId());return;}
    if(!plugin.fusion().moveBroly(owner.getUniqueId(),state.attacker,state.victim)){plugin.tell(owner,"進行先に障害物があるため演出を終了しました。");plugin.playback().stop(owner.getUniqueId());return;}
    if(tick<CHARGE&&tick%4==0){dust(state.victim.clone().add(0,.9,0),ESCAPE_KI,3,.4);dust(state.attacker.clone().add(0,.8,0),KI,2,.4);}
@@ -39,7 +39,7 @@ final class BrolyScene extends SummonScene {
    if(tick>=LAUNCH&&state.impactTick<0&&tick%2==0){particle(state.victim.clone().add(0,1,0),Particle.CLOUD,4,.35,.02);particle(state.attacker.clone().add(0,1,0),Particle.END_ROD,2,.2,.02);dust(state.attacker.clone().add(0,1,0),KI,3,.5);}
    if(state.impactTick==tick){
     var position=state.realBlock?state.impact.clone().subtract(state.direction.clone().multiply(2.7)):wallPosition==null?state.impact.clone():wallPosition.clone();
-    if(wall!=null)audience.hide(wall);wallPosition=face(position,state);
+    position.setY(state.victimStart.getY()+IMPACT_HEIGHT+1.3);if(wall!=null)audience.hide(wall);wallPosition=face(position,state);
     wall=model("motionrp_broly_dented_wall",wallPosition,(float)WALL_SCALE,"dented_rock_wall");wall.animate("dent",AnimationModifier.DEFAULT_WITH_PLAY_ONCE);
     crater=model("motionrp_broly_crater",wallPosition,(float)WALL_SCALE,"impact_crater");crater.animate("dent",AnimationModifier.DEFAULT_WITH_PLAY_ONCE);
     trace("grey rock wall dents into a circular bowl diameter=8.5 depth=2.55");
