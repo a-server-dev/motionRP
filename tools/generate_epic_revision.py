@@ -194,10 +194,19 @@ def roller():
  c('roll_bar_crossbeam',(0,30,13),(26,1.8,1.8),0);c('short_exhaust',(10,24,-1),(2,8,2),2)
  cab=a.joint('crushable_cab',(0,17,12))
  clip=animation('crumple',4.4,{})
- for g,drop,sy in [(hood,1.6,.62),(deck,2.7,.8),(cab,4.5,.62)]:
+ for index,(g,drop,sy) in enumerate([(hood,4.0,.48),(deck,2.3,.82),(cab,6.5,.48)]):
+  positions=[];scales=[];rotations=[]
+  # Each 0.1s punch leaves a permanent dent, followed by a smaller recoil.
+  for hit in range(32):
+   t=hit*.1;p=hit/31;side=1 if (hit+index)%2 else -1
+   positions.extend([(t,(side*.35,-drop*p-.45,side*.16)),(t+.045,(side*.08,-drop*p,0))])
+   scales.extend([(t,(1+.045*p,1-(1-sy)*p-.025,1+.035*p)),(t+.045,(1+.035*p,1-(1-sy)*p,1+.025*p))])
+   rotations.extend([(t,(side*1.2,0,side*(1.8+index*.5))),(t+.045,(0,0,0))])
+  positions.extend([(3.2,(0,-drop,0)),(3.6,(0,-drop,0)),(4.35,(0,-drop,0)),(4.4,(.5,-drop*1.5,.6))])
+  scales.extend([(3.2,(1.04,sy,1.03)),(3.6,(1.04,sy,1.03)),(4.35,(1.04,sy,1.03)),(4.4,(1.08,sy*.7,1.06))])
+  rotations.extend([(3.2,(0,0,0)),(3.6,(0,0,0)),(4.35,(0,0,0)),(4.4,(3,0,(-1 if index%2 else 1)*5))])
   keys=[]
-  for channel,values in [('position',[(0,(0,0,0)),(.9,(0,-drop*.2,0)),(1.8,(.4,-drop*.45,.2)),(2.7,(-.3,-drop*.75,.4)),(3.6,(.3,-drop*.8,.5)),(4.4,(.5,-drop*1.3,.6))]),('scale',[(0,(1,1,1)),(3.6,(1.03,sy,1.03)),(4.4,(1.06,sy*.7,1.06))])]:
-   keys+=animator(g,values,channel)['keyframes']
+  for channel,values in [('position',positions),('scale',scales),('rotation',rotations)]:keys+=animator(g,values,channel)['keyframes']
   clip['animators'][g['uuid']]={'name':g['name'],'type':'bone','keyframes':sorted(keys,key=lambda k:k['time'])}
  a.m.data['animations']=[clip];a.m.save()
  a=palette_model('motionrp_roller_debris',GOLD);a.cube('torn_yellow_sheet',(0,0,0),(6,1,5),0);a.cube('dark_broken_frame',(1,1,0),(2,3,4),6);a.joint('debris',(0,0,0));a.m.save()

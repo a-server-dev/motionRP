@@ -11,6 +11,14 @@ public final class EpicTimeline {
   default->tick<28?"SEAL":tick<68?"CORE":tick<240?"ATTRACTION":tick<288?"MOON":"FADE";};}
  public static final int ROCK_COUNT=144;
  public static double rollerHeight(int tick){return tick<82?18.2:Math.max(.15,18.2*(1-Math.pow(Math.clamp((tick-82)/22.0,0,1),2)));}
+ public record RollerJolt(double right,double forward,double up,float pitch,float yaw) {}
+ public static double rollerDent(int tick){return Math.clamp((tick-104)/62.0,0,1);}
+ public static RollerJolt rollerJolt(int tick){
+  if(tick>=104&&tick<168){int age=tick-104,hit=age/2;double pulse=age%2==0?1:.2,side=hit%2==0?-1:1;
+   return new RollerJolt(side*.12*pulse,Math.sin(hit*2.399963)*.09*pulse,(.09+.03*rollerDent(tick))*pulse,(float)(side*2.4*pulse),(float)(Math.cos(hit*1.7)*1.8*pulse));}
+  if(tick>=192&&tick<198){double p=(198-tick)/6.0;return new RollerJolt(.16*Math.sin((tick-192)*2)*p,0,.18*p,(float)(-4*p),(float)(2*p));}
+  return new RollerJolt(0,0,0,0,0);
+ }
  public static int rockLayer(int index){if(index<0||index>=ROCK_COUNT)throw new IllegalArgumentException("rock");return index<24?0:index<72?1:2;}
  public static double rockRadius(int index){return switch(rockLayer(index)){case 0->1.2;case 1->3.9;default->6.6;};}
  public static double rockScale(int index){return switch(rockLayer(index)){case 0->2.8;case 1->4.0;default->4.8;};}
