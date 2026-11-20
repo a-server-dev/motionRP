@@ -35,7 +35,7 @@ final class FusionCoordinator implements AutoCloseable {
  private Location offset(Location center,double right){double yaw=Math.toRadians(center.getYaw());return center.clone().add(-Math.cos(yaw)*right,0,-Math.sin(yaw)*right);}
  private void start(Player left,Player right,String kind){
   boolean battle=kind.equals("finalbattle"),broly=kind.equals("broly");
-  Location center=left.getLocation().clone();center.setPitch(0);Location lp=broly?center.clone():battle?battlePosition(center,true,0,58):offset(center,-HALF_SPACING),rp=broly?BrolyState.ahead(center,1.35,0,true):battle?battlePosition(center,false,0,58):offset(center,HALF_SPACING);
+  Location center=left.getLocation().clone();center.setPitch(0);Location lp=broly?center.clone():battle?battlePosition(center,true,0,58):offset(center,-HALF_SPACING),rp=broly?right.getLocation().clone():battle?battlePosition(center,false,0,58):offset(center,HALF_SPACING);
   var la=new AerialAnchor(plugin,left);var ra=new AerialAnchor(plugin,right);
   starting.add(left.getUniqueId());starting.add(right.getUniqueId());
   try{
@@ -43,7 +43,7 @@ final class FusionCoordinator implements AutoCloseable {
    if(left.collidesAt(lp)||right.collidesAt(rp)||!la.moveTo(lp,left.getLocation())||!ra.moveTo(rp,right.getLocation()))throw new IllegalStateException("並ぶ場所に障害物があります。");
    plugin.playback().play(left,definition(true,kind));plugin.playback().play(right,definition(false,kind));
    if(!plugin.playback().active(left.getUniqueId())||!plugin.playback().active(right.getUniqueId()))throw new IllegalStateException("二人のモデルを開始できませんでした。");
-   var run=new Run(left,right,la,ra,center,battle,broly?new BrolyState(center):null);runs.put(left.getUniqueId(),run);runs.put(right.getUniqueId(),run);plugin.tell(left,broly?"ブロリーの岩盤：攻撃側を開始しました。":battle?"最終決戦：ナルト役を開始しました。":"二人用フュージョンを開始しました。");plugin.tell(right,broly?"ブロリーの岩盤：相手役を開始しました。":battle?"最終決戦：サスケ役を開始しました。":"二人用フュージョンを開始しました。");
+   var run=new Run(left,right,la,ra,center,battle,broly?new BrolyState(center,rp):null);runs.put(left.getUniqueId(),run);runs.put(right.getUniqueId(),run);plugin.tell(left,broly?"ブロリーの岩盤：攻撃側を開始しました。":battle?"最終決戦：ナルト役を開始しました。":"二人用フュージョンを開始しました。");plugin.tell(right,broly?"ブロリーの岩盤：相手役を開始しました。":battle?"最終決戦：サスケ役を開始しました。":"二人用フュージョンを開始しました。");
   }catch(RuntimeException e){sessions.cancel(left.getUniqueId());plugin.playback().stop(left.getUniqueId());plugin.playback().stop(right.getUniqueId());la.close();ra.close();plugin.tell(left,"開始できません: "+e.getMessage());plugin.tell(right,(broly?"ブロリーの岩盤":battle?"最終決戦":"フュージョン")+"を開始できませんでした。");}
   finally{starting.remove(left.getUniqueId());starting.remove(right.getUniqueId());}
  }

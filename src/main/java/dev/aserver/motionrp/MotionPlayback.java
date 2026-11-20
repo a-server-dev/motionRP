@@ -22,6 +22,7 @@ public final class MotionPlayback {
         var model = BetterModel.limbOrNull(definition.model());
         if (model == null) return "プレイヤーモデルが未読込: " + definition.model();
         if (model.animation(definition.animation()).isEmpty()) return "アニメーションが未登録: " + definition.animation();
+        if(Set.of("broly_attacker","broly_victim").contains(definition.effect())) for(String phase:List.of("stand","flee","turn","charge","fright","grapple","flight","impact","recover")) if(model.animation(phase).isEmpty()) return "岩盤モーションの更新が必要です: "+phase;
         for(String required:SummonAssets.models(definition.effect())) {
             if(BetterModel.modelOrNull(required)==null) return "演出モデルが未読込: "+required;
         }

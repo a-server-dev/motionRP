@@ -19,7 +19,7 @@ final class BrolyScene extends SummonScene {
  private void cue(Location p,Sound s,float volume,float pitch){heard.computeIfAbsent(s,k->new HashSet<>()).addAll(audience.players());sound(p,s,volume,pitch);}
  @Override void onClose(){for(var e:heard.entrySet())for(Player p:e.getValue())if(p.isOnline())p.stopSound(e.getKey(),SoundCategory.PLAYERS);}
  private void locate(DummyTracker t,Location p){t.location(BukkitAdapter.adapt(p));t.forceUpdate(true);}
- private void pose(String next){if(clip.equals(next))return;if(!clip.isEmpty())body.stopAnimation(clip);clip=next;body.animate(clip,AnimationModifier.builder().type(next.equals("flight")?AnimationIterator.Type.LOOP:AnimationIterator.Type.PLAY_ONCE).build());}
+ private void pose(String next){if(clip.equals(next))return;if(!clip.isEmpty())body.stopAnimation(clip);clip=next;body.animate(clip,AnimationModifier.builder().type(Set.of("flight","flee").contains(next)?AnimationIterator.Type.LOOP:AnimationIterator.Type.PLAY_ONCE).build());}
  private Location face(Location p,BrolyState state){var q=p.clone();q.setDirection(state.direction);return q;}
  @Override void update(){
   var state=plugin.fusion().brolyState(owner.getUniqueId());UUID partner=plugin.fusion().partner(owner.getUniqueId());if(state==null||partner==null){plugin.playback().stop(owner.getUniqueId());return;}
@@ -28,8 +28,11 @@ final class BrolyScene extends SummonScene {
   if(attacker){
    var target=Bukkit.getPlayer(partner);if(target==null){plugin.playback().stop(owner.getUniqueId());return;}
    if(tick==LAUNCH&&state.contact(state.victim,MAX_DISTANCE)==null){wall=model("motionrp_broly_wall",face(state.victim.clone().add(state.direction.clone().multiply(MAX_DISTANCE+.55)).add(0,1.3,0),state),3.4f,"fallback_rock_wall");trace("maximum-distance fallback rock wall prepared");}
-   if(!state.advance(tick,target)){plugin.tell(owner,"読み込み済みの範囲を超えるため演出を終了しました。");plugin.playback().stop(owner.getUniqueId());return;}
+   if(!state.advance(tick,owner,target)){plugin.tell(owner,state.failure);plugin.playback().stop(owner.getUniqueId());return;}
    if(!plugin.fusion().moveBroly(owner.getUniqueId(),state.attacker,state.victim)){plugin.tell(owner,"進行先に障害物があるため演出を終了しました。");plugin.playback().stop(owner.getUniqueId());return;}
+   if(tick==TURN)trace("victim escaped from acceptance point distance="+state.victim.distance(state.victimStart)+"; turns back");
+   if(tick==CHARGE){cue(state.attacker,Sound.ENTITY_BREEZE_WIND_BURST,2,.8f);trace("attacker rushes the turned victim");}
+   if(tick>=CHARGE&&tick<GRAB&&tick%2==0){particle(state.attacker.clone().add(0,1,0),Particle.CLOUD,3,.25,.03);dust(state.attacker.clone().add(0,1,0),KI,3,.4);}
    if(tick==LAUNCH){cue(state.attacker,Sound.ENTITY_PLAYER_ATTACK_KNOCKBACK,2,.6f);cue(state.attacker,Sound.ENTITY_BREEZE_WIND_BURST,2,.7f);trace("consenting victim launched; swept block collision enabled");}
    if(tick>=LAUNCH&&state.impactTick<0&&tick%2==0){particle(state.victim.clone().add(0,1,0),Particle.CLOUD,4,.35,.02);particle(state.attacker.clone().add(0,1,0),Particle.END_ROD,2,.2,.02);dust(state.attacker.clone().add(0,1,0),KI,3,.5);}
    if(state.impactTick==tick){
@@ -46,6 +49,6 @@ final class BrolyScene extends SummonScene {
     if(tick>=END-20){float fade=(float)Math.max(.01,(END-tick)/20.0);if(wall!=null)wall.scaler(ModelScaler.value(3.4f*fade));if(crater!=null)crater.scaler(ModelScaler.value(2*fade));}
    }
   }
-  if(tick>=12){String next=state.impactTick>=0?(tick-state.impactTick<20?"impact":"recover"):tick>=LAUNCH?"flight":"grapple";pose(next);}
+  String next=state.impactTick>=0?(tick-state.impactTick<20?"impact":"recover"):tick>=LAUNCH?"flight":tick>=GRAB?"grapple":tick>=CHARGE?(attacker?"charge":"fright"):tick>=TURN?(attacker?"stand":"turn"):(attacker?"stand":state.fleeBlocked?"fright":"flee");pose(next);
  }
 }
