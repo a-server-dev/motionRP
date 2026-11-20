@@ -22,8 +22,8 @@ public final class MotionItems {
         ItemStack stack = new ItemStack(Material.CARROT_ON_A_STICK);
         var meta = stack.getItemMeta();
         meta.displayName(text(catalog.controllerName(), NamedTextColor.GOLD));
-        meta.lore(List.of(text("右クリック: 登録GUI", NamedTextColor.GRAY),
-                text("左クリック: 再生 / 再クリック: 終了", NamedTextColor.GRAY),
+        meta.lore(List.of(text("右クリック: 招待の承諾 / 登録GUI", NamedTextColor.GRAY),
+                text("左クリック: 再生・二人用招待 / 再クリック: 終了", NamedTextColor.GRAY),
                 text("シフト＋左クリック: 次のモーション", NamedTextColor.GRAY)));
         meta.getPersistentDataContainer().set(kind, PersistentDataType.STRING, "controller");
         meta.setMaxStackSize(1);
@@ -37,8 +37,10 @@ public final class MotionItems {
         ItemStack stack = new ItemStack(Material.PAPER, amount);
         var meta = stack.getItemMeta();
         meta.displayName(text(definition.name(), NamedTextColor.AQUA));
-        meta.lore(List.of(text("GUIでこのアイテムをクリックして1個登録", NamedTextColor.GRAY),
+        var lore=new java.util.ArrayList<Component>(List.of(text("GUIでこのアイテムをクリックして1個登録", NamedTextColor.GRAY),
                 text("モーション: " + definition.id(), NamedTextColor.DARK_GRAY)));
+        if(dev.aserver.motionrp.core.PairMotion.fromEffect(definition.effect()).isPresent())lore.add(text("二人用: 左クリックで最寄りの相手へ招待（8ブロック以内）",NamedTextColor.YELLOW));
+        meta.lore(lore);
         meta.getPersistentDataContainer().set(kind, PersistentDataType.STRING, "motion");
         meta.getPersistentDataContainer().set(motion, PersistentDataType.STRING, definition.id());
         // No unique serial or owner tag: identical tokens remain stackable.

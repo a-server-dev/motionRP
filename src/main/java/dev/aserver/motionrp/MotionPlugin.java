@@ -28,7 +28,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
     @Override public void onEnable() {
         saveDefaultConfig();
         // Add only the new built-in definition during upgrade; keep user entries.
-        for (String builtIn : java.util.List.of("rasengan", "rasenshuriken", "gate_of_babylon", "susanoo", "senbonzakura","titan_transform","gate_of_babylon_100","gate_of_babylon_enuma","zangetsu_bankai","excalibur","gae_bolg","kamehameha","genki_dama","rho_aias","getsuga_tensho","road_roller","kokuryuha","kokujo_tengen_myoo","chibaku_tensei")) {
+        for (String builtIn : java.util.List.of("rasengan", "rasenshuriken", "gate_of_babylon", "susanoo", "senbonzakura","titan_transform","gate_of_babylon_100","gate_of_babylon_enuma","zangetsu_bankai","excalibur","gae_bolg","kamehameha","genki_dama","rho_aias","getsuga_tensho","road_roller","kokuryuha","kokujo_tengen_myoo","chibaku_tensei","fusion","broly")) {
             if (!getConfig().contains("assets." + builtIn + "-definition-installed", true)) {
                 if (!getConfig().contains("motions." + builtIn, true)) {
                     for (var entry : Objects.requireNonNull(getConfig().getDefaults())
@@ -136,6 +136,9 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
     }
 
     @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if(args.length>0&&args[0].equalsIgnoreCase("accept")){
+            if(!(sender instanceof Player p)){tell(sender,"プレイヤーのみ実行できます。");return true;}if(args.length>2){tell(sender,"/motionrp accept [招待ID]");return true;}return fusion.acceptCurrent(p,args.length==2?args[1]:null);
+        }
         if(args.length>0&&args[0].equalsIgnoreCase("broly")){if(sender instanceof Player p)return fusion.broly(p,args);tell(sender,"プレイヤーのみ実行できます。");return true;}
         if(args.length>0&&args[0].equalsIgnoreCase("fusion")){if(sender instanceof Player p)return fusion.command(p,args);tell(sender,"プレイヤーのみ実行できます。");return true;}
         if(args.length>0 && args[0].equalsIgnoreCase("view")){
@@ -215,8 +218,9 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
 
     private void usage(CommandSender sender) {
         tell(sender, "/motionrp gui | view [on|off] | status | reload | pack status | pack publish");
-        tell(sender, "/motionrp broly <相手> | broly accept <招待者> | broly cancel");
-        tell(sender, "/motionrp fusion <相手> | fusion accept <招待者> | fusion cancel");
+        tell(sender, "/motionrp broly [相手] | broly accept [招待者] | broly cancel");
+        tell(sender,"/motionrp accept — 届いている招待に参加");
+        tell(sender, "/motionrp fusion [相手] | fusion accept [招待者] | fusion cancel");
         tell(sender, "/motionrp give controller [プレイヤー]");
         tell(sender, "/motionrp give motion <ID> [個数1〜64] [プレイヤー]");
     }
@@ -224,7 +228,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
     @Override public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         List<String> choices = new ArrayList<>();
         if (args.length == 1) {
-            choices.add("gui");choices.add("view");choices.add("fusion");choices.add("broly");
+            choices.add("gui");choices.add("view");choices.add("fusion");choices.add("broly");choices.add("accept");
             if (sender.hasPermission("motionrp.admin")) choices.addAll(List.of("give", "reload", "status", "pack"));
         } else if((args.length==2||args.length==3)&&(args[0].equalsIgnoreCase("fusion")||args[0].equalsIgnoreCase("broly"))){if(args.length==2)choices.addAll(List.of("accept","cancel"));
             if(args.length==2||args[1].equalsIgnoreCase("accept"))Bukkit.getOnlinePlayers().stream().filter(p->p!=sender&&(!(sender instanceof Player viewer)||viewer.canSee(p))).forEach(p->choices.add(p.getName()));

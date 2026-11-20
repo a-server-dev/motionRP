@@ -4,6 +4,18 @@ debug-input: false
 # BetterModel/players にあるプレイヤーモデルを指定します。
 # 標準の steve.bbmodel に含まれる roll を初期モーションとして使用します。
 motions:
+  fusion:
+    name: フュージョン（二人用）
+    model: motionrp_fusion_left
+    animation: fusion_left
+    effect: pair_fusion
+    max-ticks: 204
+  broly:
+    name: ブロリー 岩盤（二人用）
+    model: motionrp_broly_attacker
+    animation: broly_attacker
+    effect: pair_broly
+    max-ticks: 154
   road_roller:
     name: ロードローラーだッ！（ザ・ワールド）
     model: motionrp_road_roller

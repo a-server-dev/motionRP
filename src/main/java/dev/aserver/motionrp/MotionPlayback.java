@@ -19,6 +19,7 @@ public final class MotionPlayback {
     public MotionPlayback(MotionPlugin plugin) { this.plugin = plugin; }
 
     public String unavailable(MotionCatalog.Definition definition) {
+        var pair=dev.aserver.motionrp.core.PairMotion.fromEffect(definition.effect());if(pair.isPresent())return plugin.fusion().unavailable(pair.get().command());
         var model = BetterModel.limbOrNull(definition.model());
         if (model == null) return "プレイヤーモデルが未読込: " + definition.model();
         if (model.animation(definition.animation()).isEmpty()) return "アニメーションが未登録: " + definition.animation();
@@ -62,6 +63,7 @@ public final class MotionPlayback {
     }
 
     public void play(Player player, MotionCatalog.Definition definition) {
+        var pair=dev.aserver.motionrp.core.PairMotion.fromEffect(definition.effect());if(pair.isPresent()){plugin.fusion().inviteNearest(player,pair.get().command());return;}
         String error = unavailable(definition);
         if (error != null) { plugin.tell(player, error); return; }
         if (player.isDead() || player.isInsideVehicle() || player.isGliding() || player.isSleeping()) {

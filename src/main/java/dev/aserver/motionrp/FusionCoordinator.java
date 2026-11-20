@@ -2,6 +2,10 @@ package dev.aserver.motionrp;
 import dev.aserver.motionrp.core.PairSessions;
 import static dev.aserver.motionrp.core.FusionTimeline.*;
 import org.bukkit.*;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.entity.Player;
 import java.util.*;
 
@@ -14,9 +18,28 @@ final class FusionCoordinator implements AutoCloseable {
  boolean command(Player player,String[] args){return command(player,args,"fusion");}
  boolean finalBattle(Player player,String[] args){return command(player,args,"finalbattle");}
  boolean broly(Player player,String[] args){return command(player,args,"broly");}
+ String unavailable(String kind){for(boolean left:new boolean[]{true,false}){String error=plugin.playback().unavailable(definition(left,kind));if(error!=null)return error;}return null;}
+ boolean inviteNearest(Player player,String kind){
+  if(!Set.of("fusion","broly").contains(kind)){plugin.tell(player,"この二人用モーションは現在利用できません。");return true;}
+  var nearest=Bukkit.getOnlinePlayers().stream().filter(p->p!=player&&p.isOnline()&&!p.isDead()&&p.getWorld()==player.getWorld()&&player.canSee(p)&&p.canSee(player)&&p.getLocation().distanceSquared(player.getLocation())<=64).min(Comparator.comparingDouble((Player p)->p.getLocation().distanceSquared(player.getLocation())).thenComparing(p->p.getUniqueId().toString()));
+  if(nearest.isEmpty()){plugin.tell(player,"8ブロック以内に招待できるプレイヤーがいません。");return true;}return command(player,new String[]{kind,nearest.get().getName()},kind);
+ }
+ boolean acceptCurrent(Player player,String invitationId){
+  var incoming=sessions.incoming(player.getUniqueId(),System.currentTimeMillis());
+  if(incoming.isEmpty()||(invitationId!=null&&!incoming.get().id().toString().equalsIgnoreCase(invitationId))){plugin.tell(player,"その招待は期限切れ、または既に無効です。");return true;}
+  var invite=incoming.get();if(!Set.of("fusion","broly").contains(invite.kind())){plugin.tell(player,"この二人用モーションは現在利用できません。");return true;}
+  var other=Bukkit.getPlayer(invite.from());if(other==null){sessions.cancel(player.getUniqueId());plugin.tell(player,"招待者がオフラインです。");return true;}
+  return command(player,new String[]{invite.kind(),"accept",other.getName()},invite.kind());
+ }
+ boolean controllerAccept(Player player){
+  if(sessions.incoming(player.getUniqueId(),System.currentTimeMillis()).isPresent()){acceptCurrent(player,null);return true;}
+  return runs.containsKey(player.getUniqueId()); // A repeated right-click must not open a GUI and cancel a running pair.
+ }
  private boolean command(Player player,String[] args,String command){
   boolean battle=command.equals("finalbattle"),broly=command.equals("broly");String title=broly?"ブロリーの岩盤":battle?"最終決戦":"フュージョン";
   if(!player.hasPermission("motionrp.use")){plugin.tell(player,"権限がありません。");return true;}
+  if(args.length==1&&!battle)return inviteNearest(player,command);
+  if(args.length==2&&args[1].equalsIgnoreCase("accept")&&!battle){var invite=sessions.incoming(player.getUniqueId(),System.currentTimeMillis());if(invite.isEmpty()||!invite.get().kind().equals(command)){plugin.tell(player,"この演出の有効な招待がありません。");return true;}return acceptCurrent(player,null);}
   if(args.length==1||args.length>3){usage(player,command);return true;}
   if(args.length==2&&Set.of("cancel","stop").contains(args[1].toLowerCase(Locale.ROOT))){plugin.playback().stop(player.getUniqueId());sessions.cancel(player.getUniqueId());plugin.tell(player,title+"を中止しました。");return true;}
   boolean accept=args.length==3&&args[1].equalsIgnoreCase("accept");
@@ -26,7 +49,11 @@ final class FusionCoordinator implements AutoCloseable {
   if(!eligible(player,other)){plugin.tell(player,"二人とも同じワールドの8ブロック以内で、他のモーションを止めて地上に立ってください。");return true;}
   for(boolean left:new boolean[]{true,false}){String error=plugin.playback().unavailable(definition(left,command));if(error!=null){plugin.tell(player,error);return true;}}
   if(accept){var session=sessions.accept(player.getUniqueId(),other.getUniqueId(),System.currentTimeMillis(),command);if(session.isEmpty()){plugin.tell(player,"その相手からの有効な招待がありません。");return true;}start(other,player,command);}
-  else if(sessions.invite(player.getUniqueId(),other.getUniqueId(),System.currentTimeMillis(),command)){plugin.tell(player,other.getName()+" に招待しました（30秒）。");plugin.tell(other,player.getName()+" と"+title+": /motionrp "+command+" accept "+player.getName()+"（30秒以内）"+(broly?" 招待者=ブロリー側、あなた=相手役":battle?" 招待者=ナルト、あなた=サスケ":""));}
+  else if(sessions.invite(player.getUniqueId(),other.getUniqueId(),System.currentTimeMillis(),command)){
+   plugin.tell(player,other.getName()+" に招待しました（30秒）。");plugin.tell(other,player.getName()+" と"+title+": /motionrp "+command+" accept "+player.getName()+"（30秒以内）"+(broly?" 招待者=ブロリー側、あなた=相手役":battle?" 招待者=ナルト、あなた=サスケ":""));
+   var invite=sessions.incoming(other.getUniqueId(),System.currentTimeMillis()).orElseThrow();
+   other.sendMessage(Component.text("[MotionRP] ",NamedTextColor.GOLD).append(Component.text("(accept)",NamedTextColor.GREEN).decorate(TextDecoration.BOLD).clickEvent(ClickEvent.runCommand("/motionrp accept "+invite.id())).hoverEvent(Component.text("クリックしてこの招待に参加",NamedTextColor.WHITE))).append(Component.text("  モーションセットの右クリックでも参加できます。",NamedTextColor.WHITE)));
+  }
   else plugin.tell(player,"二人のどちらかが招待・再生中です。");
   return true;
  }
@@ -35,6 +62,7 @@ final class FusionCoordinator implements AutoCloseable {
  private Location offset(Location center,double right){double yaw=Math.toRadians(center.getYaw());return center.clone().add(-Math.cos(yaw)*right,0,-Math.sin(yaw)*right);}
  private void start(Player left,Player right,String kind){
   boolean battle=kind.equals("finalbattle"),broly=kind.equals("broly");
+  left.closeInventory();right.closeInventory();
   Location center=left.getLocation().clone();center.setPitch(0);Location lp=broly?center.clone():battle?battlePosition(center,true,0,58):offset(center,-HALF_SPACING),rp=broly?right.getLocation().clone():battle?battlePosition(center,false,0,58):offset(center,HALF_SPACING);
   var la=new AerialAnchor(plugin,left);var ra=new AerialAnchor(plugin,right);
   starting.add(left.getUniqueId());starting.add(right.getUniqueId());
@@ -56,7 +84,7 @@ final class FusionCoordinator implements AutoCloseable {
  }
  UUID partner(UUID id){var run=runs.get(id);return run==null?null:(id.equals(run.left.getUniqueId())?run.right.getUniqueId():run.left.getUniqueId());}
  Location center(UUID participant){var run=runs.get(participant);return run==null?null:run.center.clone();}
- private void usage(Player player,String command){plugin.tell(player,"/motionrp "+command+" <相手> | "+command+" accept <招待者> | "+command+" cancel");}
+ private void usage(Player player,String command){plugin.tell(player,"/motionrp "+command+" [相手] | "+command+" accept [招待者] | "+command+" cancel");}
  static Location battlePosition(Location center,boolean naruto,double height,double distance){double yaw=Math.toRadians(center.getYaw()),f=naruto?-distance:distance;var p=center.clone().add(-Math.sin(yaw)*f,height,Math.cos(yaw)*f);p.setYaw(center.getYaw()+(naruto?0:180));return p;}
  boolean ownsMove(UUID id,Location a,Location b){var run=runs.get(id);return run!=null&&(id.equals(run.left.getUniqueId())?run.leftAnchor:run.rightAnchor).owns(a,b);}
  boolean moveBattle(UUID id,Location seat){var run=runs.get(id);if(run==null||!run.battle)return false;return (id.equals(run.left.getUniqueId())?run.leftAnchor:run.rightAnchor).moveTo(seat,run.center);}

@@ -22,7 +22,7 @@ public final class ControllerListener implements Listener {
         if (event.getHand() != EquipmentSlot.HAND || !plugin.items().controller(event.getItem())) return;
         event.setCancelled(true);
         if (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK) {
-            if (accept(event.getPlayer())) plugin.menu().open(event.getPlayer());
+            right(event.getPlayer());
         } else if (event.getAction() == Action.LEFT_CLICK_AIR || event.getAction() == Action.LEFT_CLICK_BLOCK) {
             left(event.getPlayer());
         }
@@ -32,7 +32,7 @@ public final class ControllerListener implements Listener {
     public void interactEntity(PlayerInteractEntityEvent event) {
         if (event.getHand() == EquipmentSlot.HAND && plugin.items().controller(event.getPlayer().getInventory().getItemInMainHand())) {
             event.setCancelled(true);
-            if (accept(event.getPlayer())) plugin.menu().open(event.getPlayer());
+            right(event.getPlayer());
         }
     }
 
@@ -45,6 +45,12 @@ public final class ControllerListener implements Listener {
             event.setCancelled(true);
             left(player);
         }
+    }
+
+    private void right(Player player){
+        if(!accept(player))return;
+        if(plugin.fusion().controllerAccept(player))return;
+        plugin.menu().open(player);
     }
 
     private boolean accept(Player player) {
@@ -121,9 +127,9 @@ public final class ControllerListener implements Listener {
         }
     }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void held(PlayerItemHeldEvent event) { plugin.playback().stop(event.getPlayer().getUniqueId()); }
+    public void held(PlayerItemHeldEvent event) { if (plugin.playback().active(event.getPlayer().getUniqueId())) plugin.playback().stop(event.getPlayer().getUniqueId()); }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void swap(PlayerSwapHandItemsEvent event) { plugin.playback().stop(event.getPlayer().getUniqueId()); }
+    public void swap(PlayerSwapHandItemsEvent event) { if (plugin.playback().active(event.getPlayer().getUniqueId())) plugin.playback().stop(event.getPlayer().getUniqueId()); }
     @EventHandler(priority = EventPriority.HIGHEST)
     public void breakBlock(BlockBreakEvent event) {
         if (plugin.items().controller(event.getPlayer().getInventory().getItemInMainHand())) event.setCancelled(true);

@@ -279,6 +279,38 @@ assert c[0]==0,c
   pass('compiled mask keeps a predominantly white face, red markings and limited black eye details');
 }
 
+if(process.env.MOTIONRP_PAIR_ITEMS_ONLY==='1'){
+ let code=0;
+ try{
+  fs.copyFileSync(path.join(project,`build/libs/motionRP-${version}.jar`),path.join(run,'plugins/MotionRP.jar'));
+  log=fs.createWriteStream(path.join(project,'build/pair-items-smoke.log'));await startServer();
+  const suffix=String(Date.now()).slice(-6),an='PairA'+suffix,bn='PairB'+suffix,cn='PairC'+suffix;
+  const a=await connect(an),b=await connect(bn),c=await connect(cn);
+  consoleCommand('fill -5 -60 -3 12 -54 45 air');consoleCommand('fill -5 -61 -3 12 -61 45 grass_block');
+  for(const [name,x]of [[an,.5],[bn,3.5],[cn,7.5]])consoleCommand(`tp ${name} ${x} -60.0 0.5 0 0`);await sleep(600);
+  const bases=[a.entity.position.clone(),b.entity.position.clone()];
+  for(const name of [an,bn])consoleCommand('motionrp give controller '+name);
+  consoleCommand('motionrp give motion fusion 64 '+an);await waitFor(()=>tokens(a)===64&&b.inventory.items().some(i=>i.name==='carrot_on_a_stick'),'paired item distribution');
+  await a.equip(a.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');await b.equip(b.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');await sleep(300);
+  const right=bot=>{bot._testLookUp();bot._client.write('use_item',{hand:'main_hand',sequence:1,rotation:{x:0,y:-60}});};
+  right(a);await waitFor(()=>a.currentWindow,'controller opens menu');await deposit(a);assert.equal(registered(a),1);assert.equal(tokens(a),63);await closeMenu(a);pass('Paired paper tokens stack to 64 and register in the existing controller GUI');
+  const clicks=[];b.on('message',m=>{const raw=JSON.stringify(m.json);for(const hit of raw.matchAll(/\/motionrp accept [0-9a-f-]{36}/g))clicks.push(hit[0]);});
+  async function inviteItem(){const n=b._testMessages.length,k=clicks.length;a._testLeftClick();await waitFor(()=>b._testMessages.slice(n).some(m=>m.includes('fusion accept '+an)),'nearest item invitation');await waitFor(()=>clicks.length>k,'clickable accept UUID');return clicks.at(-1);}
+  async function cancel(){b.chat('/motionrp fusion cancel');await sleep(650);assert.ok(a.entity.position.distanceTo(bases[0])<.02);assert.ok(b.entity.position.distanceTo(bases[1])<.02);}
+  async function began(begin){await waitFor(()=>output.slice(begin).includes('FusionLeft phase:'),'pair begins');assert.equal(b.currentWindow,null);}
+  let token=await inviteItem();await sleep(300);assert.ok(a.entity.position.distanceTo(bases[0])<.02&&b.entity.position.distanceTo(bases[1])<.02);assert.ok(!c._testMessages.some(m=>m.includes('fusion accept '+an)));pass('Left-click invites only the closest player and does not move either player before consent');
+  let begin=output.length;b.chat(token);await began(begin);await cancel();pass('The unique clickable chat command accepts and cancellation restores both players');
+  const old=token;b.setQuickBarSlot(8);await sleep(300);token=await inviteItem();b.chat(old);await sleep(400);assert.ok(b._testMessages.at(-1).includes('無効'));assert.ok(b.entity.position.distanceTo(bases[1])<.02);await b.equip(b.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');await sleep(300);begin=output.length;right(b);await began(begin);await sleep(300);right(b);await sleep(300);assert.equal(b.currentWindow,null);assert.ok(!b._testMessages.at(-1).includes('中止'));await cancel();pass('Stale chat buttons cannot accept a new invite; controller right-click accepts without opening a GUI, including repeated clicks');
+  await inviteItem();begin=output.length;b.chat('/motionrp accept');await began(begin);await cancel();pass('The plain accept command accepts the current incoming invitation');
+  a.chat('/motionrp broly');await waitFor(()=>b._testMessages.some(m=>m.includes('broly accept '+an)),'nearest Broly command invitation');begin=output.length;b.chat('/motionrp accept');await waitFor(()=>output.slice(begin).includes('BrolyAttacker phase: FLEE'),'Broly accept');b.chat('/motionrp broly cancel');await sleep(650);pass('No-argument Broly command invites nearest and shares the same acceptance flow');
+  consoleCommand('motionrp give motion broly 1 '+cn);consoleCommand('motionrp give controller '+cn);await waitFor(()=>tokens(c)===1,'Broly token');await c.equip(c.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');await menu(c);await deposit(c);await closeMenu(c);const msg=b._testMessages.length;c._testLeftClick();await waitFor(()=>b._testMessages.slice(msg).some(m=>m.includes('broly accept '+cn)),'Broly item invites nearest');begin=output.length;b.chat('/motionrp accept');await waitFor(()=>output.slice(begin).includes('BrolyAttacker phase: FLEE'),'Broly item begins');b.chat('/motionrp broly cancel');await sleep(650);pass('The Broly token also registers, invites the nearest player and starts both roles after consent');
+  right(b);await waitFor(()=>b.currentWindow,'no invite opens GUI');await closeMenu(b);pass('Controller right-click still opens registration when no invitation exists');
+  assert.ok(!/scene failed|Motion playback failed/.test(output));for(const bot of [a,b,c])await disconnect(bot);await stopServer();
+ }catch(e){code=1;console.error(e.stack);}
+ finally{for(const bot of bots)try{bot.quit();}catch{}try{await stopServer();}catch{}log?.end();fs.writeFileSync(path.join(project,'build/pair-items-smoke-result.json'),JSON.stringify({passed:code===0,version,checks},null,2));}
+ process.exit(code);
+}
+
 if(process.env.MOTIONRP_BROLY_ONLY==='1'){
  let code=0;
  try{
