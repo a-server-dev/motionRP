@@ -1,0 +1,8 @@
+{
+  "target":"player",
+  "animations":[{"name":"wave","length":2,"loop":true,"tracks":[
+    {"bone":"right_arm","keyframes":[{"time":0,"rotation":[0,0,100]},{"time":1,"rotation":[0,0,145]},{"time":2,"rotation":[0,0,100]}]},
+    {"bone":"right_forearm","keyframes":[{"time":0,"rotation":[0,0,0]},{"time":0.5,"rotation":[0,0,-35]},{"time":1,"rotation":[0,0,15]},{"time":1.5,"rotation":[0,0,-35]},{"time":2,"rotation":[0,0,0]}]},
+    {"bone":"head","keyframes":[{"time":0,"rotation":[0,0,0]},{"time":1,"rotation":[0,-12,-5]},{"time":2,"rotation":[0,0,0]}]}
+  ]}]
+}

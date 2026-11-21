@@ -16,7 +16,7 @@ async function observePreview(page) {
     Preview.prototype.frame = function(tick) {
       original.call(this,tick);
       window.previewSnapshot = {
-        tick, only:this.only,
+        tick, only:this.only, actorBones:this.actor?.userData.bones?.size, actor:this.actor?.userData.body?{animation:this.current.body?.animation,rotations:Object.fromEntries([...this.actor.userData.bones.values()].map(b=>[b.name,b.rotation.z])),textures:this.actor.userData.materials.map(m=>m.map?.image?.src)}:null,
         models:this.instances.map(({e,object})=>({
           model:e.model, visible:!!object.visible, animation:e.animation,
           rotations:[...object.userData.bones.values()].map(b=>b.rotation.z),
@@ -74,6 +74,7 @@ test('AI sample imports, articulates in scene, and exports an animated project',
   await expect(page.locator('#project-title')).toHaveText('光の剣');
   await observePreview(page);
   await page.locator('#ai').click();
+  await page.locator('#ai-target').selectOption('model');
   await page.locator('#ai-sample').click();
   await expect(page.locator('#ai-json')).toHaveValue(/"tracks"/);
   await page.locator('#import-ai').click();
@@ -89,4 +90,35 @@ test('AI sample imports, articulates in scene, and exports an animated project',
   const [download]=await Promise.all([page.waitForEvent('download'),page.locator('#export').click()]);
   await download.saveAs('test-results/ai-animated.zip');
   expect(errors).toEqual([]);
+});
+
+test('default Steve and AI player motion animate the actor instead of a separate prop',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('/motionRP/');
+ await expect(page.locator('#project-title')).toHaveText('光の剣');
+ await observePreview(page);await scrub(page,0);
+ await expect.poll(async()=>page.evaluate(()=>window.previewSnapshot?.actorBones)).toBeGreaterThan(10);
+ await expect.poll(async()=>page.evaluate(()=>window.previewSnapshot?.actor?.textures[0])).toContain('/steve.png');
+ await page.locator('#ai').click();
+ await expect(page.locator('#ai-target')).toHaveValue('player');
+ await page.locator('#ai-description').fill('右手を振る');await page.locator('#make-prompt').click();
+ await expect(page.locator('#ai-prompt')).toHaveValue(/"target":"player"/);
+ await page.locator('#ai-sample').click();await expect(page.locator('#ai-json')).toHaveValue(/"target":\s*"player"/);
+ await page.locator('#import-ai').click();
+ await expect(page.locator('#body-model')).toHaveValue('generated_player');
+ await expect(page.locator('#body-animation')).toHaveValue('wave');
+ await expect(page.locator('.track')).toHaveCount(3);
+ await expect(page.locator('#scene-view')).toHaveClass('active');
+ await scrub(page,0);
+ await expect.poll(async()=>page.evaluate(()=>window.previewSnapshot.actor?.animation)).toBe('wave');
+ const first=await page.evaluate(()=>window.previewSnapshot.actor.rotations.pra_right_arm);
+ await scrub(page,20);
+ const next=await page.evaluate(()=>window.previewSnapshot.actor.rotations.pra_right_arm);
+ expect(next).not.toBe(first);expect(next).toBeCloseTo(145*Math.PI/180);
+ await page.screenshot({path:'test-results/steve-wave.png'});
+ const [download]=await Promise.all([page.waitForEvent('download'),page.locator('#export').click()]);
+ await download.saveAs('test-results/steve-animated.zip');
+ await page.waitForTimeout(900);await page.reload();
+ await expect(page.locator('#body-model')).toHaveValue('generated_player');
+ expect(errors).toEqual([]);
 });
