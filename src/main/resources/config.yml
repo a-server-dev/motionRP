@@ -4,6 +4,24 @@ debug-input: false
 # BetterModel/players にあるプレイヤーモデルを指定します。
 # 標準の steve.bbmodel に含まれる roll を初期モーションとして使用します。
 motions:
+  fire_tornado:
+    name: ファイアトルネード
+    model: motionrp_fire_tornado
+    animation: fire_tornado
+    effect: fire_tornado
+    max-ticks: 174
+  emperor_penguin_1:
+    name: 皇帝ペンギン1号
+    model: motionrp_emperor_penguin_1
+    animation: emperor_penguin_1
+    effect: emperor_penguin_1
+    max-ticks: 174
+  emperor_penguin_2:
+    name: 皇帝ペンギン2号（二人用）
+    model: motionrp_emperor_penguin_2_left
+    animation: emperor_penguin_2_left
+    effect: pair_emperor_penguin_2
+    max-ticks: 174
   infinity_castle:
     name: 無限城への落下
     model: motionrp_infinity_castle

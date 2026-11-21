@@ -27,7 +27,7 @@ class PairSessionsTest {
         assertTrue(p.incoming(b,30_004).isEmpty());assertTrue(p.invite(a,b,30_004));
     }
     @Test void publicPairItemsExcludePostponedBattle(){
-        assertEquals(Set.of("fusion","broly"),Arrays.stream(PairMotion.values()).map(PairMotion::command).collect(java.util.stream.Collectors.toSet()));
+        assertEquals(Set.of("fusion","broly","emperor_penguin_2"),Arrays.stream(PairMotion.values()).map(PairMotion::command).collect(java.util.stream.Collectors.toSet()));
         assertEquals(PairMotion.FUSION,PairMotion.fromEffect("pair_fusion").orElseThrow());
         assertTrue(PairMotion.fromEffect("final_battle_naruto").isEmpty());
     }
