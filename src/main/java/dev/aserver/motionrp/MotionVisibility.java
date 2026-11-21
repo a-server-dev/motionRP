@@ -10,6 +10,21 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /** Opt-in for the original MotionRP scenes; sports celebrations are independent. */
 final class MotionVisibility implements Listener {
+    private final dev.aserver.motionrp.core.ViewingNoticeGate noticeGate=new dev.aserver.motionrp.core.ViewingNoticeGate();
+    void playbackStarted(Player actor,boolean filtered){
+        var center=actor.getLocation();double limit=range(256);long now=System.nanoTime()/1_000_000;
+        for(Player viewer:Bukkit.getOnlinePlayers()){
+            if(viewer.isDead()||viewer.getWorld()!=actor.getWorld()||!viewer.canSee(actor)||viewer.getLocation().distanceSquared(center)>limit*limit)continue;
+            boolean off=filtered&&!enabled(viewer.getUniqueId());var pack=plugin.packApplications().notice(viewer.getUniqueId(),plugin.currentPackHash());
+            if(!off&&pack==dev.aserver.motionrp.core.PackApplicationState.Notice.NONE)continue;
+            if(!noticeGate.allow(viewer.getUniqueId(),now))continue;
+            var message=net.kyori.adventure.text.Component.text("[MotionRP] 近くでモーションが再生されています。",net.kyori.adventure.text.format.NamedTextColor.GOLD);
+            if(off)message=message.append(net.kyori.adventure.text.Component.text(" 演出表示がOFFです。",net.kyori.adventure.text.format.NamedTextColor.YELLOW)).append(button("[表示ON]","/motionrp view on"));
+            if(pack!=dev.aserver.motionrp.core.PackApplicationState.Notice.NONE)message=message.append(net.kyori.adventure.text.Component.text(pack==dev.aserver.motionrp.core.PackApplicationState.Notice.OUTDATED?" MotionRPの最新リソパが未適用です。":" MotionRP配布リソパが未適用です（適用失敗・拒否・解除を検知）。",net.kyori.adventure.text.format.NamedTextColor.YELLOW)).append(button("[リソパ再適用]","/motionrp reload"));
+            viewer.sendMessage(message);
+        }
+    }
+    private static net.kyori.adventure.text.Component button(String text,String command){return net.kyori.adventure.text.Component.text(" "+text,net.kyori.adventure.text.format.NamedTextColor.AQUA).clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand(command)).hoverEvent(net.kyori.adventure.text.Component.text(command));}
     private final NamespacedKey key;
     private final Set<UUID> enabled=ConcurrentHashMap.newKeySet();
     private volatile double range;
@@ -38,5 +53,5 @@ final class MotionVisibility implements Listener {
     }
     private void load(Player p){if(p.getPersistentDataContainer().getOrDefault(key,PersistentDataType.BYTE,(byte)0)==1)enabled.add(p.getUniqueId());else enabled.remove(p.getUniqueId());}
     @EventHandler public void join(PlayerJoinEvent e){load(e.getPlayer());}
-    @EventHandler public void quit(PlayerQuitEvent e){enabled.remove(e.getPlayer().getUniqueId());}
+    @EventHandler public void quit(PlayerQuitEvent e){enabled.remove(e.getPlayer().getUniqueId());noticeGate.forget(e.getPlayer().getUniqueId());plugin.packApplications().forget(e.getPlayer().getUniqueId());}
 }

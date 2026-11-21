@@ -46,6 +46,7 @@ final class AutomaticResourcePack implements Listener,AutoCloseable {
         worker.scheduleWithFixedDelay(this::check,5,5,TimeUnit.SECONDS);
     }
     String status() { return status; }
+    String currentHash(){var pack=current;return pack==null?null:pack.sha1();}
     boolean publishNow() {
         if(!enabled || closed) return false;
         worker.execute(()->{ forcePublish=true;processed=null;candidate=null;retryAfter=0;check(); });return true;
@@ -145,6 +146,7 @@ final class AutomaticResourcePack implements Listener,AutoCloseable {
     private void offer(Player player) {
         PackSnapshot pack=current;
         if(closed || pack==null || !player.isOnline()) return;
+        plugin.packApplications().offered(player.getUniqueId(),pack.sha1());
         player.removeResourcePack(PACK_ID); // Leave server.properties and other plugins' packs alone.
         player.addResourcePack(PACK_ID,pack.url(repository),HexFormat.of().parseHex(pack.sha1()),prompt,required);
         requested.remove(player.getUniqueId());
@@ -153,6 +155,7 @@ final class AutomaticResourcePack implements Listener,AutoCloseable {
     @EventHandler public void packStatus(PlayerResourcePackStatusEvent event) {
         if(!PACK_ID.equals(event.getID())) return;
         String state=event.getStatus().name();
+        plugin.packApplications().status(event.getPlayer().getUniqueId(),state);
         if(state.equals("FAILED_DOWNLOAD") || state.equals("FAILED_RELOAD") || state.equals("INVALID_URL") || state.equals("DECLINED")) {
             plugin.tell(event.getPlayer(),"パックの適用に失敗・拒否されました。サーバーリソースパックを有効にして /motionrp reload を実行してください。");
             plugin.getLogger().warning("Resource pack "+state+" for "+event.getPlayer().getUniqueId());

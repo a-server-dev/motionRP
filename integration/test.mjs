@@ -279,6 +279,25 @@ assert c[0]==0,c
   pass('compiled mask keeps a predominantly white face, red markings and limited black eye details');
 }
 
+if(process.env.MOTIONRP_NOTICE_ONLY==='1'){
+ let code=0;
+ try{
+  fs.copyFileSync(path.join(project,`build/libs/motionRP-${version}.jar`),path.join(run,'plugins/MotionRP.jar'));log=fs.createWriteStream(path.join(project,'build/notice-smoke.log'));await startServer();
+  const suffix=String(Date.now()).slice(-6),an='NoteA'+suffix,bn='NoteB'+suffix,cn='NoteC'+suffix,dn='NoteD'+suffix;
+  const a=await connect(an),b=await connect(bn),c=await connect(cn),d=await connect(dn);c.chat('/motionrp view off');d.chat('/motionrp view off');
+  for(const [name,x]of [[an,.5],[bn,3.5],[cn,6.5],[dn,100.5]])consoleCommand(`tp ${name} ${x} -60.0 0.5 0 0`);await sleep(500);
+  consoleCommand('motionrp give controller '+an);consoleCommand('motionrp give motion roll 1 '+an);await waitFor(()=>tokens(a)===1,'roll token');await a.equip(a.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');await menu(a);await deposit(a);await closeMenu(a);
+  const notices=bot=>bot._testMessages.filter(m=>m.includes('近くでモーションが再生'));const components=[];c.on('message',m=>{if(m.toString().includes('近くでモーションが再生'))components.push(m.json);});
+  a._testLookUp();await sleep(200);a._testLeftClick();await waitFor(()=>notices(c).length===1,'nearby OFF warning');assert.ok(notices(c)[0].includes('演出表示がOFF'));assert.ok(JSON.stringify(components).includes('/motionrp view on'));assert.equal(notices(b).length,0);assert.equal(notices(d).length,0);assert.ok(!notices(c)[0].includes('リソパ'));pass('A nearby OFF viewer receives one clickable warning; ON and distant viewers do not, and an unknown local pack is not called missing');
+  a.chat('/goalperformance stop');await sleep(300);a._testLeftClick();await sleep(700);assert.equal(notices(c).length,1);pass('Repeated nearby playback does not spam the same viewer inside the cooldown');
+  c.chat('/motionrp view on');a.chat('/goalperformance stop');consoleCommand(`tp ${dn} 8.5 -60.0 0.5`);await waitFor(()=>Math.abs(d.entity.position.x-8.5)<.02,'OFF spectator arrives before sports performance');await sleep(250);a.chat('/goalperformance kazu');await sleep(700);assert.equal(notices(d).length,0);a.chat('/goalperformance stop');await sleep(350);pass('Command-only sports performances do not claim their independently visible models are blocked by view OFF');
+  a.chat('/motionrp view off');await sleep(250);a._testLookUp();a._testLeftClick();await waitFor(()=>notices(d).length===1&&notices(a).length===1,'new nearby viewer and OFF performer reminders');assert.equal(notices(c).length,1);assert.equal(notices(b).length,0);pass('An OFF performer and a newly nearby OFF viewer receive reminders while an enabled viewer receives no extra warning');
+  for(const bot of [a,b,c,d])await disconnect(bot);await stopServer();
+ }catch(e){code=1;console.error(e.stack);}
+ finally{for(const bot of bots)try{bot.quit();}catch{}try{await stopServer();}catch{}log?.end();fs.writeFileSync(path.join(project,'build/notice-smoke-result.json'),JSON.stringify({passed:code===0,version,checks},null,2));}
+ process.exit(code);
+}
+
 if(process.env.MOTIONRP_ALL_SET_ONLY==='1'){
  let code=0;
  try{

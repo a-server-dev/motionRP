@@ -71,9 +71,10 @@ try {
   });
   bot._client.on('remove_resource_pack',packet=>removals.push(packet));
   await waitFor(()=>bot.entity,'first player spawn');
-  const otherOffers=[];
+  const otherOffers=[],otherMessages=[];
   other=mineflayer.createBot({host:'127.0.0.1',port,username:'PackOther',auth:'offline',version:'26.1',physicsEnabled:false});other.physicsEnabled=false;
-  other.on('error',e=>console.error(e.message));
+  const otherWrite=other._client.write.bind(other._client);other._client.write=(name,packet)=>{if(['position','position_look','look','flying'].includes(name))return;return otherWrite(name,packet);};
+  other.on('error',e=>console.error(e.message));other.on('message',m=>otherMessages.push(m.toString()));
   other._client.on('add_resource_pack',p=>{otherOffers.push(p);if(other._client.state==='configuration'){other._client.write('resource_pack_receive',{uuid:p.uuid,result:3});other._client.write('resource_pack_receive',{uuid:p.uuid,result:0});}});
   await waitFor(()=>other.entity,'second player spawn');await sleep(3000);
   assert.ok(!offers.some(p=>p.url===initial.url));assert.ok(!otherOffers.some(p=>p.url===initial.url));
@@ -99,11 +100,15 @@ try {
   bot._client.write('resource_pack_receive',{uuid:first.uuid,result:2});
   await waitFor(()=>messages.some(m=>m.includes('パックの適用に失敗')),'download failure message');
   pass('failed downloads produce actionable player feedback');
+  const failedNotice=messages.length;bot.chat('/goalperformance kazu');await waitFor(()=>messages.slice(failedNotice).some(m=>m.includes('近くでモーションが再生')&&m.includes('リソパが未適用')),'nearby failed-pack reminder');bot.chat('/goalperformance stop');pass('A known failed pack triggers a nearby-playback reminder with a reapply action');
+  other.chat('/motionrp reload');await waitFor(()=>otherOffers.some(p=>p.url===initial.url),'other player explicitly requests old pack');other._client.write('resource_pack_receive',{uuid:first.uuid,result:0});await sleep(300);
+
   const next=publication('next');const count=offers.length;command('motionrp configreload');await sleep(1500);assert.equal(offers.length,count);assert.ok(!otherOffers.some(p=>p.url===next.url));bot.chat('/motionrp reload');
   await waitFor(()=>offers.some(p=>p.url===next.url),'updated cached publication offer');
   const second=offers.find(p=>p.url===next.url);assert.equal(second.uuid,first.uuid);assert.equal(second.hash,next.sha1);
   assert.ok(removals.every(p=>p.uuid===first.uuid));assert.ok(!removals.some(p=>p.uuid===undefined));
   assert.ok(!otherOffers.some(p=>p.url===next.url));pass('A new cached publication stays unsent after config reload and reaches only the player who requests it');
+  const staleNotice=otherMessages.length;other.chat('/goalperformance kazu');await waitFor(()=>otherMessages.slice(staleNotice).some(m=>m.includes('最新リソパが未適用')),'loaded old pack warning');other.chat('/goalperformance stop');pass('A confirmed loaded older pack triggers an update reminder after publication changes, without auto-applying the new pack');
   fs.writeFileSync(path.join(pluginDir,'github-token.txt'),'TEST_SECRET_NEVER_LOG\ninvalid-second-line');command('motionrp configreload');
   await waitFor(()=>output.includes('自動公開失敗（IOException）'),'invalid credential rejected');
   assert.ok(!output.includes('TEST_SECRET_NEVER_LOG'));

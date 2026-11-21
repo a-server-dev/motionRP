@@ -1,0 +1,9 @@
+package dev.aserver.motionrp.core;
+import org.junit.jupiter.api.Test;
+import java.util.UUID;
+import static org.junit.jupiter.api.Assertions.*;
+class ViewingNoticeTest {
+ @Test void remindersAreThrottledPerViewerAndClearedOnQuit(){var g=new ViewingNoticeGate();var a=UUID.randomUUID();var b=UUID.randomUUID();assertTrue(g.allow(a,0));assertFalse(g.allow(a,1));assertFalse(g.allow(a,29999));assertTrue(g.allow(b,1));assertTrue(g.allow(a,30000));g.forget(a);assertTrue(g.allow(a,30001));}
+ @Test void localAndUnrequestedPacksAreUnknownAndPendingDownloadsAreNotMissing(){var s=new PackApplicationState();var a=UUID.randomUUID();s.status(a,"FAILED_DOWNLOAD");assertEquals(PackApplicationState.Notice.NONE,s.notice(a,"v1"));s.offered(a,"v1");assertEquals(PackApplicationState.Notice.NONE,s.notice(a,"v1"));s.status(a,"DOWNLOADED");assertEquals(PackApplicationState.Notice.NONE,s.notice(a,"v1"));s.status(a,"SUCCESSFULLY_LOADED");assertEquals(PackApplicationState.Notice.NONE,s.notice(a,"v1"));assertEquals(PackApplicationState.Notice.OUTDATED,s.notice(a,"v2"));assertEquals(PackApplicationState.Notice.NONE,s.notice(a,null));}
+ @Test void failuresAreKnownUntilAReapplySucceedsAndReconnectClearsEvidence(){var s=new PackApplicationState();var a=UUID.randomUUID();for(String error:new String[]{"FAILED_DOWNLOAD","FAILED_RELOAD","INVALID_URL","DECLINED","DISCARDED"}){s.offered(a,"v1");s.status(a,error);assertEquals(PackApplicationState.Notice.NOT_APPLIED,s.notice(a,"v1"));}s.status(a,"ACCEPTED");assertEquals(PackApplicationState.Notice.NONE,s.notice(a,"v1"));s.offered(a,"v2");assertEquals(PackApplicationState.Notice.NONE,s.notice(a,"v2"));s.status(a,"SUCCESSFULLY_LOADED");assertEquals(PackApplicationState.Notice.NONE,s.notice(a,"v2"));s.forget(a);assertEquals(PackApplicationState.Notice.NONE,s.notice(a,"v3"));}
+}

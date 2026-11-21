@@ -18,6 +18,9 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
     private LoadoutMenu menu;
     private MotionPlayback playback;
     private AutomaticResourcePack resourcePack;
+    private final dev.aserver.motionrp.core.PackApplicationState packApplications=new dev.aserver.motionrp.core.PackApplicationState();
+    dev.aserver.motionrp.core.PackApplicationState packApplications(){return packApplications;}
+    String currentPackHash(){return resourcePack==null?null:resourcePack.currentHash();}
     private EnergyPackService energyPack;
     private TerrainOverlayManager terrain;
 
