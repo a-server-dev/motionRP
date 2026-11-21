@@ -24,6 +24,7 @@ public final class MotionPlayback {
         if (model == null) return "プレイヤーモデルが未読込: " + definition.model();
         if (model.animation(definition.animation()).isEmpty()) return "アニメーションが未登録: " + definition.animation();
         if(Set.of("broly_attacker","broly_victim").contains(definition.effect())) for(String phase:List.of("stand","flee","turn","charge","fright","grapple","flight","impact","recover")) if(model.animation(phase).isEmpty()) return "岩盤モーションの更新が必要です: "+phase;
+        if(definition.effect().startsWith("studio:")){String error=plugin.studio().unavailable(definition.effect());if(error!=null)return error;}
         for(String required:SummonAssets.models(definition.effect())) {
             if(BetterModel.modelOrNull(required)==null) return "演出モデルが未読込: "+required;
         }
@@ -114,13 +115,13 @@ public final class MotionPlayback {
                 case "susanoo" -> new SusanooScene(plugin,player);
                 case "senbonzakura" -> new SenbonzakuraScene(plugin,player);
                 case "titan_transform" -> new TitanScene(plugin,player,definition.model(),owned,Objects.requireNonNull(titan));
-                default -> null;
+                default -> definition.effect().startsWith("studio:")?new StudioScene(plugin,player,owned,plugin.studio().project(definition.effect())):null;
             };
             var timeout = Bukkit.getScheduler().runTaskLater(plugin, () -> finish(uuid, owned), definition.maxTicks());
             playing.put(uuid, new Playing(owned, timeout, scene,!definition.effect().equals("performance")));
             boolean started = owned.animate(definition.animation(), AnimationModifier.DEFAULT_WITH_PLAY_ONCE, () -> {
                 // Broly replaces phase clips at variable collision times; its scene and timeout own the end clock.
-                if (plugin.isEnabled() && !Set.of("broly_attacker","broly_victim").contains(definition.effect())) Bukkit.getScheduler().runTask(plugin, () -> finish(uuid, owned));
+                if (plugin.isEnabled() && !definition.effect().startsWith("studio:") && !Set.of("broly_attacker","broly_victim").contains(definition.effect())) Bukkit.getScheduler().runTask(plugin, () -> finish(uuid, owned));
             });
             if (!started) { stop(uuid); plugin.tell(player, "モーションを開始できませんでした。"); return; }
             if (scene != null) scene.start();

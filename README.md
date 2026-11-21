@@ -4,6 +4,16 @@ Minecraft **Paper 26.3 / Java 25 / BetterModel 3.6.0** 用のプレイヤーモ�
 
 リポジトリ: https://github.com/a-server-dev/motionRP
 
+## MotionRP Studio — Webでモーションを制作
+
+**公開先（Pages初回設定後）: https://a-server-dev.github.io/motionRP/**
+
+bbmodelを読み込み、3Dプレビューとタイムラインでモデル配置・移動・追従・粒子・音を設定できます。簡単なモデルはChatGPT用の依頼文とJSON貼り付けで作れます。APIキーやAI料金は不要で、ChatGPT側の無料枠・ログイン制限に従います。
+
+制作データはZIPで保存し、GitHubにログインしてPRで `projects/<id>/` へ提案します。取り込まれた作品は作品ライブラリから読み込めます。`Studio Build` がJARとBetterModelのリソパを生成し、Actionsの成果物からダウンロードできます。PRは自動マージしません。編集自体にGitHubログインは不要です。
+
+0.42.0からデータ駆動のStudio演出を再生できます。既存モーションは維持します。詳しい手順・対応範囲・形式は [Studioガイド](docs/studio.md) を確認してください。
+
 ## 0.41.0：近くでの再生時に観覧OFF・リソパの案内
 
 モーションの再生開始時、表示範囲内にいる観覧OFFの人へ「演出表示がOFFです」と通知します。`[表示ON]` をクリックすると `/motionrp view on` を実行できます。演者本人がOFFの場合も通知します。同一ワールド・演者が見える相手・`visibility.range` の範囲内だけが対象で、同じ人には30秒に1回まで案内します。ゴール・HRパフォーマンスは観覧OFFでも表示されるため、OFF警告は出しません。

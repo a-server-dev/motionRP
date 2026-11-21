@@ -1,0 +1,297 @@
+{
+  "meta": {
+    "format_version": "5.0",
+    "model_format": "free",
+    "box_uv": false
+  },
+  "name": "light_sword",
+  "resolution": {
+    "width": 3,
+    "height": 1
+  },
+  "textures": [
+    {
+      "id": "0",
+      "name": "palette.png",
+      "width": 3,
+      "height": 1,
+      "uv_width": 3,
+      "uv_height": 1,
+      "source": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAMAAAABCAYAAAAb4BS0AAAAFklEQVR4nGP4f7fp/7tv//8bhnb9BwBAgAlP4iQmEwAAAABJRU5ErkJggg==",
+      "uuid": "7bfce931-acab-5187-a361-e937e1a01779"
+    }
+  ],
+  "elements": [
+    {
+      "name": "blade",
+      "uuid": "38c8c6d4-a2c3-5bb9-82f3-f61e54c9c5e7",
+      "type": "cube",
+      "from": [
+        -1,
+        7,
+        -0.5
+      ],
+      "to": [
+        1,
+        27,
+        0.5
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            1.05,
+            0.05,
+            1.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            1.05,
+            0.05,
+            1.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            1.05,
+            0.05,
+            1.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            1.05,
+            0.05,
+            1.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            1.05,
+            0.05,
+            1.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            1.05,
+            0.05,
+            1.95,
+            0.95
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "guard",
+      "uuid": "66c62459-2412-5d2c-b8f5-671c2e664cf5",
+      "type": "cube",
+      "from": [
+        -5,
+        5,
+        -1
+      ],
+      "to": [
+        5,
+        7,
+        1
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.05,
+            0.05,
+            0.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0.05,
+            0.05,
+            0.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0.05,
+            0.05,
+            0.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0.05,
+            0.05,
+            0.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0.05,
+            0.05,
+            0.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0.05,
+            0.05,
+            0.95,
+            0.95
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "grip",
+      "uuid": "9d7385e5-e456-5307-9626-f26c9e32eb2f",
+      "type": "cube",
+      "from": [
+        -1,
+        0,
+        -1
+      ],
+      "to": [
+        1,
+        5,
+        1
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2.05,
+            0.05,
+            2.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            2.05,
+            0.05,
+            2.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            2.05,
+            0.05,
+            2.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            2.05,
+            0.05,
+            2.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            2.05,
+            0.05,
+            2.95,
+            0.95
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            2.05,
+            0.05,
+            2.95,
+            0.95
+          ],
+          "texture": 0
+        }
+      }
+    }
+  ],
+  "groups": [
+    {
+      "uuid": "124d68e9-20d6-5fd2-b403-aa7243b662db",
+      "name": "sword_root",
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "export": true
+    }
+  ],
+  "outliner": [
+    {
+      "uuid": "124d68e9-20d6-5fd2-b403-aa7243b662db",
+      "children": [
+        "38c8c6d4-a2c3-5bb9-82f3-f61e54c9c5e7",
+        "66c62459-2412-5d2c-b8f5-671c2e664cf5",
+        "9d7385e5-e456-5307-9626-f26c9e32eb2f"
+      ]
+    }
+  ],
+  "animations": []
+}

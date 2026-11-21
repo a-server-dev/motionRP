@@ -1,0 +1,20 @@
+{
+  "name": "motionrp-studio",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "python3 ../tools/export_studio_library.py && vite --host 127.0.0.1",
+    "build": "python3 ../tools/export_studio_library.py && vite build --base=/motionRP/",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "three": "0.181.2",
+    "fflate": "0.8.2"
+  },
+  "devDependencies": {
+    "vite": "7.2.2",
+    "@playwright/test": "1.56.1"
+  }
+}

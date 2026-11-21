@@ -279,6 +279,21 @@ assert c[0]==0,c
   pass('compiled mask keeps a predominantly white face, red markings and limited black eye details');
 }
 
+if(process.env.MOTIONRP_STUDIO_ONLY==='1'){
+ let code=0;
+ try{
+  const studioJar=path.join(project,'build/studio-artifacts/MotionRP.jar');const studioFiles=['players/motionrp_studio_light_sword_body.bbmodel','models/motionrp_studio_light_sword_sword.bbmodel','models/motionrp_studio_light_sword_generated_model.bbmodel'];const needsReload=studioFiles.some(f=>!fs.existsSync(path.join(run,'plugins/BetterModel',f))||!fs.readFileSync(path.join(run,'plugins/BetterModel',f)).equals(execFileSync('unzip',['-p',studioJar,'bettermodel/'+f])));fs.copyFileSync(studioJar,path.join(run,'plugins/MotionRP.jar'));log=fs.createWriteStream(path.join(project,'build/studio-smoke.log'));await startServer();if(needsReload||output.includes('Updated bundled model'))await waitFor(()=>output.includes('Bundled Rasengan models loaded'),'studio model reload',90000);
+  const statusBegin=output.length,timer=setInterval(()=>consoleCommand('motionrp status'),500);try{await waitFor(()=>output.slice(statusBegin).includes('studio_light_sword: 利用可能'),'compiled Studio project loads',90000);}finally{clearInterval(timer);}
+  const suffix=String(Date.now()).slice(-6),an='StudioA'+suffix,bn='StudioB'+suffix,cn='StudioC'+suffix;const a=await connect(an),b=await connect(bn),c=await connect(cn);c.chat('/motionrp view off');consoleCommand('fill -3 -60 -3 10 -52 5 air');consoleCommand('fill -3 -61 -3 10 -61 5 grass_block');for(const [name,x]of [[an,.5],[bn,4.5],[cn,7.5]])consoleCommand(`tp ${name} ${x} -60.0 0.5 0 0`);await sleep(400);
+  consoleCommand('motionrp give controller '+an);consoleCommand('motionrp give motion studio_light_sword 1 '+an);await waitFor(()=>tokens(a)===1,'compiled Studio token');await a.equip(a.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');await menu(a);await deposit(a);await closeMenu(a);const origin=a.entity.position.clone(),health=a.health,spawns=[new Set(),new Set(),new Set()],removed=[new Set(),new Set(),new Set()],particles=[0,0,0];for(const [i,bot]of [a,b,c].entries()){bot._client.on('spawn_entity',p=>{if(p.type===bot.registry.entitiesByName.item_display.id)spawns[i].add(p.entityId);});bot._client.on('entity_destroy',p=>p.entityIds.forEach(id=>removed[i].add(id)));bot._client.on('world_particles',()=>particles[i]++);}
+  const cleanup=()=>spawns.every((ids,i)=>[...ids].every(id=>removed[i].has(id)));a._testLookUp();await sleep(200);a._testLeftClick();try{await waitFor(()=>a.entity.position.y>origin.y+2.8,'recipe player movement');}catch(e){throw Error(e.message+' messages='+JSON.stringify(a._testMessages.slice(-8)));}await waitFor(cleanup,'Studio timeline cleanup');assert.ok(a.entity.position.distanceTo(origin)<.02);assert.equal(a.health,health);assert.ok(spawns[0].size>0&&spawns[1].size>0);assert.equal(spawns[2].size,0);assert.ok(particles[0]>0&&particles[1]>0);assert.equal(particles[2],0);assert.ok(!(await readPlayerData(an)).BukkitValues?.['motionrp:aerial_return_v1']);pass('The browser-exported project loads as a motion item, plays models/particles and temporary movement, filters OFF viewers and restores its actor');
+  spawns.forEach(s=>s.clear());a._testLookUp();await sleep(250);a._testLeftClick();await waitFor(()=>a.entity.position.y>origin.y+.2,'cancel recipe movement');a._testLeftClick();await waitFor(cleanup,'cancel Studio project');assert.ok(a.entity.position.distanceTo(origin)<.02);pass('Cancelling a data-driven recipe removes every model and clears temporary flight');
+  assert.ok(!/scene failed|Motion playback failed/.test(output));for(const bot of [a,b,c])await disconnect(bot);await stopServer();
+ }catch(e){code=1;console.error(e.stack);}
+ finally{for(const bot of bots)try{bot.quit();}catch{}try{await stopServer();}catch{}log?.end();fs.writeFileSync(path.join(project,'build/studio-smoke-result.json'),JSON.stringify({passed:code===0,checks},null,2));}
+ process.exit(code);
+}
+
 if(process.env.MOTIONRP_NOTICE_ONLY==='1'){
  let code=0;
  try{

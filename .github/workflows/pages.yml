@@ -1,0 +1,50 @@
+name: Studio Pages
+on:
+  push:
+    branches: [main]
+    paths: ['editor/**', 'projects/**', 'tools/export_studio_library.py', 'tools/compile_studio_projects.py', '.github/workflows/pages.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: studio-pages
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: editor/package-lock.json
+      - run: npm --prefix editor ci
+      - run: npm --prefix editor test
+      - name: Install browser for smoke test
+        working-directory: editor
+        run: npx playwright install --with-deps chromium
+      - name: Test the complete editor flow
+        working-directory: editor
+        run: npx playwright test
+      - run: npm --prefix editor run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MotionRP-Studio-website
+          path: editor/dist
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: editor/dist
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy Studio
+        id: deployment
+        uses: actions/deploy-pages@v4

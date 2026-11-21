@@ -17,6 +17,8 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
     private PlayerLoadouts loadouts;
     private LoadoutMenu menu;
     private MotionPlayback playback;
+    private StudioProjects studio;
+    StudioProjects studio(){return studio;}
     private AutomaticResourcePack resourcePack;
     private final dev.aserver.motionrp.core.PackApplicationState packApplications=new dev.aserver.motionrp.core.PackApplicationState();
     dev.aserver.motionrp.core.PackApplicationState packApplications(){return packApplications;}
@@ -83,7 +85,8 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
         if("motionrp_getsuga_tensho".equals(getConfig().getString("motions.getsuga_tensho.model")) && "getsuga_tensho".equals(getConfig().getString("motions.getsuga_tensho.effect")) && getConfig().getInt("motions.getsuga_tensho.max-ticks",0)<dev.aserver.motionrp.core.BarrierSlashTimeline.GETSUGA_END){getConfig().set("motions.getsuga_tensho.max-ticks",186);saveConfig();}
         for(String id:java.util.List.of("road_roller","chibaku_tensei","kokuryuha"))if(("motionrp_"+id).equals(getConfig().getString("motions."+id+".model"))&&id.equals(getConfig().getString("motions."+id+".effect"))&&getConfig().getInt("motions."+id+".max-ticks",0)<dev.aserver.motionrp.core.EpicTimeline.end(id)){getConfig().set("motions."+id+".max-ticks",dev.aserver.motionrp.core.EpicTimeline.end(id)+10);saveConfig();}
         if(MotionNames.migrate(getConfig()))saveConfig();
-        catalog = MotionCatalog.read(getConfig());
+        studio=new StudioProjects(this);
+        catalog = studio.merge(MotionCatalog.read(getConfig()));
         items = new MotionItems(this);
         loadouts = new PlayerLoadouts(this, items);
         menu = new LoadoutMenu(this, loadouts, items);
@@ -172,7 +175,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
                     reloadConfig();if(MotionNames.migrate(getConfig()))saveConfig();visibility.reload(this);
                     MotionCatalog updated = MotionCatalog.read(getConfig());
                     playback.stopAll();
-                    catalog = updated;
+                    catalog = studio.merge(updated);
                     configureResourcePack();
                     tell(sender, "設定を再読み込みしました。既存アイテムと登録内容は保持されます。");
                 }

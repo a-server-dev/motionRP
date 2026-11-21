@@ -1,7 +1,7 @@
 plugins { id 'java' }
 
 group = 'dev.aserver.motionrp'
-version = '0.41.0'
+version = '0.42.0'
 
 repositories {
     mavenCentral()
@@ -22,7 +22,15 @@ dependencies {
 
 tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
 tasks.withType(Test).configureEach { useJUnitPlatform() }
+tasks.register('compileStudioProjects', Exec) {
+    inputs.dir('projects'); inputs.file('tools/compile_studio_projects.py')
+    inputs.file('src/main/resources/bettermodel/players/motionrp_rasengan.bbmodel')
+    outputs.dir(layout.buildDirectory.dir('generated/studio'))
+    commandLine 'python3', 'tools/compile_studio_projects.py', '--output', layout.buildDirectory.dir('generated/studio').get().asFile.absolutePath
+}
 tasks.processResources {
+    dependsOn tasks.compileStudioProjects
+    from(layout.buildDirectory.dir('generated/studio'))
     inputs.property('version', project.version)
     filesMatching('plugin.yml') { expand(version: project.version) }
 }
@@ -44,7 +52,8 @@ tasks.register('sourceBundle', Zip) {
     archiveFileName = "${rootProject.name}-${project.version}-source.zip"
     destinationDirectory = layout.buildDirectory.dir('distributions')
     from(projectDir) {
-        include 'src/**', 'tools/**', 'docs/**', 'gradle/**', '.github/**'
+        include 'src/**', 'tools/**', 'docs/**', 'gradle/**', '.github/**', 'editor/**', 'projects/**'
+        exclude 'editor/node_modules/**', 'editor/dist/**', 'editor/test-results/**', 'editor/public/community/**', 'editor/public/library.json'
         include 'integration/*.mjs', 'integration/package*.json'
         include 'README.md', '.gitignore', '.gitattributes', 'build.gradle', 'settings.gradle', 'gradlew', 'gradlew.bat'
     }

@@ -7,3 +7,10 @@ node_modules/
 
 # Server-local GitHub credential; never commit.
 **/github-token.txt
+
+editor/dist/
+test-results/
+__pycache__/
+
+editor/public/community/
+editor/public/library.json

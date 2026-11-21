@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "id": "example",
+  "name": "光の剣の練習",
+  "enabled": false,
+  "duration": 100,
+  "models": [
+    {
+      "id": "sword",
+      "file": "models/sword.bbmodel",
+      "kind": "display"
+    }
+  ],
+  "events": [
+    {
+      "id": "sword_appearance",
+      "type": "model",
+      "model": "sword",
+      "tick": 0,
+      "endTick": 90,
+      "anchor": "player",
+      "from": [
+        -0.8,
+        0.8,
+        0
+      ],
+      "to": [
+        -0.8,
+        0.8,
+        0
+      ],
+      "scale": 1,
+      "pitch": 0,
+      "yaw": 0
+    },
+    {
+      "id": "light",
+      "type": "particle",
+      "tick": 10,
+      "endTick": 80,
+      "anchor": "player",
+      "from": [
+        -0.8,
+        1.8,
+        0
+      ],
+      "to": [
+        -0.8,
+        1.8,
+        0
+      ],
+      "particle": "END_ROD",
+      "count": 6,
+      "every": 4,
+      "spread": 0.25
+    },
+    {
+      "id": "chime",
+      "type": "sound",
+      "tick": 10,
+      "from": [
+        0,
+        1,
+        0
+      ],
+      "sound": "BLOCK_AMETHYST_BLOCK_CHIME",
+      "volume": 1,
+      "pitch": 1
+    }
+  ]
+}
