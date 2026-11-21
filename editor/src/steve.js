@@ -41,7 +41,7 @@ export function animateSteve(raw, template) {
 
 export function stevePrompt(description) {
   return `Minecraftのスティーブを動かすアニメーションを作ってください。作りたい動き: ${description}
-返答は説明なしのJSONのみ。Webツールが固定のスティーブ用リグへ適用し、bbmodelに変換します。形やスキンは作らず、partsやbonesの定義は不要です。targetは必ず"player"です。
+返答は、そのまますぐコピーできる有効なJSONとして、jsonと指定したコードブロック1つに全文をまとめてください。コードブロックの外に説明は書かず、JSON内のコメント・省略記号・途中省略も使わないでください。Webツールが固定のスティーブ用リグへ適用し、bbmodelに変換します。形やスキンは作らず、partsやbonesの定義は不要です。targetは必ず"player"です。
 {"target":"player","animations":[{"name":"wave","length":2,"loop":true,"tracks":[{"bone":"right_arm","keyframes":[{"time":0,"rotation":[0,0,100]},{"time":1,"rotation":[0,0,145]},{"time":2,"rotation":[0,0,100]}]},{"bone":"right_forearm","keyframes":[{"time":0,"rotation":[0,0,0]},{"time":0.5,"rotation":[0,0,-35]},{"time":1,"rotation":[0,0,15]},{"time":1.5,"rotation":[0,0,-35]},{"time":2,"rotation":[0,0,0]}]}]}]}
 使えるboneは ${Object.keys(STEVE_BONES).join(', ')} のみ。rootは全身、hipは腰全体、waistは胴体下部、chestは胸、headは頭。armは肩、forearmは肘、legは股関節、forelegは膝です。左右はスティーブ本人の左右。上腕には前腕、上脚には下脚が追従します。胸→腕・頭、腰→胸・脚の既存の親子関係で動きます。
 単位: timeとlengthは秒（tickではない）、rotationは初期姿勢からの追加回転の度数、positionは初期姿勢からの相対移動（16=1ブロック）、scaleは倍率です。Yが上、前は-Z、本人の右は+Xです。正のX回転で腕が前へ上がり、本人右腕は正のZ回転で横へ上がります。両腕を上げるときは左右のZ回転を反対符号にしてください。
