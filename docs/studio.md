@@ -15,7 +15,7 @@
 
 読み込んだ表示用モデルは、演出のタイムラインにも自動配置します。既存の作業で未配置のモデルは、左のモデルを選び「演出に配置・編集」を押してください。bbmodelにアニメーションがあれば先頭のクリップを初期選択します。
 
-簡易生成用の `parts` JSONは形と色のみで、ボーンアニメーションを作りません。モデル全体の移動はStudioの開始・終了位置で設定でき、ボーンアニメーションはBlockbench等で作成してbbmodelへ保存します。
+簡易生成用JSONは `parts`（形・色）、`bones`（関節・親子関係）、`animations`（キーフレーム）に対応します。ChatGPTへの依頼文に動きを含め、返答を取り込むとアニメーション入りbbmodelへ変換します。先頭クリップを演出に自動設定し、必要なら演出の長さを延長します。「動くサンプルを入力」で手を振るロボットを試せます。静止モデル用の従来JSONもそのまま利用できます。
 
 ChatGPT補助は「依頼文をコピー→別タブのChatGPTに貼り付け→返答のJSONをStudioへ貼り付け」の方式です。サイトからOpenAI APIを呼びません。ChatGPT側のログイン・回数・機能制限には従います。無料APIとして自動利用する仕組みではありません。
 
@@ -75,3 +75,15 @@ UIのブラウザテストは `cd editor && npx playwright test` です。Chromi
 ## Pagesの初回公開設定
 
 リポジトリ所有者が [Settings → Pages](https://github.com/a-server-dev/motionRP/settings/pages) で Source を **GitHub Actions** に設定します。接続アプリにはPagesを初回有効化する権限がないため、この設定だけは所有者の操作が必要です。その後、Actionsの **Studio Pages** を実行すると公開されます。公開設定が未完了でも、ビルド成功時にはサイト一式を `MotionRP-Studio-website` アーティファクトから取得できます。
+
+## ChatGPT向けアニメーションJSON
+
+完全な例は [`editor/public/animated-example.json`](../editor/public/animated-example.json) です。画面の依頼文にも形式を含めています。
+
+- `bones`: `id`・`parent`・`origin`（関節位置）・任意の初期`rotation`。`root`は省略時に原点へ自動追加します。部品の`bone`で所属先を指定します。
+- 部品の`from/to/origin`とボーンの`origin`はモデル全体の絶対座標です。16=1ブロック、Yが上、前が-Zです。親からの相対座標ではありません。
+- `animations`: `name`・`length`（秒）・`loop`（真偽値）・`tracks`。各トラックは`bone`と`keyframes`を持ちます。
+- キーは`time`（秒）と`rotation`（度）・`position`（初期姿勢からの相対移動）・`scale`（倍率）のいずれか。`interpolation`は`linear`または`step`です。
+- 最大200部品・64ボーン（自動rootを除く）・32クリップ・合計4096キーチャンネルです。ボーンの循環・参照漏れ、範囲外時刻、数式、外部ファイルは受け付けません。
+
+これは直方体モデルと数値キーフレームの生成補助です。生成された動きの品質は依頼内容に左右されます。プレイヤーの腕そのものを動かすにはBetterModelのプレイヤー用リグが必要で、通常の簡易生成モデルは演出用の別モデルとして表示します。

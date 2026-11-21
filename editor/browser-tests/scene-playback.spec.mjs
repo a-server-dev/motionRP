@@ -67,3 +67,26 @@ test('sample and imported animation render in scene, and replay restarts',async(
   await page.locator('#rewind').click();
   expect(errors).toEqual([]);
 });
+
+test('AI sample imports, articulates in scene, and exports an animated project',async({page})=>{
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto('/motionRP/');
+  await expect(page.locator('#project-title')).toHaveText('光の剣');
+  await observePreview(page);
+  await page.locator('#ai').click();
+  await page.locator('#ai-sample').click();
+  await expect(page.locator('#ai-json')).toHaveValue(/"tracks"/);
+  await page.locator('#import-ai').click();
+  await expect(page.locator('[data-model="generated_model"]')).toContainText('1 clips');
+  await page.locator('#scene-view').click();
+  await scrub(page,0);
+  await expect.poll(async()=>page.evaluate(()=>window.previewSnapshot.models.find(m=>m.model==='generated_model'))).toMatchObject({visible:true,animation:'wave'});
+  const initial=await page.evaluate(()=>window.previewSnapshot.models.find(m=>m.model==='generated_model').rotations);
+  await scrub(page,20);
+  const later=await page.evaluate(()=>window.previewSnapshot.models.find(m=>m.model==='generated_model').rotations);
+  expect(later).not.toEqual(initial);
+  await page.screenshot({path:'test-results/ai-wave.png'});
+  const [download]=await Promise.all([page.waitForEvent('download'),page.locator('#export').click()]);
+  await download.saveAs('test-results/ai-animated.zip');
+  expect(errors).toEqual([]);
+});

@@ -1,0 +1,22 @@
+{
+  "name": "waving_robot",
+  "bones": [
+    {"id":"arm","parent":"root","origin":[-5,22,0]},
+    {"id":"forearm","parent":"arm","origin":[-5,16,0]}
+  ],
+  "parts": [
+    {"name":"body","from":[-4,10,-2],"to":[4,22,2],"color":"#e9b94d"},
+    {"name":"head","from":[-4,22,-3],"to":[4,30,3],"color":"#f2d58c"},
+    {"name":"eye_left","from":[-3,26,-3.2],"to":[-1,27,-3],"color":"#263541"},
+    {"name":"eye_right","from":[1,26,-3.2],"to":[3,27,-3],"color":"#263541"},
+    {"name":"leg_left","from":[-4,0,-2],"to":[-0.5,10,2],"color":"#425970"},
+    {"name":"leg_right","from":[0.5,0,-2],"to":[4,10,2],"color":"#425970"},
+    {"name":"rest_arm","from":[4,10,-2],"to":[7,22,2],"color":"#e9b94d"},
+    {"name":"upper_arm","bone":"arm","from":[-7,16,-2],"to":[-4,22,2],"color":"#e9b94d"},
+    {"name":"lower_arm","bone":"forearm","from":[-7,10,-2],"to":[-4,16,2],"color":"#f2d58c"}
+  ],
+  "animations": [{"name":"wave","length":2,"loop":true,"tracks":[
+    {"bone":"arm","keyframes":[{"time":0,"rotation":[0,0,-100]},{"time":1,"rotation":[0,0,-145]},{"time":2,"rotation":[0,0,-100]}]},
+    {"bone":"forearm","keyframes":[{"time":0,"rotation":[0,0,0]},{"time":0.5,"rotation":[0,0,35]},{"time":1,"rotation":[0,0,-15]},{"time":1.5,"rotation":[0,0,35]},{"time":2,"rotation":[0,0,0]}]}
+  ]}]
+}
