@@ -175,7 +175,10 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
             if(resourcePack==null)tell(sender,packStatus());else resourcePack.reload(player);
             return true;
         }
-        if (!sender.hasPermission("motionrp.admin")) { tell(sender, "管理者権限が必要です。"); return true; }
+        boolean giving=args[0].equalsIgnoreCase("give");
+        if(giving?!canGive(sender):!sender.hasPermission("motionrp.admin")){
+            tell(sender,giving?"give はOPまたはEmeraldREX91のみ利用できます。":"管理者権限が必要です。");return true;
+        }
         try {
             switch (args[0].toLowerCase(Locale.ROOT)) {
                 case "configreload" -> {
@@ -212,6 +215,10 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
         return true;
     }
 
+    private boolean canGive(CommandSender sender){
+        if(sender instanceof Player player)return dev.aserver.motionrp.core.GiveAccess.playerAllowed(player.getName(),player.isOp());
+        return sender instanceof ConsoleCommandSender || sender instanceof RemoteConsoleCommandSender;
+    }
     private void give(CommandSender sender, String[] args) {
         if (args.length < 2) { usage(sender); return; }
         ItemStack item;
@@ -252,13 +259,14 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
         List<String> choices = new ArrayList<>();
         if (args.length == 1) {
             choices.add("gui");choices.add("view");choices.add("fusion");choices.add("broly");choices.add("accept");choices.add("reload");
-            if (sender.hasPermission("motionrp.admin")) choices.addAll(List.of("give", "configreload", "status", "pack"));
+            if(canGive(sender))choices.add("give");
+            if (sender.hasPermission("motionrp.admin")) choices.addAll(List.of("configreload", "status", "pack"));
         } else if((args.length==2||args.length==3)&&(args[0].equalsIgnoreCase("fusion")||args[0].equalsIgnoreCase("broly"))){if(args.length==2)choices.addAll(List.of("accept","cancel"));
             if(args.length==2||args[1].equalsIgnoreCase("accept"))Bukkit.getOnlinePlayers().stream().filter(p->p!=sender&&(!(sender instanceof Player viewer)||viewer.canSee(p))).forEach(p->choices.add(p.getName()));
         } else if(args.length==2 && args[0].equalsIgnoreCase("view")){choices.addAll(List.of("on","off"));
         } else if(sender.hasPermission("motionrp.admin") && args[0].equalsIgnoreCase("pack") && args.length==2) {
             choices.addAll(List.of("status","publish"));
-        } else if (sender.hasPermission("motionrp.admin") && args[0].equalsIgnoreCase("give")) {
+        } else if (canGive(sender) && args[0].equalsIgnoreCase("give")) {
             if (args.length == 2) choices.addAll(List.of("controller", "motion", "all"));
             else if (args.length == 3 && args[1].equalsIgnoreCase("motion")) choices.addAll(catalog.motions().keySet());
             else if (args.length == 4 && args[1].equalsIgnoreCase("motion")) choices.addAll(List.of("1", "16", "64"));

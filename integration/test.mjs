@@ -279,6 +279,34 @@ assert c[0]==0,c
   pass('compiled mask keeps a predominantly white face, red markings and limited black eye details');
 }
 
+if(process.env.MOTIONRP_GIVE_ONLY==='1'){
+ let code=0;
+ try{
+  fs.copyFileSync(path.join(project,`build/libs/motionRP-${version}.jar`),path.join(run,'plugins/MotionRP.jar'));
+  log=fs.createWriteStream(path.join(project,'build/give-smoke.log'));await startServer();
+  const suffix=String(Date.now()).slice(-5),an='EmeraldREX91',bn='GiveNo'+suffix,cn='GiveOp'+suffix;
+  const a=await connect(an),b=await connect(bn),c=await connect(cn);
+  consoleCommand('deop '+an);consoleCommand('deop '+bn);consoleCommand('op '+cn);for(const name of [an,bn,cn])consoleCommand('clear '+name);await sleep(400);
+  const sets=bot=>bot.inventory.items().filter(i=>i.name==='carrot_on_a_stick').length;
+  a.chat('/motionrp give controller');await waitFor(()=>sets(a)===1,'named non-OP receives controller');
+  a.chat('/motionrp give motion roll 1');await waitFor(()=>tokens(a)===1,'named non-OP receives motion token');
+  a.chat('/motionrp give all');await waitFor(()=>sets(a)===2,'named non-OP receives full controller');
+  a.chat('/motionrp give controller '+bn);await waitFor(()=>sets(b)===1,'named non-OP may distribute to another player');
+  pass('EmeraldREX91 without OP can use controller, motion and all give subcommands, including another recipient');
+  for(const command of ['status','configreload','pack publish']){
+   const start=a._testMessages.length;a.chat('/motionrp '+command);await waitFor(()=>a._testMessages.slice(start).some(m=>m.includes('管理者権限')),'named player receives no extra admin access: '+command);
+  }
+  pass('The named exception does not grant status, configuration reload or pack publication');
+  const denied=b._testMessages.length;b.chat('/motionrp give all');await waitFor(()=>b._testMessages.slice(denied).some(m=>m.includes('OPまたはEmeraldREX91')),'other non-OP is denied');assert.equal(sets(b),1);
+  c.chat('/motionrp give controller');await waitFor(()=>sets(c)===1,'OP receives controller');
+  consoleCommand('deop '+cn);await sleep(300);const afterDeop=c._testMessages.length;c.chat('/motionrp give motion roll');await waitFor(()=>c._testMessages.slice(afterDeop).some(m=>m.includes('OPまたはEmeraldREX91')),'de-OP immediately loses give access');assert.equal(tokens(c),0);
+  consoleCommand('motionrp give motion roll 1 '+cn);await waitFor(()=>tokens(c)===1,'console distribution remains available');
+  pass('OP is allowed, other non-OPs and de-OPed players are denied, and console distribution still works');
+ }catch(e){code=1;console.error(e.stack);}
+ finally{for(const bot of bots)try{bot.quit();}catch{}try{await stopServer();}catch{}log?.end();fs.writeFileSync(path.join(project,'build/give-smoke-result.json'),JSON.stringify({passed:code===0,version,checks},null,2));}
+ process.exit(code);
+}
+
 if(process.env.MOTIONRP_FOOTBALL_ONLY==='1'){
  let code=0;
  try{
@@ -396,7 +424,7 @@ if(process.env.MOTIONRP_ALL_SET_ONLY==='1'){
   const allItem=a.inventory.items().find(i=>i.name==='carrot_on_a_stick'&&JSON.stringify(i.components??i.nbt).includes('controller_set_id'));assert.ok(allItem,'Embedded controller metadata');await a.equip(allItem,'hand');await menu(a);assert.equal(registered(a),25);await closeMenu(a);a._testLookUp();a.setControlState('sneak',true);await sleep(250);a._testLeftClick();await sleep(300);a.setControlState('sneak',false);assert.deepEqual((await readSaved(an)).loadout,normal);pass('Cycling the full controller selection does not change the normal controller selection');
   // Copy to an empty hand then clear the source: exercise vanilla ItemStack/PDC portability without altering the recipient registration.
   consoleCommand(`item replace entity ${bn} weapon.mainhand from entity ${an} weapon.mainhand`);consoleCommand(`item replace entity ${an} weapon.mainhand with air`);await waitFor(()=>b.inventory.items().some(i=>i.name==='carrot_on_a_stick'),'controller transferred');await menu(b);assert.equal(registered(b),25);await click(b,0);assert.equal(registered(b),24);await closeMenu(b);await disconnect(b);b=await connect(bn);await menu(b);assert.equal(registered(b),24);await closeMenu(b);pass('The item carries its own registration to another player and retains edits across reconnect');
-  const denied=b._testMessages.length;b.chat('/motionrp give all');await waitFor(()=>b._testMessages.slice(denied).some(m=>m.includes('管理者権限')),'admin permission required');pass('Non-admins cannot distribute complete sets');
+  const denied=b._testMessages.length;b.chat('/motionrp give all');await waitFor(()=>b._testMessages.slice(denied).some(m=>m.includes('OPまたはEmeraldREX91')),'give access required');pass('Other non-OP players cannot distribute complete sets');
   for(let slot=1;slot<9;slot++)consoleCommand(`item replace entity ${bn} hotbar.${slot} with stone 64`);for(let slot=0;slot<27;slot++)consoleCommand(`item replace entity ${bn} inventory.${slot} with stone 64`);await sleep(350);const begin=output.length;consoleCommand('motionrp give all '+bn);await waitFor(()=>output.slice(begin).includes('所持品に空き'),'full inventory rejected');assert.equal(b.inventory.items().filter(i=>i.name==='carrot_on_a_stick').length,1);pass('A full inventory rejects distribution without replacing the existing controller');
   await a.equip(a.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');await menu(a);assert.equal(registered(a),1);await closeMenu(a);pass('The original normal controller still opens its unchanged one-motion registration');
   await disconnect(a);await disconnect(b);await stopServer();

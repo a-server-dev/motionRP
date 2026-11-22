@@ -2,6 +2,10 @@
 
 Minecraft **Paper 26.3 / Java 25 / BetterModel 3.6.0** 用のプレイヤーモーションプラグインです。Velocity配下ではPaper側に導入します。Velocity用の追加プラグインは必要ありません。
 
+## v0.46.0 — giveの実行者
+
+`/motionrp give controller`・`give motion`・`give all` を実行できるプレイヤーは、**OPとEmeraldREX91のみ**です。コンソール／RCONからの配布も引き続き使えます。`motionrp.admin` だけを持つ非OPプレイヤーにはgiveを許可しません。EmeraldREX91への例外はgive専用で、設定再読込・パック公開などの管理権限は付与しません。
+
 ## v0.45.0 — 回転方向・空中の炎・ペンギンの視線
 
 - ファイアトルネードのジャンプを3.2ブロックから**8ブロック**へ引き上げ、ボールの蹴り上げ高度も合わせました。
@@ -908,8 +912,8 @@ BetterModelが生成する `plugins/BetterModel/build.zip` をプレイヤーに
 | コマンド | 権限 |
 | --- | --- |
 | `/motionrp` または `/motionrp gui` | `motionrp.use`（標準で全員） |
-| `/motionrp give controller [プレイヤー]` | `motionrp.admin`（標準でOP） |
-| `/motionrp give motion <ID> [個数1〜64] [プレイヤー]` | `motionrp.admin` |
+| `/motionrp give controller [プレイヤー]` | OPまたはEmeraldREX91（コンソールも可） |
+| `/motionrp give motion <ID> [個数1〜64] [プレイヤー]` | OPまたはEmeraldREX91（コンソールも可） |
 | `/motionrp status` | `motionrp.admin` |
 | `/motionrp reload` | `motionrp.admin` |
 

@@ -23,5 +23,5 @@ permissions:
     description: モーションの登録・再生
     default: true
   motionrp.admin:
-    description: アイテム配布・設定の再読み込み
+    description: 設定の再読み込み・状態確認・パック管理（giveはOPまたはEmeraldREX91のみ）
     default: op
