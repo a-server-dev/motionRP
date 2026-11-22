@@ -103,7 +103,7 @@ def reference_actors(rig):
    poses={
     'pc_chest':[(0,(0,0,0)),(16,(-10,0,-8)),(30,(0,0,0)),(60,(-18,0,0)),(96,(-18,12,-12)),(112,(12,-15,8)),(134,(0,0,0)),(end,(0,0,0))],
     'pw_waist':[(0,(0,0,0)),(60,(-8,0,0)),(100,(-10,15,0)),(112,(12,-12,0)),(156,(0,0,0)),(end,(0,0,0))],
-    'prl_right_leg':[(0,(0,0,0)),(10,(-20,0,0)),(16,(65,0,5)),(30,(0,0,0)),(52,(25,0,15)),(76,(-65,0,20)),(102,(-95,0,12)),(108,(-40,0,8)),(112,(35,0,5)),(120,(25,0,8)),(134,(15,0,15)),(156,(0,0,0)),(end,(0,0,0))],
+    'prl_right_leg':[(0,(0,0,0)),(10,(-20,0,0)),(16,(65,0,5)),(30,(0,0,0)),(52,(25,0,15)),(76,(-65,0,20)),(102,(-95,0,12)),(108,(-65,0,8)),(112,(-25,0,5)),(120,(-5,0,8)),(134,(15,0,15)),(156,(0,0,0)),(end,(0,0,0))],
     'prfl_right_foreleg':[(0,(0,0,0)),(10,(-45,0,0)),(16,(0,0,0)),(30,(0,0,0)),(70,(-85,0,0)),(102,(-90,0,0)),(108,(-40,0,0)),(112,(0,0,0)),(126,(-25,0,0)),(146,(-25,0,0)),(156,(0,0,0)),(end,(0,0,0))],
     'pll_left_leg':[(0,(0,0,0)),(30,(-12,0,-5)),(52,(35,0,-15)),(90,(40,0,-20)),(112,(-35,0,-18)),(128,(45,0,-12)),(156,(0,0,0)),(end,(0,0,0))],
     'plfl_left_foreleg':[(0,(0,0,0)),(46,(-35,0,0)),(70,(-95,0,0)),(110,(-75,0,0)),(132,(-40,0,0)),(156,(0,0,0)),(end,(0,0,0))]
@@ -126,7 +126,7 @@ def reference_actors(rig):
    track('prfa_right_forearm'if right else'plfa_left_forearm',[(0,(0,0,0)),(44,(20,0,0)),(kick,(30,0,0)),(136,(65 if not fire else 20,0,0)),(end,(0,0,0))])
   track('h_ph_head',[(0,(12,0,0)),(44,(25,0,0)),(kick-8,(35,0,0)),(kick,(12,0,0)),(136,(30 if not fire else 0,0,0)),(end,(0,0,0))])
   # Real boot and calf attachments, sampled from these exact animated joints.
-  parent=next(g for g in m['groups']if g['name']=='prfl_right_foreleg')
+  parent=None
   def attach(nodes,uid):
    for node in nodes:
     if isinstance(node,dict):
@@ -134,12 +134,13 @@ def reference_actors(rig):
      if attach(node['children'],uid):return True
    return False
   paths=[]
-  for label,origin in [('football_boot',(1.875,.65,-1.8)),('football_calf',(1.875,4.1,0))]:
+  for label,bone,origin in [('football_boot','prfl_right_foreleg',(1.875,.65,-1.8)),('football_calf','prfl_right_foreleg',(1.875,4.1,0)),('football_torso','pc_chest',(0,17,0)),('football_upper','pc_chest',(0,22,0)),('football_side','pc_chest',(5,17,0))]:
+   parent=next(g for g in m['groups']if g['name']==bone)
    g={'name':label,'uuid':ident(name+'/'+label),'origin':list(origin),'rotation':[0,0,0],'export':True};m['groups'].append(g);assert attach(m['outliner'],g['uuid'])
    paths.append(hand_path(m,end,label).strip().splitlines())
   save('players/motionrp_'+name+'.bbmodel',m)
   from generate_summons import ROOT
-  (ROOT/(name+'-boot.csv')).write_text('\n'.join(a+','+b for a,b in zip(*paths))+'\n')
+  (ROOT/(name+'-boot.csv')).write_text('\n'.join(','.join(row)for row in zip(*paths))+'\n')
 
 if __name__=='__main__':
  raw=Path(sys.argv[1]).read_bytes()

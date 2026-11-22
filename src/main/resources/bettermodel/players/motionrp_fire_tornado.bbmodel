@@ -2727,6 +2727,51 @@
         0
       ],
       "export": true
+    },
+    {
+      "name": "football_torso",
+      "uuid": "4b4eb9f8-2e6e-53f4-9013-3cb96ada3589",
+      "origin": [
+        0,
+        17,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "export": true
+    },
+    {
+      "name": "football_upper",
+      "uuid": "7a45a680-dc10-540a-8f35-63c3eabaf93f",
+      "origin": [
+        0,
+        22,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "export": true
+    },
+    {
+      "name": "football_side",
+      "uuid": "1edb056e-2ddb-5e2d-be1d-2b2e109b6007",
+      "origin": [
+        5,
+        17,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "export": true
     }
   ],
   "outliner": [
@@ -2813,6 +2858,18 @@
                           ]
                         }
                       ]
+                    },
+                    {
+                      "uuid": "4b4eb9f8-2e6e-53f4-9013-3cb96ada3589",
+                      "children": []
+                    },
+                    {
+                      "uuid": "7a45a680-dc10-540a-8f35-63c3eabaf93f",
+                      "children": []
+                    },
+                    {
+                      "uuid": "1edb056e-2ddb-5e2d-be1d-2b2e109b6007",
+                      "children": []
                     }
                   ]
                 }
@@ -3427,10 +3484,10 @@
               "time": 5.4,
               "interpolation": "linear",
               "color": -1,
-              "uuid": "b34c2cf1-1e13-501f-a248-774d89fb20ec",
+              "uuid": "0ebf689d-a25d-57ae-b38e-35d0abd9cfbe",
               "data_points": [
                 {
-                  "x": "-40",
+                  "x": "-65",
                   "y": "0",
                   "z": "8"
                 }
@@ -3441,10 +3498,10 @@
               "time": 5.6,
               "interpolation": "linear",
               "color": -1,
-              "uuid": "1371b457-364e-59ed-b9c9-77d126a6914a",
+              "uuid": "b96873a0-f953-5186-81b7-558a744c1277",
               "data_points": [
                 {
-                  "x": "35",
+                  "x": "-25",
                   "y": "0",
                   "z": "5"
                 }
@@ -3455,10 +3512,10 @@
               "time": 6.0,
               "interpolation": "linear",
               "color": -1,
-              "uuid": "62bbb54e-9572-5944-b0b2-3545f8b99c3d",
+              "uuid": "0e052ab2-ac5b-5e33-9a09-5bcb3a9a0f4d",
               "data_points": [
                 {
-                  "x": "25",
+                  "x": "-5",
                   "y": "0",
                   "z": "8"
                 }

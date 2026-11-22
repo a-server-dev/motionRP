@@ -303,13 +303,34 @@ if(process.env.MOTIONRP_FOOTBALL_ONLY==='1'){
   const reset=()=>{spawns.forEach(s=>s.clear());removed.forEach(s=>s.clear());};
   async function setup(bot,name,id){consoleCommand('motionrp give controller '+name);consoleCommand('motionrp give motion '+id+' 1 '+name);await waitFor(()=>tokens(bot)===1,'football motion item');await bot.equip(bot.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');await menu(bot);await deposit(bot);assert.equal(registered(bot),1);await closeMenu(bot);}
   await setup(a,an,'fire_tornado');await setup(b,bn,'emperor_penguin_1');
+  let collectFire=false;const fireParticles=[],penguinLooks=[],billboards=[];
+  b._client.on('world_particles',p=>{if(collectFire&&p.particle.type==='flame')fireParticles.push(p);});
+  a._client.on('entity_look',p=>penguinLooks.push(p));
+  const billboardKey=a.registry.entitiesByName.item_display.metadataKeys.indexOf('billboard_render_constraints');
+  a._client.on('entity_metadata',p=>{for(const m of p.metadata)if(m.key===billboardKey)billboards.push({id:p.entityId,value:m.value});});
+
   for(const [bot,name,id]of [[a,an,'fire_tornado'],[b,bn,'emperor_penguin_1']]){
    reset();const begin=output.length,origin=bot.entity.position.clone();bot._testLookUp();await sleep(150);bot._testLeftClick();
-   await waitFor(()=>output.slice(begin).includes('Football-'+id+' phase: WINDUP'),'football windup');if(id==='fire_tornado')await waitFor(()=>bot.entity.position.y>origin.y+1,'actual airborne kick');else{await waitFor(()=>bot.entity.position.z>origin.z+.3,'grounded approach to ball');assert.ok(Math.abs(bot.entity.position.y-origin.y)<.05);}
-   await waitFor(()=>output.slice(begin).includes('Football-'+id+' kick contact'),'kick contact');
+   await waitFor(()=>output.slice(begin).includes('Football-'+id+' phase: WINDUP'),'football windup');if(id==='fire_tornado'){await waitFor(()=>bot.entity.position.y>origin.y+7.9,'eight-block airborne kick');collectFire=true;}else{await waitFor(()=>bot.entity.position.z>origin.z+.3,'grounded approach to ball');assert.ok(Math.abs(bot.entity.position.y-origin.y)<.05);}
+   await waitFor(()=>output.slice(begin).includes('Football-'+id+' kick contact'),'kick contact');collectFire=false;
    await waitFor(()=>output.slice(begin).includes('Football-'+id+' cosmetic shot impact'),'football impact');
    await waitFor(cleanup,'solo shot models removed');await waitFor(()=>bot.entity.position.distanceTo(origin)<.03,'solo actor restored');
-   assert.equal(spawns[2].size,0);assert.ok(spawns[0].size>15&&spawns[1].size>15);assert.ok(!(await readPlayerData(name)).BukkitValues?.['motionrp:aerial_return_v1']);
+   assert.equal(spawns[2].size,0);assert.ok(spawns[0].size>5&&spawns[1].size>5);assert.ok(!(await readPlayerData(name)).BukkitValues?.['motionrp:aerial_return_v1']);
+
+   if(id==='fire_tornado'){
+    assert.ok(fireParticles.length>20,'Flame ribbons were sent around the airborne body');
+    assert.ok(fireParticles.every(p=>p.y>origin.y+6.5),'Flames follow the body high above the ground');
+    assert.ok(!/displays (fire_spiral|burning_boot)/.test(output.slice(begin)),'Standing cone models are not used');
+    pass('Fire Tornado rises eight blocks and wraps the tilted body in ordinary flame particles');
+   }else{
+    const birdIds=new Set([...output.slice(begin).matchAll(/Football-emperor_penguin_1 displays red_penguin_\d+ ids=([0-9,]+)/g)].flatMap(m=>m[1].split(',').map(Number)));
+    const looks=penguinLooks.filter(p=>birdIds.has(p.entityId));
+    assert.ok(looks.length>20,'Penguin rotation packets were sent');
+    assert.ok(new Set(looks.map(p=>p.yaw)).size>=5,'Each bird turns to its own calf target');
+    assert.ok(looks.some(p=>Math.abs(p.pitch)>10),'Full pitch is enabled, not yaw-only rotation');
+    assert.ok(billboards.filter(p=>birdIds.has(p.id)).every(p=>p.value===0),'Birds cannot billboard towards the camera');
+    pass('All five penguins receive independent yaw and pitch with fixed billboards');
+   }
    pass(id+' item plays reference choreography, boot contact, ball/effects, impact, viewer filtering and cleanup');
   }
   reset();const begin=output.length,messages=a._testMessages.length;

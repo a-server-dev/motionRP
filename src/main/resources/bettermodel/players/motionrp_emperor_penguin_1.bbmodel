@@ -2727,6 +2727,51 @@
         0
       ],
       "export": true
+    },
+    {
+      "name": "football_torso",
+      "uuid": "9c45254f-1b8f-5e8a-a868-16ba48e3fb2f",
+      "origin": [
+        0,
+        17,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "export": true
+    },
+    {
+      "name": "football_upper",
+      "uuid": "8a16737f-8c7f-53ca-b403-b3fd9fc790fe",
+      "origin": [
+        0,
+        22,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "export": true
+    },
+    {
+      "name": "football_side",
+      "uuid": "f91c75f5-2b2e-52b1-aec2-f54efff06b7f",
+      "origin": [
+        5,
+        17,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "export": true
     }
   ],
   "outliner": [
@@ -2813,6 +2858,18 @@
                           ]
                         }
                       ]
+                    },
+                    {
+                      "uuid": "9c45254f-1b8f-5e8a-a868-16ba48e3fb2f",
+                      "children": []
+                    },
+                    {
+                      "uuid": "8a16737f-8c7f-53ca-b403-b3fd9fc790fe",
+                      "children": []
+                    },
+                    {
+                      "uuid": "f91c75f5-2b2e-52b1-aec2-f54efff06b7f",
+                      "children": []
                     }
                   ]
                 }

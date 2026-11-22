@@ -24,7 +24,7 @@ class FootballAssetsTest {
   assertEquals("flap",p.getAsJsonArray("animations").get(0).getAsJsonObject().get("name").getAsString());
  }
  @Test void flightReturnsToGroundAndPairConsentCannotBeAcceptedAsAnotherMotion(){
-  for(boolean fire:new boolean[]{true,false}){assertEquals(0,FootballTimeline.height(0,fire));assertEquals(0,FootballTimeline.height(FootballTimeline.land(fire),fire),1e-8);assertEquals(fire?3.2:0,FootballTimeline.height(90,fire),1e-8);}
+  for(boolean fire:new boolean[]{true,false}){assertEquals(0,FootballTimeline.height(0,fire));assertEquals(0,FootballTimeline.height(FootballTimeline.land(fire),fire),1e-8);assertEquals(fire?FootballTimeline.FIRE_HEIGHT:0,FootballTimeline.height(90,fire),1e-8);}
   assertEquals(0,FootballTimeline.distance(FootballTimeline.KICK));assertEquals(42,FootballTimeline.distance(FootballTimeline.IMPACT));
   var sessions=new PairSessions();var a=UUID.randomUUID();var b=UUID.randomUUID();assertTrue(sessions.invite(a,b,0,"emperor_penguin_2"));assertTrue(sessions.accept(b,a,1,"fusion").isEmpty());assertTrue(sessions.accept(b,a,1,"broly").isEmpty());assertTrue(sessions.accept(b,a,1,"emperor_penguin_2").isPresent());
  }
@@ -34,7 +34,7 @@ class FootballAssetsTest {
   String root=no1.getAsJsonArray("groups").asList().stream().map(JsonElement::getAsJsonObject).filter(g->g.get("name").getAsString().equals("player_root")).findFirst().orElseThrow().get("uuid").getAsString();
   for(var key:no1.getAsJsonArray("animations").get(0).getAsJsonObject().getAsJsonObject("animators").getAsJsonObject(root).getAsJsonArray("keyframes"))assertEquals("position",key.getAsJsonObject().get("channel").getAsString(),"No.1 keeps a planted support leg, not a full-body flip");
   var raised=FootballFootPath.at(false,75);assertTrue(raised.boot().forward()<-.1);assertTrue(raised.boot().height()>1.2);assertTrue(FootballFootPath.at(false,98).boot().forward()>.5);
-  var fire=FootballFootPath.at(true,112);assertTrue(fire.boot().height()>1.3);assertTrue(fire.boot().forward()>.2);
+  var fire=FootballFootPath.at(true,112);assertTrue(fire.boot().height()>.8);assertTrue(fire.boot().forward()>.2);
   assertTrue(PairMotion.fromEffect("pair_emperor_penguin_2").isEmpty());assertNotNull(load("players/motionrp_emperor_penguin_2_left"));
   var penguin=load("models/motionrp_emperor_penguin_red");var source=penguin.getAsJsonArray("textures").get(0).getAsJsonObject().get("source").getAsString();var png=javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(java.util.Base64.getDecoder().decode(source.substring(source.indexOf(',')+1))));boolean red=false;for(int y=0;y<png.getHeight();y++)for(int x=0;x<png.getWidth();x++){int rgb=png.getRGB(x,y);if((rgb>>16&255)>150&&(rgb>>8&255)<50&&(rgb&255)<70)red=true;}assertTrue(red,"Reference penguins must be red");
  }
