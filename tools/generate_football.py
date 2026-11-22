@@ -24,18 +24,20 @@ def ball():
   pts=[verts[k]for k in keys];c=[sum(p[i]for p in pts)/len(pts)for i in range(3)]
   normal=[x/math.sqrt(sum(q*q for q in c))for x in c];a=[pts[0][i]-c[i]for i in range(3)];length=math.sqrt(sum(x*x for x in a));a=[x/length for x in a];b=[normal[1]*a[2]-normal[2]*a[1],normal[2]*a[0]-normal[0]*a[2],normal[0]*a[1]-normal[1]*a[0]]
   pts.sort(key=lambda p:math.atan2(sum((p[i]-c[i])*b[i]for i in range(3)),sum((p[i]-c[i])*a[i]for i in range(3))))
-  norm=math.sqrt(sum(q*q for q in pts[0]));points={str(i):[(c[k]+(p[k]-c[k])*.975)*8/norm for k in range(3)]for i,p in enumerate(pts)}
+  norm=math.sqrt(sum(q*q for q in pts[0]));points={str(i):[(c[k]+(p[k]-c[k])*.975)*3.8/norm for k in range(3)]for i,p in enumerate(pts)}
   ids.append(add_mesh(m,'stitched_panel_'+str(n),points,[([str(0),str(i),str(i+1)],color)for i in range(1,len(pts)-1)]))
  m.group('football',ids);m.save()
 
-def penguin():
- m=mesh_model('motionrp_emperor_penguin',COLORS);ids=[]
+def penguin(red=False):
+ colors=list(COLORS)
+ if red:colors[1]=(222,19,32,255);colors[4]=(198,9,25,255);colors[6]=(20,12,18,255)
+ m=mesh_model('motionrp_emperor_penguin_red'if red else'motionrp_emperor_penguin',colors);ids=[]
  ids.append(oval(m,'navy_body',(0,0,0),(4.1,4.8,7.8),4,rows=7,sides=12))
  ids.append(oval(m,'white_belly',(0,-2.2,1),(3.5,2.8,6.3),0,rows=6,sides=10))
  ids.append(oval(m,'navy_head',(0,1.7,6),(3.5,3.5,3.5),1,rows=7,sides=12))
  for sign in [-1,1]:
   ids.append(oval(m,'face_patch_'+str(sign),(sign*2,2.2,7.7),(1.5,1.9,1.6),0,rows=5,sides=8))
-  ids.append(oval(m,'eye_'+str(sign),(sign*2.25,2.6,8.95),(.5,.75,.35),1,rows=4,sides=6))
+  ids.append(oval(m,'eye_'+str(sign),(sign*2.25,2.6,8.95),(.5,.75,.35),6 if red else 1,rows=4,sides=6))
   ids.append(oval(m,'tucked_foot_'+str(sign),(sign*2,-2.7,-6),(1.6,.8,2.8),2,rows=4,sides=6))
  ids.append(add_mesh(m,'pointed_beak',{'a':[-1.9,.6,8],'b':[1.9,.6,8],'c':[0,2.1,8],'d':[0,.8,12]},[(['a','b','d'],2),(['b','c','d'],3),(['c','a','d'],2),(['a','c','b'],2)]))
  m.group('swimming_penguin',ids)
@@ -86,7 +88,60 @@ def actors(rig):
    track('prfa_right_forearm'if right else'plfa_left_forearm',[(0,(15,0,0)),(56,(70,0,0)),(90,(35,0,0)),(110,(55,0,0)),(145,(0,0,0)),(164,(0,0,0))])
   track('h_ph_head',[(0,(15,0,0)),(45,(-15,0,0)),(90,(-20,0,0)),(100,(10,0,0)),(145,(0,0,0)),(164,(0,0,0))])
   save('players/motionrp_'+name+'.bbmodel',m)
+def reference_actors(rig):
+ from generate_summons import ident
+ from generate_rasengan import hand_path
+ for fire in [True,False]:
+  name='fire_tornado'if fire else'emperor_penguin_1';end=178 if fire else 174;kick=112 if fire else 98
+  m=player(rig,name,end/20,{})
+  def track(b,keys,channel='rotation'):
+   g=next(g for g in m['groups']if g['name']==b);a=m['animations'][0]['animators'];entry=a.setdefault(g['uuid'],{'name':g['name'],'type':'bone','keyframes':[]})
+   entry['keyframes']+=animator(g,[(t/20,v)for t,v in keys],channel)['keyframes']
+  track('player_root',[(0,(0,0,0)),(end,(0,0,0))],'position')
+  if fire:
+   track('player_root',[(0,(0,0,0)),(44,(0,0,0)),(62,(45,90,0)),(76,(80,180,0)),(88,(95,270,0)),(106,(105,360,0)),(112,(95,360,0)),(124,(165,360,0)),(134,(270,360,0)),(148,(350,360,0)),(156,(360,360,0)),(end,(360,360,0))])
+   poses={
+    'pc_chest':[(0,(0,0,0)),(16,(-10,0,-8)),(30,(0,0,0)),(60,(-18,0,0)),(96,(-18,12,-12)),(112,(12,-15,8)),(134,(0,0,0)),(end,(0,0,0))],
+    'pw_waist':[(0,(0,0,0)),(60,(-8,0,0)),(100,(-10,15,0)),(112,(12,-12,0)),(156,(0,0,0)),(end,(0,0,0))],
+    'prl_right_leg':[(0,(0,0,0)),(10,(-20,0,0)),(16,(65,0,5)),(30,(0,0,0)),(52,(25,0,15)),(76,(-65,0,20)),(102,(-95,0,12)),(108,(-40,0,8)),(112,(35,0,5)),(120,(25,0,8)),(134,(15,0,15)),(156,(0,0,0)),(end,(0,0,0))],
+    'prfl_right_foreleg':[(0,(0,0,0)),(10,(-45,0,0)),(16,(0,0,0)),(30,(0,0,0)),(70,(-85,0,0)),(102,(-90,0,0)),(108,(-40,0,0)),(112,(0,0,0)),(126,(-25,0,0)),(146,(-25,0,0)),(156,(0,0,0)),(end,(0,0,0))],
+    'pll_left_leg':[(0,(0,0,0)),(30,(-12,0,-5)),(52,(35,0,-15)),(90,(40,0,-20)),(112,(-35,0,-18)),(128,(45,0,-12)),(156,(0,0,0)),(end,(0,0,0))],
+    'plfl_left_foreleg':[(0,(0,0,0)),(46,(-35,0,0)),(70,(-95,0,0)),(110,(-75,0,0)),(132,(-40,0,0)),(156,(0,0,0)),(end,(0,0,0))]
+   }
+  else:
+   poses={
+    'pc_chest':[(0,(0,0,0)),(22,(-28,0,0)),(44,(-48,0,0)),(76,(-48,0,0)),(90,(-45,12,0)),(98,(-28,-15,0)),(114,(-32,0,0)),(132,(-48,0,0)),(148,(-35,0,0)),(end,(0,0,0))],
+    'pw_waist':[(0,(0,0,0)),(44,(-25,0,0)),(90,(-25,0,0)),(98,(-8,0,0)),(132,(-16,0,0)),(end,(0,0,0))],
+    'prl_right_leg':[(0,(0,0,0)),(20,(-55,0,8)),(44,(-160,0,8)),(76,(-160,0,8)),(90,(-165,0,8)),(94,(-65,0,5)),(98,(105,0,5)),(108,(85,0,10)),(124,(35,0,12)),(132,(38,0,12)),(138,(25,0,12)),(146,(32,0,12)),(158,(15,0,8)),(end,(0,0,0))],
+    'prfl_right_foreleg':[(0,(0,0,0)),(44,(-8,0,0)),(90,(-8,0,0)),(98,(0,0,0)),(122,(-35,0,0)),(132,(-48,0,0)),(138,(-28,0,0)),(146,(-42,0,0)),(end,(0,0,0))],
+    'pll_left_leg':[(0,(0,0,0)),(44,(8,0,-8)),(90,(8,0,-8)),(98,(-12,0,-10)),(124,(12,0,-10)),(end,(0,0,0))],
+    'plfl_left_foreleg':[(0,(0,0,0)),(44,(-12,0,0)),(90,(-12,0,0)),(98,(-24,0,0)),(124,(-18,0,0)),(end,(0,0,0))]
+   }
+  for bone,keys in poses.items():track(bone,keys)
+  for right in [True,False]:
+   sign=1 if right else -1
+   if fire:arm=[(0,(0,0,sign*8)),(20,(10,0,sign*25)),(62,(-35,0,sign*65)),(100,(-55 if right else 120,0,sign*65)),(112,(35 if right else 105,0,sign*40)),(134,(0,0,sign*55)),(156,(0,0,0)),(end,(0,0,0))]
+   else:arm=[(0,(0,0,sign*8)),(44,(-15,0,sign*75)),(90,(-15,0,sign*75)),(98,(25,0,sign*45)),(120,(10,0,sign*35)),(136,(65,-sign*25,sign*5)),(152,(45,0,sign*10)),(end,(0,0,0))]
+   track('pra_right_arm'if right else'pla_left_arm',arm)
+   track('prfa_right_forearm'if right else'plfa_left_forearm',[(0,(0,0,0)),(44,(20,0,0)),(kick,(30,0,0)),(136,(65 if not fire else 20,0,0)),(end,(0,0,0))])
+  track('h_ph_head',[(0,(12,0,0)),(44,(25,0,0)),(kick-8,(35,0,0)),(kick,(12,0,0)),(136,(30 if not fire else 0,0,0)),(end,(0,0,0))])
+  # Real boot and calf attachments, sampled from these exact animated joints.
+  parent=next(g for g in m['groups']if g['name']=='prfl_right_foreleg')
+  def attach(nodes,uid):
+   for node in nodes:
+    if isinstance(node,dict):
+     if node['uuid']==parent['uuid']:node['children'].append({'uuid':uid,'children':[]});return True
+     if attach(node['children'],uid):return True
+   return False
+  paths=[]
+  for label,origin in [('football_boot',(1.875,.65,-1.8)),('football_calf',(1.875,4.1,0))]:
+   g={'name':label,'uuid':ident(name+'/'+label),'origin':list(origin),'rotation':[0,0,0],'export':True};m['groups'].append(g);assert attach(m['outliner'],g['uuid'])
+   paths.append(hand_path(m,end,label).strip().splitlines())
+  save('players/motionrp_'+name+'.bbmodel',m)
+  from generate_summons import ROOT
+  (ROOT/(name+'-boot.csv')).write_text('\n'.join(a+','+b for a,b in zip(*paths))+'\n')
+
 if __name__=='__main__':
  raw=Path(sys.argv[1]).read_bytes()
  if hashlib.sha256(raw).hexdigest()!=RIG_SHA:raise SystemExit('Expected pinned Steve rig')
- actors(json.loads(raw));ball();penguin();tornado()
+ actors(json.loads(raw));reference_actors(json.loads(raw));ball();penguin();penguin(True);tornado()

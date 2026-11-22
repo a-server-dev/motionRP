@@ -17,18 +17,18 @@ final class FusionCoordinator implements AutoCloseable {
  private MotionCatalog.Definition definition(boolean left,String kind){if(kind.equals("emperor_penguin_2")){String id="emperor_penguin_2_"+(left?"left":"right");return new MotionCatalog.Definition(id,"皇帝ペンギン2号","motionrp_"+id,id,dev.aserver.motionrp.core.FootballTimeline.END+10,null,id);}boolean battle=kind.equals("finalbattle"),broly=kind.equals("broly");String id=broly?(left?"broly_attacker":"broly_victim"):battle?(left?"final_battle_naruto":"final_battle_sasuke"):(left?"fusion_left":"fusion_right");return new MotionCatalog.Definition(id,broly?"岩盤":battle?"ナルト VS サスケ 最終決戦":"フュージョン", "motionrp_"+id,id,(broly?dev.aserver.motionrp.core.BrolyTimeline.END:battle?dev.aserver.motionrp.core.FinalBattleTimeline.END:END)+10,null,id);}
  boolean command(Player player,String[] args){return command(player,args,"fusion");}
  boolean finalBattle(Player player,String[] args){return command(player,args,"finalbattle");}
- boolean penguin(Player player,String[] args){return command(player,args,"emperor_penguin_2");}
+ boolean penguin(Player player,String[] args){plugin.tell(player,"皇帝ペンギン2号は三人用対応まで休止中です。");return true;}
  boolean broly(Player player,String[] args){return command(player,args,"broly");}
  String unavailable(String kind){for(boolean left:new boolean[]{true,false}){String error=plugin.playback().unavailable(definition(left,kind));if(error!=null)return error;}return null;}
  boolean inviteNearest(Player player,String kind){
-  if(!Set.of("fusion","broly","emperor_penguin_2").contains(kind)){plugin.tell(player,"この二人用モーションは現在利用できません。");return true;}
+  if(!Set.of("fusion","broly").contains(kind)){plugin.tell(player,"この二人用モーションは現在利用できません。");return true;}
   var nearest=Bukkit.getOnlinePlayers().stream().filter(p->p!=player&&p.isOnline()&&!p.isDead()&&p.getWorld()==player.getWorld()&&player.canSee(p)&&p.canSee(player)&&p.getLocation().distanceSquared(player.getLocation())<=64).min(Comparator.comparingDouble((Player p)->p.getLocation().distanceSquared(player.getLocation())).thenComparing(p->p.getUniqueId().toString()));
   if(nearest.isEmpty()){plugin.tell(player,"8ブロック以内に招待できるプレイヤーがいません。");return true;}return command(player,new String[]{kind,nearest.get().getName()},kind);
  }
  boolean acceptCurrent(Player player,String invitationId){
   var incoming=sessions.incoming(player.getUniqueId(),System.currentTimeMillis());
   if(incoming.isEmpty()||(invitationId!=null&&!incoming.get().id().toString().equalsIgnoreCase(invitationId))){plugin.tell(player,"その招待は期限切れ、または既に無効です。");return true;}
-  var invite=incoming.get();if(!Set.of("fusion","broly","emperor_penguin_2").contains(invite.kind())){plugin.tell(player,"この二人用モーションは現在利用できません。");return true;}
+  var invite=incoming.get();if(!Set.of("fusion","broly").contains(invite.kind())){plugin.tell(player,"この二人用モーションは現在利用できません。");return true;}
   var other=Bukkit.getPlayer(invite.from());if(other==null){sessions.cancel(player.getUniqueId());plugin.tell(player,"招待者がオフラインです。");return true;}
   return command(player,new String[]{invite.kind(),"accept",other.getName()},invite.kind());
  }
@@ -37,6 +37,7 @@ final class FusionCoordinator implements AutoCloseable {
   return runs.containsKey(player.getUniqueId()); // A repeated right-click must not open a GUI and cancel a running pair.
  }
  private boolean command(Player player,String[] args,String command){
+  if(command.equals("emperor_penguin_2")){plugin.tell(player,"皇帝ペンギン2号は三人用対応まで休止中です。");return true;}
   boolean battle=command.equals("finalbattle"),broly=command.equals("broly");String title=command.equals("emperor_penguin_2")?"皇帝ペンギン2号":broly?"岩盤":battle?"最終決戦":"フュージョン";
   if(!player.hasPermission("motionrp.use")){plugin.tell(player,"権限がありません。");return true;}
   if(args.length==1&&!battle)return inviteNearest(player,command);

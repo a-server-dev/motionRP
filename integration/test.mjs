@@ -284,8 +284,12 @@ if(process.env.MOTIONRP_FOOTBALL_ONLY==='1'){
  try{
   fs.copyFileSync(path.join(project,`build/libs/motionRP-${version}.jar`),path.join(run,'plugins/MotionRP.jar'));
   log=fs.createWriteStream(path.join(project,'build/football-smoke.log'));await startServer();
+  if(output.includes('Updated bundled model'))await waitFor(()=>output.includes('Bundled Rasengan models loaded'),'football upgrade reload finishes',90000);
   const statusStart=output.length, timer=setInterval(()=>consoleCommand('motionrp status'),500);
-  try{await waitFor(()=>['fire_tornado','emperor_penguin_1','emperor_penguin_2'].every(id=>output.slice(statusStart).includes(id+': 利用可能')),'all football assets and pair roles loaded',90000);}finally{clearInterval(timer);}
+  try{await waitFor(()=>['fire_tornado','emperor_penguin_1'].every(id=>output.slice(statusStart).includes(id+': 利用可能')),'all football assets and pair roles loaded',90000);}finally{clearInterval(timer);}
+  assert.ok(!output.slice(statusStart).includes('emperor_penguin_2: 利用可能'),'Legacy No.2 must be absent from the executable catalog');
+  for(const file of ['players/motionrp_fire_tornado.bbmodel','players/motionrp_emperor_penguin_1.bbmodel','models/motionrp_football.bbmodel','models/motionrp_emperor_penguin_red.bbmodel'])assert.deepEqual(fs.readFileSync(path.join(run,'plugins/BetterModel',file)),fs.readFileSync(path.join(project,'src/main/resources/bettermodel',file)));
+  pass('Football assets migrate to the reference revision while saved No.2 configuration stays unavailable');
   const suffix=String(Date.now()).slice(-5),an='KickA'+suffix,bn='KickB'+suffix,cn='KickC'+suffix;
   const a=await connect(an),b=await connect(bn),c=await connect(cn);c.chat('/motionrp view off');
   consoleCommand('fill -4 -60 -4 9 -51 6 air');consoleCommand('fill -4 -61 -4 9 -61 6 grass_block');
@@ -301,27 +305,22 @@ if(process.env.MOTIONRP_FOOTBALL_ONLY==='1'){
   await setup(a,an,'fire_tornado');await setup(b,bn,'emperor_penguin_1');
   for(const [bot,name,id]of [[a,an,'fire_tornado'],[b,bn,'emperor_penguin_1']]){
    reset();const begin=output.length,origin=bot.entity.position.clone();bot._testLookUp();await sleep(150);bot._testLeftClick();
-   await waitFor(()=>output.slice(begin).includes('Football-'+id+' phase: WINDUP'),'football windup');await waitFor(()=>bot.entity.position.y>origin.y+1,'actual airborne kick');
+   await waitFor(()=>output.slice(begin).includes('Football-'+id+' phase: WINDUP'),'football windup');if(id==='fire_tornado')await waitFor(()=>bot.entity.position.y>origin.y+1,'actual airborne kick');else{await waitFor(()=>bot.entity.position.z>origin.z+.3,'grounded approach to ball');assert.ok(Math.abs(bot.entity.position.y-origin.y)<.05);}
    await waitFor(()=>output.slice(begin).includes('Football-'+id+' kick contact'),'kick contact');
    await waitFor(()=>output.slice(begin).includes('Football-'+id+' cosmetic shot impact'),'football impact');
    await waitFor(cleanup,'solo shot models removed');await waitFor(()=>bot.entity.position.distanceTo(origin)<.03,'solo actor restored');
    assert.equal(spawns[2].size,0);assert.ok(spawns[0].size>15&&spawns[1].size>15);assert.ok(!(await readPlayerData(name)).BukkitValues?.['motionrp:aerial_return_v1']);
-   pass(id+' item plays an airborne kick, ball/effects, impact, viewer filtering and complete cleanup');
+   pass(id+' item plays reference choreography, boot contact, ball/effects, impact, viewer filtering and cleanup');
   }
-  reset();let begin=output.length;
-  a.chat('/motionrp emperor_penguin_2');await waitFor(()=>b._testMessages.some(m=>m.includes('(accept)')),'nearest-player penguin invitation');await sleep(250);
-  assert.ok(!output.slice(begin).includes('Football-emperor_penguin_2_'));pass('No.2 does not move or start either actor before consent');
-  b.activateItem();await waitFor(()=>output.slice(begin).includes('Football-emperor_penguin_2_left phase: WINDUP'),'duet begins through controller consent');
-  await waitFor(()=>a.entity.position.y>-59&&b.entity.position.y>-59,'both players jump');
-  await waitFor(()=>output.slice(begin).includes('Football-emperor_penguin_2_left cosmetic shot impact'),'joint shot impact');
-  await waitFor(cleanup,'duet models removed');await waitFor(()=>Math.abs(a.entity.position.x-.5)<.03&&Math.abs(b.entity.position.x-4.5)<.03,'both original positions restored');
-  const sharedBalls=[...output.slice(begin).matchAll(/Football-emperor_penguin_2_\w+ displays football ids=/g)];assert.equal(sharedBalls.length,1);assert.equal(spawns[2].size,0);
-  pass('No.2 uses two consenting airborne actors and one shared ball, then restores both');
-  reset();begin=output.length;a.chat('/motionrp emperor_penguin_2 '+bn);await sleep(400);b.chat('/motionrp accept');
-  await waitFor(()=>output.slice(begin).includes('Football-emperor_penguin_2_left phase: WINDUP'),'second duet starts');
-  a.chat('/motionrp emperor_penguin_2 cancel');await waitFor(cleanup,'cancel removes both actors and effects');
-  for(const name of [an,bn])assert.ok(!(await readPlayerData(name)).BukkitValues?.['motionrp:aerial_return_v1']);
-  assert.ok(!/Football-.*scene failed|Motion playback failed/.test(output));pass('Cancelling either duet participant removes the whole scene and both return journals');
+  reset();const begin=output.length,messages=a._testMessages.length;
+  a.chat('/motionrp emperor_penguin_2 '+bn);
+  await waitFor(()=>a._testMessages.slice(messages).some(m=>m.includes('三人用対応まで休止')),'No.2 disabled notice');
+  b.chat('/motionrp accept');await sleep(400);
+  assert.ok(!output.slice(begin).includes('Football-emperor_penguin_2_'));
+  assert.equal(spawns[0].size,0);assert.equal(spawns[1].size,0);
+  consoleCommand('motionrp give motion emperor_penguin_2 1 '+an);await sleep(300);assert.equal(tokens(a),0);
+  pass('Retired two-player No.2 cannot invite, accept, play, or distribute new motion items');
+  assert.ok(!/Football-.*scene failed|Motion playback failed/.test(output));
  }catch(e){code=1;console.error(e.stack);}
  finally{for(const bot of bots)try{bot.quit();}catch{}try{await stopServer();}catch{}log?.end();fs.writeFileSync(path.join(project,'build/football-smoke-result.json'),JSON.stringify({passed:code===0,version,checks},null,2));}
  process.exit(code);
@@ -368,14 +367,14 @@ if(process.env.MOTIONRP_ALL_SET_ONLY==='1'){
   const suffix=String(Date.now()).slice(-6),an='AllA'+suffix,bn='AllB'+suffix;let a=await connect(an),b=await connect(bn);
   for(const [name,x]of [[an,.5],[bn,4.5]])consoleCommand(`tp ${name} ${x} -60.0 0.5 0 0`);await sleep(400);
   consoleCommand('motionrp give controller '+an);consoleCommand('motionrp give motion roll 1 '+an);await waitFor(()=>tokens(a)===1,'normal set materials');await a.equip(a.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');await menu(a);await deposit(a);await closeMenu(a);const normal=(await readSaved(an)).loadout;
-  consoleCommand('motionrp give all '+an);await waitFor(()=>a.inventory.items().filter(i=>i.name==='carrot_on_a_stick').length===2,'complete controller distributed');const normalSlot=36+a.quickBarSlot,full=a.inventory.items().find(i=>i.name==='carrot_on_a_stick'&&i.slot!==normalSlot);assert.ok(full);await a.equip(full,'hand');await menu(a);assert.equal(registered(a),26);await closeMenu(a);assert.deepEqual((await readSaved(an)).loadout,normal);pass('The all command gives a separate 26-motion controller including paired scenes, leaving existing registration unchanged');
+  consoleCommand('motionrp give all '+an);await waitFor(()=>a.inventory.items().filter(i=>i.name==='carrot_on_a_stick').length===2,'complete controller distributed');const normalSlot=36+a.quickBarSlot,full=a.inventory.items().find(i=>i.name==='carrot_on_a_stick'&&i.slot!==normalSlot);assert.ok(full);await a.equip(full,'hand');await menu(a);assert.equal(registered(a),25);await closeMenu(a);assert.deepEqual((await readSaved(an)).loadout,normal);pass('The all command gives a separate 25-motion controller including paired scenes, leaving existing registration unchanged');
   const spawned=new Set(),removed=new Set();a._client.on('spawn_entity',p=>{if(p.type===a.registry.entitiesByName.item_display.id)spawned.add(p.entityId);});a._client.on('entity_destroy',p=>p.entityIds.forEach(id=>removed.add(id)));a._testLookUp();await sleep(200);a._testLeftClick();await waitFor(()=>spawned.size>0,'complete controller playback');await sleep(300);a._testLeftClick();await waitFor(()=>[...spawned].every(id=>removed.has(id)),'complete controller playback cancellation');pass('A preloaded motion plays directly from the full controller and cancels normally');
-  await menu(a);const before=tokens(a);await click(a,0);assert.equal(registered(a),25);assert.equal(tokens(a),before+1);await closeMenu(a);assert.deepEqual((await readSaved(an)).loadout,normal);await menu(a);await deposit(a);assert.equal(registered(a),26);await closeMenu(a);pass('Withdrawing and registering tokens changes only the held complete controller and conserves item counts');
+  await menu(a);const before=tokens(a);await click(a,0);assert.equal(registered(a),24);assert.equal(tokens(a),before+1);await closeMenu(a);assert.deepEqual((await readSaved(an)).loadout,normal);await menu(a);await deposit(a);assert.equal(registered(a),25);await closeMenu(a);pass('Withdrawing and registering tokens changes only the held complete controller and conserves item counts');
   // Bind the GUI to the controller selected when it opens, even if a client changes its hotbar underneath it.
   await menu(a);a.setQuickBarSlot((a.quickBarSlot+1)%9);await sleep(300);if(a.currentWindow){await click(a,0);await waitFor(()=>a.currentWindow===null,'mismatched set closes GUI');}assert.equal(tokens(a),0);assert.deepEqual((await readSaved(an)).loadout,normal);pass('Switching hotbar slots under the GUI cannot mutate a different set or release its tokens');
-  const allItem=a.inventory.items().find(i=>i.name==='carrot_on_a_stick'&&JSON.stringify(i.components??i.nbt).includes('controller_set_id'));assert.ok(allItem,'Embedded controller metadata');await a.equip(allItem,'hand');await menu(a);assert.equal(registered(a),26);await closeMenu(a);a._testLookUp();a.setControlState('sneak',true);await sleep(250);a._testLeftClick();await sleep(300);a.setControlState('sneak',false);assert.deepEqual((await readSaved(an)).loadout,normal);pass('Cycling the full controller selection does not change the normal controller selection');
+  const allItem=a.inventory.items().find(i=>i.name==='carrot_on_a_stick'&&JSON.stringify(i.components??i.nbt).includes('controller_set_id'));assert.ok(allItem,'Embedded controller metadata');await a.equip(allItem,'hand');await menu(a);assert.equal(registered(a),25);await closeMenu(a);a._testLookUp();a.setControlState('sneak',true);await sleep(250);a._testLeftClick();await sleep(300);a.setControlState('sneak',false);assert.deepEqual((await readSaved(an)).loadout,normal);pass('Cycling the full controller selection does not change the normal controller selection');
   // Copy to an empty hand then clear the source: exercise vanilla ItemStack/PDC portability without altering the recipient registration.
-  consoleCommand(`item replace entity ${bn} weapon.mainhand from entity ${an} weapon.mainhand`);consoleCommand(`item replace entity ${an} weapon.mainhand with air`);await waitFor(()=>b.inventory.items().some(i=>i.name==='carrot_on_a_stick'),'controller transferred');await menu(b);assert.equal(registered(b),26);await click(b,0);assert.equal(registered(b),25);await closeMenu(b);await disconnect(b);b=await connect(bn);await menu(b);assert.equal(registered(b),25);await closeMenu(b);pass('The item carries its own registration to another player and retains edits across reconnect');
+  consoleCommand(`item replace entity ${bn} weapon.mainhand from entity ${an} weapon.mainhand`);consoleCommand(`item replace entity ${an} weapon.mainhand with air`);await waitFor(()=>b.inventory.items().some(i=>i.name==='carrot_on_a_stick'),'controller transferred');await menu(b);assert.equal(registered(b),25);await click(b,0);assert.equal(registered(b),24);await closeMenu(b);await disconnect(b);b=await connect(bn);await menu(b);assert.equal(registered(b),24);await closeMenu(b);pass('The item carries its own registration to another player and retains edits across reconnect');
   const denied=b._testMessages.length;b.chat('/motionrp give all');await waitFor(()=>b._testMessages.slice(denied).some(m=>m.includes('管理者権限')),'admin permission required');pass('Non-admins cannot distribute complete sets');
   for(let slot=1;slot<9;slot++)consoleCommand(`item replace entity ${bn} hotbar.${slot} with stone 64`);for(let slot=0;slot<27;slot++)consoleCommand(`item replace entity ${bn} inventory.${slot} with stone 64`);await sleep(350);const begin=output.length;consoleCommand('motionrp give all '+bn);await waitFor(()=>output.slice(begin).includes('所持品に空き'),'full inventory rejected');assert.equal(b.inventory.items().filter(i=>i.name==='carrot_on_a_stick').length,1);pass('A full inventory rejects distribution without replacing the existing controller');
   await a.equip(a.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');await menu(a);assert.equal(registered(a),1);await closeMenu(a);pass('The original normal controller still opens its unchanged one-motion registration');

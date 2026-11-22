@@ -19,6 +19,7 @@ public final class MotionPlayback {
     public MotionPlayback(MotionPlugin plugin) { this.plugin = plugin; }
 
     public String unavailable(MotionCatalog.Definition definition) {
+        if(definition.effect().contains("emperor_penguin_2")||definition.model().startsWith("motionrp_emperor_penguin_2"))return "皇帝ペンギン2号は三人用対応まで休止中です。";
         var pair=dev.aserver.motionrp.core.PairMotion.fromEffect(definition.effect());if(pair.isPresent())return plugin.fusion().unavailable(pair.get().command());
         var model = BetterModel.limbOrNull(definition.model());
         if (model == null) return "プレイヤーモデルが未読込: " + definition.model();
@@ -95,7 +96,7 @@ public final class MotionPlayback {
             EntityTracker owned = tracker;
             UUID uuid = player.getUniqueId();
             MotionScene scene = switch (definition.effect()) {
-                case "fire_tornado","emperor_penguin_1","emperor_penguin_2_left","emperor_penguin_2_right" -> new FootballScene(plugin,player,owned,definition.effect());
+                case "fire_tornado","emperor_penguin_1" -> new FootballScene(plugin,player,owned,definition.effect());
                 case "infinity_castle" -> new InfinityCastleScene(plugin,player,owned);
                 case "road_roller","kokuryuha","kokujo_tengen_myoo","chibaku_tensei" -> new EpicScene(plugin,player,owned,definition.effect());
                 case "final_battle_naruto","final_battle_sasuke" -> new FinalBattleScene(plugin,player,owned,definition.effect().equals("final_battle_naruto"));

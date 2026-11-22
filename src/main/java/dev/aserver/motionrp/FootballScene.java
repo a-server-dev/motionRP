@@ -1,6 +1,7 @@
 package dev.aserver.motionrp;
 
 import dev.aserver.motionrp.core.FootballTimeline;
+import dev.aserver.motionrp.core.FootballFootPath;
 import kr.toxicity.model.api.bukkit.platform.BukkitAdapter;
 import kr.toxicity.model.api.tracker.*;
 import org.bukkit.*;
@@ -9,92 +10,108 @@ import org.bukkit.util.Vector;
 import java.util.*;
 import static dev.aserver.motionrp.core.FootballTimeline.*;
 
-/** Cosmetic football shots: a single shared ball for No.2; no damage or block edits. */
+/** Cosmetic reference-based solo shots. No damage, block edits, or retired No.2 playback. */
 final class FootballScene extends SummonScene {
  private final EntityTracker body;
- private final boolean fire,pair,lead;
+ private final boolean fire;
  private final AerialAnchor flight;
- private Location center,ballPosition,previousBall;
- private DummyTracker ball,spiral;
+ private Location ballPosition,previousBall,shotStart;
+ private DummyTracker ball,spiral,bootFlame;
  private final List<DummyTracker> penguins=new ArrayList<>();
- private boolean impacted;private double shotHeight;
+ private final List<Location> birdPositions=new ArrayList<>();
+ private boolean impacted;
  FootballScene(MotionPlugin plugin,Player owner,EntityTracker body,String effect){
-  super(plugin,owner,"Football-"+effect,END,56,true);this.body=body;
-  fire=effect.equals("fire_tornado");pair=effect.startsWith("emperor_penguin_2_");lead=!effect.endsWith("_right");
-  flight=pair?null:new AerialAnchor(plugin,owner);
+  super(plugin,owner,"Football-"+effect,end(effect.equals("fire_tornado")),56,true);this.body=body;
+  fire=effect.equals("fire_tornado");flight=new AerialAnchor(plugin,owner);
   body.rotation(()->new ModelRotation(0,origin.getYaw()));
  }
- @Override String phase(){return FootballTimeline.phase(tick);}
- private Location point(double right,double forward,double up){
-  double yaw=Math.toRadians(center.getYaw());return center.clone().add(-Math.cos(yaw)*right-Math.sin(yaw)*forward,up,-Math.sin(yaw)*right+Math.cos(yaw)*forward);
+ @Override String phase(){return FootballTimeline.phase(tick,fire);}
+ private Location attach(FootballFootPath.Point p,int t){return at(p.right(),p.forward()+approach(t,fire),p.height()+height(t,fire));}
+ private Location boot(int t){return attach(FootballFootPath.at(fire,t).boot(),t);}
+ private Location calf(int t){return attach(FootballFootPath.at(fire,t).calf(),t);}
+ private Location contact(){return boot(kick(fire)).add(at(0,.25,.03).toVector().subtract(origin.toVector()));}
+ private Location blend(Location a,Location b,double p){return a.clone().add(b.toVector().subtract(a.toVector()).multiply(p));}
+ private void orient(DummyTracker tracker,Vector direction){
+  double horizontal=Math.hypot(direction.getX(),direction.getZ());float yaw=(float)Math.toDegrees(Math.atan2(-direction.getX(),direction.getZ())),pitch=(float)-Math.toDegrees(Math.atan2(direction.getY(),horizontal));
+  tracker.rotation(()->new ModelRotation(pitch,yaw));
  }
  @Override void update(){
   body.update(TrackerUpdateAction.togglePart(false),b->Set.of("pri_right_item","pli_left_item").contains(b.name().rawName()));
-  if(center==null){center=pair?plugin.fusion().center(owner.getUniqueId()):origin.clone();if(center==null){plugin.playback().stop(owner.getUniqueId());return;}}
-  // Both roles use the coordinator's return journals. Solo jumps own a separate journal.
-  double height=height(tick,fire);Location seat=origin.clone().add(0,height,0);
-  if(tick>=JUMP&&tick<=LAND){
-   Location from=owner.getLocation();Vector delta=seat.toVector().subtract(from.toVector());
-   int samples=Math.max(1,(int)Math.ceil(delta.length()/.18));
+  int release=kick(fire),hit=FootballTimeline.impact(fire);
+  if((fire&&tick>=jump(true)&&tick<=land(true))||(!fire&&tick>=70)){
+   Location seat=at(0,approach(tick,fire),height(tick,fire)),from=owner.getLocation();Vector delta=seat.toVector().subtract(from.toVector());int samples=Math.max(1,(int)Math.ceil(delta.length()/.18));
    for(int i=1;i<=samples;i++){
     Vector shift=delta.clone().multiply(i/(double)samples);Location check=from.clone().add(shift);
     if(!check.getWorld().isChunkLoaded(check.getBlockX()>>4,check.getBlockZ()>>4)||owner.wouldCollideUsing(owner.getBoundingBox().shift(shift))){plugin.playback().stop(owner.getUniqueId());return;}
    }
-   if(!(pair?plugin.fusion().movePenguin(owner.getUniqueId(),seat):flight.moveTo(seat,origin))){plugin.playback().stop(owner.getUniqueId());return;}
+   if(!flight.moveTo(seat,origin)){plugin.playback().stop(owner.getUniqueId());return;}
   }
-  if(!lead)return;
-  if(tick==0){ballPosition=point(0,1,.5);ball=model("motionrp_football",ballPosition,1,"football");ball.update(TrackerUpdateAction.moveDuration(1));ball.rotation(()->new ModelRotation(tick*17,center.getYaw()+tick*23));}
-  if(tick==CHARGE){
-   if(fire){spiral=model("motionrp_fire_tornado",point(0,0,.1),.8f,"fire_spiral");loop(spiral,"spin");sound(center,Sound.ITEM_FIRECHARGE_USE,1.4f,.65f);}
-   else {int count=pair?8:6;for(int i=0;i<count;i++){var p=model("motionrp_emperor_penguin",point(0,1,.25),.65f,"penguin_"+i);p.update(TrackerUpdateAction.moveDuration(1));loop(p,"flap");penguins.add(p);}particle(point(0,1,.1),Particle.CLOUD,32,1,.08);sound(center,Sound.ENTITY_ENDER_DRAGON_GROWL,.8f,1.6f);}
-  }
-  if(!impacted&&tick<KICK){
-   double lift=tick<JUMP?progress(tick,CHARGE,JUMP)*.5:height+.55;
-   if(fire)lift=tick<CHARGE?.5:tick<JUMP?.5+progress(tick,CHARGE,JUMP)*1.2:height+.65;
-   ballPosition=point(0,1,Math.max(.5,lift));place(ball,ballPosition);
-   if(fire&&tick>=CHARGE){
-    if(tick%2==0){double a=tick*.6;particle(point(Math.cos(a)*1.1,Math.sin(a)*1.1,height+.35),Particle.FLAME,8,.15,.04);particle(owner.getLocation().add(0,.2,0),Particle.SMOKE,3,.2,.01);}
+  if(tick==0){ballPosition=at(.12,fire?.9:1.55,.3);ball=model("motionrp_football",ballPosition,1,"football");ball.update(TrackerUpdateAction.moveDuration(1));ball.rotation(()->new ModelRotation(tick*17,origin.getYaw()+tick*23));}
+  if(tick==charge(fire)){
+   if(fire){spiral=model("motionrp_fire_tornado",at(0,0,.05),.7f,"fire_spiral");loop(spiral,"spin");sound(origin,Sound.ITEM_FIRECHARGE_USE,1.4f,.65f);}
+   else for(int i=0;i<5;i++){
+    double a=i*Math.PI*2/5;Location start=at(Math.cos(a)*3,Math.sin(a)*3,.1);
+    var p=model("motionrp_emperor_penguin_red",start,.55f,"red_penguin_"+i);p.update(TrackerUpdateAction.moveDuration(1));loop(p,"flap");penguins.add(p);birdPositions.add(start);
+    particle(start,Particle.SPLASH,12,.2,.05);particle(start,Particle.CLOUD,8,.2,.03);
    }
+   if(!fire)sound(origin,Sound.ENTITY_ENDER_DRAGON_GROWL,.7f,1.8f);
+  }
+  if(tick<release){
+   Location target=contact();
+   if(fire){
+    if(tick<16)ballPosition=blend(at(.12,.9,.3),boot(16).add(0,.15,0),smooth(tick,10,16));
+    else if(tick<46){double p=progress(tick,16,46);ballPosition=blend(boot(16).add(0,.15,0),at(.1,.65,5.2),p);}
+    else ballPosition=blend(at(.1,.65,5.2),target,smooth(tick,46,release));
+    if(spiral!=null){place(spiral,at(0,0,height(tick,true)*.2));spiral.scaler(ModelScaler.value((float)(.4+.45*smooth(tick,36,82))));}
+    if(tick==60){bootFlame=model("motionrp_fire_tornado",boot(tick),.2f,"burning_boot");loop(bootFlame,"spin");}
+   }else ballPosition=blend(at(.12,1.55,.3),target,smooth(tick,86,release));
+   place(ball,ballPosition);
+   if(fire&&tick>=charge(true)&&tick%2==0){double a=tick*.6;particle(at(Math.cos(a)*.8,Math.sin(a)*.8,height(tick,true)+.4),Particle.FLAME,7,.12,.02);}
+   // Birds climb out of the turf, sweep upward with white wakes, then bite the raised calf.
    for(int i=0;i<penguins.size();i++){
-    double q=tick*.23+i*Math.PI*2/penguins.size(),r=1.65-.8*progress(tick,70,KICK);
-    var p=penguins.get(i);Location pos=point(Math.cos(q)*r,1+Math.sin(q)*r,.35+progress(tick,CHARGE,80)*(height+1.1)+.3*Math.sin(q*2));
-    place(p,pos);p.rotation(()->new ModelRotation(-15,center.getYaw()+(float)Math.toDegrees(-q)));
-    if(tick%3==0)dust(pos,new Particle.DustOptions(Color.fromRGB(pair?75:178,pair?186:25,pair?255:42),.85f),2,.15);
+    double a=i*Math.PI*2/5;Location c=calf(tick);Vector axis=boot(tick).toVector().subtract(c.toVector()).normalize();Vector u=at(1,0,0).toVector().subtract(origin.toVector());u.subtract(axis.clone().multiply(u.dot(axis)));if(u.lengthSquared()<.001)u=new Vector(0,0,1);u.normalize();Vector v=axis.clone().crossProduct(u).normalize();Vector radial=u.multiply(Math.cos(a)).add(v.multiply(Math.sin(a)));
+    Location targetBird=c.clone().add(radial.clone().multiply(.5));double p=smooth(tick,charge(false)+i*2,54+i*2);
+    Location pos=blend(at(Math.cos(a)*3,Math.sin(a)*3,.1),targetBird,p).add(0,Math.sin(p*Math.PI)*3.4,0);
+    var bird=penguins.get(i);place(bird,pos);orient(bird,c.toVector().subtract(pos.toVector()));
+    if(tick%2==0&&p<1){Location previous=birdPositions.get(i);for(int j=0;j<3;j++)particle(blend(previous,pos,j/3.0),Particle.END_ROD,1,.02,0);}
+    birdPositions.set(i,pos);
    }
   }
-  if(tick==KICK){
-   shotHeight=ballPosition.getY()-center.getY();previousBall=ballPosition.clone();trace("kick contact; shared ball released");
-   for(Player viewer:audience.players())viewer.spawnParticle(Particle.FLASH,ballPosition,1,0,0,0,0,Color.fromRGB(fire?255:120,fire?180:210,fire?65:255));particle(ballPosition,Particle.SWEEP_ATTACK,4,.3,0);
-   sound(ballPosition,Sound.ENTITY_PLAYER_ATTACK_STRONG,1.8f,.65f);sound(ballPosition,Sound.ENTITY_BREEZE_WIND_BURST,1.5f,.8f);
-   if(spiral!=null)spiral.rotation(()->new ModelRotation(-90,center.getYaw()));
+  if(bootFlame!=null){place(bootFlame,boot(tick));orient(bootFlame,boot(tick).toVector().subtract(calf(tick).toVector()));if(tick>=release+14){audience.hide(bootFlame);bootFlame=null;}}
+  if(tick==release){
+   ballPosition=contact();shotStart=ballPosition.clone();previousBall=shotStart.clone();place(ball,ballPosition);trace("kick contact at baked boot; ball released");
+   for(Player viewer:audience.players())viewer.spawnParticle(Particle.FLASH,ballPosition,1,0,0,0,0,Color.fromRGB(255,fire?190:130,fire?65:45));
+   particle(ballPosition,Particle.SWEEP_ATTACK,3,.15,0);sound(ballPosition,Sound.ENTITY_PLAYER_ATTACK_STRONG,1.8f,.65f);sound(ballPosition,Sound.ENTITY_BREEZE_WIND_BURST,1.5f,.8f);
+   if(spiral!=null)spiral.rotation(()->new ModelRotation(-90,origin.getYaw()));
   }
-  if(tick>=KICK&&!impacted){
-   double distance=distance(tick);Location next=point(0,1+distance,shotHeight+(1.2-shotHeight)*progress(tick,KICK,IMPACT));
+  if(tick>=release&&!impacted){
+   double p=progress(tick,release,hit);Vector forward=at(0,distance(tick,fire),0).toVector().subtract(origin.toVector());
+   Location next=shotStart.clone().add(forward).add(0,(1.2-(shotStart.getY()-origin.getY()))*p,0);
    Vector direction=next.toVector().subtract(previousBall.toVector());double length=direction.length();
-   if(!next.getWorld().isChunkLoaded(next.getBlockX()>>4,next.getBlockZ()>>4)){impact(previousBall);}
+   if(!next.getWorld().isChunkLoaded(next.getBlockX()>>4,next.getBlockZ()>>4))impact(previousBall);
    else{
-    var hit=length<.001?null:next.getWorld().rayTraceBlocks(previousBall,direction.clone().normalize(),length,FluidCollisionMode.NEVER,true);
-    if(hit!=null)impact(hit.getHitPosition().toLocation(next.getWorld()));
-    else {ballPosition=next;place(ball,next);
-     if(spiral!=null){spiral.scaler(ModelScaler.value(.6f));place(spiral,next);}
+    var obstacle=length<.001?null:next.getWorld().rayTraceBlocks(previousBall,direction.clone().normalize(),length,FluidCollisionMode.NEVER,true);
+    if(obstacle!=null)impact(obstacle.getHitPosition().toLocation(next.getWorld()));
+    else{
+     ballPosition=next;place(ball,next);
+     if(spiral!=null){spiral.scaler(ModelScaler.value(.45f));place(spiral,next);}
      for(int i=0;i<penguins.size();i++){
-      double q=tick*.65+i*Math.PI*2/penguins.size();Location p=point(Math.cos(q)*(.6+i*.06),1+distance,next.getY()-center.getY()+Math.sin(q)*(.6+i*.06));place(penguins.get(i),p);penguins.get(i).rotation(()->new ModelRotation(0,center.getYaw()));
+      double a=i*Math.PI*2/5+tick*.4;Vector right=at(Math.cos(a)*.48,0,Math.sin(a)*.48).toVector().subtract(origin.toVector());
+      Location target=next.clone().add(right);Location pos=blend(birdPositions.get(i),target,smooth(tick,release,release+7));place(penguins.get(i),pos);orient(penguins.get(i),new Vector(-Math.sin(Math.toRadians(origin.getYaw())),0,Math.cos(Math.toRadians(origin.getYaw()))));
+      if(tick%2==0)particle(pos,Particle.END_ROD,2,.04,0);
      }
-     for(int j=0;j<3;j++){Location p=previousBall.clone().add(direction.clone().multiply(j/3.0));particle(p,fire?Particle.FLAME:Particle.ELECTRIC_SPARK,fire?10:5,.2,.015);if(!fire)dust(p,new Particle.DustOptions(pair?Color.fromRGB(70,185,255):Color.fromRGB(175,25,55),1.1f),4,.25);}
-     previousBall=next;
-     if(tick>=IMPACT)impact(next);
+     for(int j=0;j<3;j++){Location at=blend(previousBall,next,j/3.0);particle(at,fire?Particle.FLAME:Particle.END_ROD,fire?10:4,.14,.01);if(!fire)dust(at,new Particle.DustOptions(Color.fromRGB(245,55,30),.9f),3,.12);}
+     previousBall=next;if(tick>=hit)impact(next);
     }
    }
   }
  }
  private void place(DummyTracker tracker,Location location){tracker.location(BukkitAdapter.adapt(location));}
  private void impact(Location location){
-  if(impacted)return;impacted=true;
-  audience.hide(ball);ball=null;if(spiral!=null){audience.hide(spiral);spiral=null;}for(var p:penguins)audience.hide(p);penguins.clear();
-  particle(location,Particle.EXPLOSION_EMITTER,1,0,0);particle(location,Particle.GUST,12,1,.04);particle(location,Particle.CLOUD,60,1.3,.12);particle(location,fire?Particle.FLAME:Particle.ELECTRIC_SPARK,80,1.2,.12);
-  sound(location,Sound.ENTITY_GENERIC_EXPLODE,2,.65f);trace("cosmetic shot impact");
+  if(impacted)return;impacted=true;audience.hide(ball);ball=null;if(spiral!=null){audience.hide(spiral);spiral=null;}for(var p:penguins)audience.hide(p);penguins.clear();
+  particle(location,Particle.EXPLOSION_EMITTER,1,0,0);particle(location,Particle.GUST,12,1,.04);particle(location,Particle.CLOUD,50,1.1,.1);particle(location,Particle.FLAME,60,1,.08);sound(location,Sound.ENTITY_GENERIC_EXPLODE,2,.65f);trace("cosmetic shot impact tick="+tick);
  }
- @Override public boolean ownsMove(Location from,Location to){return pair?plugin.fusion().ownsMove(owner.getUniqueId(),from,to):flight.owns(from,to);}
- @Override public void externalTeleport(){if(flight!=null)flight.finishAtCurrent();}
- @Override void onClose(){if(flight!=null)flight.close();}
+ @Override public boolean ownsMove(Location from,Location to){return flight.owns(from,to);}
+ @Override public void externalTeleport(){flight.finishAtCurrent();}
+ @Override void onClose(){flight.close();}
 }
