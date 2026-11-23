@@ -33,6 +33,22 @@ class FootballAssetsTest {
   var body=spin.getAsJsonArray("children").asList().stream().map(JsonElement::getAsJsonObject).map(n->names.get(n.get("uuid").getAsString())).collect(java.util.stream.Collectors.toSet());
   assertEquals(Set.of("phip_hip","prl_right_leg","pll_left_leg"),body,"Both thigh branches must rotate with the hip");
  }
+ @Test void fireShootsWithTheLeftLegAndAttachesTheBallToThatBoot()throws Exception{
+  var model=load("players/motionrp_fire_tornado");var groups=new HashMap<String,JsonObject>();
+  for(var raw:model.getAsJsonArray("groups")){var g=raw.getAsJsonObject();groups.put(g.get("name").getAsString(),g);}
+  var left=node(model.getAsJsonArray("outliner"),groups.get("plfl_left_foreleg").get("uuid").getAsString());
+  assertNotNull(node(left.getAsJsonArray("children"),groups.get("football_boot").get("uuid").getAsString()));
+  assertTrue(groups.get("football_boot").getAsJsonArray("origin").get(0).getAsDouble()<0);
+  var tracks=model.getAsJsonArray("animations").get(0).getAsJsonObject().getAsJsonObject("animators");
+  for(String name:List.of("pll_left_leg","prl_right_leg")){
+   var keys=tracks.getAsJsonObject(groups.get(name).get("uuid").getAsString()).getAsJsonArray("keyframes");
+   var contact=keys.asList().stream().map(JsonElement::getAsJsonObject).filter(k->Math.abs(k.get("time").getAsDouble()-3.6)<1e-6).findFirst().orElseThrow();
+   double pitch=contact.getAsJsonArray("data_points").get(0).getAsJsonObject().get("x").getAsDouble();assertEquals(name.equals("pll_left_leg")?165:-35,pitch);
+  }
+ }
+ private JsonObject node(JsonArray nodes,String id){
+  for(var raw:nodes)if(raw.isJsonObject()){var n=raw.getAsJsonObject();if(n.get("uuid").getAsString().equals(id))return n;var child=node(n.getAsJsonArray("children"),id);if(child!=null)return child;}return null;
+ }
  @Test void ballHasTwelvePentagonsAndTwentyHexagonsAndPenguinHasFaceAndFlippers()throws Exception{
   assertEquals(32,load("models/motionrp_football").getAsJsonArray("elements").size());
   var p=load("models/motionrp_emperor_penguin");var names=p.getAsJsonArray("elements").asList().stream().map(e->e.getAsJsonObject().get("name").getAsString()).toList();

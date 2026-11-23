@@ -126,6 +126,14 @@ def reference_actors(rig):
    track('prfa_right_forearm'if right else'plfa_left_forearm',[(0,(0,0,0)),(44,(20,0,0)),(kick,(30,0,0)),(136,(65 if not fire else 20,0,0)),(end,(0,0,0))])
   track('h_ph_head',[(0,(12,0,0)),(44,(25,0,0)),(kick-8,(35,0,0)),(kick,(12,0,0)),(136,(30 if not fire else 0,0,0)),(end,(0,0,0))])
   if fire:
+   # Mirror only the two leg performances: the left leg now lifts and shoots.
+   tracks=m['animations'][0]['animators']
+   for right,left in [('prl_right_leg','pll_left_leg'),('prfl_right_foreleg','plfl_left_foreleg')]:
+    rg=next(g for g in m['groups']if g['name']==right);lg=next(g for g in m['groups']if g['name']==left)
+    def mirrored(entry):
+     return [(k['time'],tuple(float(k['data_points'][0][a])*(1 if a=='x'else -1)for a in ['x','y','z']))for k in entry['keyframes']]
+    rkeys=mirrored(tracks[rg['uuid']]);lkeys=mirrored(tracks[lg['uuid']])
+    tracks[rg['uuid']]=animator(rg,lkeys);tracks[lg['uuid']]=animator(lg,rkeys)
    # Tilt on the parent, spin around the body's local axis on the child.
    root=next(g for g in m['groups']if g['name']=='player_root')
    spin={'name':'football_spin','uuid':ident(name+'/spin'),'origin':root['origin'][:],'rotation':[0,0,0],'export':True}
@@ -170,6 +178,7 @@ def reference_actors(rig):
    return False
   paths=[]
   for label,bone,origin in [('football_boot','prfl_right_foreleg',(1.875,.65,-1.8)),('football_calf','prfl_right_foreleg',(1.875,4.1,0)),('football_torso','pc_chest',(0,17,0)),('football_upper','pc_chest',(0,22,0)),('football_side','pc_chest',(5,17,0))]:
+   if fire and label in {'football_boot','football_calf'}:bone='plfl_left_foreleg';origin=(-origin[0],origin[1],origin[2])
    parent=next(g for g in m['groups']if g['name']==bone)
    g={'name':label,'uuid':ident(name+'/'+label),'origin':list(origin),'rotation':[0,0,0],'export':True};m['groups'].append(g);assert attach(m['outliner'],g['uuid'])
    paths.append(hand_path(m,end,label).strip().splitlines())

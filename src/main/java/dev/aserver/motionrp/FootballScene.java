@@ -22,6 +22,7 @@ final class FootballScene extends SummonScene {
  private DummyTracker ball;
  private final List<DummyTracker> penguins=new ArrayList<>();
  private final List<Location> birdPositions=new ArrayList<>();
+ private final List<FootballVisuals.Facing> birdAttachedFacings=new ArrayList<>();
  private boolean impacted;
  FootballScene(MotionPlugin plugin,Player owner,EntityTracker body,String effect){
   super(plugin,owner,"Football-"+effect,end(effect.equals("fire_tornado")),56,true);this.body=body;
@@ -39,8 +40,7 @@ final class FootballScene extends SummonScene {
   return new FootballFootPath.Point(-Math.cos(yaw)*delta.getX()-Math.sin(yaw)*delta.getZ(),-Math.sin(yaw)*delta.getX()+Math.cos(yaw)*delta.getZ(),delta.getY());
  }
  private Location blend(Location a,Location b,double p){return a.clone().add(b.toVector().subtract(a.toVector()).multiply(p));}
- private void orient(DummyTracker tracker,Vector direction){
-  var facing=FootballVisuals.penguinFacing(direction.getX(),direction.getY(),direction.getZ());
+ private void orient(DummyTracker tracker,FootballVisuals.Facing facing){
   tracker.rotator(ModelRotator.DEFAULT);tracker.rotation(()->new ModelRotation(facing.pitch(),facing.yaw()));tracker.forceUpdate(true);
  }
  @Override void update(){
@@ -59,7 +59,7 @@ final class FootballScene extends SummonScene {
    if(fire)sound(origin,Sound.ITEM_FIRECHARGE_USE,1.4f,.65f);
    else for(int i=0;i<5;i++){
     double a=i*Math.PI*2/5;Location start=at(Math.cos(a)*3,Math.sin(a)*3,.1);
-    var p=model("motionrp_emperor_penguin_red",start,.55f,"red_penguin_"+i);p.update(TrackerUpdateAction.composite(TrackerUpdateAction.moveDuration(1),TrackerUpdateAction.billboard(PlatformBillboard.FIXED)));p.rotator(ModelRotator.DEFAULT);loop(p,"flap");penguins.add(p);birdPositions.add(start);
+    var p=model("motionrp_emperor_penguin_red",start,.55f,"red_penguin_"+i);p.update(TrackerUpdateAction.composite(TrackerUpdateAction.moveDuration(1),TrackerUpdateAction.billboard(PlatformBillboard.FIXED)));p.rotator(ModelRotator.DEFAULT);loop(p,"flap");penguins.add(p);birdPositions.add(start);birdAttachedFacings.add(new FootballVisuals.Facing(0,0));
     particle(start,Particle.SPLASH,12,.2,.05);particle(start,Particle.CLOUD,8,.2,.03);
    }
    if(!fire)sound(origin,Sound.ENTITY_ENDER_DRAGON_GROWL,.7f,1.8f);
@@ -81,7 +81,7 @@ final class FootballScene extends SummonScene {
     double a=i*Math.PI*2/5;Location c=calf(tick);Vector axis=boot(tick).toVector().subtract(c.toVector()).normalize();Vector u=at(1,0,0).toVector().subtract(origin.toVector());u.subtract(axis.clone().multiply(u.dot(axis)));if(u.lengthSquared()<.001)u=new Vector(0,0,1);u.normalize();Vector v=axis.clone().crossProduct(u).normalize();Vector radial=u.multiply(Math.cos(a)).add(v.multiply(Math.sin(a)));
     Location targetBird=c.clone().add(radial.clone().multiply(.5));double p=smooth(tick,charge(false)+i*2,54+i*2);
     Location pos=blend(at(Math.cos(a)*3,Math.sin(a)*3,.1),targetBird,p).add(0,Math.sin(p*Math.PI)*3.4,0);
-    var bird=penguins.get(i);place(bird,pos);orient(bird,c.toVector().subtract(pos.toVector()));
+    var bird=penguins.get(i);place(bird,pos);Vector beak=c.toVector().subtract(pos.toVector());var facing=FootballVisuals.penguinFacing(beak.getX(),beak.getY(),beak.getZ());birdAttachedFacings.set(i,facing);orient(bird,facing);
     if(tick%2==0&&p<1){Location previous=birdPositions.get(i);for(int j=0;j<3;j++)particle(blend(previous,pos,j/3.0),Particle.END_ROD,1,.02,0);}
     birdPositions.set(i,pos);
    }
@@ -117,7 +117,10 @@ final class FootballScene extends SummonScene {
      ballPosition=next;place(ball,next);
      for(int i=0;i<penguins.size();i++){
       double a=i*Math.PI*2/5+tick*.4;Vector right=at(Math.cos(a)*.48,0,Math.sin(a)*.48).toVector().subtract(origin.toVector());
-      Location target=next.clone().add(right);Location pos=blend(birdPositions.get(i),target,smooth(tick,release,release+7));place(penguins.get(i),pos);orient(penguins.get(i),new Vector(-Math.sin(Math.toRadians(origin.getYaw())),0,Math.cos(Math.toRadians(origin.getYaw()))));
+      Location target=next.clone().add(right);Location pos=blend(birdPositions.get(i),target,smooth(tick,release,release+7));place(penguins.get(i),pos);Vector travel=direction.lengthSquared()>.000001?direction:at(0,1,0).toVector().subtract(origin.toVector());
+      var flightFacing=FootballVisuals.penguinFacing(travel.getX(),travel.getY(),travel.getZ());
+      var facing=FootballVisuals.launchFacing(birdAttachedFacings.get(i),flightFacing,smooth(tick,release,release+7));orient(penguins.get(i),facing);
+      if(tick==release)trace("penguin release index="+i+" yawDelta="+(facing.yaw()-birdAttachedFacings.get(i).yaw())+" pitchDelta="+(facing.pitch()-birdAttachedFacings.get(i).pitch()));
       if(tick%2==0)particle(pos,Particle.END_ROD,2,.04,0);
      }
      for(int j=0;j<3;j++){Location at=blend(previousBall,next,j/3.0);particle(at,fire?Particle.FLAME:Particle.END_ROD,fire?10:4,.14,.01);if(!fire)dust(at,new Particle.DustOptions(Color.fromRGB(245,55,30),.9f),3,.12);}

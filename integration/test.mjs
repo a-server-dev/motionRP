@@ -373,7 +373,10 @@ if(process.env.MOTIONRP_FOOTBALL_ONLY==='1'){
     assert.ok(new Set(looks.map(p=>p.yaw)).size>=5,'Each bird turns to its own calf target');
     assert.ok(looks.some(p=>Math.abs(p.pitch)>10),'Full pitch is enabled, not yaw-only rotation');
     assert.ok(billboards.filter(p=>birdIds.has(p.id)).every(p=>p.value===0),'Birds cannot billboard towards the camera');
-    pass('All five penguins receive independent yaw and pitch with fixed billboards');
+    const releaseLooks=[...output.slice(begin).matchAll(/penguin release index=(\d+) yawDelta=([^ ]+) pitchDelta=([^\r\n]+)/g)];
+    assert.equal(releaseLooks.length,5,'All five attached headings are preserved at release');
+    assert.ok(releaseLooks.every(m=>+m[2]===0&&+m[3]===0),'No penguin suddenly turns towards the viewer on the kick tick');
+    pass('All five penguins receive independent yaw and pitch with fixed billboards and preserve their heading at release');
    }
    pass(id+' item plays reference choreography, boot contact, ball/effects, impact, viewer filtering and cleanup');
   }

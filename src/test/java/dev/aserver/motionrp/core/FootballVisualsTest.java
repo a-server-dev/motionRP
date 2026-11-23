@@ -30,6 +30,16 @@ class FootballVisualsTest {
  @Test void old048FireIsRecognizedForAutomaticUpgrade()throws Exception{
   String name="players/motionrp_fire_tornado.bbmodel";try(var in=new GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.48.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
  }
+ @Test void penguinsKeepTheirCalfFacingOnReleaseAndTurnAcrossTheShortYawArc(){
+  var attached=new FootballVisuals.Facing(35,350);var flight=new FootballVisuals.Facing(-10,10);
+  assertEquals(attached,FootballVisuals.launchFacing(attached,flight,0));
+  assertEquals(360,FootballVisuals.launchFacing(attached,flight,.5).yaw(),1e-6);
+  assertEquals(12.5,FootballVisuals.launchFacing(attached,flight,.5).pitch(),1e-6);
+  assertEquals(370,FootballVisuals.launchFacing(attached,flight,1).yaw(),1e-6);
+ }
+ @Test void old050FireIsRecognizedForAutomaticUpgrade()throws Exception{
+  String name="players/motionrp_fire_tornado.bbmodel";try(var in=new GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.50.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
+ }
  @Test void flameRibbonsStayAroundTheAnimatedTorsoInEveryBodyOrientation(){
   for(int t=20;t<82;t+=3){var f=FootballFootPath.at(true,t);Point center=f.torso();Point axis=unit(sub(f.upper(),center));
    for(int strand=0;strand<2;strand++)for(int i=0;i<FootballVisuals.FLAME_SAMPLES;i++){
