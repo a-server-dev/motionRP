@@ -353,6 +353,10 @@ if(process.env.MOTIONRP_FOOTBALL_ONLY==='1'){
     assert.equal(footMotion.length,4,'Four native boot samples before release');
     assert.ok(footMotion.every(p=>p.forward>.01),'Rendered boot moves forward through the shot, not backwards');
     assert.equal(footMotion.at(-1).tick,68);
+    const lob=[...output.slice(begin).matchAll(/Football-fire_tornado lob tick=(\d+) height=([^ ]+) contactGap=([^\r\n]+)/g)].map(m=>({tick:+m[1],height:+m[2],gap:+m[3]}));
+    assert.equal(lob.find(p=>p.tick===32)?.height,15,'Only the ball rises to fifteen blocks');
+    assert.ok(lob.find(p=>p.tick===67)?.gap>.15,'Ball is still falling towards the boot before the kick');
+    assert.ok(lob.find(p=>p.tick===68)?.gap<1e-8,'Falling ball meets the live boot exactly at release without snapping');
     assert.ok(output.slice(begin).includes('kick contact at live boot'),'Ball releases at the live animated boot');
     const bodyAxis=output.slice(begin).match(/Football-fire_tornado kick body axis forward=([^ ]+) up=([^\r\n]+)/);
     const bank=output.slice(begin).match(/Football-fire_tornado kick bank side up=([^\r\n]+)/);

@@ -3,6 +3,7 @@ package dev.aserver.motionrp;
 import dev.aserver.motionrp.core.FootballTimeline;
 import dev.aserver.motionrp.core.FootballFootPath;
 import dev.aserver.motionrp.core.FootballVisuals;
+import dev.aserver.motionrp.core.FootballBallArc;
 import kr.toxicity.model.api.platform.PlatformBillboard;
 import kr.toxicity.model.api.bukkit.platform.BukkitAdapter;
 import kr.toxicity.model.api.tracker.*;
@@ -33,6 +34,10 @@ final class FootballScene extends SummonScene {
  private Location calf(int t){return attach(FootballFootPath.at(fire,t).calf(),t);}
  private Location liveBoot(){var p=body.bone("football_boot").worldPosition();return owner.getLocation().add(p.x,p.y,p.z);}
  private Location contact(){return (fire?liveBoot():boot(kick(false))).add(at(0,.25,.03).toVector().subtract(origin.toVector()));}
+ private FootballFootPath.Point local(Location location){
+  Vector delta=location.toVector().subtract(origin.toVector());double yaw=Math.toRadians(origin.getYaw());
+  return new FootballFootPath.Point(-Math.cos(yaw)*delta.getX()-Math.sin(yaw)*delta.getZ(),-Math.sin(yaw)*delta.getX()+Math.cos(yaw)*delta.getZ(),delta.getY());
+ }
  private Location blend(Location a,Location b,double p){return a.clone().add(b.toVector().subtract(a.toVector()).multiply(p));}
  private void orient(DummyTracker tracker,Vector direction){
   var facing=FootballVisuals.penguinFacing(direction.getX(),direction.getY(),direction.getZ());
@@ -59,12 +64,16 @@ final class FootballScene extends SummonScene {
    }
    if(!fire)sound(origin,Sound.ENTITY_ENDER_DRAGON_GROWL,.7f,1.8f);
   }
-  if(tick<release){
+  if(tick<release||(fire&&tick==release)){
    Location target=contact();
    if(fire){
     if(tick<8)ballPosition=blend(at(.12,.9,.3),boot(8).add(0,.15,0),smooth(tick,4,8));
-    else if(tick<26){double p=progress(tick,8,26);ballPosition=blend(boot(8).add(0,.15,0),at(.1,.65,height(kick(true),true)+FootballFootPath.at(true,kick(true)).boot().height()+.8),p);}
-    else ballPosition=blend(at(.1,.65,height(kick(true),true)+FootballFootPath.at(true,kick(true)).boot().height()+.8),target,smooth(tick,26,release));
+    else{
+     Location expected=boot(release+4).add(at(0,.25,.03).toVector().subtract(origin.toVector()));
+     var point=FootballBallArc.at(tick,local(boot(8).add(0,.15,0)),local(expected),local(target));
+     ballPosition=at(point.right(),point.forward(),point.height());
+     if(tick==FootballBallArc.APEX_TICK||tick>=release-4)trace("lob tick="+tick+" height="+(ballPosition.getY()-origin.getY())+" contactGap="+ballPosition.distance(target));
+    }
    }else ballPosition=blend(at(.12,1.55,.3),target,smooth(tick,86,release));
    place(ball,ballPosition);
    // Birds climb out of the turf, sweep upward with white wakes, then bite the raised calf.
