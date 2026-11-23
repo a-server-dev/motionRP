@@ -17,7 +17,7 @@ final class FootballScene extends SummonScene {
  private final EntityTracker body;
  private final boolean fire;
  private final AerialAnchor flight;
- private Location ballPosition,previousBall,shotStart;
+ private Location ballPosition,previousBall,shotStart,previousBoot;
  private DummyTracker ball;
  private final List<DummyTracker> penguins=new ArrayList<>();
  private final List<Location> birdPositions=new ArrayList<>();
@@ -31,7 +31,8 @@ final class FootballScene extends SummonScene {
  private Location attach(FootballFootPath.Point p,int t){return at(p.right(),p.forward()+approach(t,fire),p.height()+height(t,fire));}
  private Location boot(int t){return attach(FootballFootPath.at(fire,t).boot(),t);}
  private Location calf(int t){return attach(FootballFootPath.at(fire,t).calf(),t);}
- private Location contact(){return boot(kick(fire)).add(at(0,.25,.03).toVector().subtract(origin.toVector()));}
+ private Location liveBoot(){var p=body.bone("football_boot").worldPosition();return owner.getLocation().add(p.x,p.y,p.z);}
+ private Location contact(){return (fire?liveBoot():boot(kick(false))).add(at(0,.25,.03).toVector().subtract(origin.toVector()));}
  private Location blend(Location a,Location b,double p){return a.clone().add(b.toVector().subtract(a.toVector()).multiply(p));}
  private void orient(DummyTracker tracker,Vector direction){
   var facing=FootballVisuals.penguinFacing(direction.getX(),direction.getY(),direction.getZ());
@@ -61,9 +62,9 @@ final class FootballScene extends SummonScene {
   if(tick<release){
    Location target=contact();
    if(fire){
-    if(tick<16)ballPosition=blend(at(.12,.9,.3),boot(16).add(0,.15,0),smooth(tick,10,16));
-    else if(tick<46){double p=progress(tick,16,46);ballPosition=blend(boot(16).add(0,.15,0),at(.1,.65,height(kick(true),true)+FootballFootPath.at(true,kick(true)).boot().height()+.8),p);}
-    else ballPosition=blend(at(.1,.65,height(kick(true),true)+FootballFootPath.at(true,kick(true)).boot().height()+.8),target,smooth(tick,46,release));
+    if(tick<8)ballPosition=blend(at(.12,.9,.3),boot(8).add(0,.15,0),smooth(tick,4,8));
+    else if(tick<26){double p=progress(tick,8,26);ballPosition=blend(boot(8).add(0,.15,0),at(.1,.65,height(kick(true),true)+FootballFootPath.at(true,kick(true)).boot().height()+.8),p);}
+    else ballPosition=blend(at(.1,.65,height(kick(true),true)+FootballFootPath.at(true,kick(true)).boot().height()+.8),target,smooth(tick,26,release));
    }else ballPosition=blend(at(.12,1.55,.3),target,smooth(tick,86,release));
    place(ball,ballPosition);
    // Birds climb out of the turf, sweep upward with white wakes, then bite the raised calf.
@@ -81,8 +82,12 @@ final class FootballScene extends SummonScene {
    for(int strand=0;strand<2;strand++)for(int i=0;i<FootballVisuals.FLAME_SAMPLES;i++)particle(attach(FootballVisuals.flame(frame,tick,strand,i),tick),Particle.FLAME,1,.025,0);
    particle(boot(tick),Particle.FLAME,4,.08,.005);
   }
+  if(fire&&tick>=release-4&&tick<=release){
+   Location foot=liveBoot();Vector aim=at(0,1,0).toVector().subtract(origin.toVector());
+   if(previousBoot!=null)trace("live foot tick="+tick+" forward="+foot.toVector().subtract(previousBoot.toVector()).dot(aim)+" xyz="+foot.getX()+","+foot.getY()+","+foot.getZ());previousBoot=foot;
+  }
   if(tick==release){
-   ballPosition=contact();shotStart=ballPosition.clone();previousBall=shotStart.clone();place(ball,ballPosition);trace("kick contact at baked boot; ball released");
+   ballPosition=contact();shotStart=ballPosition.clone();previousBall=shotStart.clone();place(ball,ballPosition);trace("kick contact at "+(fire?"live":"baked")+" boot; ball released");
    for(Player viewer:audience.players())viewer.spawnParticle(Particle.FLASH,ballPosition,1,0,0,0,0,Color.fromRGB(255,fire?190:130,fire?65:45));
    particle(ballPosition,Particle.SWEEP_ATTACK,3,.15,0);sound(ballPosition,Sound.ENTITY_PLAYER_ATTACK_STRONG,1.8f,.65f);sound(ballPosition,Sound.ENTITY_BREEZE_WIND_BURST,1.5f,.8f);
   }

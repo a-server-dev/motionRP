@@ -349,7 +349,13 @@ if(process.env.MOTIONRP_FOOTBALL_ONLY==='1'){
     assert.ok(fireParticles.length>20,'Flame ribbons were sent around the airborne body');
     assert.ok(fireParticles.every(p=>p.y>origin.y+6.5),'Flames follow the body high above the ground');
     assert.ok(!/displays (fire_spiral|burning_boot)/.test(output.slice(begin)),'Standing cone models are not used');
+    const footMotion=[...output.slice(begin).matchAll(/Football-fire_tornado live foot tick=(\d+) forward=([^ ]+)/g)].map(m=>({tick:+m[1],forward:+m[2]}));
+    assert.equal(footMotion.length,4,'Four native boot samples before release');
+    assert.ok(footMotion.every(p=>p.forward>.01),'Rendered boot moves forward through the shot, not backwards');
+    assert.equal(footMotion.at(-1).tick,68);
+    assert.ok(output.slice(begin).includes('kick contact at live boot'),'Ball releases at the live animated boot');
     pass('Fire Tornado rises eight blocks and wraps the tilted body in ordinary flame particles');
+    pass('The faster Fire Tornado releases during the actual forward kick after four corkscrew turns');
    }else{
     const birdIds=new Set([...output.slice(begin).matchAll(/Football-emperor_penguin_1 displays red_penguin_\d+ ids=([0-9,]+)/g)].flatMap(m=>m[1].split(',').map(Number)));
     const looks=penguinLooks.filter(p=>birdIds.has(p.entityId));

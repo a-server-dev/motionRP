@@ -125,6 +125,39 @@ def reference_actors(rig):
    track('pra_right_arm'if right else'pla_left_arm',arm)
    track('prfa_right_forearm'if right else'plfa_left_forearm',[(0,(0,0,0)),(44,(20,0,0)),(kick,(30,0,0)),(136,(65 if not fire else 20,0,0)),(end,(0,0,0))])
   track('h_ph_head',[(0,(12,0,0)),(44,(25,0,0)),(kick-8,(35,0,0)),(kick,(12,0,0)),(136,(30 if not fire else 0,0,0)),(end,(0,0,0))])
+  if fire:
+   # Tilt on the parent, spin around the body's local axis on the child.
+   root=next(g for g in m['groups']if g['name']=='player_root')
+   hip=next(g for g in m['groups']if g['name']=='phip_hip')
+   spin={'name':'football_spin','uuid':ident(name+'/spin'),'origin':root['origin'][:],'rotation':[0,0,0],'export':True}
+   m['groups'].append(spin)
+   def nest(nodes):
+    for node in nodes:
+     if isinstance(node,dict):
+      for i,child in enumerate(node['children']):
+       if isinstance(child,dict)and child['uuid']==hip['uuid']:
+        node['children'][i]={'uuid':spin['uuid'],'children':[child]};return True
+      if nest(node['children']):return True
+    return False
+   assert nest(m['outliner'])
+   landmarks=[(0,0),(16,8),(36,20),(46,26),(82,46),(106,64),(112,68),(126,78),(144,88),(156,98),(178,108)]
+   def retime(t):
+    for (a,x),(b,y)in zip(landmarks,landmarks[1:]):
+     if t<=b:return x+(t-a)*(y-x)/(b-a)
+    return 108
+   for entry in m['animations'][0]['animators'].values():
+    for key in entry['keyframes']:
+     key['time']=retime(key['time']*20)/20
+     if entry['name']=='player_root'and key['channel']=='rotation':key['data_points'][0]['y']=0
+   # Explicit quarter turns prevent quaternion interpolation taking a shortcut.
+   track('football_spin',[(0,(0,0,0)),(26,(0,0,0))]+[(28+i*1.75,(0,i*90,0))for i in range(17)]+[(108,(0,1440,0))])
+   # BetterModel's player track is evaluated ahead of the scene tick.
+   # Hold the initial pose for four ticks so the visible boot reaches contact
+   # during the scene's release, before the follow-through reverses its motion.
+   for entry in m['animations'][0]['animators'].values():
+    for key in entry['keyframes']:
+     if key['time']>0:key['time']+=4/20
+   end=112;m['animations'][0]['length']=end/20
   # Real boot and calf attachments, sampled from these exact animated joints.
   parent=None
   def attach(nodes,uid):
