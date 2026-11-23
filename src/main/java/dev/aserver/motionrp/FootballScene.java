@@ -87,6 +87,10 @@ final class FootballScene extends SummonScene {
    if(previousBoot!=null)trace("live foot tick="+tick+" forward="+foot.toVector().subtract(previousBoot.toVector()).dot(aim)+" xyz="+foot.getX()+","+foot.getY()+","+foot.getZ());previousBoot=foot;
   }
   if(tick==release){
+   if(fire){
+    var torso=body.bone("football_torso").worldPosition();var upper=body.bone("football_upper").worldPosition();var axis=upper.sub(torso,new org.joml.Vector3f()).normalize();
+    Vector aim=at(0,1,0).toVector().subtract(origin.toVector());trace("kick body axis forward="+(axis.x*aim.getX()+axis.z*aim.getZ())+" up="+axis.y);
+   }
    ballPosition=contact();shotStart=ballPosition.clone();previousBall=shotStart.clone();place(ball,ballPosition);trace("kick contact at "+(fire?"live":"baked")+" boot; ball released");
    for(Player viewer:audience.players())viewer.spawnParticle(Particle.FLASH,ballPosition,1,0,0,0,0,Color.fromRGB(255,fire?190:130,fire?65:45));
    particle(ballPosition,Particle.SWEEP_ATTACK,3,.15,0);sound(ballPosition,Sound.ENTITY_PLAYER_ATTACK_STRONG,1.8f,.65f);sound(ballPosition,Sound.ENTITY_BREEZE_WIND_BURST,1.5f,.8f);

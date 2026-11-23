@@ -354,6 +354,10 @@ if(process.env.MOTIONRP_FOOTBALL_ONLY==='1'){
     assert.ok(footMotion.every(p=>p.forward>.01),'Rendered boot moves forward through the shot, not backwards');
     assert.equal(footMotion.at(-1).tick,68);
     assert.ok(output.slice(begin).includes('kick contact at live boot'),'Ball releases at the live animated boot');
+    const bodyAxis=output.slice(begin).match(/Football-fire_tornado kick body axis forward=([^ ]+) up=([^\r\n]+)/);
+    assert.ok(bodyAxis,'Native torso orientation measured at release');
+    assert.ok(+bodyAxis[1]>.95,'Head points in the shot direction');
+    assert.ok(+bodyAxis[2]<-.08&&+bodyAxis[2]>-.3,'Head is slightly below the horizontal torso');
     pass('Fire Tornado rises eight blocks and wraps the tilted body in ordinary flame particles');
     pass('The faster Fire Tornado releases during the actual forward kick after four corkscrew turns');
    }else{

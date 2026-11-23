@@ -11,6 +11,16 @@ class FootballVisualsTest {
   assertEquals(8,FootballTimeline.height(50,true));assertEquals(8,FootballTimeline.height(contact,true));
   assertEquals(0,FootballTimeline.height(FootballTimeline.land(true),true),1e-9);
  }
+ @Test void headPointsTowardsTheShotAndSlightlyDownAtContact(){
+  for(int tick=68;tick<=72;tick++){
+   var frame=FootballFootPath.at(true,tick);var axis=unit(sub(frame.upper(),frame.torso()));
+   assertTrue(axis.forward()>.95,"Head must point into the shot, not behind it");
+   assertTrue(axis.height()<-.08&&axis.height()>-.3,"Torso must be nearly horizontal with the head slightly lower");
+  }
+ }
+ @Test void old047FireIsRecognizedForAutomaticUpgrade()throws Exception{
+  String name="players/motionrp_fire_tornado.bbmodel";try(var in=new GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.47.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
+ }
  @Test void flameRibbonsStayAroundTheAnimatedTorsoInEveryBodyOrientation(){
   for(int t=20;t<82;t+=3){var f=FootballFootPath.at(true,t);Point center=f.torso();Point axis=unit(sub(f.upper(),center));
    for(int strand=0;strand<2;strand++)for(int i=0;i<FootballVisuals.FLAME_SAMPLES;i++){
