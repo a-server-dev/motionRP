@@ -4,6 +4,24 @@ debug-input: false
 # BetterModel/players にあるプレイヤーモデルを指定します。
 # 標準の steve.bbmodel に含まれる roll を初期モーションとして使用します。
 motions:
+  death_sword:
+    name: デスソード
+    model: motionrp_death_sword
+    animation: death_sword
+    effect: death_sword
+    max-ticks: 139
+  eternal_blizzard:
+    name: エターナルブリザード
+    model: motionrp_eternal_blizzard
+    animation: eternal_blizzard
+    effect: eternal_blizzard
+    max-ticks: 168
+  death_spear:
+    name: デススピアー
+    model: motionrp_death_spear
+    animation: death_spear
+    effect: death_spear
+    max-ticks: 142
   fire_tornado:
     name: ファイアトルネード
     model: motionrp_fire_tornado

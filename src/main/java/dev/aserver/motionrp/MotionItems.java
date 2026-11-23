@@ -34,6 +34,16 @@ public final class MotionItems {
         return stack;
     }
 
+    public List<ItemStack> completeControllers(MotionCatalog catalog){
+        var definitions=new java.util.ArrayList<>(catalog.motions().values());var result=new java.util.ArrayList<ItemStack>();
+        int pages=Math.max(1,(definitions.size()+dev.aserver.motionrp.core.Loadout.SIZE-1)/dev.aserver.motionrp.core.Loadout.SIZE);
+        for(int page=0;page<pages;page++){
+            var subset=new java.util.LinkedHashMap<String,MotionCatalog.Definition>();
+            for(var d:definitions.subList(page*27,Math.min(definitions.size(),(page+1)*27)))subset.put(d.id(),d);
+            result.add(completeController(new MotionCatalog(subset,catalog.controllerName()+(pages>1?"（"+(page+1)+"/"+pages+"）":""),catalog.controllerModel())));
+        }
+        return result;
+    }
     public ItemStack completeController(MotionCatalog catalog) {
         if(catalog.motions().size()>dev.aserver.motionrp.core.Loadout.SIZE)throw new IllegalArgumentException("全種セットは27種類までです。現在の設定数: "+catalog.motions().size());
         var state=dev.aserver.motionrp.core.Loadout.empty();

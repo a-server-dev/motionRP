@@ -96,6 +96,7 @@ public final class MotionPlayback {
             EntityTracker owned = tracker;
             UUID uuid = player.getUniqueId();
             MotionScene scene = switch (definition.effect()) {
+                case "death_sword","eternal_blizzard","death_spear" -> new InazumaShotScene(plugin,player,owned,definition.effect());
                 case "fire_tornado","emperor_penguin_1" -> new FootballScene(plugin,player,owned,definition.effect());
                 case "infinity_castle" -> new InfinityCastleScene(plugin,player,owned);
                 case "road_roller","kokuryuha","kokujo_tengen_myoo","chibaku_tensei" -> new EpicScene(plugin,player,owned,definition.effect());

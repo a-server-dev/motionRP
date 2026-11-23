@@ -33,7 +33,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
     @Override public void onEnable() {
         saveDefaultConfig();
         // Add only the new built-in definition during upgrade; keep user entries.
-        for (String builtIn : java.util.List.of("rasengan", "rasenshuriken", "gate_of_babylon", "susanoo", "senbonzakura","titan_transform","gate_of_babylon_100","gate_of_babylon_enuma","zangetsu_bankai","excalibur","gae_bolg","kamehameha","genki_dama","rho_aias","getsuga_tensho","road_roller","kokuryuha","kokujo_tengen_myoo","chibaku_tensei","fusion","broly","infinity_castle","fire_tornado","emperor_penguin_1")) {
+        for (String builtIn : java.util.List.of("rasengan", "rasenshuriken", "gate_of_babylon", "susanoo", "senbonzakura","titan_transform","gate_of_babylon_100","gate_of_babylon_enuma","zangetsu_bankai","excalibur","gae_bolg","kamehameha","genki_dama","rho_aias","getsuga_tensho","road_roller","kokuryuha","kokujo_tengen_myoo","chibaku_tensei","fusion","broly","infinity_castle","death_sword","eternal_blizzard","death_spear","fire_tornado","emperor_penguin_1")) {
             if (!getConfig().contains("assets." + builtIn + "-definition-installed", true)) {
                 if (!getConfig().contains("motions." + builtIn, true)) {
                     for (var entry : Objects.requireNonNull(getConfig().getDefaults())
@@ -221,13 +221,20 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
     }
     private void give(CommandSender sender, String[] args) {
         if (args.length < 2) { usage(sender); return; }
+        if(args[1].equalsIgnoreCase("all")&&args.length<=3){
+            Player target=args.length==3?Bukkit.getPlayerExact(args[2]):(sender instanceof Player p?p:null);
+            if(target==null){tell(sender,"オンラインの配布先プレイヤーを指定してください。");return;}
+            if(target.getOpenInventory().getTopInventory().getHolder() instanceof LoadoutMenu.Holder){tell(sender,"配布先の登録GUIを閉じてから配布してください。");return;}
+            var sets=items.completeControllers(catalog);long empty=java.util.Arrays.stream(target.getInventory().getStorageContents()).filter(i->i==null||i.getType().isAir()).count();
+            if(empty<sets.size()){tell(sender,"配布先の所持品に空きがありません。");return;}
+            target.getInventory().addItem(sets.toArray(ItemStack[]::new));target.saveData();tell(sender,target.getName()+" に全種セットを "+sets.size()+" 個配布しました。");return;
+        }
         ItemStack item;
         String targetName;
         if (args[1].equalsIgnoreCase("controller") && args.length <= 3) {
             item = items.controller(catalog);
             targetName = args.length == 3 ? args[2] : null;
-        } else if(args[1].equalsIgnoreCase("all")&&args.length<=3){
-            item=items.completeController(catalog);targetName=args.length==3?args[2]:null;
+
         } else if (args[1].equalsIgnoreCase("motion") && args.length >= 3 && args.length <= 5) {
             var definition = catalog.motions().get(args[2]);
             if (definition == null) throw new IllegalArgumentException("Unknown motion: " + args[2]);

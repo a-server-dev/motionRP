@@ -290,7 +290,7 @@ if(process.env.MOTIONRP_GIVE_ONLY==='1'){
   const sets=bot=>bot.inventory.items().filter(i=>i.name==='carrot_on_a_stick').length;
   a.chat('/motionrp give controller');await waitFor(()=>sets(a)===1,'named non-OP receives controller');
   a.chat('/motionrp give motion roll 1');await waitFor(()=>tokens(a)===1,'named non-OP receives motion token');
-  a.chat('/motionrp give all');await waitFor(()=>sets(a)===2,'named non-OP receives full controller');
+  a.chat('/motionrp give all');await waitFor(()=>sets(a)===3,'named non-OP receives both full-controller pages');
   a.chat('/motionrp give controller '+bn);await waitFor(()=>sets(b)===1,'named non-OP may distribute to another player');
   pass('EmeraldREX91 without OP can use controller, motion and all give subcommands, including another recipient');
   for(const command of ['status','configreload','pack publish']){
@@ -304,6 +304,55 @@ if(process.env.MOTIONRP_GIVE_ONLY==='1'){
   pass('OP is allowed, other non-OPs and de-OPed players are denied, and console distribution still works');
  }catch(e){code=1;console.error(e.stack);}
  finally{for(const bot of bots)try{bot.quit();}catch{}try{await stopServer();}catch{}log?.end();fs.writeFileSync(path.join(project,'build/give-smoke-result.json'),JSON.stringify({passed:code===0,version,checks},null,2));}
+ process.exit(code);
+}
+
+if(process.env.MOTIONRP_INAZUMA_ONLY==='1'){
+ let code=0;
+ try{
+  fs.copyFileSync(path.join(project,`build/libs/motionRP-${version}.jar`),path.join(run,'plugins/MotionRP.jar'));
+  const freshAssets=['death_sword','eternal_blizzard','death_spear'].some(id=>!fs.existsSync(path.join(run,'plugins/BetterModel/players/motionrp_'+id+'.bbmodel')));
+  log=fs.createWriteStream(path.join(project,'build/inazuma-smoke.log'));await startServer();
+  if(freshAssets)await waitFor(()=>output.includes('Bundled Rasengan models loaded'),'initial asset rebuild finishes',120000);
+  const ids=['death_sword','eternal_blizzard','death_spear'];
+  const beginStatus=output.length,timer=setInterval(()=>consoleCommand('motionrp status'),500);
+  try{await waitFor(()=>ids.every(id=>output.slice(beginStatus).includes(id+': 利用可能')),'new Inazuma assets load',120000);}finally{clearInterval(timer);}
+  const suffix=String(Date.now()).slice(-5),names=['ShotA'+suffix,'ShotB'+suffix,'ShotC'+suffix];
+  const a=await connect(names[0]),b=await connect(names[1]),c=await connect(names[2]);c.chat('/motionrp view off');
+  consoleCommand('fill -4 -60 -4 9 -50 6 air');consoleCommand('fill -4 -61 -4 9 -61 6 grass_block');
+  for(const [i,name]of names.entries())consoleCommand(`tp ${name} ${i*3+.5} -60 .5 0 0`);await sleep(500);
+  const spawns=[new Set(),new Set(),new Set()],removed=[new Set(),new Set(),new Set()],particles=[];let active='';
+  for(const [i,bot]of [a,b,c].entries()){
+   bot._client.on('spawn_entity',p=>{if(p.type===bot.registry.entitiesByName.item_display.id)spawns[i].add(p.entityId);});
+   bot._client.on('entity_destroy',p=>p.entityIds.forEach(id=>removed[i].add(id)));
+   bot._client.on('world_particles',p=>{if(i===1)particles.push({shot:active,type:p.particle.type});});
+  }
+  const cleanup=()=>spawns.every((ids,i)=>[...ids].every(id=>removed[i].has(id)));
+  for(const id of ids){
+   consoleCommand('clear '+names[0]);await sleep(250);consoleCommand('motionrp give controller '+names[0]);consoleCommand('motionrp give motion '+id+' 1 '+names[0]);
+   await waitFor(()=>tokens(a)===1,'new shot item');await a.equip(a.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');await menu(a);await deposit(a);assert.equal(registered(a),1);await closeMenu(a);
+   spawns.forEach(s=>s.clear());removed.forEach(s=>s.clear());const start=output.length,origin=a.entity.position.clone();active=id;a._testLookUp();await sleep(150);a._testLeftClick();
+   try{await waitFor(()=>output.slice(start).includes('Inazuma-'+id+' phase: CHARGE'),'charge '+id);}catch(e){throw new Error(e.message+' messages='+JSON.stringify(a._testMessages.slice(-8)));}
+   await waitFor(()=>output.slice(start).includes('Inazuma-'+id+' kick tick='),'kick '+id);
+   const contact=output.slice(start).match(/contactGap=([^ ]+)/);assert.ok(contact&&+contact[1]<1e-8,'ball meets animated foot');
+   await waitFor(()=>output.slice(start).includes('Inazuma-'+id+' impact tick='),'impact '+id);await waitFor(cleanup,'cleanup '+id);await waitFor(()=>a.entity.position.distanceTo(origin)<.03,'pilot restored '+id);
+   assert.ok(spawns[0].size>5&&spawns[1].size>5);assert.equal(spawns[2].size,0);
+   assert.ok(particles.some(p=>p.shot===id&&p.type===(id==='eternal_blizzard'?'snowflake':'dust')));
+   assert.ok(!(await readPlayerData(names[0])).BukkitValues?.['motionrp:aerial_return_v1']);
+   pass(id+' item plays charge, live-foot kick, themed projectile, impact and cleanup; OFF viewers see nothing');
+   await menu(a);while(registered(a)>0){const slot=a.currentWindow.slots.findIndex((item,i)=>i<a.currentWindow.inventoryStart&&item?.name==='paper');await click(a,slot);}await closeMenu(a);
+  }
+  // The new total exceeds one 27-slot item: give all must preserve every entry.
+  consoleCommand('clear '+names[0]);await sleep(300);consoleCommand('motionrp give all '+names[0]);await waitFor(()=>a.inventory.items().filter(i=>i.name==='carrot_on_a_stick').length===2,'two full-set pages');
+  const sets=a.inventory.items().filter(i=>i.name==='carrot_on_a_stick');let total=0;
+  for(const item of sets){await a.equip(item,'hand');await menu(a);total+=registered(a);await closeMenu(a);}
+  assert.equal(total,28);pass('give all distributes all 28 motions across two independently editable controller items');
+  // Cancel while airborne and verify no later projectile or stale pilot journal.
+  consoleCommand('clear '+names[0]);await sleep(250);consoleCommand('motionrp give controller '+names[0]);consoleCommand('motionrp give motion eternal_blizzard 1 '+names[0]);await waitFor(()=>tokens(a)===1,'cancel shot item');await a.equip(a.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');await menu(a);await deposit(a);await closeMenu(a);
+  spawns.forEach(s=>s.clear());removed.forEach(s=>s.clear());const cancel=output.length,origin=a.entity.position.clone();a._testLeftClick();await waitFor(()=>a.entity.position.y>origin.y+1,'airborne before cancel');a._testLeftClick();await waitFor(cleanup,'cancel removes all effects');await waitFor(()=>a.entity.position.distanceTo(origin)<.03,'cancel restores pilot');await sleep(4000);assert.ok(!output.slice(cancel).includes(' kick tick='));
+  pass('cancelling the spinning ice shot restores the player and suppresses the later kick');
+ }catch(e){code=1;console.error(e.stack);}
+ finally{for(const bot of bots)try{bot.quit();}catch{}try{await stopServer();}catch{}log?.end();fs.writeFileSync(path.join(project,'build/inazuma-smoke-result.json'),JSON.stringify({passed:code===0,version,checks},null,2));}
  process.exit(code);
 }
 
@@ -462,14 +511,14 @@ if(process.env.MOTIONRP_ALL_SET_ONLY==='1'){
   const suffix=String(Date.now()).slice(-6),an='AllA'+suffix,bn='AllB'+suffix;let a=await connect(an),b=await connect(bn);
   for(const [name,x]of [[an,.5],[bn,4.5]])consoleCommand(`tp ${name} ${x} -60.0 0.5 0 0`);await sleep(400);
   consoleCommand('motionrp give controller '+an);consoleCommand('motionrp give motion roll 1 '+an);await waitFor(()=>tokens(a)===1,'normal set materials');await a.equip(a.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');await menu(a);await deposit(a);await closeMenu(a);const normal=(await readSaved(an)).loadout;
-  consoleCommand('motionrp give all '+an);await waitFor(()=>a.inventory.items().filter(i=>i.name==='carrot_on_a_stick').length===2,'complete controller distributed');const normalSlot=36+a.quickBarSlot,full=a.inventory.items().find(i=>i.name==='carrot_on_a_stick'&&i.slot!==normalSlot);assert.ok(full);await a.equip(full,'hand');await menu(a);assert.equal(registered(a),25);await closeMenu(a);assert.deepEqual((await readSaved(an)).loadout,normal);pass('The all command gives a separate 25-motion controller including paired scenes, leaving existing registration unchanged');
+  consoleCommand('motionrp give all '+an);await waitFor(()=>a.inventory.items().filter(i=>i.name==='carrot_on_a_stick').length===3,'complete controller pages distributed');const normalSlot=36+a.quickBarSlot,full=a.inventory.items().find(i=>i.name==='carrot_on_a_stick'&&i.slot!==normalSlot);assert.ok(full);await a.equip(full,'hand');await menu(a);assert.equal(registered(a),27);await closeMenu(a);assert.deepEqual((await readSaved(an)).loadout,normal);pass('The all command gives a separate 27-motion first controller page including paired scenes, leaving existing registration unchanged');
   const spawned=new Set(),removed=new Set();a._client.on('spawn_entity',p=>{if(p.type===a.registry.entitiesByName.item_display.id)spawned.add(p.entityId);});a._client.on('entity_destroy',p=>p.entityIds.forEach(id=>removed.add(id)));a._testLookUp();await sleep(200);a._testLeftClick();await waitFor(()=>spawned.size>0,'complete controller playback');await sleep(300);a._testLeftClick();await waitFor(()=>[...spawned].every(id=>removed.has(id)),'complete controller playback cancellation');pass('A preloaded motion plays directly from the full controller and cancels normally');
-  await menu(a);const before=tokens(a);await click(a,0);assert.equal(registered(a),24);assert.equal(tokens(a),before+1);await closeMenu(a);assert.deepEqual((await readSaved(an)).loadout,normal);await menu(a);await deposit(a);assert.equal(registered(a),25);await closeMenu(a);pass('Withdrawing and registering tokens changes only the held complete controller and conserves item counts');
+  await menu(a);const before=tokens(a);await click(a,0);assert.equal(registered(a),26);assert.equal(tokens(a),before+1);await closeMenu(a);assert.deepEqual((await readSaved(an)).loadout,normal);await menu(a);await deposit(a);assert.equal(registered(a),27);await closeMenu(a);pass('Withdrawing and registering tokens changes only the held complete controller and conserves item counts');
   // Bind the GUI to the controller selected when it opens, even if a client changes its hotbar underneath it.
   await menu(a);a.setQuickBarSlot((a.quickBarSlot+1)%9);await sleep(300);if(a.currentWindow){await click(a,0);await waitFor(()=>a.currentWindow===null,'mismatched set closes GUI');}assert.equal(tokens(a),0);assert.deepEqual((await readSaved(an)).loadout,normal);pass('Switching hotbar slots under the GUI cannot mutate a different set or release its tokens');
-  const allItem=a.inventory.items().find(i=>i.name==='carrot_on_a_stick'&&JSON.stringify(i.components??i.nbt).includes('controller_set_id'));assert.ok(allItem,'Embedded controller metadata');await a.equip(allItem,'hand');await menu(a);assert.equal(registered(a),25);await closeMenu(a);a._testLookUp();a.setControlState('sneak',true);await sleep(250);a._testLeftClick();await sleep(300);a.setControlState('sneak',false);assert.deepEqual((await readSaved(an)).loadout,normal);pass('Cycling the full controller selection does not change the normal controller selection');
+  const allItem=a.inventory.items().find(i=>i.name==='carrot_on_a_stick'&&JSON.stringify(i.components??i.nbt).includes('controller_set_id'));assert.ok(allItem,'Embedded controller metadata');await a.equip(allItem,'hand');await menu(a);assert.equal(registered(a),27);await closeMenu(a);a._testLookUp();a.setControlState('sneak',true);await sleep(250);a._testLeftClick();await sleep(300);a.setControlState('sneak',false);assert.deepEqual((await readSaved(an)).loadout,normal);pass('Cycling the full controller selection does not change the normal controller selection');
   // Copy to an empty hand then clear the source: exercise vanilla ItemStack/PDC portability without altering the recipient registration.
-  consoleCommand(`item replace entity ${bn} weapon.mainhand from entity ${an} weapon.mainhand`);consoleCommand(`item replace entity ${an} weapon.mainhand with air`);await waitFor(()=>b.inventory.items().some(i=>i.name==='carrot_on_a_stick'),'controller transferred');await menu(b);assert.equal(registered(b),25);await click(b,0);assert.equal(registered(b),24);await closeMenu(b);await disconnect(b);b=await connect(bn);await menu(b);assert.equal(registered(b),24);await closeMenu(b);pass('The item carries its own registration to another player and retains edits across reconnect');
+  consoleCommand(`item replace entity ${bn} weapon.mainhand from entity ${an} weapon.mainhand`);consoleCommand(`item replace entity ${an} weapon.mainhand with air`);await waitFor(()=>b.inventory.items().some(i=>i.name==='carrot_on_a_stick'),'controller transferred');await menu(b);assert.equal(registered(b),27);await click(b,0);assert.equal(registered(b),26);await closeMenu(b);await disconnect(b);b=await connect(bn);await menu(b);assert.equal(registered(b),26);await closeMenu(b);pass('The item carries its own registration to another player and retains edits across reconnect');
   const denied=b._testMessages.length;b.chat('/motionrp give all');await waitFor(()=>b._testMessages.slice(denied).some(m=>m.includes('OPまたはEmeraldREX91')),'give access required');pass('Other non-OP players cannot distribute complete sets');
   for(let slot=1;slot<9;slot++)consoleCommand(`item replace entity ${bn} hotbar.${slot} with stone 64`);for(let slot=0;slot<27;slot++)consoleCommand(`item replace entity ${bn} inventory.${slot} with stone 64`);await sleep(350);const begin=output.length;consoleCommand('motionrp give all '+bn);await waitFor(()=>output.slice(begin).includes('所持品に空き'),'full inventory rejected');assert.equal(b.inventory.items().filter(i=>i.name==='carrot_on_a_stick').length,1);pass('A full inventory rejects distribution without replacing the existing controller');
   await a.equip(a.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');await menu(a);assert.equal(registered(a),1);await closeMenu(a);pass('The original normal controller still opens its unchanged one-motion registration');
