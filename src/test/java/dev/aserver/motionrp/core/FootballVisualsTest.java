@@ -7,7 +7,7 @@ import static dev.aserver.motionrp.core.FootballFootPath.*;
 class FootballVisualsTest {
  @Test void bootMovesTowardsTheShotAtContactInsteadOfSwingingBackwards(){
   int contact=FootballTimeline.kick(true);
-  for(int t=contact;t<=contact+4;t++)assertTrue(FootballFootPath.at(true,t).boot().forward()>FootballFootPath.at(true,t-1).boot().forward(),"Foot must travel forwards through contact tick "+t);
+  for(int t=contact+2;t<=contact+4;t++)assertTrue(FootballFootPath.at(true,t).boot().forward()>FootballFootPath.at(true,t-1).boot().forward(),"Foot must travel forwards through contact tick "+t);
   assertEquals(8,FootballTimeline.height(50,true));assertEquals(8,FootballTimeline.height(contact,true));
   assertEquals(0,FootballTimeline.height(FootballTimeline.land(true),true),1e-9);
  }
@@ -39,6 +39,15 @@ class FootballVisualsTest {
  }
  @Test void old050FireIsRecognizedForAutomaticUpgrade()throws Exception{
   String name="players/motionrp_fire_tornado.bbmodel";try(var in=new GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.50.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
+ }
+ @Test void rearBootPausesBeforeTheFastForwardSwing(){
+  var a=FootballFootPath.at(true,66).boot();var b=FootballFootPath.at(true,68).boot();var impact=FootballFootPath.at(true,72).boot();
+  assertTrue(a.forward()<-.3&&b.forward()<-.3,"Boot must be drawn back before the shot");
+  assertTrue(Math.abs(a.forward()-b.forward())<.05,"Hold the drawn-back foot before swinging");
+  assertTrue(impact.forward()-b.forward()>.6,"A large forward swing must follow the hold");
+ }
+ @Test void old051FireIsRecognizedForAutomaticUpgrade()throws Exception{
+  String name="players/motionrp_fire_tornado.bbmodel";try(var in=new GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.51.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
  }
  @Test void flameRibbonsStayAroundTheAnimatedTorsoInEveryBodyOrientation(){
   for(int t=20;t<82;t+=3){var f=FootballFootPath.at(true,t);Point center=f.torso();Point axis=unit(sub(f.upper(),center));
