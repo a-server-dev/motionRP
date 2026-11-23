@@ -128,18 +128,17 @@ def reference_actors(rig):
   if fire:
    # Tilt on the parent, spin around the body's local axis on the child.
    root=next(g for g in m['groups']if g['name']=='player_root')
-   hip=next(g for g in m['groups']if g['name']=='phip_hip')
    spin={'name':'football_spin','uuid':ident(name+'/spin'),'origin':root['origin'][:],'rotation':[0,0,0],'export':True}
-   m['groups'].append(spin)
-   def nest(nodes):
-    for node in nodes:
-     if isinstance(node,dict):
-      for i,child in enumerate(node['children']):
-       if isinstance(child,dict)and child['uuid']==hip['uuid']:
-        node['children'][i]={'uuid':spin['uuid'],'children':[child]};return True
-      if nest(node['children']):return True
-    return False
-   assert nest(m['outliner'])
+   bank={'name':'football_bank','uuid':ident(name+'/bank'),'origin':root['origin'][:],'rotation':[0,0,0],'export':True}
+   m['groups'] += [spin,bank]
+   # The upstream Steve rig puts both thighs beside the hip, not inside it.
+   # Rotate every body branch together; leave the shadow and name tag outside.
+   body_ids={g['uuid']for g in m['groups']if g['name']in {'phip_hip','prl_right_leg','pll_left_leg'}}
+   node=next(n for n in m['outliner']if isinstance(n,dict)and n['uuid']==root['uuid'])
+   branches=[n for n in node['children']if isinstance(n,dict)and n['uuid']in body_ids]
+   assert len(branches)==3
+   node['children']=[n for n in node['children']if n not in branches]
+   node['children'].append({'uuid':bank['uuid'],'children':[{'uuid':spin['uuid'],'children':branches}]})
    landmarks=[(0,0),(16,8),(36,20),(46,26),(82,46),(106,64),(112,68),(126,78),(144,88),(156,98),(178,108)]
    def retime(t):
     for (a,x),(b,y)in zip(landmarks,landmarks[1:]):
@@ -151,6 +150,9 @@ def reference_actors(rig):
      if entry['name']=='player_root'and key['channel']=='rotation':key['data_points'][0]['y']=0
    # Explicit quarter turns prevent quaternion interpolation taking a shortcut.
    track('football_spin',[(0,(0,0,0)),(26,(0,0,0))]+[(28+i*1.75,(0,i*90,0))for i in range(17)]+[(108,(0,1440,0))])
+   # Quarter-turn left around the horizontal body's own axis at the kick.
+   # Keep the four-turn spin track independent and unbank before landing.
+   track('football_bank',[(0,(0,0,0)),(56,(0,0,0)),(62,(0,90,0)),(78,(0,90,0)),(96,(0,0,0)),(108,(0,0,0))])
    # BetterModel's player track is evaluated ahead of the scene tick.
    # Hold the initial pose for four ticks so the visible boot reaches contact
    # during the scene's release, before the follow-through reverses its motion.

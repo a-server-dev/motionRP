@@ -24,6 +24,15 @@ class FootballAssetsTest {
   for(var raw:spin.getAsJsonArray("keyframes")){var k=raw.getAsJsonObject();double y=k.getAsJsonArray("data_points").get(0).getAsJsonObject().get("y").getAsDouble();assertTrue(y-previous<=90.001);if(y>previous)quarters++;previous=y;}
   assertEquals(1440,previous);assertEquals(16,quarters);assertEquals(112,FootballTimeline.end(true));assertEquals(68,FootballTimeline.kick(true));
  }
+ @Test void entireBodyIncludingBothThighsSharesTheSpinParent()throws Exception{
+  var model=load("players/motionrp_fire_tornado");var names=new HashMap<String,String>();
+  for(var raw:model.getAsJsonArray("groups")){var g=raw.getAsJsonObject();names.put(g.get("uuid").getAsString(),g.get("name").getAsString());}
+  var root=model.getAsJsonArray("outliner").get(0).getAsJsonObject();
+  var bank=root.getAsJsonArray("children").asList().stream().filter(JsonElement::isJsonObject).map(JsonElement::getAsJsonObject).filter(n->"football_bank".equals(names.get(n.get("uuid").getAsString()))).findFirst().orElseThrow();
+  var spin=bank.getAsJsonArray("children").get(0).getAsJsonObject();assertEquals("football_spin",names.get(spin.get("uuid").getAsString()));
+  var body=spin.getAsJsonArray("children").asList().stream().map(JsonElement::getAsJsonObject).map(n->names.get(n.get("uuid").getAsString())).collect(java.util.stream.Collectors.toSet());
+  assertEquals(Set.of("phip_hip","prl_right_leg","pll_left_leg"),body,"Both thigh branches must rotate with the hip");
+ }
  @Test void ballHasTwelvePentagonsAndTwentyHexagonsAndPenguinHasFaceAndFlippers()throws Exception{
   assertEquals(32,load("models/motionrp_football").getAsJsonArray("elements").size());
   var p=load("models/motionrp_emperor_penguin");var names=p.getAsJsonArray("elements").asList().stream().map(e->e.getAsJsonObject().get("name").getAsString()).toList();

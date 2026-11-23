@@ -21,6 +21,15 @@ class FootballVisualsTest {
  @Test void old047FireIsRecognizedForAutomaticUpgrade()throws Exception{
   String name="players/motionrp_fire_tornado.bbmodel";try(var in=new GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.47.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
  }
+ @Test void horizontalKickIsBankedLeftByAQuarterTurn(){
+  for(int tick=68;tick<=72;tick++){
+   var frame=FootballFootPath.at(true,tick);var side=unit(sub(frame.side(),frame.torso()));
+   assertEquals(0,side.right(),1e-6);assertTrue(side.height()<-.98,"Side axis must turn left/down by 90 degrees");
+  }
+ }
+ @Test void old048FireIsRecognizedForAutomaticUpgrade()throws Exception{
+  String name="players/motionrp_fire_tornado.bbmodel";try(var in=new GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.48.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
+ }
  @Test void flameRibbonsStayAroundTheAnimatedTorsoInEveryBodyOrientation(){
   for(int t=20;t<82;t+=3){var f=FootballFootPath.at(true,t);Point center=f.torso();Point axis=unit(sub(f.upper(),center));
    for(int strand=0;strand<2;strand++)for(int i=0;i<FootballVisuals.FLAME_SAMPLES;i++){

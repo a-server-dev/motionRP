@@ -2714,6 +2714,21 @@
       "export": true
     },
     {
+      "name": "football_bank",
+      "uuid": "8900a6b9-3259-5792-bf1c-c80ec7e87761",
+      "origin": [
+        0,
+        17,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "export": true
+    },
+    {
       "name": "football_boot",
       "uuid": "b16ec2a5-2273-5c1d-86ee-2773e77a2bbc",
       "origin": [
@@ -2802,146 +2817,151 @@
           ]
         },
         {
-          "uuid": "add09c5b-6b5b-58bf-8594-b6a57f4706ae",
+          "uuid": "310c12c3-81f7-ed2f-172e-4d4c44aaa31f",
+          "isOpen": true,
+          "children": [
+            "34afd0ba-f1fd-3d07-3b19-cdbe87b7bc1e"
+          ]
+        },
+        {
+          "uuid": "8900a6b9-3259-5792-bf1c-c80ec7e87761",
           "children": [
             {
-              "uuid": "9dc65952-10a9-876f-bd47-d6a7e9ec6183",
-              "isOpen": true,
+              "uuid": "add09c5b-6b5b-58bf-8594-b6a57f4706ae",
               "children": [
-                "ea42f7f7-a6f1-4479-c43f-48211bab5ed2",
-                "357ebf82-23ba-edb1-081f-dca75d94b83c",
                 {
-                  "uuid": "e297aef6-7dfd-f100-2e7c-ab113699b922",
+                  "uuid": "9dc65952-10a9-876f-bd47-d6a7e9ec6183",
                   "isOpen": true,
                   "children": [
-                    "5ea74bdb-ba28-b8e3-103b-9be6ff2262da",
-                    "f5b9f499-b26b-f912-1a54-151d702e13ed",
+                    "ea42f7f7-a6f1-4479-c43f-48211bab5ed2",
+                    "357ebf82-23ba-edb1-081f-dca75d94b83c",
                     {
-                      "uuid": "a0c01522-9040-7533-fa11-f6a45d3d96ac",
+                      "uuid": "e297aef6-7dfd-f100-2e7c-ab113699b922",
                       "isOpen": true,
                       "children": [
+                        "5ea74bdb-ba28-b8e3-103b-9be6ff2262da",
+                        "f5b9f499-b26b-f912-1a54-151d702e13ed",
                         {
-                          "uuid": "9824ae07-4a7e-34a7-e7db-3dbb3327c38b",
-                          "isOpen": true,
-                          "children": []
-                        },
-                        "dc1510db-a719-17b4-e253-c992a92c5d25",
-                        "d51a8665-a2bc-af6e-1230-5acba07248e7",
-                        {
-                          "uuid": "34097e46-c233-c03c-d8b9-aee154c9946f",
+                          "uuid": "a0c01522-9040-7533-fa11-f6a45d3d96ac",
                           "isOpen": true,
                           "children": [
-                            "7f60fbaf-510d-2e5f-b7d2-9111e08443cd",
-                            "e0f94313-bf88-492d-0c68-bd6b466a3b68"
-                          ]
-                        },
-                        {
-                          "uuid": "bfc2f156-b48b-dd08-1b9e-777d8ada16b2",
-                          "isOpen": true,
-                          "children": [
-                            "53d40d2e-0941-29f9-00ed-1b19c941dcd8",
-                            "b17452ef-afbe-e010-f2c9-e0ba945faa1f",
                             {
-                              "uuid": "cf1618da-24d8-aab8-eebc-128815c02d35",
+                              "uuid": "9824ae07-4a7e-34a7-e7db-3dbb3327c38b",
+                              "isOpen": true,
+                              "children": []
+                            },
+                            "dc1510db-a719-17b4-e253-c992a92c5d25",
+                            "d51a8665-a2bc-af6e-1230-5acba07248e7",
+                            {
+                              "uuid": "34097e46-c233-c03c-d8b9-aee154c9946f",
                               "isOpen": true,
                               "children": [
-                                "e02c395d-e1bc-1375-a8ed-729e19544ce9",
-                                "a509c2d7-53ef-2b11-1331-f716b9c210d6",
-                                {
-                                  "uuid": "fcaf8da0-0146-2587-b578-3e1af888deaa",
-                                  "isOpen": true,
-                                  "children": []
-                                }
+                                "7f60fbaf-510d-2e5f-b7d2-9111e08443cd",
+                                "e0f94313-bf88-492d-0c68-bd6b466a3b68"
                               ]
-                            }
-                          ]
-                        },
-                        {
-                          "uuid": "b3135254-0351-3462-2479-e6a3286c89ff",
-                          "isOpen": true,
-                          "children": [
-                            "addb9f66-a2a4-46f7-b6af-f5a23c00fe70",
-                            "5e7dc31c-c64a-ff15-90d9-52a6f77cb14b",
+                            },
                             {
-                              "uuid": "1a9070b5-b8b6-b955-9f31-54f9625f8f3d",
+                              "uuid": "bfc2f156-b48b-dd08-1b9e-777d8ada16b2",
                               "isOpen": true,
                               "children": [
-                                "1433ee62-21ac-d72c-0fd0-37000e5eb221",
-                                "24bacfd6-cde8-81a0-f620-998cf5393d48",
+                                "53d40d2e-0941-29f9-00ed-1b19c941dcd8",
+                                "b17452ef-afbe-e010-f2c9-e0ba945faa1f",
                                 {
-                                  "uuid": "0e94ff40-15b6-0b24-d0a0-447f000d761b",
+                                  "uuid": "cf1618da-24d8-aab8-eebc-128815c02d35",
                                   "isOpen": true,
-                                  "children": []
+                                  "children": [
+                                    "e02c395d-e1bc-1375-a8ed-729e19544ce9",
+                                    "a509c2d7-53ef-2b11-1331-f716b9c210d6",
+                                    {
+                                      "uuid": "fcaf8da0-0146-2587-b578-3e1af888deaa",
+                                      "isOpen": true,
+                                      "children": []
+                                    }
+                                  ]
                                 }
                               ]
+                            },
+                            {
+                              "uuid": "b3135254-0351-3462-2479-e6a3286c89ff",
+                              "isOpen": true,
+                              "children": [
+                                "addb9f66-a2a4-46f7-b6af-f5a23c00fe70",
+                                "5e7dc31c-c64a-ff15-90d9-52a6f77cb14b",
+                                {
+                                  "uuid": "1a9070b5-b8b6-b955-9f31-54f9625f8f3d",
+                                  "isOpen": true,
+                                  "children": [
+                                    "1433ee62-21ac-d72c-0fd0-37000e5eb221",
+                                    "24bacfd6-cde8-81a0-f620-998cf5393d48",
+                                    {
+                                      "uuid": "0e94ff40-15b6-0b24-d0a0-447f000d761b",
+                                      "isOpen": true,
+                                      "children": []
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "uuid": "4b4eb9f8-2e6e-53f4-9013-3cb96ada3589",
+                              "children": []
+                            },
+                            {
+                              "uuid": "7a45a680-dc10-540a-8f35-63c3eabaf93f",
+                              "children": []
+                            },
+                            {
+                              "uuid": "1edb056e-2ddb-5e2d-be1d-2b2e109b6007",
+                              "children": []
                             }
                           ]
-                        },
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "uuid": "7e8426f1-08b2-81a2-7703-cb76ff5e7003",
+                  "isOpen": true,
+                  "children": [
+                    "b17675fc-b79b-0ad9-8f81-aa2dd1fc8c97",
+                    "2e42e483-1557-d21e-aee0-94af7bedfd40",
+                    {
+                      "uuid": "c6d9e946-1d10-482d-14b1-0766027adba8",
+                      "isOpen": true,
+                      "children": [
+                        "9455d16e-4bbf-4b63-881d-7daf943e782b",
+                        "16aee685-0ead-a542-5b3c-a62467ca45e3",
                         {
-                          "uuid": "4b4eb9f8-2e6e-53f4-9013-3cb96ada3589",
+                          "uuid": "b16ec2a5-2273-5c1d-86ee-2773e77a2bbc",
                           "children": []
                         },
                         {
-                          "uuid": "7a45a680-dc10-540a-8f35-63c3eabaf93f",
-                          "children": []
-                        },
-                        {
-                          "uuid": "1edb056e-2ddb-5e2d-be1d-2b2e109b6007",
+                          "uuid": "174c4e4d-00e9-5f87-8c1e-fcceca5c8793",
                           "children": []
                         }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "uuid": "5ef5d225-d5ae-6787-8838-b75ccb7a7a81",
+                  "isOpen": true,
+                  "children": [
+                    "0e370edc-7b05-dccf-dd2a-a92cfe9f3e22",
+                    "dc189735-0a58-619b-07ef-feec37d65e7d",
+                    {
+                      "uuid": "1b5cc202-c09e-faa0-5057-eb4ae60bf336",
+                      "isOpen": true,
+                      "children": [
+                        "6bcf768b-beab-4c39-6d96-91266036a4e1",
+                        "274282a7-bc7b-02f8-4dce-84226e9dd9c1"
                       ]
                     }
                   ]
                 }
               ]
             }
-          ]
-        },
-        {
-          "uuid": "7e8426f1-08b2-81a2-7703-cb76ff5e7003",
-          "isOpen": true,
-          "children": [
-            "b17675fc-b79b-0ad9-8f81-aa2dd1fc8c97",
-            "2e42e483-1557-d21e-aee0-94af7bedfd40",
-            {
-              "uuid": "c6d9e946-1d10-482d-14b1-0766027adba8",
-              "isOpen": true,
-              "children": [
-                "9455d16e-4bbf-4b63-881d-7daf943e782b",
-                "16aee685-0ead-a542-5b3c-a62467ca45e3",
-                {
-                  "uuid": "b16ec2a5-2273-5c1d-86ee-2773e77a2bbc",
-                  "children": []
-                },
-                {
-                  "uuid": "174c4e4d-00e9-5f87-8c1e-fcceca5c8793",
-                  "children": []
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "uuid": "5ef5d225-d5ae-6787-8838-b75ccb7a7a81",
-          "isOpen": true,
-          "children": [
-            "0e370edc-7b05-dccf-dd2a-a92cfe9f3e22",
-            "dc189735-0a58-619b-07ef-feec37d65e7d",
-            {
-              "uuid": "1b5cc202-c09e-faa0-5057-eb4ae60bf336",
-              "isOpen": true,
-              "children": [
-                "6bcf768b-beab-4c39-6d96-91266036a4e1",
-                "274282a7-bc7b-02f8-4dce-84226e9dd9c1"
-              ]
-            }
-          ]
-        },
-        {
-          "uuid": "310c12c3-81f7-ed2f-172e-4d4c44aaa31f",
-          "isOpen": true,
-          "children": [
-            "34afd0ba-f1fd-3d07-3b19-cdbe87b7bc1e"
           ]
         }
       ]
@@ -4795,6 +4815,96 @@
                 {
                   "x": "0",
                   "y": "1440",
+                  "z": "0"
+                }
+              ]
+            }
+          ]
+        },
+        "8900a6b9-3259-5792-bf1c-c80ec7e87761": {
+          "name": "football_bank",
+          "type": "bone",
+          "keyframes": [
+            {
+              "channel": "rotation",
+              "time": 0.0,
+              "interpolation": "linear",
+              "color": -1,
+              "uuid": "3a5d4245-a109-5101-89c2-49247efc6d62",
+              "data_points": [
+                {
+                  "x": "0",
+                  "y": "0",
+                  "z": "0"
+                }
+              ]
+            },
+            {
+              "channel": "rotation",
+              "time": 3.0,
+              "interpolation": "linear",
+              "color": -1,
+              "uuid": "2d189e84-a99e-59dc-a207-afe382b4b16d",
+              "data_points": [
+                {
+                  "x": "0",
+                  "y": "0",
+                  "z": "0"
+                }
+              ]
+            },
+            {
+              "channel": "rotation",
+              "time": 3.3000000000000003,
+              "interpolation": "linear",
+              "color": -1,
+              "uuid": "73eecd03-7405-514d-8eb1-ac5af2ad2a26",
+              "data_points": [
+                {
+                  "x": "0",
+                  "y": "90",
+                  "z": "0"
+                }
+              ]
+            },
+            {
+              "channel": "rotation",
+              "time": 4.1,
+              "interpolation": "linear",
+              "color": -1,
+              "uuid": "3bdc9cbd-00cc-535f-a718-deeb85a18c04",
+              "data_points": [
+                {
+                  "x": "0",
+                  "y": "90",
+                  "z": "0"
+                }
+              ]
+            },
+            {
+              "channel": "rotation",
+              "time": 5.0,
+              "interpolation": "linear",
+              "color": -1,
+              "uuid": "49871357-bc7c-54f0-bca8-4f669b68966a",
+              "data_points": [
+                {
+                  "x": "0",
+                  "y": "0",
+                  "z": "0"
+                }
+              ]
+            },
+            {
+              "channel": "rotation",
+              "time": 5.6000000000000005,
+              "interpolation": "linear",
+              "color": -1,
+              "uuid": "de75c703-1afe-5882-a517-d24b6e4a16e9",
+              "data_points": [
+                {
+                  "x": "0",
+                  "y": "0",
                   "z": "0"
                 }
               ]

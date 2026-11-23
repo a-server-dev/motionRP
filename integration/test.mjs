@@ -355,6 +355,8 @@ if(process.env.MOTIONRP_FOOTBALL_ONLY==='1'){
     assert.equal(footMotion.at(-1).tick,68);
     assert.ok(output.slice(begin).includes('kick contact at live boot'),'Ball releases at the live animated boot');
     const bodyAxis=output.slice(begin).match(/Football-fire_tornado kick body axis forward=([^ ]+) up=([^\r\n]+)/);
+    const bank=output.slice(begin).match(/Football-fire_tornado kick bank side up=([^\r\n]+)/);
+    assert.ok(bank&&+bank[1]<-.98,'Native horizontal body is banked 90 degrees left');
     assert.ok(bodyAxis,'Native torso orientation measured at release');
     assert.ok(+bodyAxis[1]>.95,'Head points in the shot direction');
     assert.ok(+bodyAxis[2]<-.08&&+bodyAxis[2]>-.3,'Head is slightly below the horizontal torso');

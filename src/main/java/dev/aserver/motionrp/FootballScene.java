@@ -89,6 +89,7 @@ final class FootballScene extends SummonScene {
   if(tick==release){
    if(fire){
     var torso=body.bone("football_torso").worldPosition();var upper=body.bone("football_upper").worldPosition();var axis=upper.sub(torso,new org.joml.Vector3f()).normalize();
+    var side=body.bone("football_side").worldPosition().sub(torso,new org.joml.Vector3f()).normalize();trace("kick bank side up="+side.y);
     Vector aim=at(0,1,0).toVector().subtract(origin.toVector());trace("kick body axis forward="+(axis.x*aim.getX()+axis.z*aim.getZ())+" up="+axis.y);
    }
    ballPosition=contact();shotStart=ballPosition.clone();previousBall=shotStart.clone();place(ball,ballPosition);trace("kick contact at "+(fire?"live":"baked")+" boot; ball released");
