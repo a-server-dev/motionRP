@@ -5,6 +5,7 @@ import dev.aserver.motionrp.core.FootballFootPath;
 import dev.aserver.motionrp.core.FootballVisuals;
 import dev.aserver.motionrp.core.FootballBallArc;
 import kr.toxicity.model.api.platform.PlatformBillboard;
+import kr.toxicity.model.api.BetterModel;
 import kr.toxicity.model.api.bukkit.platform.BukkitAdapter;
 import kr.toxicity.model.api.tracker.*;
 import org.bukkit.*;
@@ -40,8 +41,16 @@ final class FootballScene extends SummonScene {
   return new FootballFootPath.Point(-Math.cos(yaw)*delta.getX()-Math.sin(yaw)*delta.getZ(),-Math.sin(yaw)*delta.getX()+Math.cos(yaw)*delta.getZ(),delta.getY());
  }
  private Location blend(Location a,Location b,double p){return a.clone().add(b.toVector().subtract(a.toVector()).multiply(p));}
- private void orient(DummyTracker tracker,FootballVisuals.Facing facing){
-  tracker.rotator(ModelRotator.DEFAULT);tracker.rotation(()->new ModelRotation(facing.pitch(),facing.yaw()));tracker.forceUpdate(true);
+ /** DummyTracker.location teleports with pitch zero, even when its rotation cache
+  * is unchanged. Reapply every bone's rotation after each movement packet. */
+ private void placeBird(DummyTracker tracker,Location position,FootballVisuals.Facing facing){
+  Location pose=position.clone();pose.setYaw(facing.yaw());pose.setPitch(facing.pitch());
+  tracker.location(BukkitAdapter.adapt(pose));
+  var rotation=new ModelRotation(facing.pitch(),facing.yaw());
+  tracker.rotator(ModelRotator.DEFAULT);tracker.rotation(()->rotation);tracker.forceUpdate(true);
+  var packets=BetterModel.nms().createBundler(tracker.bones().size());
+  for(var bone:tracker.bones())bone.rotate(rotation,packets);
+  for(Player viewer:audience.players())packets.send(BukkitAdapter.adapt(viewer));
  }
  @Override void update(){
   body.update(TrackerUpdateAction.togglePart(false),b->Set.of("pri_right_item","pli_left_item").contains(b.name().rawName()));
@@ -81,7 +90,8 @@ final class FootballScene extends SummonScene {
     double a=i*Math.PI*2/5;Location c=calf(tick);Vector axis=boot(tick).toVector().subtract(c.toVector()).normalize();Vector u=at(1,0,0).toVector().subtract(origin.toVector());u.subtract(axis.clone().multiply(u.dot(axis)));if(u.lengthSquared()<.001)u=new Vector(0,0,1);u.normalize();Vector v=axis.clone().crossProduct(u).normalize();Vector radial=u.multiply(Math.cos(a)).add(v.multiply(Math.sin(a)));
     Location targetBird=c.clone().add(radial.clone().multiply(.5));double p=smooth(tick,charge(false)+i*2,54+i*2);
     Location pos=blend(at(Math.cos(a)*3,Math.sin(a)*3,.1),targetBird,p).add(0,Math.sin(p*Math.PI)*3.4,0);
-    var bird=penguins.get(i);place(bird,pos);Vector beak=c.toVector().subtract(pos.toVector());var facing=FootballVisuals.penguinFacing(beak.getX(),beak.getY(),beak.getZ());birdAttachedFacings.set(i,facing);orient(bird,facing);
+    var bird=penguins.get(i);Vector beak=c.toVector().subtract(pos.toVector());var facing=FootballVisuals.penguinFacing(beak.getX(),beak.getY(),beak.getZ());birdAttachedFacings.set(i,facing);placeBird(bird,pos,facing);
+    if(tick==90)trace("penguin target index="+i+" from="+pos.getX()+","+pos.getY()+","+pos.getZ()+" target="+c.getX()+","+c.getY()+","+c.getZ());
     if(tick%2==0&&p<1){Location previous=birdPositions.get(i);for(int j=0;j<3;j++)particle(blend(previous,pos,j/3.0),Particle.END_ROD,1,.02,0);}
     birdPositions.set(i,pos);
    }
@@ -117,9 +127,9 @@ final class FootballScene extends SummonScene {
      ballPosition=next;place(ball,next);
      for(int i=0;i<penguins.size();i++){
       double a=i*Math.PI*2/5+tick*.4;Vector right=at(Math.cos(a)*.48,0,Math.sin(a)*.48).toVector().subtract(origin.toVector());
-      Location target=next.clone().add(right);Location pos=blend(birdPositions.get(i),target,smooth(tick,release,release+7));place(penguins.get(i),pos);Vector travel=direction.lengthSquared()>.000001?direction:at(0,1,0).toVector().subtract(origin.toVector());
+      Location target=next.clone().add(right);Location pos=blend(birdPositions.get(i),target,smooth(tick,release,release+7));Vector travel=direction.lengthSquared()>.000001?direction:at(0,1,0).toVector().subtract(origin.toVector());
       var flightFacing=FootballVisuals.penguinFacing(travel.getX(),travel.getY(),travel.getZ());
-      var facing=FootballVisuals.launchFacing(birdAttachedFacings.get(i),flightFacing,smooth(tick,release,release+7));orient(penguins.get(i),facing);
+      var facing=FootballVisuals.launchFacing(birdAttachedFacings.get(i),flightFacing,smooth(tick,release,release+7));placeBird(penguins.get(i),pos,facing);
       if(tick==release)trace("penguin release index="+i+" yawDelta="+(facing.yaw()-birdAttachedFacings.get(i).yaw())+" pitchDelta="+(facing.pitch()-birdAttachedFacings.get(i).pitch()));
       if(tick%2==0)particle(pos,Particle.END_ROD,2,.04,0);
      }

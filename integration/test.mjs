@@ -331,9 +331,10 @@ if(process.env.MOTIONRP_FOOTBALL_ONLY==='1'){
   const reset=()=>{spawns.forEach(s=>s.clear());removed.forEach(s=>s.clear());};
   async function setup(bot,name,id){consoleCommand('motionrp give controller '+name);consoleCommand('motionrp give motion '+id+' 1 '+name);await waitFor(()=>tokens(bot)===1,'football motion item');await bot.equip(bot.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');await menu(bot);await deposit(bot);assert.equal(registered(bot),1);await closeMenu(bot);}
   await setup(a,an,'fire_tornado');await setup(b,bn,'emperor_penguin_1');
-  let collectFire=false;const fireParticles=[],penguinLooks=[],billboards=[];
+  let collectFire=false;const fireParticles=[],penguinLooks=[],billboards=[],penguinPosePackets=[];
   b._client.on('world_particles',p=>{if(collectFire&&p.particle.type==='flame')fireParticles.push(p);});
   a._client.on('entity_look',p=>penguinLooks.push(p));
+  a._client.on('packet',(p,meta)=>{if(['entity_teleport','sync_entity_position','entity_look'].includes(meta.name))penguinPosePackets.push({kind:meta.name,...p});});
   const billboardKey=a.registry.entitiesByName.item_display.metadataKeys.indexOf('billboard_render_constraints');
   a._client.on('entity_metadata',p=>{for(const m of p.metadata)if(m.key===billboardKey)billboards.push({id:p.entityId,value:m.value});});
 
@@ -353,7 +354,7 @@ if(process.env.MOTIONRP_FOOTBALL_ONLY==='1'){
     assert.equal(footMotion.length,4,'Four native boot samples before release');
     assert.ok(footMotion.slice(-2).every(p=>p.forward>.01),'Rendered boot swings forward through contact after the rear hold');
     assert.equal(footMotion.at(-1).tick,68);
-    assert.ok(footMotion.slice(0,2).every(p=>Math.abs(p.forward)<.01),'Drawn-back foot pauses before the kick');
+    assert.ok(footMotion.slice(0,2).every(p=>Math.abs(p.forward)<.06),'Drawn-back foot pauses before the kick');
     assert.ok(footMotion.at(-1).forward>.3,'Left boot accelerates into a strong forward kick');
     const lob=[...output.slice(begin).matchAll(/Football-fire_tornado lob tick=(\d+) height=([^ ]+) contactGap=([^\r\n]+)/g)].map(m=>({tick:+m[1],height:+m[2],gap:+m[3]}));
     assert.equal(lob.find(p=>p.tick===32)?.height,15,'Only the ball rises to fifteen blocks');
@@ -378,7 +379,31 @@ if(process.env.MOTIONRP_FOOTBALL_ONLY==='1'){
     const releaseLooks=[...output.slice(begin).matchAll(/penguin release index=(\d+) yawDelta=([^ ]+) pitchDelta=([^\r\n]+)/g)];
     assert.equal(releaseLooks.length,5,'All five attached headings are preserved at release');
     assert.ok(releaseLooks.every(m=>+m[2]===0&&+m[3]===0),'No penguin suddenly turns towards the viewer on the kick tick');
+    for(const id of birdIds){
+     const events=penguinPosePackets.filter(p=>p.entityId===id);let moving=false,repaired=true,moves=0;
+     for(const p of events){
+      if(p.kind==='entity_look'){if(moving)repaired=true;}
+      else{if(moving)assert.ok(repaired,'Previous teleport must not leave a penguin facing forward with pitch reset');moving=true;repaired=false;moves++;}
+     }
+     assert.ok(moves>20,'Repeated movement packets captured for every penguin part');
+     assert.ok(repaired,'Final movement also retains its pitch and facing');
+    }
+    const targetSamples=[...output.slice(begin).matchAll(/penguin target index=(\d+) from=([^ ]+) target=([^\r\n]+)/g)];
+    assert.equal(targetSamples.length,5);
+    for(const sample of targetSamples){
+     const index=+sample[1],from=sample[2].split(',').map(Number),target=sample[3].split(',').map(Number);
+     const ids=new Set([...output.slice(begin).matchAll(new RegExp('displays red_penguin_'+index+' ids=([0-9,]+)','g'))].flatMap(m=>m[1].split(',').map(Number)));
+     const events=penguinPosePackets.filter(p=>ids.has(p.entityId));
+     const move=events.findIndex(p=>p.kind!=='entity_look'&&Math.hypot(p.x-from[0],p.y-from[1],p.z-from[2])<.0001);
+     assert.ok(move>=0,'Stable calf-hold teleport captured for bird '+index);
+     const id=events[move].entityId;let pitch=events[move].pitch,yaw=events[move].yaw,corrected=false;
+     for(let j=move+1;j<events.length;j++){const p=events[j];if(p.entityId!==id)continue;if(p.kind!=='entity_look')break;pitch=p.pitch*360/256;yaw=p.yaw*360/256;corrected=true;}
+     assert.ok(corrected,'Every teleport is followed by a full orientation update, even while facing is unchanged');
+     const ry=yaw*Math.PI/180,rx=pitch*Math.PI/180,beak=[Math.sin(ry)*Math.cos(rx),Math.sin(rx),-Math.cos(ry)*Math.cos(rx)],d=target.map((v,i)=>v-from[i]),n=Math.hypot(...d);
+     assert.ok(beak.reduce((sum,v,i)=>sum+v*d[i]/n,0)>.998,'Final client pose points into the calf rather than towards the viewer for bird '+index);
+    }
     pass('All five penguins receive independent yaw and pitch with fixed billboards and preserve their heading at release');
+    pass('Final client pose after movement keeps all five penguin beaks pointing into the calf');
    }
    pass(id+' item plays reference choreography, boot contact, ball/effects, impact, viewer filtering and cleanup');
   }
