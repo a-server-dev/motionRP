@@ -7,11 +7,11 @@ class InazumaShotTest {
  private JsonObject load(String path)throws Exception{try(var in=Objects.requireNonNull(getClass().getResourceAsStream("/bettermodel/"+path+".bbmodel"))){return JsonParser.parseString(new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();}}
  @Test void sourceDurationsRespectTheSelectedReferenceAndHaveTimeForImpact(){
   for(var shot:InazumaShot.values()){
-   assertEquals((shot.sourceEnd-shot.sourceStart)*shot.durationScale,shot.end/20.0,.026);
+   if(shot!=InazumaShot.ETERNAL_BLIZZARD)assertEquals((shot.sourceEnd-shot.sourceStart)*shot.durationScale,shot.end/20.0,.026);
    assertTrue(shot.kick>20&&shot.impact>shot.kick&&shot.end>shot.impact);
    assertEquals(0,shot.height(0),1e-9);assertEquals(0,shot.height(shot.end-1),1e-9);
   }
-  assertEquals(129,InazumaShot.DEATH_SWORD.end);assertEquals(132,InazumaShot.DEATH_SPEAR.end);assertEquals(278,InazumaShot.ETERNAL_BLIZZARD.end);
+  assertEquals(129,InazumaShot.DEATH_SWORD.end);assertEquals(132,InazumaShot.DEATH_SPEAR.end);assertEquals(211,InazumaShot.ETERNAL_BLIZZARD.end);
  }
  @Test void swordDarkensOnlyAfterItsPhysicalStrikeAndThenReleases(){
   var sword=InazumaShot.DEATH_SWORD;assertEquals(78,sword.strike());assertTrue(sword.strike()<sword.auraStart());assertTrue(sword.auraStart()<sword.kick);
@@ -50,12 +50,16 @@ class InazumaShotTest {
   var held=arm.getAsJsonArray("keyframes").asList().stream().map(JsonElement::getAsJsonObject).filter(k->Math.abs(k.get("time").getAsDouble()-4.5)<1e-6||Math.abs(k.get("time").getAsDouble()-4.8)<1e-6).toList();
   assertEquals(2,held.size());assertEquals(held.get(0).get("data_points"),held.get(1).get("data_points"));assertEquals(6,InazumaShot.DEATH_SWORD.handHoldEnd()-InazumaShot.DEATH_SWORD.handHoldStart());
  }
- @Test void blizzardUsesOneTiltedTurnAndAnIndependentWindEffect()throws Exception{
+ @Test void blizzardTurnsOnceOnTheBallThenTwiceBeforeTheShot()throws Exception{
   var m=load("players/motionrp_eternal_blizzard");var tracks=m.getAsJsonArray("animations").get(0).getAsJsonObject().getAsJsonObject("animators");
   var root=tracks.entrySet().stream().map(e->e.getValue().getAsJsonObject()).filter(e->e.get("name").getAsString().equals("player_root")).findFirst().orElseThrow();
   double maxYaw=0;boolean tilted=false;
   for(var raw:root.getAsJsonArray("keyframes")){var p=raw.getAsJsonObject().getAsJsonArray("data_points").get(0).getAsJsonObject();maxYaw=Math.max(maxYaw,p.get("y").getAsDouble());tilted|=Math.abs(p.get("x").getAsDouble())>=25&&Math.abs(p.get("z").getAsDouble())>=20;}
-  assertEquals(360,maxYaw);assertTrue(tilted);
+  assertEquals(1080,maxYaw);assertTrue(tilted);
+  var keys=root.getAsJsonArray("keyframes").asList().stream().map(JsonElement::getAsJsonObject).filter(k->k.get("channel").getAsString().equals("rotation")).toList();
+  for(var pair:List.of(new double[]{17,0},new double[]{27,360},new double[]{70,360},new double[]{129,1080})){
+   var k=keys.stream().filter(x->Math.abs(x.get("time").getAsDouble()*20-pair[0])<1e-6).findFirst().orElseThrow();assertEquals(pair[1],k.getAsJsonArray("data_points").get(0).getAsJsonObject().get("y").getAsDouble());
+  }
  }
  @Test void old056RevisionsAreRecognizedForUpgrade()throws Exception{
   for(String name:List.of("players/motionrp_death_sword.bbmodel","players/motionrp_eternal_blizzard.bbmodel","models/motionrp_blizzard_orb.bbmodel"))try(var in=new java.util.zip.GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.56.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
@@ -75,9 +79,9 @@ class InazumaShotTest {
  @Test void blizzardFootScoopsUpThenDrawsBackForTheHeldKick()throws Exception{
   try(var in=Objects.requireNonNull(getClass().getResourceAsStream("/bettermodel/eternal_blizzard-boot.csv"))){
    var feet=new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8).lines().map(l->Arrays.stream(l.split(",")).mapToDouble(Double::parseDouble).toArray()).toList();
-   assertTrue(feet.get(46)[1]>feet.get(34)[1]+.5);assertTrue(feet.get(46)[2]>feet.get(34)[2]+.4);
-   for(int t=210;t<=224;t++)assertTrue(feet.get(t)[1]<-.2,"Kicking boot is drawn back throughout the wind-up");
-   assertTrue(feet.get(240)[1]>feet.get(224)[1]+.6,"Foot accelerates forward after the hold");
+   assertTrue(feet.get(10)[1]>feet.get(2)[1]+.5);assertTrue(feet.get(10)[2]>feet.get(2)[2]+.4);
+   for(int t=143;t<=157;t++)assertTrue(feet.get(t)[1]<-.2,"Kicking boot is drawn back throughout the wind-up");
+   assertTrue(feet.get(173)[1]>feet.get(157)[1]+.6,"Foot accelerates forward after the hold");
   }
  }
  @Test void old057ActorsAreRecognizedForUpgrade()throws Exception{
@@ -86,18 +90,16 @@ class InazumaShotTest {
  @Test void blizzardOpposesItsFeetThenLandsBeforeTheMainJump()throws Exception{
   var paths=new ArrayList<List<double[]>>();
   for(String side:List.of("boot","other"))try(var in=Objects.requireNonNull(getClass().getResourceAsStream("/bettermodel/eternal_blizzard-"+side+".csv"))){paths.add(new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8).lines().map(l->Arrays.stream(l.split(",")).mapToDouble(Double::parseDouble).toArray()).toList());}
-  assertTrue(paths.get(0).get(56)[1]>paths.get(1).get(56)[1]+.6);
-  assertTrue(paths.get(0).get(66)[1]<paths.get(1).get(66)[1]-.6);
-  // Exactly one front/back exchange, followed by a stable, wide crouch.
-  for(int t=67;t<86;t++)assertTrue(paths.get(0).get(t)[1]<=paths.get(1).get(t)[1]+1e-7);
-  for(int t=90;t<=136;t++){
+  // The right foot remains the pivot for a full turn above the ball.
+  for(int t=17;t<=27;t++){assertEquals(paths.get(0).get(17)[0],paths.get(0).get(t)[0],1e-7);assertEquals(paths.get(0).get(17)[1],paths.get(0).get(t)[1],1e-7);}
+  for(int t=39;t<=69;t++){
    assertTrue(Math.abs(paths.get(0).get(t)[0]-paths.get(1).get(t)[0])>1);
    for(var path:paths)assertTrue(path.get(t)[2]>=0&&path.get(t)[2]<.12);
   }
-  try(var in=Objects.requireNonNull(getClass().getResourceAsStream("/bettermodel/eternal_blizzard-ground.csv"))){var h=new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8).lines().map(l->Double.parseDouble(l.split(",")[2])).toList();for(int t=90;t<=136;t++)assertTrue(h.get(t)>=0&&h.get(t)<.12,"Supporting palm touches the ground throughout the crouch");}
-  var ice=InazumaShot.ETERNAL_BLIZZARD;assertTrue(ice.height(66)>.8);
-  for(int t=90;t<=136;t++)assertEquals(0,ice.height(t),1e-9);
-  assertTrue(ice.height(155)>0);assertEquals(3.0,ice.height(192),1e-9);
+  try(var in=Objects.requireNonNull(getClass().getResourceAsStream("/bettermodel/eternal_blizzard-ground.csv"))){var h=new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8).lines().map(l->Double.parseDouble(l.split(",")[2])).toList();for(int t=39;t<=69;t++)assertTrue(h.get(t)>=0&&h.get(t)<.12,"Supporting palm touches the ground throughout the crouch");}
+  var ice=InazumaShot.ETERNAL_BLIZZARD;assertTrue(ice.height(23)>.8);
+  for(int t=39;t<=69;t++)assertEquals(0,ice.height(t),1e-9);
+  assertTrue(ice.height(88)>0);assertEquals(3.0,ice.height(125),1e-9);
  }
  @Test void old058ActorsAreRecognizedForUpgrade()throws Exception{
   for(String name:List.of("players/motionrp_death_sword.bbmodel","players/motionrp_eternal_blizzard.bbmodel"))try(var in=new java.util.zip.GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.58.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
@@ -122,6 +124,16 @@ class InazumaShotTest {
  }
  @Test void old060ActorsAreRecognizedForUpgrade()throws Exception{
   for(String name:List.of("players/motionrp_death_sword.bbmodel","players/motionrp_eternal_blizzard.bbmodel"))try(var in=new java.util.zip.GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.60.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
+ }
+ @Test void blizzardCutsItsIntroSpeedsUpOnlyBeforeTurningAndLowersTheFreeArm()throws Exception{
+  assertEquals(0,BlizzardTimeline.at(32));assertEquals(69,BlizzardTimeline.TURN);assertEquals(58,BlizzardTimeline.at(194)-BlizzardTimeline.TURN);assertEquals(173,BlizzardTimeline.KICK);assertEquals("CHARGE",InazumaShot.ETERNAL_BLIZZARD.phase(0));
+  List<double[]> hand,shoulder;
+  try(var in=Objects.requireNonNull(getClass().getResourceAsStream("/bettermodel/eternal_blizzard-trail.csv"))){hand=new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8).lines().map(l->Arrays.stream(l.split(",")).mapToDouble(Double::parseDouble).toArray()).toList();}
+  try(var in=Objects.requireNonNull(getClass().getResourceAsStream("/bettermodel/eternal_blizzard-shoulder.csv"))){shoulder=new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8).lines().map(l->Arrays.stream(l.split(",")).mapToDouble(Double::parseDouble).toArray()).toList();}
+  for(int t=41;t<=69;t++){double length=0;for(int i=0;i<3;i++)length+=Math.pow(hand.get(t)[i]-shoulder.get(t)[i],2);double vertical=(hand.get(t)[2]-shoulder.get(t)[2])/Math.sqrt(length);assertTrue(vertical>.4&&vertical<.85,"Free arm extends diagonally, not vertically");}
+ }
+ @Test void old061BlizzardIsRecognizedForUpgrade()throws Exception{
+  String name="players/motionrp_eternal_blizzard.bbmodel";try(var in=new java.util.zip.GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.61.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
  }
  @Test void projectileMeshesHaveDistinctSilhouettesAndNoSolidCubeStandins()throws Exception{
   for(String id:List.of("death_sword_edge","death_spear_drill","blizzard_orb","blizzard_flake","blizzard_wind","blizzard_wake")){

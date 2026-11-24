@@ -15,7 +15,7 @@ motions:
     model: motionrp_eternal_blizzard
     animation: eternal_blizzard
     effect: eternal_blizzard
-    max-ticks: 288
+    max-ticks: 221
   death_spear:
     name: デススピアー
     model: motionrp_death_spear

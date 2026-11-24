@@ -45,10 +45,10 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
                 saveConfig();
             }
         }
-        // v0.61 follows the longer anime reference; upgrade only the old stock timeout.
+        // Retimed anime reference: migrate only known stock timeouts.
         if("motionrp_eternal_blizzard".equals(getConfig().getString("motions.eternal_blizzard.model"))
                 && "eternal_blizzard".equals(getConfig().getString("motions.eternal_blizzard.effect"))
-                && getConfig().getInt("motions.eternal_blizzard.max-ticks",0)==168) {
+                && (getConfig().getInt("motions.eternal_blizzard.max-ticks",0)==168||getConfig().getInt("motions.eternal_blizzard.max-ticks",0)==288)) {
             getConfig().set("motions.eternal_blizzard.max-ticks",dev.aserver.motionrp.core.InazumaShot.ETERNAL_BLIZZARD.end+10);saveConfig();
         }
         for(String football:java.util.List.of("fire_tornado","emperor_penguin_1")){

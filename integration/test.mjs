@@ -342,6 +342,7 @@ if(process.env.MOTIONRP_INAZUMA_ONLY==='1'){
    assert.ok(!(await readPlayerData(names[0])).BukkitValues?.['motionrp:aerial_return_v1']);
    if(id==='death_sword'){
     const text=output.slice(start);assert.ok(/scoop contactGap=[^ ]+ preKickDrift=0.0/.test(text));assert.ok(text.includes('dark conversion tick=80'));assert.ok(text.includes('shot tick=110 trigger=hand'));assert.ok(!text.includes('kick tick='),'The final shot has no second foot kick');
+    const levels=[...text.matchAll(/ball level tick=(\d+) height=([^\r\n]+)/g)];assert.ok(levels.length>=46&&levels.some(m=>+m[1]===123));assert.ok(levels.every(m=>Math.abs(+m[2]-+levels[0][2])<1e-8)&&+levels[0][2]>1,'Ball height stays fixed from the high kick through the hand chop and projectile');
     const highKick=text.match(/strike tick=78 contactGap=([^ ]+) bootHeight=([^\r\n]+)/);assert.ok(highKick&&+highKick[1]<.04&&+highKick[2]>1,'Grounded front kick is restored at waist height');
     const knife=text.match(/knife minimumGap=([^ ]+) release tick=110/);assert.ok(knife&&+knife[1]>.02&&+knife[1]<.2,'Hand edge passes close to the dark ball without touching');
     assert.ok(pilotY.every(y=>Math.abs(y-origin.y)<.03),'Grounded sword kick never lifts the pilot');
@@ -355,11 +356,12 @@ if(process.env.MOTIONRP_INAZUMA_ONLY==='1'){
     assert.ok(text.indexOf('strike tick=78')<text.indexOf('displays dark_ball'),'Football changes to blue-black only after the strike');
    }
    if(id==='eternal_blizzard'){
-    const text=output.slice(start);assert.ok(text.includes('freeze tick=72'));assert.ok(text.includes('displays frozen_ball'));assert.ok(text.includes('displays frozen_wake'));assert.ok(text.includes('displays snowflake_5'));assert.ok(text.indexOf('displays frozen_wake')>text.indexOf('kick tick=240'));
-    assert.ok(text.includes('duration=278 source=0.0..13.917 durationScale=1.0'),'Full anime reference duration is used without the old 1.2x timing');assert.ok(text.includes('phase: RISE tick=136')&&text.includes('phase: TURN tick=154'));
-    const loft=text.match(/loft tick=44 footGap=([^\r\n]+)/);assert.ok(loft&&Math.abs(+loft[1])<1e-8,'Toe physically lifts the ball before the lob');
-    const twist=[...text.matchAll(/twist feet tick=(\d+) right=([^ ]+) left=([^\r\n]+)/g)];assert.equal(twist.length,2);assert.equal(+twist[0][1],56);assert.equal(+twist[1][1],66);assert.ok(+twist[0][2]>+twist[0][3]+.4&&+twist[1][2]<+twist[1][3]-.4,'Feet exchange front and rear exactly once');
-    const land=[...text.matchAll(/land reset tick=(\d+) pilot=([^ ]+) left=([^ ]+) right=([^ ]+) hand=([^ ]+) spread=([^\r\n]+)/g)];assert.equal(land.length,2);assert.equal(+land[1][1]-+land[0][1],46);assert.ok(land.every(m=>Math.abs(+m[2])<.03&&+m[3]>=-.01&&+m[3]<.12&&+m[4]>=-.01&&+m[4]<.12&&+m[5]>=-.03&&+m[5]<.12&&+m[6]>1),'Reference crouch holds both boots and one palm on the ground while the ice ball forms');assert.ok(text.indexOf('twist release tick=70')<text.indexOf('land reset tick=90')&&text.indexOf('land reset tick=136')<text.indexOf('kick tick=240'));
+    const text=output.slice(start);assert.ok(text.includes('freeze tick=29'));assert.ok(text.includes('displays frozen_ball'));assert.ok(text.includes('displays frozen_wake'));assert.ok(text.includes('displays snowflake_5'));assert.ok(text.indexOf('displays frozen_wake')>text.indexOf('kick tick=173'));
+    assert.ok(text.includes('duration=211 source=1.6..13.917 durationScale=1.0'),'Intro is removed and only pre-turn action is accelerated');assert.ok(text.includes('phase: CHARGE tick=0')&&text.includes('phase: DOUBLE_TURN tick=69'));
+    const loft=text.match(/loft tick=8 footGap=([^\r\n]+)/);assert.ok(loft&&Math.abs(+loft[1])<1e-8,'Toe physically lifts the ball before the lob');
+    const top=[...text.matchAll(/ball top tick=(\d+) soleGap=([^\r\n]+)/g)];assert.ok(top.length>=10&&top.every(m=>Math.abs(+m[2]-.04)<1e-8),'Right sole remains on the ball top throughout the full turn');
+    const arms=[...text.matchAll(/crouch arm vertical=([^\r\n]+)/g)];assert.equal(arms.length,2);assert.ok(arms.every(m=>+m[1]>.4&&+m[1]<.85),'Landing arm extends diagonally');
+    const land=[...text.matchAll(/land reset tick=(\d+) pilot=([^ ]+) left=([^ ]+) right=([^ ]+) hand=([^ ]+) spread=([^\r\n]+)/g)];assert.equal(land.length,2);assert.equal(+land[1][1]-+land[0][1],30);assert.ok(land.every(m=>Math.abs(+m[2])<.03&&+m[3]>=-.01&&+m[3]<.12&&+m[4]>=-.01&&+m[4]<.12&&+m[5]>=-.03&&+m[5]<.12&&+m[6]>1),'Reference crouch holds both boots and one palm on the ground while the ice ball forms');assert.ok(text.indexOf('ball turn complete tick=28')<text.indexOf('land reset tick=39')&&text.indexOf('land reset tick=69')<text.indexOf('kick tick=173'));
     const legs=[...text.matchAll(/ice leg tick=(\d+) forward=([^\r\n]+)/g)];assert.equal(legs.length,2);assert.ok(+legs[0][2]<-.15&&+legs[1][2]>+legs[0][2]+.4,'Rearward leg hold leads into a forward strike');
    }
    pass(id+' item plays charge, live-foot kick, themed projectile, impact and cleanup; OFF viewers see nothing');
