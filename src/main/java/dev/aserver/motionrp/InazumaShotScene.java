@@ -14,7 +14,7 @@ import static dev.aserver.motionrp.core.FootballTimeline.*;
 final class InazumaShotScene extends SummonScene {
  private final EntityTracker body;private final InazumaShot shot;private final AerialAnchor flight;
  private DummyTracker ball,aura;private final List<DummyTracker> flakes=new ArrayList<>();
- private Location ballAt,shotStart,previousBall,swordContact,swordHoldHand,blizzardLiftStart,swordBallRest;private boolean impacted;private double minimumKnifeGap=Double.POSITIVE_INFINITY;
+ private Location ballAt,shotStart,previousBall,swordContact,swordHoldHand,blizzardLiftStart,swordBallRest,swordKickTarget;private boolean impacted;private double minimumKnifeGap=Double.POSITIVE_INFINITY;
  InazumaShotScene(MotionPlugin plugin,Player owner,EntityTracker body,String id){
   super(plugin,owner,"Inazuma-"+id,InazumaShot.from(id).end,64,true);this.body=body;shot=InazumaShot.from(id);flight=new AerialAnchor(plugin,owner);
   body.rotation(()->new ModelRotation(0,origin.getYaw()));
@@ -40,8 +40,8 @@ final class InazumaShotScene extends SummonScene {
  }
  @Override void update(){
   body.update(TrackerUpdateAction.togglePart(false),b->Set.of("pri_right_item","pli_left_item").contains(b.name().rawName()));if(!movePilot())return;
-  // Grounded ball center matched to the fixed 50-degree front-kick pose, not the moving boot.
-  if(tick==0){swordBallRest=at(.1171875,.83981805,.39345821);ballAt=shot==InazumaShot.DEATH_SWORD?swordBallRest.clone():at(.12,.4,.35);ball=model("motionrp_football",ballAt,1,"ball");ball.update(TrackerUpdateAction.moveDuration(1));trace("duration="+shot.end+" source="+shot.sourceStart+".."+shot.sourceEnd+" speed=1.2x-duration");}
+  // The scoop and high kick meet fixed points on a free ball arc; no pre-impact foot attraction.
+  if(tick==0){swordBallRest=at(.1171875,.80800776,.34421627);swordKickTarget=at(.1171875,.84406910,1.06542876);ballAt=shot==InazumaShot.DEATH_SWORD?swordBallRest.clone():at(.12,.4,.35);ball=model("motionrp_football",ballAt,1,"ball");ball.update(TrackerUpdateAction.moveDuration(1));trace("duration="+shot.end+" source="+shot.sourceStart+".."+shot.sourceEnd+" durationScale="+shot.durationScale);}
   if(tick==shot.auraStart()){
    String id=switch(shot){case DEATH_SWORD->"motionrp_death_sword_edge";case ETERNAL_BLIZZARD->"motionrp_blizzard_wind";case DEATH_SPEAR->"motionrp_death_spear_drill";};
    if(shot==InazumaShot.DEATH_SWORD){
@@ -52,44 +52,47 @@ final class InazumaShotScene extends SummonScene {
    sound(origin,shot==InazumaShot.ETERNAL_BLIZZARD?Sound.BLOCK_AMETHYST_BLOCK_CHIME:Sound.BLOCK_RESPAWN_ANCHOR_CHARGE,1.2f,.65f);
 
   }
-  if(shot==InazumaShot.ETERNAL_BLIZZARD&&tick==38){
+  if(shot==InazumaShot.ETERNAL_BLIZZARD&&tick==72){
    audience.hide(ball);ball=model("motionrp_blizzard_orb",ballAt,.7f,"frozen_ball");ball.update(TrackerUpdateAction.moveDuration(1));loop(ball,"spin");trace("freeze tick="+tick);
   }
   if(tick<=shot.kick){
    Location target=contact();
    if(shot==InazumaShot.DEATH_SWORD){
     // Before contact the ball is independent of the foot; the kick comes to it.
-    if(tick<=shot.strike())ballAt=swordBallRest.clone();
+    if(tick<=22)ballAt=swordBallRest.clone();
+    else if(tick<=shot.strike()){
+     double p=progress(tick,22,shot.strike());ballAt=blend(swordBallRest,swordKickTarget,p).add(0,.95*4*p*(1-p),0);
+    }
     else {
      double p=progress(tick,shot.strike(),88);
-     ballAt=blend(swordContact,at(.1,1.15,.75),p).add(0,.3*4*p*(1-p),0);
+     ballAt=blend(swordContact,at(.1,1.15,.65),p).add(0,.3*4*p*(1-p),0);
     }
+    if(tick==22)trace("scoop contactGap="+ballAt.distance(target)+" preKickDrift="+ballAt.distance(swordBallRest));
     if(tick==shot.strike()){
      swordContact=ballAt.clone();particle(ballAt,Particle.CRIT,18,.12,.08);particle(ballAt,Particle.SWEEP_ATTACK,1,0,0);
-     sound(ballAt,Sound.ENTITY_PLAYER_ATTACK_STRONG,1.4f,.8f);trace("strike tick="+tick+" contactGap="+ballAt.distance(target)+" preKickDrift="+ballAt.distance(swordBallRest));
+     sound(ballAt,Sound.ENTITY_PLAYER_ATTACK_STRONG,1.4f,.8f);trace("strike tick="+tick+" contactGap="+ballAt.distance(target)+" bootHeight="+(boot().getY()-owner.getLocation().getY()));
     }
    }else if(shot==InazumaShot.ETERNAL_BLIZZARD){
-    Location top=at(0,1,5.4);
-    if(tick<=22){
-     Location toe=boot().add(0,.25,0);ballAt=tick<14?blend(at(.12,.4,.35),toe,smooth(tick,8,14)):toe;
-     if(tick==22){blizzardLiftStart=ballAt.clone();trace("loft tick=22 footGap="+(ballAt.distance(boot())-.25));}
-    }else if(tick<=32){
+    Location top=at(0,1,4.4);
+    if(tick<=44){
+     Location toe=boot().add(0,.25,0);ballAt=tick<38?at(.12,.4,.35):toe;
+     if(tick==44){blizzardLiftStart=ballAt.clone();trace("loft tick=44 footGap="+(ballAt.distance(boot())-.25));}
+    }else if(tick<=70){
      var other=body.bone("ice_other_boot").worldPosition();Location left=owner.getLocation().add(other.x,other.y,other.z),right=boot();
      Location between=blend(left,right,.5).add(forward().multiply(.32)).add(0,.12,0);
-     ballAt=tick<26?blend(blizzardLiftStart,between,smooth(tick,22,26)):between;
+     ballAt=tick<54?blend(blizzardLiftStart,between,smooth(tick,44,54)):between;
      if(tick%2==0)particle(ballAt,Particle.SNOWFLAKE,3,.1,.005);
-     if(tick==26||tick==30)trace("twist feet tick="+tick+" right="+right.toVector().subtract(owner.getLocation().toVector()).dot(forward())+" left="+left.toVector().subtract(owner.getLocation().toVector()).dot(forward()));
-     if(tick==32){blizzardLiftStart=ballAt.clone();trace("twist release tick=32");}
-    }else if(tick<56){double p=progress(tick,32,56);ballAt=blend(blizzardLiftStart,top,1-(1-p)*(1-p));}
-
-    else if(tick<68)ballAt=top;
-    else if(tick<94){double p=progress(tick,68,94),r=.65*Math.sin(Math.PI*p),a=p*Math.PI*2;ballAt=at(r*Math.cos(a),1+r*Math.sin(a),5.4-1.6*smooth(tick,68,94));}
-    else ballAt=blend(at(0,1,3.8),target,smooth(tick,94,shot.kick));
-    if(tick>=38)ball.scaler(ModelScaler.value((float)(.7+.7*smooth(tick,38,64))));
+     if(tick==56||tick==66)trace("twist feet tick="+tick+" right="+right.toVector().subtract(owner.getLocation().toVector()).dot(forward())+" left="+left.toVector().subtract(owner.getLocation().toVector()).dot(forward()));
+     if(tick==70){blizzardLiftStart=ballAt.clone();trace("twist release tick=70");}
+    }else if(tick<116){double p=progress(tick,70,116);ballAt=blend(blizzardLiftStart,top,1-(1-p)*(1-p));}
+    else if(tick<162)ballAt=top;
+    else if(tick<200){double p=progress(tick,162,200),r=.55*Math.sin(Math.PI*p),a=p*Math.PI*2;ballAt=at(r*Math.cos(a),1+r*Math.sin(a),4.4);}
+    else ballAt=blend(top,target,smooth(tick,200,shot.kick));
+    if(tick>=72)ball.scaler(ModelScaler.value((float)(.7+.7*smooth(tick,72,116))));
    }else{
     Location top=at(0,1,3.3);ballAt=tick<shot.kick-12?blend(at(.12,.4,.35),top,smooth(tick,12,38)):blend(top,target,smooth(tick,shot.kick-12,shot.kick));
    }
-   Vector spin=forward();if(shot==InazumaShot.ETERNAL_BLIZZARD&&tick>=24&&tick<=32){double angle=(tick-24)*Math.PI/4;spin=new Vector(Math.sin(angle),Math.sin(angle*.5)*.4,Math.cos(angle));}
+   Vector spin=forward();if(shot==InazumaShot.ETERNAL_BLIZZARD&&tick>=54&&tick<=70){double angle=(tick-54)*Math.PI/8;spin=new Vector(Math.sin(angle),Math.sin(angle*.5)*.4,Math.cos(angle));}
    pose(ball,ballAt,spin);
    if(aura!=null){aura.scaler(ModelScaler.value((float)(.2+1.0*smooth(tick,shot.auraStart(),shot.kick))));pose(aura,shot==InazumaShot.ETERNAL_BLIZZARD?owner.getLocation():ballAt,forward());}
    if(tick%2==0&&tick>=shot.auraStart())chargeParticles();
@@ -109,13 +112,13 @@ final class InazumaShotScene extends SummonScene {
   }
   if(shot==InazumaShot.DEATH_SWORD&&tick==120){
    var lead=body.bone("shot_knife_edge").worldPosition();var trail=body.bone("shot_trail_hand").worldPosition();var left=body.bone("shot_support_boot").worldPosition();var right=body.bone("shot_boot").worldPosition();
-   trace("finish lowHand="+lead.y+" raisedHand="+trail.y+" leftFoot="+left.y+" rightFoot="+right.y+" stance="+((left.x-right.x)*forward().getX()+(left.z-right.z)*forward().getZ()));
+   trace("finish lowHand="+lead.y+" raisedHand="+trail.y+" leftFoot="+left.y+" rightFoot="+right.y+" stance="+((left.x-right.x)*forward().getX()+(left.z-right.z)*forward().getZ())+" hip="+body.bone("shot_hip").worldPosition().y);
   }
-  if(shot==InazumaShot.ETERNAL_BLIZZARD&&(tick==42||tick==62)){
+  if(shot==InazumaShot.ETERNAL_BLIZZARD&&(tick==90||tick==136)){
    var left=body.bone("ice_other_boot").worldPosition();var right=body.bone("shot_boot").worldPosition();
-   trace("land reset tick="+tick+" pilot="+(owner.getLocation().getY()-origin.getY())+" left="+left.y+" right="+right.y+" hand="+body.bone("ice_ground_hand").worldPosition().y+" spread="+Math.hypot(left.x-right.x,left.z-right.z));if(tick==42)sound(owner.getLocation(),Sound.ENTITY_PLAYER_SMALL_FALL,.7f,1.2f);
+   trace("land reset tick="+tick+" pilot="+(owner.getLocation().getY()-origin.getY())+" left="+left.y+" right="+right.y+" hand="+body.bone("ice_ground_hand").worldPosition().y+" spread="+Math.hypot(left.x-right.x,left.z-right.z));if(tick==90)sound(owner.getLocation(),Sound.ENTITY_PLAYER_SMALL_FALL,.7f,1.2f);
   }
-  if(shot==InazumaShot.ETERNAL_BLIZZARD&&(tick==100||tick==shot.kick)){
+  if(shot==InazumaShot.ETERNAL_BLIZZARD&&(tick==222||tick==shot.kick)){
    var foot=boot().toVector().subtract(owner.getLocation().toVector());trace("ice leg tick="+tick+" forward="+foot.dot(forward()));
   }
   if(tick==shot.kick){
