@@ -14,7 +14,7 @@ import static dev.aserver.motionrp.core.FootballTimeline.*;
 final class InazumaShotScene extends SummonScene {
  private final EntityTracker body;private final InazumaShot shot;private final AerialAnchor flight;
  private DummyTracker ball,aura;private final List<DummyTracker> flakes=new ArrayList<>();
- private Location ballAt,shotStart,previousBall;private boolean impacted;
+ private Location ballAt,shotStart,previousBall,swordLiftStart,swordContact;private boolean impacted;private double minimumKnifeGap=Double.POSITIVE_INFINITY;
  InazumaShotScene(MotionPlugin plugin,Player owner,EntityTracker body,String id){
   super(plugin,owner,"Inazuma-"+id,InazumaShot.from(id).end,64,true);this.body=body;shot=InazumaShot.from(id);flight=new AerialAnchor(plugin,owner);
   body.rotation(()->new ModelRotation(0,origin.getYaw()));
@@ -41,8 +41,11 @@ final class InazumaShotScene extends SummonScene {
  @Override void update(){
   body.update(TrackerUpdateAction.togglePart(false),b->Set.of("pri_right_item","pli_left_item").contains(b.name().rawName()));if(!movePilot())return;
   if(tick==0){ballAt=at(.12,.4,.35);ball=model("motionrp_football",ballAt,1,"ball");ball.update(TrackerUpdateAction.moveDuration(1));trace("duration="+shot.end+" source="+shot.sourceStart+".."+shot.sourceEnd+" speed=1.2x-duration");}
-  if(tick==20){
+  if(tick==shot.auraStart()){
    String id=switch(shot){case DEATH_SWORD->"motionrp_death_sword_edge";case ETERNAL_BLIZZARD->"motionrp_blizzard_orb";case DEATH_SPEAR->"motionrp_death_spear_drill";};
+   if(shot==InazumaShot.DEATH_SWORD){
+    audience.hide(ball);ball=model("motionrp_death_sword_core",ballAt,1,"dark_ball");ball.update(TrackerUpdateAction.moveDuration(1));trace("dark conversion tick="+tick);
+   }
    aura=model(id,ballAt,.2f,"charge_effect");aura.update(TrackerUpdateAction.moveDuration(1));
    if(shot!=InazumaShot.DEATH_SWORD)loop(aura,"spin");
    sound(origin,shot==InazumaShot.ETERNAL_BLIZZARD?Sound.BLOCK_AMETHYST_BLOCK_CHIME:Sound.BLOCK_RESPAWN_ANCHOR_CHARGE,1.2f,.65f);
@@ -52,19 +55,31 @@ final class InazumaShotScene extends SummonScene {
    Location target=contact();
    if(shot==InazumaShot.DEATH_SWORD){
     if(tick<16)ballAt=blend(at(.12,.4,.35),target,smooth(tick,0,16));
-    else if(tick<65)ballAt=target;
-    else ballAt=blend(at(.1,1.1,1.55),target,smooth(tick,shot.kick-8,shot.kick));
+    else if(tick<44)ballAt=target;
+    else if(tick<60){if(swordLiftStart==null)swordLiftStart=ballAt.clone();ballAt=blend(swordLiftStart,at(.1,.9,1.85),smooth(tick,44,60));}
+    else if(tick<=shot.strike())ballAt=blend(at(.1,.9,1.85),target,smooth(tick,shot.strike()-6,shot.strike()));
+    else ballAt=swordContact.clone();
+    if(tick==shot.strike()){
+     swordContact=ballAt.clone();particle(ballAt,Particle.CRIT,18,.12,.08);particle(ballAt,Particle.SWEEP_ATTACK,1,0,0);
+     sound(ballAt,Sound.ENTITY_PLAYER_ATTACK_STRONG,1.4f,.8f);trace("strike tick="+tick+" contactGap="+ballAt.distance(target));
+    }
    }else{
     double high=shot==InazumaShot.ETERNAL_BLIZZARD?5.4:3.3;Location top=at(0,1,high);
     ballAt=tick<shot.kick-12?blend(at(.12,.4,.35),top,smooth(tick,12,shot==InazumaShot.ETERNAL_BLIZZARD?44:38)):blend(top,target,smooth(tick,shot.kick-12,shot.kick));
    }
    pose(ball,ballAt,forward());
-   if(aura!=null){aura.scaler(ModelScaler.value((float)(.2+1.0*smooth(tick,20,shot.kick))));pose(aura,ballAt,forward());}
-   if(tick%2==0&&tick>=20)chargeParticles();
-   if(tick==shot.kick)trace("contactGap="+ballAt.distance(target)+" boot="+ballAt.getX()+","+ballAt.getY()+","+ballAt.getZ());
+   if(aura!=null){aura.scaler(ModelScaler.value((float)(.2+1.0*smooth(tick,shot.auraStart(),shot.kick))));pose(aura,ballAt,forward());}
+   if(tick%2==0&&tick>=shot.auraStart())chargeParticles();
+   if(tick==shot.strike())trace("contactGap="+ballAt.distance(target)+" boot="+ballAt.getX()+","+ballAt.getY()+","+ballAt.getZ());
+  }
+  if(shot==InazumaShot.DEATH_SWORD&&tick>=88&&tick<=shot.kick){
+   var edge=body.bone("shot_knife_edge").worldPosition();Location hand=owner.getLocation().add(edge.x,edge.y,edge.z);double gap=hand.distance(ballAt)-5.25/16;
+   minimumKnifeGap=Math.min(minimumKnifeGap,gap);trace("knife tick="+tick+" gap="+gap+" hand="+hand.getX()+","+hand.getY()+","+hand.getZ());
+   if(tick>=94&&tick%2==0)particle(hand,Particle.SWEEP_ATTACK,1,0,0);
+   if(tick==shot.kick)trace("knife minimumGap="+minimumKnifeGap+" release tick="+tick);
   }
   if(tick==shot.kick){
-   shotStart=contact();previousBall=shotStart.clone();ballAt=shotStart;pose(ball,ballAt,forward());
+   shotStart=shot==InazumaShot.DEATH_SWORD?ballAt.clone():contact();previousBall=shotStart.clone();ballAt=shotStart;pose(ball,ballAt,forward());
    particle(ballAt,Particle.SWEEP_ATTACK,3,.1,0);particle(ballAt,Particle.ELECTRIC_SPARK,16,.25,.03);
    sound(ballAt,Sound.ENTITY_PLAYER_ATTACK_STRONG,1.6f,.6f);sound(ballAt,Sound.ENTITY_BREEZE_WIND_BURST,1.6f,shot==InazumaShot.ETERNAL_BLIZZARD?1.2f:.65f);trace("kick tick="+tick);
   }

@@ -49,6 +49,16 @@ class FootballVisualsTest {
  @Test void old051FireIsRecognizedForAutomaticUpgrade()throws Exception{
   String name="players/motionrp_fire_tornado.bbmodel";try(var in=new GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.51.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
  }
+ @Test void legsExchangeFrontAndBackAcrossTheKick()throws Exception{
+  try(var in=Objects.requireNonNull(getClass().getResourceAsStream("/bettermodel/fire_tornado-support.csv"))){
+   var right=new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8).lines().map(l->Arrays.stream(l.split(",")).mapToDouble(Double::parseDouble).toArray()).toList();
+   for(int t=66;t<=68;t++){assertTrue(right.get(t)[1]>.15);assertTrue(FootballFootPath.at(true,t).boot().forward()<right.get(t)[1]-.8);}
+   for(int t=72;t<=74;t++){assertTrue(right.get(t)[1]<-.5);assertTrue(FootballFootPath.at(true,t).boot().forward()>right.get(t)[1]+.8);}
+  }
+ }
+ @Test void revised054AssetsAreRecognizedForUpgrade()throws Exception{
+  for(String name:List.of("players/motionrp_fire_tornado.bbmodel","players/motionrp_death_sword.bbmodel","models/motionrp_death_sword_edge.bbmodel"))try(var in=new GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.54.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
+ }
  @Test void flameRibbonsStayAroundTheAnimatedTorsoInEveryBodyOrientation(){
   for(int t=20;t<82;t+=3){var f=FootballFootPath.at(true,t);Point center=f.torso();Point axis=unit(sub(f.upper(),center));
    for(int strand=0;strand<2;strand++)for(int i=0;i<FootballVisuals.FLAME_SAMPLES;i++){

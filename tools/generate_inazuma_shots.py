@@ -8,20 +8,20 @@ from generate_summons import player,animator,save,ident,RIG_SHA,animation
 from generate_energy import mesh_model,add_mesh
 from generate_battle_visuals import oval
 COLORS=[(8,5,22,255),(22,26,94,255),(27,80,255,255),(66,195,255,255),(235,252,255,255),(152,231,255,255),(205,8,35,255),(255,69,81,255)]
-SHOTS={'death_sword':(129,84),'eternal_blizzard':(158,110),'death_spear':(132,72)}
+SHOTS={'death_sword':(129,74),'eternal_blizzard':(158,110),'death_spear':(132,72)}
 def actor(rig,name,end,kick):
  m=player(rig,name,end/20,{})
  def track(b,keys,channel='rotation'):
   g=next(g for g in m['groups']if g['name']==b)
-  keys=[(min(end,t+4)if t else 0,v)for t,v in keys]
+  keys=[(min(end,t+(2 if name=='death_sword'else 4))if t else 0,v)for t,v in keys]
   # A terminal pose can coincide after the renderer lead correction.
   keys=list({t:v for t,v in keys}.items())
   m['animations'][0]['animators'][g['uuid']]=animator(g,[(t/20,v)for t,v in keys],channel)
  track('player_root',[(0,(0,0,0)),(end,(0,0,0))],'position')
  if name=='death_sword':
-  thigh=[(0,(0,0,0)),(12,(95,0,8)),(62,(95,0,8)),(70,(55,0,12)),(76,(-65,0,15)),(80,(-65,0,15)),(kick,(110,0,5)),(kick+5,(125,0,5)),(end-7,(0,0,0)),(end,(0,0,0))]
-  knee=[(0,(0,0,0)),(12,(-10,0,0)),(62,(-10,0,0)),(76,(-100,0,0)),(80,(-100,0,0)),(kick,(0,0,0)),(kick+5,(0,0,0)),(end,(0,0,0))]
-  chest=[(0,(0,0,0)),(18,(-10,0,0)),(70,(-12,-25,0)),(80,(-20,-35,-8)),(kick,(28,28,8)),(kick+8,(20,20,5)),(end,(0,0,0))]
+  thigh=[(0,(0,0,0)),(16,(85,0,6)),(44,(85,0,6)),(52,(35,0,8)),(60,(-35,0,8)),(68,(-70,0,8)),(72,(-70,0,8)),(kick,(110,0,4)),(78,(125,0,4)),(82,(-35,0,8)),(94,(-55,0,8)),(100,(40,0,8)),(108,(65,0,6)),(end-7,(0,0,0)),(end,(0,0,0))]
+  knee=[(0,(0,0,0)),(16,(-20,0,0)),(44,(-20,0,0)),(52,(-60,0,0)),(60,(-90,0,0)),(68,(-105,0,0)),(72,(-105,0,0)),(kick,(0,0,0)),(78,(0,0,0)),(82,(-110,0,0)),(94,(-105,0,0)),(100,(-45,0,0)),(108,(-10,0,0)),(end,(0,0,0))]
+  chest=[(0,(0,0,0)),(18,(-8,0,0)),(44,(-8,0,0)),(60,(35,-15,0)),(70,(42,-25,-4)),(kick,(-12,15,0)),(80,(28,-10,0)),(94,(35,-15,0)),(100,(45,25,4)),(108,(30,15,4)),(end,(0,0,0))]
   root=[(0,(0,0,0)),(end,(0,0,0))]
  elif name=='eternal_blizzard':
   thigh=[(0,(0,0,0)),(17,(65,0,8)),(28,(0,0,0)),(55,(35,0,20)),(75,(55,0,25)),(90,(-65,0,15)),(kick-4,(-65,0,15)),(kick,(115,0,5)),(kick+8,(130,0,8)),(end,(0,0,0))]
@@ -39,10 +39,18 @@ def actor(rig,name,end,kick):
  track('plfl_left_foreleg',[(0,(0,0,0)),(40,(-65 if name!='death_sword'else -8,0,0)),(kick,(-75 if name!='death_sword'else -10,0,0)),(end,(0,0,0))])
  for right in [True,False]:
   sign=1 if right else -1
-  track('pra_right_arm'if right else'pla_left_arm',[(0,(0,0,sign*8)),(30,(-20,0,sign*70)),(kick-12,(-50 if right else 80,0,sign*65)),(kick,(75 if right else -25,0,sign*45)),(kick+10,(30 if right else -20,0,sign*35)),(end,(0,0,0))])
-  track('prfa_right_forearm'if right else'plfa_left_forearm',[(0,(0,0,0)),(30,(30,0,0)),(kick,(45,0,0)),(end,(0,0,0))])
+  if name=='death_sword':
+   if right:arm=[(0,(-15,0,8)),(16,(-20,0,8)),(44,(-20,0,8)),(60,(-40,0,5)),(kick,(-35,0,8)),(82,(-45,-40,45)),(84,(0,-40,65)),(86,(100,-40,65)),(88,(170,-40,45)),(92,(155,-40,10)),(94,(135,-40,-5)),(96,(45,-40,15)),(98,(20,-40,25)),(100,(-30,-40,35)),(104,(-30,-40,35)),(108,(-30,-40,20)),(end,(0,0,0))]
+   else:arm=[(0,(-15,0,-8)),(44,(-20,0,-8)),(60,(-40,0,-5)),(82,(-45,0,-8)),(94,(-40,0,-10)),(100,(-20,-10,-20)),(110,(10,0,-12)),(end,(0,0,0))]
+
+  else:arm=[(0,(0,0,sign*8)),(30,(-20,0,sign*70)),(kick-12,(-50 if right else 80,0,sign*65)),(kick,(75 if right else -25,0,sign*45)),(kick+10,(30 if right else -20,0,sign*35)),(end,(0,0,0))]
+  track('pra_right_arm'if right else'pla_left_arm',arm)
+  forearm=[(0,(0,0,0)),(30,(30,0,0)),(kick,(45,0,0)),(end,(0,0,0))]
+  if name=='death_sword'and right:forearm=[(0,(0,0,0)),(30,(55,0,0)),(kick,(15,0,0)),(82,(10,0,0)),(88,(0,0,0)),(104,(0,0,0)),(110,(20,0,0)),(end,(0,0,0))]
+  track('prfa_right_forearm'if right else'plfa_left_forearm',forearm)
  track('h_ph_head',[(0,(20,0,0)),(kick-12,(15,-15,0)),(kick,(10,10,0)),(end,(0,0,0))])
- for label,parent,origin in [('shot_boot','prfl_right_foreleg',[1.875,.65,-1.8]),('shot_torso','pc_chest',[0,17,0])]:
+ attachments=[('shot_knife_edge','prfa_right_forearm',[3.75,11.25,-1.875])]if name=='death_sword'else[]
+ for label,parent,origin in attachments+[('shot_boot','prfl_right_foreleg',[1.875,.65,-1.8]),('shot_torso','pc_chest',[0,17,0])]:
   g={'name':label,'uuid':ident(name+'/'+label),'origin':origin,'rotation':[0,0,0],'export':True};m['groups'].append(g)
   uid=next(x['uuid']for x in m['groups']if x['name']==parent)
   def add(ns):
@@ -53,6 +61,10 @@ def actor(rig,name,end,kick):
    return False
   assert add(m['outliner'])
  save('players/motionrp_'+name+'.bbmodel',m)
+ if name=='death_sword':
+  from generate_rasengan import hand_path
+  from generate_summons import ROOT
+  (ROOT/'death_sword-knife.csv').write_text(hand_path(m,end,'shot_knife_edge'))
 def finish(m,ids,spin=False):
  g=m.group('shot_effect',ids)
  if spin:
@@ -61,11 +73,26 @@ def finish(m,ids,spin=False):
  m.save()
 def effects():
  m=mesh_model('motionrp_death_sword_edge',COLORS);ids=[]
- for i in range(5):
-  q=i*math.tau/5;c,s=math.cos(q),math.sin(q)
-  def p(x,y,z):return[x*c-y*s,x*s+y*c,z]
-  for outline,w,color in [(True,8,2),(False,5.2,0)]:
-   ids.append(add_mesh(m,f'blade_{i}_{outline}',{'a':p(-w,0,-15),'b':p(w,0,-15),'c':p(0,0,52),'d':p(0,3,-4)},[(['a','b','c'],color),(['a','c','d'],3 if outline else 1)]))
+ # The ball leads; the black blade-like wake flares backwards, not ahead of it.
+ for i in range(7):
+  q=i*math.tau/7;c,s=math.cos(q),math.sin(q);length=50+(i%3)*8
+  def p(r,w,z):return[r*c-w*s,r*s+w*c,z]
+  for outer,width,color in [(True,5,2),(False,3.1,0)]:
+   v={'a':p(2,-width,3),'b':p(2,width,3),'c':p(12+(i%2)*4,width,-19),'d':p(22,0,-length),'e':p(9,-width,-31)}
+   ids.append(add_mesh(m,f'jagged_wake_{i}_{outer}',v,[(['a','b','c'],color),(['a','c','e'],color),(['c','d','e'],3 if outer else 0)]))
+ for i in range(14):
+  a=i*math.tau/14;b=(i+1)*math.tau/14
+  ids.append(add_mesh(m,'blue_corona_'+str(i),{'a':[5*math.cos(a),5*math.sin(a),1],'b':[5*math.cos(b),5*math.sin(b),1],'tip':[(13+i%3*3)*math.cos((a+b)/2),(13+i%3*3)*math.sin((a+b)/2),-3]},[(['a','b','tip'],2 if i%2 else 3)]))
+ finish(m,ids)
+ m=mesh_model('motionrp_death_sword_core',COLORS);ids=[oval(m,'black_ball',(0,0,0),(4.3,4.3,4.3),0,rows=10,sides=16)]
+ for k in range(4):
+  v={};f=[]
+  for j in range(33):
+   a=j*math.tau/32
+   for side in [0,1]:
+    r=4.8+side*.45;x=r*math.cos(a);y=r*math.sin(a);tilt=k*math.pi/4;v[f'{j}_{side}']=[x,y*math.cos(tilt),y*math.sin(tilt)]
+   if j:f.append(([f'{j-1}_0',f'{j-1}_1',f'{j}_1',f'{j}_0'],2))
+  ids.append(add_mesh(m,'blue_core_edge_'+str(k),v,f))
  finish(m,ids)
  m=mesh_model('motionrp_death_spear_drill',COLORS);ids=[]
  for i in range(12):

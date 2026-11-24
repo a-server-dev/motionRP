@@ -13,6 +13,10 @@ class InazumaShotTest {
   }
   assertEquals(129,InazumaShot.DEATH_SWORD.end);assertEquals(132,InazumaShot.DEATH_SPEAR.end);assertEquals(158,InazumaShot.ETERNAL_BLIZZARD.end);
  }
+ @Test void swordDarkensOnlyAfterItsPhysicalStrikeAndThenReleases(){
+  var sword=InazumaShot.DEATH_SWORD;assertEquals(78,sword.strike());assertTrue(sword.strike()<sword.auraStart());assertTrue(sword.auraStart()<sword.kick);
+  assertEquals("DARKEN",sword.phase(85));assertEquals("SHOT",sword.phase(104));
+ }
  @Test void playerClipsHaveAnimatedTorsoBothLegsAndALiveBootAttachment()throws Exception{
   for(var shot:InazumaShot.values()){
    var m=load("players/motionrp_"+shot.id);var clip=m.getAsJsonArray("animations").get(0).getAsJsonObject();assertEquals(shot.end/20.0,clip.get("length").getAsDouble());

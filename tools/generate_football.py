@@ -105,8 +105,8 @@ def reference_actors(rig):
     'pw_waist':[(0,(0,0,0)),(60,(-8,0,0)),(100,(-5,5,0)),(104,(0,0,0)),(112,(0,0,0)),(120,(0,0,0)),(156,(0,0,0)),(end,(0,0,0))],
     'prl_right_leg':[(0,(0,0,0)),(10,(-20,0,0)),(16,(65,0,5)),(30,(0,0,0)),(52,(25,0,15)),(76,(75,0,20)),(96,(35,0,12)),(100,(35,0,12)),(106,(35,0,12)),(108,(75,0,8)),(110,(130,0,5)),(112,(165,0,5)),(116,(185,0,8)),(120,(185,0,8)),(134,(15,0,15)),(156,(0,0,0)),(end,(0,0,0))],
     'prfl_right_foreleg':[(0,(0,0,0)),(10,(-45,0,0)),(16,(0,0,0)),(30,(0,0,0)),(70,(-85,0,0)),(96,(-105,0,0)),(100,(-105,0,0)),(106,(-105,0,0)),(108,(-75,0,0)),(110,(-35,0,0)),(112,(0,0,0)),(116,(0,0,0)),(126,(-25,0,0)),(146,(-25,0,0)),(156,(0,0,0)),(end,(0,0,0))],
-    'pll_left_leg':[(0,(0,0,0)),(30,(-12,0,-5)),(52,(35,0,-15)),(90,(40,0,-20)),(112,(-35,0,-18)),(128,(45,0,-12)),(156,(0,0,0)),(end,(0,0,0))],
-    'plfl_left_foreleg':[(0,(0,0,0)),(46,(-35,0,0)),(70,(-95,0,0)),(110,(-75,0,0)),(132,(-40,0,0)),(156,(0,0,0)),(end,(0,0,0))]
+    'pll_left_leg':[(0,(0,0,0)),(30,(-12,0,-5)),(52,(35,0,-15)),(90,(140,0,-8)),(100,(140,0,-8)),(106,(140,0,-8)),(108,(90,0,-10)),(110,(40,0,-12)),(112,(-20,0,-12)),(116,(-35,0,-12)),(120,(-35,0,-12)),(138,(20,0,-12)),(156,(0,0,0)),(end,(0,0,0))],
+    'plfl_left_foreleg':[(0,(0,0,0)),(46,(-35,0,0)),(70,(-65,0,0)),(90,(0,0,0)),(106,(0,0,0)),(110,(-45,0,0)),(112,(-70,0,0)),(120,(-70,0,0)),(138,(-35,0,0)),(156,(0,0,0)),(end,(0,0,0))]
    }
   else:
    poses={
@@ -168,6 +168,18 @@ def reference_actors(rig):
     for key in entry['keyframes']:
      if key['time']>0:key['time']+=4/20
    end=112;m['animations'][0]['length']=end/20
+  if fire:
+   parent=next(g for g in m['groups']if g['name']=='prfl_right_foreleg')
+   g={'name':'football_support_boot','uuid':ident(name+'/support_boot'),'origin':[1.875,.65,-1.8],'rotation':[0,0,0],'export':True};m['groups'].append(g)
+   def support(nodes):
+    for n in nodes:
+     if isinstance(n,dict):
+      if n['uuid']==parent['uuid']:n['children'].append({'uuid':g['uuid'],'children':[]});return True
+      if support(n['children']):return True
+    return False
+   assert support(m['outliner'])
+   from generate_summons import ROOT
+   (ROOT/'fire_tornado-support.csv').write_text(hand_path(m,end,'football_support_boot'))
   # Real boot and calf attachments, sampled from these exact animated joints.
   parent=None
   def attach(nodes,uid):

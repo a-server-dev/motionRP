@@ -101,6 +101,11 @@ final class FootballScene extends SummonScene {
    for(int strand=0;strand<2;strand++)for(int i=0;i<FootballVisuals.FLAME_SAMPLES;i++)particle(attach(FootballVisuals.flame(frame,tick,strand,i),tick),Particle.FLAME,1,.025,0);
    particle(boot(tick),Particle.FLAME,4,.08,.005);
   }
+  if(fire&&(tick==release-4||tick==release+4)){
+   var right=body.bone("football_support_boot").worldPosition();Location left=liveBoot();Vector aim=at(0,1,0).toVector().subtract(origin.toVector());
+   double lf=left.toVector().subtract(owner.getLocation().toVector()).dot(aim),rf=right.x*aim.getX()+right.z*aim.getZ();
+   trace("leg exchange tick="+tick+" left="+lf+" right="+rf);
+  }
   if(fire&&tick>=release-4&&tick<=release){
    Location foot=liveBoot();Vector aim=at(0,1,0).toVector().subtract(origin.toVector());
    if(previousBoot!=null)trace("live foot tick="+tick+" forward="+foot.toVector().subtract(previousBoot.toVector()).dot(aim)+" xyz="+foot.getX()+","+foot.getY()+","+foot.getZ());previousBoot=foot;

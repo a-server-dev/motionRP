@@ -313,7 +313,7 @@ if(process.env.MOTIONRP_INAZUMA_ONLY==='1'){
   fs.copyFileSync(path.join(project,`build/libs/motionRP-${version}.jar`),path.join(run,'plugins/MotionRP.jar'));
   const freshAssets=['death_sword','eternal_blizzard','death_spear'].some(id=>!fs.existsSync(path.join(run,'plugins/BetterModel/players/motionrp_'+id+'.bbmodel')));
   log=fs.createWriteStream(path.join(project,'build/inazuma-smoke.log'));await startServer();
-  if(freshAssets)await waitFor(()=>output.includes('Bundled Rasengan models loaded'),'initial asset rebuild finishes',120000);
+  if(freshAssets||output.includes('Updated bundled model'))await waitFor(()=>output.includes('Bundled Rasengan models loaded'),'initial asset rebuild finishes',120000);
   const ids=['death_sword','eternal_blizzard','death_spear'];
   const beginStatus=output.length,timer=setInterval(()=>consoleCommand('motionrp status'),500);
   try{await waitFor(()=>ids.every(id=>output.slice(beginStatus).includes(id+': 利用可能')),'new Inazuma assets load',120000);}finally{clearInterval(timer);}
@@ -334,11 +334,16 @@ if(process.env.MOTIONRP_INAZUMA_ONLY==='1'){
    spawns.forEach(s=>s.clear());removed.forEach(s=>s.clear());const start=output.length,origin=a.entity.position.clone();active=id;a._testLookUp();await sleep(150);a._testLeftClick();
    try{await waitFor(()=>output.slice(start).includes('Inazuma-'+id+' phase: CHARGE'),'charge '+id);}catch(e){throw new Error(e.message+' messages='+JSON.stringify(a._testMessages.slice(-8)));}
    await waitFor(()=>output.slice(start).includes('Inazuma-'+id+' kick tick='),'kick '+id);
-   const contact=output.slice(start).match(/contactGap=([^ ]+)/);assert.ok(contact&&+contact[1]<1e-8,'ball meets animated foot');
+   const contact=output.slice(start).match(/contactGap=([^\s]+)/);assert.ok(contact&&+contact[1]<1e-8,'ball meets animated foot');
    await waitFor(()=>output.slice(start).includes('Inazuma-'+id+' impact tick='),'impact '+id);await waitFor(cleanup,'cleanup '+id);await waitFor(()=>a.entity.position.distanceTo(origin)<.03,'pilot restored '+id);
    assert.ok(spawns[0].size>5&&spawns[1].size>5);assert.equal(spawns[2].size,0);
    assert.ok(particles.some(p=>p.shot===id&&p.type===(id==='eternal_blizzard'?'snowflake':'dust')));
    assert.ok(!(await readPlayerData(names[0])).BukkitValues?.['motionrp:aerial_return_v1']);
+   if(id==='death_sword'){
+    const text=output.slice(start);assert.ok(text.includes('strike tick=78 contactGap=0.0'));assert.ok(text.includes('dark conversion tick=80'));assert.ok(text.includes('kick tick=104'));
+    const knife=text.match(/knife minimumGap=([^ ]+) release tick=104/);assert.ok(knife&&+knife[1]>.02&&+knife[1]<.2,'Hand edge passes close to the dark ball without touching');
+    assert.ok(text.indexOf('strike tick=78')<text.indexOf('displays dark_ball'),'Football changes to blue-black only after the strike');
+   }
    pass(id+' item plays charge, live-foot kick, themed projectile, impact and cleanup; OFF viewers see nothing');
    await menu(a);while(registered(a)>0){const slot=a.currentWindow.slots.findIndex((item,i)=>i<a.currentWindow.inventoryStart&&item?.name==='paper');await click(a,slot);}await closeMenu(a);
   }
@@ -403,6 +408,8 @@ if(process.env.MOTIONRP_FOOTBALL_ONLY==='1'){
     assert.equal(footMotion.length,4,'Four native boot samples before release');
     assert.ok(footMotion.slice(-2).every(p=>p.forward>.01),'Rendered boot swings forward through contact after the rear hold');
     assert.equal(footMotion.at(-1).tick,68);
+    const legs=[...output.slice(begin).matchAll(/leg exchange tick=(\d+) left=([^ ]+) right=([^\r\n]+)/g)].map(m=>({tick:+m[1],left:+m[2],right:+m[3]}));
+    assert.equal(legs.length,2);assert.ok(legs[0].left<legs[0].right-.6,'Rear left boot and forward right boot during hold');assert.ok(legs[1].left>legs[1].right+.6,'Forward left boot and rear right boot after kick');
     assert.ok(footMotion.slice(0,2).every(p=>Math.abs(p.forward)<.06),'Drawn-back foot pauses before the kick');
     assert.ok(footMotion.at(-1).forward>.3,'Left boot accelerates into a strong forward kick');
     const lob=[...output.slice(begin).matchAll(/Football-fire_tornado lob tick=(\d+) height=([^ ]+) contactGap=([^\r\n]+)/g)].map(m=>({tick:+m[1],height:+m[2],gap:+m[3]}));
