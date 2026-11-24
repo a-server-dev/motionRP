@@ -349,12 +349,15 @@ if(process.env.MOTIONRP_INAZUMA_ONLY==='1'){
     assert.ok(+before[3]>.9&&Math.abs(+before[2])<.05,'No premature forward fold while holding the knife hand');
     assert.ok(+after[2]>.65&&+after[3]<.65,'Forward drive follows the hand chop');
     assert.ok(poses.every(m=>+m[4]<.12&&+m[5]<.12&&Math.abs(+m[6])<.03),'Both feet stay planted throughout the hand-only finish');
+    const finish=text.match(/finish lowHand=([^ ]+) raisedHand=([^ ]+) leftFoot=([^ ]+) rightFoot=([^ ]+) stance=([^\r\n]+)/);assert.ok(finish&&+finish[2]>+finish[1]+.6&&+finish[3]<.12&&+finish[4]<.12&&Math.abs(+finish[5])>.3,'Final pose raises the trailing hand and keeps a staggered grounded stance');
     const hold=text.match(/hand hold drift=([^\r\n]+)/);assert.ok(hold&&+hold[1]<.03,'Hand remains still for several ticks before the chop');
     assert.ok(text.indexOf('strike tick=78')<text.indexOf('displays dark_ball'),'Football changes to blue-black only after the strike');
    }
    if(id==='eternal_blizzard'){
-    const text=output.slice(start);assert.ok(text.includes('freeze tick=32'));assert.ok(text.includes('displays frozen_ball'));assert.ok(text.includes('displays frozen_wake'));assert.ok(text.includes('displays snowflake_5'));assert.ok(text.indexOf('displays frozen_wake')>text.indexOf('kick tick=112'));
+    const text=output.slice(start);assert.ok(text.includes('freeze tick=38'));assert.ok(text.includes('displays frozen_ball'));assert.ok(text.includes('displays frozen_wake'));assert.ok(text.includes('displays snowflake_5'));assert.ok(text.indexOf('displays frozen_wake')>text.indexOf('kick tick=112'));
     const loft=text.match(/loft tick=22 footGap=([^\r\n]+)/);assert.ok(loft&&Math.abs(+loft[1])<1e-8,'Toe physically lifts the ball before the lob');
+    const twist=[...text.matchAll(/twist feet tick=(\d+) right=([^ ]+) left=([^\r\n]+)/g)];assert.equal(twist.length,2);assert.ok(+twist[0][2]<+twist[0][3]-.4&&+twist[1][2]>+twist[1][3]+.4,'Feet rapidly exchange front and rear positions');
+    const land=text.match(/land reset pilot=([^ ]+) left=([^ ]+) right=([^\r\n]+)/);assert.ok(land&&Math.abs(+land[1])<.03&&+land[2]<.12&&+land[3]<.12,'Both feet land before the main jump');assert.ok(text.indexOf('twist release tick=36')<text.indexOf('land reset pilot=')&&text.indexOf('land reset pilot=')<text.indexOf('kick tick=112'));
     const legs=[...text.matchAll(/ice leg tick=(\d+) forward=([^\r\n]+)/g)];assert.equal(legs.length,2);assert.ok(+legs[0][2]<-.15&&+legs[1][2]>+legs[0][2]+.4,'Rearward leg hold leads into a forward strike');
    }
    pass(id+' item plays charge, live-foot kick, themed projectile, impact and cleanup; OFF viewers see nothing');
