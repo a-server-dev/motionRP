@@ -13,6 +13,9 @@ def ice_tick(reference):
  # Remove the 32-tick intro; pre-turn motion runs at 1.5x, subsequent motion at 1x.
  return int(math.floor((max(0,reference-32)/1.5 if reference<=136 else 104/1.5+reference-136)+.5))
 
+def sword_tick(reference):
+ return int(math.floor((reference/2 if reference<=78 else reference-39)+.5))
+
 def actor(rig,name,end,kick):
  m=player(rig,name,end/20,{})
  def track(b,keys,channel='rotation'):
@@ -26,14 +29,14 @@ def actor(rig,name,end,kick):
   # Scoop into a free arc, then strike high with a grounded, straight-legged front kick.
   thigh=[(0,(0,0,0)),(8,(0,0,0)),(16,(45,0,0)),(22,(45,0,0)),(30,(65,0,0)),(40,(40,0,0)),(52,(-20,0,0)),(64,(-60,0,0)),(68,(-60,0,0)),(72,(110,0,0)),(78,(110,0,0)),(82,(80,0,0)),(88,(65,0,0)),(end,(65,0,0))]
   knee=[(0,(0,0,0)),(22,(0,0,0)),(30,(-30,0,0)),(40,(-65,0,0)),(52,(-95,0,0)),(64,(-105,0,0)),(68,(-105,0,0)),(72,(0,0,0)),(78,(0,0,0)),(82,(-40,0,0)),(88,(-120,0,0)),(end,(-120,0,0))]
-  chest=[(0,(0,0,0)),(18,(-8,0,0)),(44,(-8,0,0)),(60,(35,-15,0)),(70,(42,-25,-4)),(kick,(-12,15,0)),(80,(-4,-4,0)),(88,(0,-12,3)),(94,(0,-12,3)),(96,(-10,-4,1)),(100,(-16,8,-2)),(104,(-20,15,-3)),(106,(-18,15,-3)),(110,(-20,15,0)),(114,(-20,15,7)),(end,(-20,15,7))]
+  chest=[(0,(0,0,0)),(18,(-8,0,0)),(44,(-8,0,0)),(60,(35,-15,0)),(70,(42,-25,-4)),(kick,(-12,15,0)),(80,(-4,-4,0)),(88,(0,-12,3)),(94,(0,-12,3)),(96,(-10,-4,1)),(100,(-16,8,-2)),(104,(-20,15,-3)),(106,(-18,15,-3)),(110,(-20,15,0)),(114,(-15,15,5)),(end,(-15,15,5))]
   root=[(0,(0,0,0)),(end,(0,0,0))]
  elif name=='eternal_blizzard':
   # 13.9-second anime reference: focus, scoop/scissor, planted freeze, rise/turn, loaded aerial kick.
   thigh=[(0,(0,0,0)),(32,(0,0,0)),(36,(-12,0,5)),(40,(30,0,5)),(44,(85,0,6)),(50,(85,20,10)),(54,(45,0,0)),(64,(45,0,0)),(70,(45,0,0)),(86,(60,0,55)),(134,(60,0,55)),(148,(30,0,30)),(158,(35,0,20)),(168,(45,0,25)),(180,(-40,0,20)),(194,(-65,0,15)),(208,(-85,0,10)),(222,(-85,0,10)),(226,(-65,0,8)),(232,(80,0,10)),(kick,(125,0,8)),(248,(140,0,12)),(260,(60,0,8)),(end,(0,0,0))]
   knee=[(0,(0,0,0)),(32,(0,0,0)),(36,(-15,0,0)),(40,(-25,0,0)),(44,(-20,0,0)),(50,(-20,0,0)),(54,(-45,0,0)),(64,(-45,0,0)),(70,(-45,0,0)),(86,(-105,0,0)),(134,(-105,0,0)),(148,(-65,0,0)),(158,(-55,0,0)),(168,(-90,0,0)),(194,(-105,0,0)),(208,(-115,0,0)),(222,(-115,0,0)),(226,(-80,0,0)),(232,(-20,0,0)),(kick,(0,0,0)),(248,(0,0,0)),(260,(-60,0,0)),(end,(0,0,0))]
   chest=[(0,(-4,0,0)),(32,(-4,0,0)),(44,(-5,0,0)),(54,(-5,20,-8)),(64,(-5,-20,8)),(70,(-10,-10,0)),(86,(-40,0,0)),(134,(-40,0,0)),(148,(-18,-15,-5)),(158,(-10,-30,-10)),(180,(-15,-20,-8)),(194,(-18,-25,-10)),(208,(-18,-35,-12)),(222,(-18,-35,-12)),(226,(-10,-10,0)),(232,(15,25,5)),(kick,(20,30,8)),(248,(-25,10,8)),(end,(0,0,0))]
-  root=[(0,(0,0,0)),(44,(0,0,0)),(54,(0,0,0)),(58,(0,90,0)),(62,(0,180,0)),(66,(0,270,0)),(70,(0,360,0)),(86,(0,360,0)),(134,(0,360,0)),(148,(-10,510,-8)),(158,(-15,630,-12)),(168,(-25,810,-25)),(180,(-30,990,-25)),(194,(-20,1080,-15)),(208,(-15,1080,-8)),(222,(-15,1080,-8)),(226,(-12,1080,0)),(kick,(0,1080,0)),(250,(15,1080,5)),(end,(0,1080,0))]
+  root=[(0,(0,0,0)),(44,(0,0,0)),(54,(0,0,0)),(58,(0,0,0)),(62,(0,0,0)),(66,(0,0,0)),(70,(0,0,0)),(86,(0,0,0)),(134,(0,0,0)),(148,(-10,150,-8)),(158,(-15,270,-12)),(168,(-25,450,-25)),(180,(-30,630,-25)),(194,(-20,720,-15)),(208,(-15,720,-8)),(222,(-15,720,-8)),(226,(-12,720,0)),(kick,(0,720,0)),(250,(15,720,5)),(end,(0,720,0))]
 
  else:
   thigh=[(0,(0,0,0)),(12,(80,0,15)),(30,(60,0,20)),(44,(65,0,20)),(kick-10,(-55,0,12)),(kick-4,(-55,0,12)),(kick,(125,0,5)),(kick+7,(140,0,5)),(end,(0,0,0))]
@@ -47,9 +50,9 @@ def actor(rig,name,end,kick):
  for right in [True,False]:
   sign=1 if right else -1
   if name=='death_sword':
-   if right:arm=[(0,(-15,0,8)),(16,(-20,0,8)),(44,(-20,0,8)),(60,(-40,0,5)),(kick,(-35,0,8)),(82,(25,-30,30)),(84,(90,-30,40)),(86,(150,-30,35)),(88,(185,-30,15)),(94,(185,-30,15)),(96,(185,-35,5)),(98,(175,-40,-20)),(100,(150,-45,-30)),(104,(100,-45,-25)),(106,(80,-40,-20)),(110,(70,-30,-15)),(114,(70,-15,-5)),(end,(70,-15,-5))]
+   if right:arm=[(0,(-15,0,8)),(16,(-20,0,8)),(44,(-20,0,8)),(60,(-40,0,5)),(kick,(-35,0,8)),(82,(25,-30,30)),(84,(90,-30,40)),(86,(150,-30,35)),(88,(185,-30,15)),(94,(185,-30,15)),(96,(185,-35,5)),(98,(175,-40,-20)),(100,(150,-45,-30)),(104,(100,-45,-25)),(106,(80,-40,-20)),(110,(70,-30,-15)),(114,(105,-25,20)),(end,(105,-25,20))]
 
-   else:arm=[(0,(-15,0,-8)),(44,(-20,0,-8)),(60,(-40,0,-5)),(82,(-15,-15,-20)),(94,(-15,-15,-20)),(100,(-35,-10,-25)),(106,(-55,0,-20)),(110,(-70,-10,-40)),(114,(-85,-15,-50)),(end,(-85,-15,-50))]
+   else:arm=[(0,(-15,0,-8)),(44,(-20,0,-8)),(60,(-40,0,-5)),(82,(-15,-15,-20)),(94,(-15,-15,-20)),(100,(-35,-10,-25)),(106,(-55,0,-20)),(110,(-65,-15,-40)),(114,(-55,-25,-45)),(end,(-55,-25,-45))]
 
   elif name=='eternal_blizzard':
    arm=[(0,(15,0,sign*10)),(32,(15,0,sign*10)),(44,(-25 if right else 25,0,sign*35)),(64,(-40 if right else -20,0,sign*70)),(86,(70 if right else -65,15 if right else -25,5 if right else -35)),(134,(70 if right else -65,15 if right else -25,5 if right else -35)),(148,(60 if right else -65,-10 if right else 10,sign*35)),(158,(75 if right else -25,0,sign*55)),(180,(-40 if right else 65,0,sign*65)),(194,(100 if right else 65,-35 if right else 25,-30 if right else 25)),(208,(120 if right else 70,-40 if right else 30,-40 if right else 30)),(222,(120 if right else 70,-40 if right else 30,-40 if right else 30)),(232,(65 if right else -45,0,sign*35)),(kick,(75 if right else -55,0,sign*25)),(250,(80 if right else -50,0,sign*25)),(end,(0,0,0))]
@@ -57,10 +60,10 @@ def actor(rig,name,end,kick):
   track('pra_right_arm'if right else'pla_left_arm',arm)
   forearm=[(0,(0,0,0)),(30,(30,0,0)),(kick,(45,0,0)),(end,(0,0,0))]
   if name=='eternal_blizzard':forearm=[(0,(65,0,0)),(32,(65,0,0)),(44,(25,0,0)),(64,(30,0,0)),(86,(0,0,0)),(134,(0,0,0)),(158,(35,0,0)),(180,(40,0,0)),(194,(85 if right else 65,0,0)),(222,(85 if right else 65,0,0)),(kick,(55 if right else 25,0,0)),(end,(0,0,0))]
-  if name=='death_sword'and right:forearm=[(0,(0,0,0)),(30,(55,0,0)),(kick,(15,0,0)),(82,(10,0,0)),(88,(0,0,0)),(104,(0,0,0)),(end,(0,0,0))]
-  if name=='death_sword'and not right:forearm=[(0,(0,0,0)),(30,(30,0,0)),(kick,(45,0,0)),(106,(0,0,0)),(end,(0,0,0))]
+  if name=='death_sword'and right:forearm=[(0,(0,0,0)),(30,(55,0,0)),(kick,(15,0,0)),(82,(10,0,0)),(88,(0,0,0)),(104,(0,0,0)),(110,(0,0,0)),(114,(10,0,0)),(end,(10,0,0))]
+  if name=='death_sword'and not right:forearm=[(0,(0,0,0)),(30,(30,0,0)),(kick,(45,0,0)),(106,(0,0,0)),(114,(10,0,0)),(end,(10,0,0))]
   track('prfa_right_forearm'if right else'plfa_left_forearm',forearm)
- track('h_ph_head',[(0,(20,0,0)),(kick-12,(15,-15,0)),(kick,(10,10,0)),(94,(10,20,0)),(110,(15,-10,0)),(114,(20,-15,0)),(end,(20,-15,0))]if name=='death_sword'else[(0,(0,-8,0)),(32,(0,-8,0)),(44,(30,0,0)),(70,(35,0,0)),(86,(60,0,0)),(134,(60,0,0)),(148,(25,15,0)),(180,(10,0,0)),(208,(-15,20,0)),(222,(-15,20,0)),(kick,(-5,0,0)),(end,(0,0,0))]if name=='eternal_blizzard'else[(0,(20,0,0)),(kick-12,(15,-15,0)),(kick,(10,10,0)),(end,(0,0,0))])
+ track('h_ph_head',[(0,(20,0,0)),(kick-12,(15,-15,0)),(kick,(10,10,0)),(94,(10,20,0)),(110,(15,-10,0)),(114,(45,-10,0)),(end,(45,-10,0))]if name=='death_sword'else[(0,(0,-8,0)),(32,(0,-8,0)),(44,(30,0,0)),(70,(35,0,0)),(86,(60,0,0)),(134,(60,0,0)),(148,(25,15,0)),(180,(10,0,0)),(208,(-15,20,0)),(222,(-15,20,0)),(kick,(-5,0,0)),(end,(0,0,0))]if name=='eternal_blizzard'else[(0,(20,0,0)),(kick-12,(15,-15,0)),(kick,(10,10,0)),(end,(0,0,0))])
  if name=='eternal_blizzard':
   g=next(g for g in m['groups']if g['name']=='pw_waist')
   m['animations'][0]['animators'][g['uuid']]['keyframes']+=animator(g,[(0,(0,0,0)),(72/20,(0,0,0)),(88/20,(0,-2,0)),(136/20,(0,-2,0)),(150/20,(0,0,0)),(end/20,(0,0,0))],'position')['keyframes']
@@ -83,15 +86,6 @@ def actor(rig,name,end,kick):
      if add(n['children']):return True
    return False
   assert add(m['outliner'])
- pivot_keys=[]
- if name=='eternal_blizzard':
-  from generate_rasengan import hand_path
-  rows=[list(map(float,l.split(',')))for l in hand_path(m,end,'shot_boot').splitlines()]
-  anchor=rows[56]
-  # Rotate around the planted right sole on top of the ball, rather than orbiting the ball around the torso.
-  pivot_keys=[(54/20,(0,0,0))]+[(t/20,((anchor[0]-rows[t][0])*16,0,-(anchor[1]-rows[t][1])*16))for t in range(56,73)]
-  root=next(g for g in m['groups']if g['name']=='player_root')
-  m['animations'][0]['animators'][root['uuid']]['keyframes']+=animator(root,pivot_keys,'position')['keyframes']
  if name in {'eternal_blizzard','death_sword'}:
   from generate_rasengan import hand_path
   right=[list(map(float,l.split(',')))for l in hand_path(m,end,'shot_boot').splitlines()]
@@ -100,7 +94,7 @@ def actor(rig,name,end,kick):
   first,last=(72,148)if name=='eternal_blizzard'else(80,end-1)
   # Match both soles to the floor while the hips lower, without moving the real pilot.
   root=next(g for g in m['groups']if g['name']=='player_root')
-  root_keys=[(0,(0,0,0))]+pivot_keys+[(first/20,(0,0,0))]
+  root_keys=[(0,(0,0,0))]+[(first/20,(0,0,0))]
   leg_keys=[[(0,(0,0,0)),(first/20,(0,0,0))]for _ in range(2)]
   for t in range(first+1,last+1):
    # The sword's striking foot returns while the other remains planted.
@@ -117,30 +111,42 @@ def actor(rig,name,end,kick):
    for bone,keys in zip(['prl_right_leg','pll_left_leg'],leg_keys):
     g=next(g for g in m['groups']if g['name']==bone);keys.append((end/20,keys[-1][1]))
     m['animations'][0]['animators'][g['uuid']]['keyframes']=[k for k in m['animations'][0]['animators'][g['uuid']]['keyframes']if k['channel']!='position']+animator(g,keys,'position')['keyframes']
- if name=='eternal_blizzard':
-  # Retiming also applies to baked root translations and render lead, preserving grounded poses.
-  new_end=ice_tick(end)
+ if name in {'eternal_blizzard','death_sword'}:
+  # Compress only the requested phase; the renderer lead and post-kick timing remain intact.
+  retime=ice_tick if name=='eternal_blizzard'else sword_tick
+  new_end=retime(end)
   for entry in m['animations'][0]['animators'].values():
    unique={}
    for k in entry['keyframes']:
     old=k['time']*20
-    t=min(new_end,ice_tick(max(0,old-2))+2)if old else 0
+    t=(max(0,min(new_end,retime(old+2)-2))if name=='death_sword'else min(new_end,retime(max(0,old-2))+2))if old else 0
     k['time']=t/20;unique[(k['channel'],t)]=k
    entry['keyframes']=list(unique.values())
   end=new_end;m['animations'][0]['length']=end/20
-  # Re-bake the horizontal pivot after frame quantization so its contact does not wobble.
+ if name=='eternal_blizzard':
   from generate_rasengan import hand_path
-  rows=[list(map(float,l.split(',')))for l in hand_path(m,end,'shot_boot').splitlines()]
-  lo,hi=ice_tick(54)+2,ice_tick(70)+2;anchor=rows[hi]
-  root=next(g for g in m['groups']if g['name']=='player_root');entry=m['animations'][0]['animators'][root['uuid']]
-  pos=[k for k in entry['keyframes']if k['channel']=='position']
-  def root_position(t):
-   a=max((k for k in pos if k['time']<=t/20),key=lambda k:k['time'],default=pos[0]);b=min((k for k in pos if k['time']>=t/20),key=lambda k:k['time'],default=pos[-1]);p=(t/20-a['time'])/(b['time']-a['time'])if b['time']!=a['time']else 0
-   return[float(a['data_points'][0][axis])*(1-p)+float(b['data_points'][0][axis])*p for axis in'xyz']
-  keys=[]
+  # Around-the-world trick: an anatomical two-bone solve sweeps the right toe around a free ball.
+  hips=[list(map(float,l.split(',')))for l in hand_path(m,end,'prl_right_leg').splitlines()]
+  upper=5.625/16;lower=math.hypot(4.975,1.8)/16;rest=math.atan2(1.8,4.975)
+  lo,hi=15,27;thigh_keys=[];knee_keys=[]
   for t in range(lo,hi+1):
-   x,y,z=root_position(t);keys.append((t/20,(x+(anchor[0]-rows[t][0])*16,y,z-(anchor[1]-rows[t][1])*16)))
-  entry['keyframes']=[k for k in entry['keyframes']if k['channel']!='position'or not lo/20<=k['time']<=hi/20]+animator(root,keys,'position')['keyframes']
+   p=(t-lo)/(hi-lo);angle=-math.pi/2+p*math.tau
+   clock=t+2;ref=32+104*clock/69 if clock<=69 else 136+clock-69
+   def smooth(x,a,b):
+    q=max(0,min(1,(x-a)/(b-a)));return q*q*(3-2*q)
+   pilot=.85*smooth(ref,46,54)*(1-smooth(ref,70,88))
+   dx=.1171875+.48*math.cos(angle)-hips[t][0]
+   df=.35-(hips[t][1]-.05)
+   dy=1.5+.48*math.sin(angle)-pilot-(hips[t][2]-.03)
+   reach=math.sqrt(dx*dx+df*df+dy*dy)
+   assert abs(upper-lower)<reach<upper+lower,(t,reach)
+   a=math.atan2(math.hypot(dx,df),-dy)+math.acos((upper*upper+reach*reach-lower*lower)/(2*upper*reach))
+   bend=math.acos((reach*reach-upper*upper-lower*lower)/(2*upper*lower))
+   thigh_keys.append((t/20,(math.degrees(a),-math.degrees(math.atan2(dx,df)),0)))
+   knee_keys.append((t/20,(-math.degrees(bend+rest),0,0)))
+  for bone,keys in [('prl_right_leg',thigh_keys),('prfl_right_foreleg',knee_keys)]:
+   g=next(g for g in m['groups']if g['name']==bone);entry=m['animations'][0]['animators'][g['uuid']]
+   entry['keyframes']=[k for k in entry['keyframes']if k['channel']!='rotation'or not lo/20<=k['time']<=hi/20]+animator(g,keys,'rotation')['keyframes']
 
  save('players/motionrp_'+name+'.bbmodel',m)
  if name=='eternal_blizzard':

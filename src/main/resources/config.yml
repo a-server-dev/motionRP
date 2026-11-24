@@ -9,7 +9,7 @@ motions:
     model: motionrp_death_sword
     animation: death_sword
     effect: death_sword
-    max-ticks: 139
+    max-ticks: 100
   eternal_blizzard:
     name: エターナルブリザード
     model: motionrp_eternal_blizzard

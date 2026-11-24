@@ -45,6 +45,11 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
                 saveConfig();
             }
         }
+        if("motionrp_death_sword".equals(getConfig().getString("motions.death_sword.model"))
+                && "death_sword".equals(getConfig().getString("motions.death_sword.effect"))
+                && getConfig().getInt("motions.death_sword.max-ticks",0)==139) {
+            getConfig().set("motions.death_sword.max-ticks",dev.aserver.motionrp.core.InazumaShot.DEATH_SWORD.end+10);saveConfig();
+        }
         // Retimed anime reference: migrate only known stock timeouts.
         if("motionrp_eternal_blizzard".equals(getConfig().getString("motions.eternal_blizzard.model"))
                 && "eternal_blizzard".equals(getConfig().getString("motions.eternal_blizzard.effect"))
