@@ -21,7 +21,7 @@ def actor(rig,name,end,kick):
  if name=='death_sword':
   thigh=[(0,(0,0,0)),(16,(85,0,6)),(44,(85,0,6)),(52,(35,0,8)),(60,(-35,0,8)),(68,(-70,0,8)),(72,(-70,0,8)),(kick,(110,0,4)),(78,(125,0,4)),(82,(-35,0,8)),(94,(-55,0,8)),(100,(40,0,8)),(108,(65,0,6)),(end-7,(0,0,0)),(end,(0,0,0))]
   knee=[(0,(0,0,0)),(16,(-20,0,0)),(44,(-20,0,0)),(52,(-60,0,0)),(60,(-90,0,0)),(68,(-105,0,0)),(72,(-105,0,0)),(kick,(0,0,0)),(78,(0,0,0)),(82,(-110,0,0)),(94,(-105,0,0)),(100,(-45,0,0)),(108,(-10,0,0)),(end,(0,0,0))]
-  chest=[(0,(0,0,0)),(18,(-8,0,0)),(44,(-8,0,0)),(60,(35,-15,0)),(70,(42,-25,-4)),(kick,(-12,15,0)),(80,(28,-10,0)),(94,(35,-15,0)),(100,(45,25,4)),(108,(30,15,4)),(end,(0,0,0))]
+  chest=[(0,(0,0,0)),(18,(-8,0,0)),(44,(-8,0,0)),(60,(35,-15,0)),(70,(42,-25,-4)),(kick,(-12,15,0)),(80,(-5,0,0)),(88,(-20,0,0)),(104,(-20,0,0)),(110,(-15,0,0)),(end,(0,0,0))]
   root=[(0,(0,0,0)),(end,(0,0,0))]
  elif name=='eternal_blizzard':
   thigh=[(0,(0,0,0)),(17,(65,0,8)),(28,(0,0,0)),(55,(35,0,20)),(75,(55,0,25)),(90,(-65,0,15)),(kick-4,(-65,0,15)),(kick,(115,0,5)),(kick+8,(130,0,8)),(end,(0,0,0))]
@@ -33,14 +33,15 @@ def actor(rig,name,end,kick):
   knee=[(0,(0,0,0)),(20,(-80,0,0)),(44,(-70,0,0)),(kick-10,(-105,0,0)),(kick-4,(-105,0,0)),(kick,(0,0,0)),(kick+7,(0,0,0)),(end,(0,0,0))]
   chest=[(0,(-10,0,0)),(26,(-30,-20,-10)),(kick-10,(-25,-35,-15)),(kick,(35,30,15)),(kick+10,(25,25,12)),(end,(0,0,0))]
   root=[(0,(0,0,0)),(30,(0,0,-12)),(kick-4,(0,0,-12)),(kick,(0,0,8)),(end,(0,0,0))]
- track('player_root',root);track('pc_chest',chest);track('pw_waist',[(0,(0,0,0)),(kick-10,(-12,-18,0)),(kick,(10,18,0)),(end,(0,0,0))])
+ track('player_root',root);track('pc_chest',chest);track('pw_waist',[(0,(0,0,0)),(kick-10,(-12,-18,0)),(kick,(10,18,0)),(end,(0,0,0))]if name!='death_sword'else[(0,(0,0,0)),(kick,(-5,0,0)),(80,(-15,0,0)),(88,(-60,0,0)),(104,(-60,0,0)),(110,(-45,0,0)),(end,(0,0,0))])
  track('prl_right_leg',thigh);track('prfl_right_foreleg',knee)
- track('pll_left_leg',[(0,(0,0,0)),(32,(-12,0,-8)),(kick-8,(35 if name!='death_sword'else -8,0,-15)),(kick,(-30,0,-12)),(end,(0,0,0))])
- track('plfl_left_foreleg',[(0,(0,0,0)),(40,(-65 if name!='death_sword'else -8,0,0)),(kick,(-75 if name!='death_sword'else -10,0,0)),(end,(0,0,0))])
+ track('pll_left_leg',[(0,(0,0,0)),(end,(0,0,0))]if name=='death_sword'else[(0,(0,0,0)),(32,(-12,0,-8)),(kick-8,(35 if name!='death_sword'else -8,0,-15)),(kick,(-30,0,-12)),(end,(0,0,0))])
+ track('plfl_left_foreleg',[(0,(0,0,0)),(end,(0,0,0))]if name=='death_sword'else[(0,(0,0,0)),(40,(-65 if name!='death_sword'else -8,0,0)),(kick,(-75 if name!='death_sword'else -10,0,0)),(end,(0,0,0))])
  for right in [True,False]:
   sign=1 if right else -1
   if name=='death_sword':
-   if right:arm=[(0,(-15,0,8)),(16,(-20,0,8)),(44,(-20,0,8)),(60,(-40,0,5)),(kick,(-35,0,8)),(82,(-45,-40,45)),(84,(0,-40,65)),(86,(100,-40,65)),(88,(170,-40,45)),(92,(155,-40,10)),(94,(135,-40,-5)),(96,(45,-40,15)),(98,(20,-40,25)),(100,(-30,-40,35)),(104,(-30,-40,35)),(108,(-30,-40,20)),(end,(0,0,0))]
+   if right:arm=[(0,(-15,0,8)),(16,(-20,0,8)),(44,(-20,0,8)),(60,(-40,0,5)),(kick,(-35,0,8)),(82,(30,-40,35)),(84,(115,-40,45)),(86,(190,-40,45)),(88,(250,-40,35)),(94,(220,-40,5)),(96,(190,-40,-20)),(98,(150,-40,-10)),(100,(110,-40,0)),(104,(80,-40,0)),(108,(80,-40,-15)),(end,(0,0,0))]
+
    else:arm=[(0,(-15,0,-8)),(44,(-20,0,-8)),(60,(-40,0,-5)),(82,(-45,0,-8)),(94,(-40,0,-10)),(100,(-20,-10,-20)),(110,(10,0,-12)),(end,(0,0,0))]
 
   else:arm=[(0,(0,0,sign*8)),(30,(-20,0,sign*70)),(kick-12,(-50 if right else 80,0,sign*65)),(kick,(75 if right else -25,0,sign*45)),(kick+10,(30 if right else -20,0,sign*35)),(end,(0,0,0))]
@@ -49,7 +50,7 @@ def actor(rig,name,end,kick):
   if name=='death_sword'and right:forearm=[(0,(0,0,0)),(30,(55,0,0)),(kick,(15,0,0)),(82,(10,0,0)),(88,(0,0,0)),(104,(0,0,0)),(110,(20,0,0)),(end,(0,0,0))]
   track('prfa_right_forearm'if right else'plfa_left_forearm',forearm)
  track('h_ph_head',[(0,(20,0,0)),(kick-12,(15,-15,0)),(kick,(10,10,0)),(end,(0,0,0))])
- attachments=[('shot_knife_edge','prfa_right_forearm',[3.75,11.25,-1.875])]if name=='death_sword'else[]
+ attachments=[('shot_knife_edge','prfa_right_forearm',[3.75,11.25,-1.875]),('shot_support_boot','plfl_left_foreleg',[-1.875,.65,-1.8]),('shot_upper','pc_chest',[0,22,0])]if name=='death_sword'else[]
  for label,parent,origin in attachments+[('shot_boot','prfl_right_foreleg',[1.875,.65,-1.8]),('shot_torso','pc_chest',[0,17,0])]:
   g={'name':label,'uuid':ident(name+'/'+label),'origin':origin,'rotation':[0,0,0],'export':True};m['groups'].append(g)
   uid=next(x['uuid']for x in m['groups']if x['name']==parent)
@@ -65,6 +66,7 @@ def actor(rig,name,end,kick):
   from generate_rasengan import hand_path
   from generate_summons import ROOT
   (ROOT/'death_sword-knife.csv').write_text(hand_path(m,end,'shot_knife_edge'))
+  (ROOT/'death_sword-support.csv').write_text(hand_path(m,end,'shot_support_boot'))
 def finish(m,ids,spin=False):
  g=m.group('shot_effect',ids)
  if spin:

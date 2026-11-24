@@ -58,7 +58,7 @@ final class InazumaShotScene extends SummonScene {
     else if(tick<44)ballAt=target;
     else if(tick<60){if(swordLiftStart==null)swordLiftStart=ballAt.clone();ballAt=blend(swordLiftStart,at(.1,.9,1.85),smooth(tick,44,60));}
     else if(tick<=shot.strike())ballAt=blend(at(.1,.9,1.85),target,smooth(tick,shot.strike()-6,shot.strike()));
-    else ballAt=swordContact.clone();
+    else ballAt=blend(swordContact,at(.1,1.15,.75),smooth(tick,shot.strike(),88));
     if(tick==shot.strike()){
      swordContact=ballAt.clone();particle(ballAt,Particle.CRIT,18,.12,.08);particle(ballAt,Particle.SWEEP_ATTACK,1,0,0);
      sound(ballAt,Sound.ENTITY_PLAYER_ATTACK_STRONG,1.4f,.8f);trace("strike tick="+tick+" contactGap="+ballAt.distance(target));
@@ -77,6 +77,10 @@ final class InazumaShotScene extends SummonScene {
    minimumKnifeGap=Math.min(minimumKnifeGap,gap);trace("knife tick="+tick+" gap="+gap+" hand="+hand.getX()+","+hand.getY()+","+hand.getZ());
    if(tick>=94&&tick%2==0)particle(hand,Particle.SWEEP_ATTACK,1,0,0);
    if(tick==shot.kick)trace("knife minimumGap="+minimumKnifeGap+" release tick="+tick);
+   if(tick==100){
+    var torso=body.bone("shot_torso").worldPosition();var upper=body.bone("shot_upper").worldPosition().sub(torso,new org.joml.Vector3f()).normalize();var support=body.bone("shot_support_boot").worldPosition();
+    trace("deep bend forward="+(upper.x*forward().getX()+upper.z*forward().getZ())+" up="+upper.y+" supportHeight="+support.y+" pilotHeight="+(owner.getLocation().getY()-origin.getY()));
+   }
   }
   if(tick==shot.kick){
    shotStart=shot==InazumaShot.DEATH_SWORD?ballAt.clone():contact();previousBall=shotStart.clone();ballAt=shotStart;pose(ball,ballAt,forward());

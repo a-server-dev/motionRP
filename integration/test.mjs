@@ -321,7 +321,8 @@ if(process.env.MOTIONRP_INAZUMA_ONLY==='1'){
   const a=await connect(names[0]),b=await connect(names[1]),c=await connect(names[2]);c.chat('/motionrp view off');
   consoleCommand('fill -4 -60 -4 9 -50 6 air');consoleCommand('fill -4 -61 -4 9 -61 6 grass_block');
   for(const [i,name]of names.entries())consoleCommand(`tp ${name} ${i*3+.5} -60 .5 0 0`);await sleep(500);
-  const spawns=[new Set(),new Set(),new Set()],removed=[new Set(),new Set(),new Set()],particles=[];let active='';
+  const spawns=[new Set(),new Set(),new Set()],removed=[new Set(),new Set(),new Set()],particles=[],pilotY=[];let active='';
+  a._client.on('position',p=>{if(active==='death_sword')pilotY.push(p.y);});
   for(const [i,bot]of [a,b,c].entries()){
    bot._client.on('spawn_entity',p=>{if(p.type===bot.registry.entitiesByName.item_display.id)spawns[i].add(p.entityId);});
    bot._client.on('entity_destroy',p=>p.entityIds.forEach(id=>removed[i].add(id)));
@@ -342,6 +343,9 @@ if(process.env.MOTIONRP_INAZUMA_ONLY==='1'){
    if(id==='death_sword'){
     const text=output.slice(start);assert.ok(text.includes('strike tick=78 contactGap=0.0'));assert.ok(text.includes('dark conversion tick=80'));assert.ok(text.includes('kick tick=104'));
     const knife=text.match(/knife minimumGap=([^ ]+) release tick=104/);assert.ok(knife&&+knife[1]>.02&&+knife[1]<.2,'Hand edge passes close to the dark ball without touching');
+    assert.ok(pilotY.every(y=>Math.abs(y-origin.y)<.03),'Grounded sword kick never lifts the pilot');
+    const bend=text.match(/deep bend forward=([^ ]+) up=([^ ]+) supportHeight=([^ ]+) pilotHeight=([^\r\n]+)/);
+    assert.ok(bend&&+bend[1]>.95&&+bend[2]>0&&+bend[2]<.3,'Torso folds forward almost horizontally during the hand chop');assert.ok(+bend[3]<.12&&Math.abs(+bend[4])<.03,'Support boot and player stay grounded');
     assert.ok(text.indexOf('strike tick=78')<text.indexOf('displays dark_ball'),'Football changes to blue-black only after the strike');
    }
    pass(id+' item plays charge, live-foot kick, themed projectile, impact and cleanup; OFF viewers see nothing');
