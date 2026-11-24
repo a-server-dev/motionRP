@@ -1,14 +1,14 @@
-"""Reference-based football shots with a piecewise-retimed anime Blizzard.
+"""Reference-based football shots with a shared two-foot brush and rightward landing turn.
 Original editable meshes; pinned BetterModel Steve rig, no video pixels embedded.
 """
-import sys,json,math,hashlib
+import sys,json,math,hashlib,copy
 from pathlib import Path
 sys.dont_write_bytecode=True
 from generate_summons import player,animator,save,ident,RIG_SHA,animation
 from generate_energy import mesh_model,add_mesh
 from generate_battle_visuals import oval
 COLORS=[(8,5,22,255),(22,26,94,255),(27,80,255,255),(66,195,255,255),(235,252,255,255),(152,231,255,255),(205,8,35,255),(255,69,81,255)]
-SHOTS={'death_sword':(129,74),'eternal_blizzard':(278,238),'death_spear':(132,72)}
+SHOTS={'death_sword':(129,74),'eternal_blizzard':(278,238),'death_spear':(132,108)}
 def ice_tick(reference):
  # Remove the 32-tick intro; pre-turn motion runs at 1.5x, subsequent motion at 1x.
  return int(math.floor((max(0,reference-32)/1.5 if reference<=136 else 104/1.5+reference-136)+.5))
@@ -123,30 +123,56 @@ def actor(rig,name,end,kick):
     k['time']=t/20;unique[(k['channel'],t)]=k
    entry['keyframes']=list(unique.values())
   end=new_end;m['animations'][0]['length']=end/20
+ if name=='death_sword':
+  # End on the completed hand chop; remove the extra raised-arm flourish after it.
+  for entry in m['animations'][0]['animators'].values():
+   keys=entry['keyframes'];cut=sword_tick(110)+2
+   rot=[k for k in keys if k['channel']=='rotation'and k['time']<=cut/20]
+   if rot:
+    held=copy.deepcopy(max(rot,key=lambda k:k['time']));held['time']=end/20
+    entry['keyframes']=[k for k in keys if k['channel']!='rotation']+rot+[held]
  if name=='eternal_blizzard':
   from generate_rasengan import hand_path
-  # Around-the-world trick: an anatomical two-bone solve sweeps the right toe around a free ball.
-  hips=[list(map(float,l.split(',')))for l in hand_path(m,end,'prl_right_leg').splitlines()]
-  upper=5.625/16;lower=math.hypot(4.975,1.8)/16;rest=math.atan2(1.8,4.975)
-  lo,hi=15,27;thigh_keys=[];knee_keys=[]
-  for t in range(lo,hi+1):
-   p=(t-lo)/(hi-lo);angle=-math.pi/2+p*math.tau
-   clock=t+2;ref=32+104*clock/69 if clock<=69 else 136+clock-69
-   def smooth(x,a,b):
-    q=max(0,min(1,(x-a)/(b-a)));return q*q*(3-2*q)
-   pilot=.85*smooth(ref,46,54)*(1-smooth(ref,70,88))
-   dx=.1171875+.48*math.cos(angle)-hips[t][0]
-   df=.35-(hips[t][1]-.05)
-   dy=1.5+.48*math.sin(angle)-pilot-(hips[t][2]-.03)
-   reach=math.sqrt(dx*dx+df*df+dy*dy)
-   assert abs(upper-lower)<reach<upper+lower,(t,reach)
-   a=math.atan2(math.hypot(dx,df),-dy)+math.acos((upper*upper+reach*reach-lower*lower)/(2*upper*reach))
-   bend=math.acos((reach*reach-upper*upper-lower*lower)/(2*upper*lower))
-   thigh_keys.append((t/20,(math.degrees(a),-math.degrees(math.atan2(dx,df)),0)))
-   knee_keys.append((t/20,(-math.degrees(bend+rest),0,0)))
-  for bone,keys in [('prl_right_leg',thigh_keys),('prfl_right_foreleg',knee_keys)]:
-   g=next(g for g in m['groups']if g['name']==bone);entry=m['animations'][0]['animators'][g['uuid']]
-   entry['keyframes']=[k for k in entry['keyframes']if k['channel']!='rotation'or not lo/20<=k['time']<=hi/20]+animator(g,keys,'rotation')['keyframes']
+  def smooth(x,a,b):
+   q=max(0,min(1,(x-a)/(b-a)));return q*q*(3-2*q)
+  # The right foot approaches from the front and the left from behind, brushing opposite sides.
+  for right in [True,False]:
+   leg='prl_right_leg'if right else'pll_left_leg';knee='prfl_right_foreleg'if right else'plfl_left_foreleg'
+   hips=[list(map(float,l.split(',')))for l in hand_path(m,end,leg).splitlines()]
+   upper=5.625/16;lower=math.hypot(4.975,1.8)/16;rest=math.atan2(1.8,4.975)
+   thigh_keys=[];knee_keys=[]
+   for t in range(8,17):
+    p=(t-8)/8;clock=t+2;pilot=.85*smooth(clock,2,12)*(1-smooth(clock,24,39))
+    dx=(.34 if right else -.34)-hips[t][0]
+    target_f=.32+(.24*(1-2*p)if right else -.24*(1-2*p))
+    df=target_f-(hips[t][1]-.05);dy=1.35-pilot-(hips[t][2]-.03)
+    reach=math.sqrt(dx*dx+df*df+dy*dy);assert abs(upper-lower)<reach<upper+lower,(right,t,reach)
+    a=math.atan2(math.hypot(dx,df),-dy)+math.acos((upper*upper+reach*reach-lower*lower)/(2*upper*reach))
+    bend=math.acos((reach*reach-upper*upper-lower*lower)/(2*upper*lower))
+    thigh_keys.append((t/20,(math.degrees(a),-math.degrees(math.atan2(dx,df)),0)));knee_keys.append((t/20,(-math.degrees(bend+rest),0,0)))
+   thigh_keys.extend([(20/20,(30 if right else 70,0,10 if right else -15)),(28/20,(45 if right else 65,0,35 if right else -40)),(38/20,(60,0,55 if right else -55))])
+   knee_keys.extend([(20/20,(-75 if right else -100,0,0)),(28/20,(-100 if right else -105,0,0)),(38/20,(-105,0,0))])
+   for bone,keys in [(leg,thigh_keys),(knee,knee_keys)]:
+    g=next(g for g in m['groups']if g['name']==bone);entry=m['animations'][0]['animators'][g['uuid']]
+    entry['keyframes']=[k for k in entry['keyframes']if k['channel']!='rotation'or not 8/20<=k['time']<=38/20]+animator(g,keys,'rotation')['keyframes']
+  # Rightward body turn follows the two-foot rub and finishes in the planted crouch.
+  root=next(g for g in m['groups']if g['name']=='player_root');entry=m['animations'][0]['animators'][root['uuid']]
+  kept=[]
+  for k in entry['keyframes']:
+   if k['channel']=='rotation':
+    if k['time']<69/20:continue
+    k['data_points'][0]['y']=str(float(k['data_points'][0]['y'])-360)
+   kept.append(k)
+  turn=[(0,(0,0,0)),(18/20,(0,0,0)),(22/20,(0,-90,0)),(26/20,(0,-180,0)),(30/20,(0,-270,0)),(34/20,(0,-360,0)),(39/20,(0,-360,0))]
+  entry['keyframes']=kept+animator(root,turn,'rotation')['keyframes']
+  # Floor clearance remains reversible throughout the descending turn.
+  r=[list(map(float,l.split(',')))for l in hand_path(m,end,'shot_boot').splitlines()];l=[list(map(float,v.split(',')))for v in hand_path(m,end,'ice_other_boot').splitlines()]
+  pos=[k for k in entry['keyframes']if k['channel']=='position'];fixed=[]
+  for t in range(18,39):
+   a=max((k for k in pos if k['time']<=t/20),key=lambda k:k['time'],default=pos[0]);b=min((k for k in pos if k['time']>=t/20),key=lambda k:k['time'],default=pos[-1]);q=(t/20-a['time'])/(b['time']-a['time'])if b['time']!=a['time']else 0
+   x,y,z=[float(a['data_points'][0][axis])*(1-q)+float(b['data_points'][0][axis])*q for axis in'xyz'];clock=t+2;pilot=.85*smooth(clock,2,12)*(1-smooth(clock,24,39));lift=max(0,.070625-min(r[t][2],l[t][2])-pilot)
+   fixed.append((t/20,(x,y+lift*16,z)))
+  entry['keyframes']=[k for k in entry['keyframes']if k['channel']!='position'or not 18/20<=k['time']<=38/20]+animator(root,fixed,'position')['keyframes']
 
  save('players/motionrp_'+name+'.bbmodel',m)
  if name=='eternal_blizzard':
@@ -164,6 +190,21 @@ def actor(rig,name,end,kick):
   (ROOT/'death_sword-support.csv').write_text(hand_path(m,end,'shot_support_boot'))
   (ROOT/'death_sword-right.csv').write_text(hand_path(m,end,'shot_boot'))
   (ROOT/'death_sword-hip.csv').write_text(hand_path(m,end,'phip_hip'))
+ return m
+
+def spear_from_scissor(blizzard):
+ from generate_rasengan import hand_path
+ from generate_summons import ROOT
+ m=copy.deepcopy(blizzard);m['name']=m['model_identifier']='motionrp_death_spear';clip=m['animations'][0];clip['name']='death_spear';clip['length']=132/20
+ for entry in clip['animators'].values():
+  unique={}
+  for k in entry['keyframes']:
+   t=max(0,min(132,int(math.floor((k['time']*20+2)*132/211+.5))-2));k['time']=t/20;unique[(k['channel'],t)]=k
+  entry['keyframes']=list(unique.values())
+ save('players/motionrp_death_spear.bbmodel',m)
+ for suffix,bone in [('boot','shot_boot'),('other','ice_other_boot'),('ground','ice_ground_hand')]:
+  (ROOT/('death_spear-'+suffix+'.csv')).write_text(hand_path(m,132,bone))
+
 def finish(m,ids,spin=False):
  g=m.group('shot_effect',ids)
  if spin:
@@ -241,5 +282,6 @@ def effects():
  finish(m,ids,True)
 if __name__=='__main__':
  raw=Path(sys.argv[1]).read_bytes();assert hashlib.sha256(raw).hexdigest()==RIG_SHA
- for name,(end,kick)in SHOTS.items():actor(json.loads(raw),name,end,kick)
+ built={name:actor(json.loads(raw),name,end,kick)for name,(end,kick)in SHOTS.items()if name!='death_spear'}
+ spear_from_scissor(built['eternal_blizzard'])
  effects()

@@ -50,14 +50,14 @@ class InazumaShotTest {
   var held=arm.getAsJsonArray("keyframes").asList().stream().map(JsonElement::getAsJsonObject).filter(k->Math.abs(k.get("time").getAsDouble()-2.55)<1e-6||Math.abs(k.get("time").getAsDouble()-2.85)<1e-6).toList();
   assertEquals(2,held.size());assertEquals(held.get(0).get("data_points"),held.get(1).get("data_points"));assertEquals(6,InazumaShot.DEATH_SWORD.handHoldEnd()-InazumaShot.DEATH_SWORD.handHoldStart());
  }
- @Test void blizzardFacesForwardForTheFootCircleThenTurnsTwiceBeforeTheShot()throws Exception{
+ @Test void blizzardTurnsRightAfterTheBrushThenTurnsTwiceBeforeTheShot()throws Exception{
   var m=load("players/motionrp_eternal_blizzard");var tracks=m.getAsJsonArray("animations").get(0).getAsJsonObject().getAsJsonObject("animators");
   var root=tracks.entrySet().stream().map(e->e.getValue().getAsJsonObject()).filter(e->e.get("name").getAsString().equals("player_root")).findFirst().orElseThrow();
-  double maxYaw=0;boolean tilted=false;
-  for(var raw:root.getAsJsonArray("keyframes")){var p=raw.getAsJsonObject().getAsJsonArray("data_points").get(0).getAsJsonObject();maxYaw=Math.max(maxYaw,p.get("y").getAsDouble());tilted|=Math.abs(p.get("x").getAsDouble())>=25&&Math.abs(p.get("z").getAsDouble())>=20;}
-  assertEquals(720,maxYaw);assertTrue(tilted);
+  double maxYaw=0,minYaw=0;boolean tilted=false;
+  for(var raw:root.getAsJsonArray("keyframes")){var p=raw.getAsJsonObject().getAsJsonArray("data_points").get(0).getAsJsonObject();maxYaw=Math.max(maxYaw,p.get("y").getAsDouble());minYaw=Math.min(minYaw,p.get("y").getAsDouble());tilted|=Math.abs(p.get("x").getAsDouble())>=25&&Math.abs(p.get("z").getAsDouble())>=20;}
+  assertEquals(360,maxYaw);assertEquals(-360,minYaw);assertTrue(tilted);
   var keys=root.getAsJsonArray("keyframes").asList().stream().map(JsonElement::getAsJsonObject).filter(k->k.get("channel").getAsString().equals("rotation")).toList();
-  for(var pair:List.of(new double[]{17,0},new double[]{27,0},new double[]{70,0},new double[]{129,720})){
+  for(var pair:List.of(new double[]{18,0},new double[]{34,-360},new double[]{70,-360},new double[]{129,360})){
    var k=keys.stream().filter(x->Math.abs(x.get("time").getAsDouble()*20-pair[0])<1e-6).findFirst().orElseThrow();assertEquals(pair[1],k.getAsJsonArray("data_points").get(0).getAsJsonObject().get("y").getAsDouble());
   }
  }
@@ -79,7 +79,7 @@ class InazumaShotTest {
  @Test void blizzardFootScoopsUpThenDrawsBackForTheHeldKick()throws Exception{
   try(var in=Objects.requireNonNull(getClass().getResourceAsStream("/bettermodel/eternal_blizzard-boot.csv"))){
    var feet=new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8).lines().map(l->Arrays.stream(l.split(",")).mapToDouble(Double::parseDouble).toArray()).toList();
-   assertTrue(feet.get(10)[1]>feet.get(2)[1]+.5);assertTrue(feet.get(10)[2]>feet.get(2)[2]+.4);
+   assertTrue(feet.get(8)[2]+InazumaShot.ETERNAL_BLIZZARD.height(10)>.9);assertTrue(InazumaShot.ETERNAL_BLIZZARD.height(8)>.4,"Scoop and jump overlap");
    for(int t=143;t<=157;t++)assertTrue(feet.get(t)[1]<-.2,"Kicking boot is drawn back throughout the wind-up");
    assertTrue(feet.get(173)[1]>feet.get(157)[1]+.6,"Foot accelerates forward after the hold");
   }
@@ -90,14 +90,12 @@ class InazumaShotTest {
  @Test void blizzardOpposesItsFeetThenLandsBeforeTheMainJump()throws Exception{
   var paths=new ArrayList<List<double[]>>();
   for(String side:List.of("boot","other"))try(var in=Objects.requireNonNull(getClass().getResourceAsStream("/bettermodel/eternal_blizzard-"+side+".csv"))){paths.add(new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8).lines().map(l->Arrays.stream(l.split(",")).mapToDouble(Double::parseDouble).toArray()).toList());}
-  // The toe circles a free ball; the player does not stand on it or spin as a rigid pivot.
-  double previous=0,total=0;
-  for(int t=15;t<=27;t++){
-   var r=paths.get(0).get(t);double x=r[0]-.1171875,y=r[2]-.03+InazumaShot.ETERNAL_BLIZZARD.height(t+2)-1.5;
-   assertEquals(.48,Math.hypot(x,y),1e-6);assertEquals(.4,r[1],1e-7);
-   double a=Math.atan2(y,x);if(t>15){double delta=a-previous;while(delta<0)delta+=Math.PI*2;total+=delta;}previous=a;
+  // Both soles brush opposite sides while their forward strokes run in opposite directions.
+  for(int t=8;t<=16;t++){
+   var r=paths.get(0).get(t);var l=paths.get(1).get(t);assertEquals(.34,r[0],1e-6);assertEquals(-.34,l[0],1e-6);assertEquals(.74,r[1]+l[1],1e-6);
+   assertEquals(1.35,r[2]-.03+InazumaShot.ETERNAL_BLIZZARD.height(t+2),1e-6);assertEquals(1.35,l[2]-.03+InazumaShot.ETERNAL_BLIZZARD.height(t+2),1e-6);
   }
-  assertEquals(Math.PI*2,total,1e-6);
+  assertTrue(paths.get(0).get(8)[1]>paths.get(1).get(8)[1]+.4);assertTrue(paths.get(0).get(16)[1]<paths.get(1).get(16)[1]-.4);
   for(int t=39;t<=69;t++){
    assertTrue(Math.abs(paths.get(0).get(t)[0]-paths.get(1).get(t)[0])>1);
    for(var path:paths)assertTrue(path.get(t)[2]>=0&&path.get(t)[2]<.12);
@@ -147,6 +145,23 @@ class InazumaShotTest {
  }
  @Test void old062ActorsAreRecognizedForUpgrade()throws Exception{
   for(String name:List.of("players/motionrp_death_sword.bbmodel","players/motionrp_eternal_blizzard.bbmodel"))try(var in=new java.util.zip.GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.62.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
+ }
+ @Test void swordHasNoExtraPoseAfterTheHandChop()throws Exception{
+  var tracks=load("players/motionrp_death_sword").getAsJsonArray("animations").get(0).getAsJsonObject().getAsJsonObject("animators");
+  for(var raw:tracks.entrySet()){
+   var keys=raw.getValue().getAsJsonObject().getAsJsonArray("keyframes").asList().stream().map(JsonElement::getAsJsonObject).filter(k->k.get("channel").getAsString().equals("rotation")).toList();
+   if(keys.isEmpty())continue;var last=keys.stream().max(Comparator.comparingDouble(k->k.get("time").getAsDouble())).orElseThrow();
+   var chop=keys.stream().filter(k->k.get("time").getAsDouble()<=3.65).max(Comparator.comparingDouble(k->k.get("time").getAsDouble())).orElseThrow();assertEquals(chop.get("data_points"),last.get("data_points"));
+   assertTrue(keys.stream().noneMatch(k->k.get("time").getAsDouble()>3.65&&k.get("time").getAsDouble()<4.5));
+  }
+ }
+ @Test void spearReusesTheCompleteScissorSequenceAtItsOwnDuration()throws Exception{
+  var m=load("players/motionrp_death_spear");var clip=m.getAsJsonArray("animations").get(0).getAsJsonObject();assertEquals("death_spear",clip.get("name").getAsString());assertEquals(6.6,clip.get("length").getAsDouble());
+  assertEquals(108,InazumaShot.DEATH_SPEAR.kick);assertTrue(InazumaShot.DEATH_SPEAR.height(5)>.4);assertEquals(0,InazumaShot.DEATH_SPEAR.height(25));assertEquals("RIGHT_TURN",InazumaShot.DEATH_SPEAR.phase(15));
+  assertTrue(m.getAsJsonArray("groups").asList().stream().anyMatch(g->g.getAsJsonObject().get("name").getAsString().equals("ice_other_boot")));
+ }
+ @Test void old063ActorsAreRecognizedForUpgrade()throws Exception{
+  for(String name:List.of("players/motionrp_death_sword.bbmodel","players/motionrp_eternal_blizzard.bbmodel","players/motionrp_death_spear.bbmodel"))try(var in=new java.util.zip.GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.63.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
  }
  @Test void projectileMeshesHaveDistinctSilhouettesAndNoSolidCubeStandins()throws Exception{
   for(String id:List.of("death_sword_edge","death_spear_drill","blizzard_orb","blizzard_flake","blizzard_wind","blizzard_wake")){
