@@ -19,15 +19,16 @@ def actor(rig,name,end,kick):
   m['animations'][0]['animators'][g['uuid']]=animator(g,[(t/20,v)for t,v in keys],channel)
  track('player_root',[(0,(0,0,0)),(end,(0,0,0))],'position')
  if name=='death_sword':
-  thigh=[(0,(0,0,0)),(16,(85,0,6)),(44,(85,0,6)),(52,(35,0,8)),(60,(-35,0,8)),(68,(-70,0,8)),(72,(-70,0,8)),(kick,(110,0,4)),(78,(125,0,4)),(82,(-35,0,8)),(94,(-55,0,8)),(100,(40,0,8)),(108,(65,0,6)),(end-7,(0,0,0)),(end,(0,0,0))]
-  knee=[(0,(0,0,0)),(16,(-20,0,0)),(44,(-20,0,0)),(52,(-60,0,0)),(60,(-90,0,0)),(68,(-105,0,0)),(72,(-105,0,0)),(kick,(0,0,0)),(78,(0,0,0)),(82,(-110,0,0)),(94,(-105,0,0)),(100,(-45,0,0)),(108,(-10,0,0)),(end,(0,0,0))]
+  thigh=[(0,(0,0,0)),(16,(85,0,6)),(44,(85,0,6)),(52,(35,0,8)),(60,(-35,0,8)),(68,(-70,0,8)),(72,(-70,0,8)),(kick,(110,0,4)),(78,(125,0,4)),(82,(-35,0,8)),(88,(0,0,0)),(108,(0,0,0)),(end-7,(0,0,0)),(end,(0,0,0))]
+  knee=[(0,(0,0,0)),(16,(-20,0,0)),(44,(-20,0,0)),(52,(-60,0,0)),(60,(-90,0,0)),(68,(-105,0,0)),(72,(-105,0,0)),(kick,(0,0,0)),(78,(0,0,0)),(82,(-110,0,0)),(88,(0,0,0)),(108,(0,0,0)),(end,(0,0,0))]
   chest=[(0,(0,0,0)),(18,(-8,0,0)),(44,(-8,0,0)),(60,(35,-15,0)),(70,(42,-25,-4)),(kick,(-12,15,0)),(80,(-5,0,0)),(88,(-20,0,0)),(104,(-20,0,0)),(110,(-15,0,0)),(end,(0,0,0))]
   root=[(0,(0,0,0)),(end,(0,0,0))]
  elif name=='eternal_blizzard':
-  thigh=[(0,(0,0,0)),(17,(65,0,8)),(28,(0,0,0)),(55,(35,0,20)),(75,(55,0,25)),(90,(-65,0,15)),(kick-4,(-65,0,15)),(kick,(115,0,5)),(kick+8,(130,0,8)),(end,(0,0,0))]
-  knee=[(0,(0,0,0)),(38,(-55,0,0)),(65,(-90,0,0)),(90,(-100,0,0)),(kick-4,(-100,0,0)),(kick,(0,0,0)),(kick+8,(0,0,0)),(end,(0,0,0))]
-  chest=[(0,(0,0,0)),(32,(-18,0,0)),(65,(-20,0,-12)),(90,(-28,-30,-15)),(kick,(25,25,10)),(kick+8,(32,15,10)),(end,(0,0,0))]
-  root=[(0,(0,0,0)),(32,(0,0,0))]+[(38+i*5,(0,i*90,0))for i in range(13)]+[(kick,(0,1080,0)),(end,(0,1080,0))]
+  thigh=[(0,(0,0,0)),(12,(75,0,5)),(24,(20,0,8)),(48,(35,0,20)),(60,(45,0,25)),(74,(-40,0,20)),(88,(-65,0,15)),(102,(-75,0,10)),(106,(-75,0,10)),(kick,(115,0,5)),(kick+8,(135,0,8)),(end,(0,0,0))]
+  knee=[(0,(0,0,0)),(12,(-70,0,0)),(24,(0,0,0)),(48,(-80,0,0)),(60,(-90,0,0)),(88,(-105,0,0)),(106,(-105,0,0)),(kick,(0,0,0)),(kick+8,(0,0,0)),(end,(0,0,0))]
+  chest=[(0,(0,0,0)),(32,(-15,0,0)),(65,(-20,-10,-8)),(90,(-30,-25,-10)),(106,(-15,-30,0)),(kick,(10,20,8)),(kick+8,(-15,10,8)),(end,(0,0,0))]
+  root=[(0,(0,0,0)),(32,(-15,0,-12)),(46,(-25,90,-25)),(60,(-35,180,-30)),(74,(-30,270,-25)),(88,(-20,360,-15)),(100,(-15,360,-8)),(106,(-12,360,0)),(kick,(0,360,0)),(118,(15,360,5)),(end,(0,360,0))]
+
  else:
   thigh=[(0,(0,0,0)),(12,(80,0,15)),(30,(60,0,20)),(44,(65,0,20)),(kick-10,(-55,0,12)),(kick-4,(-55,0,12)),(kick,(125,0,5)),(kick+7,(140,0,5)),(end,(0,0,0))]
   knee=[(0,(0,0,0)),(20,(-80,0,0)),(44,(-70,0,0)),(kick-10,(-105,0,0)),(kick-4,(-105,0,0)),(kick,(0,0,0)),(kick+7,(0,0,0)),(end,(0,0,0))]
@@ -35,12 +36,12 @@ def actor(rig,name,end,kick):
   root=[(0,(0,0,0)),(30,(0,0,-12)),(kick-4,(0,0,-12)),(kick,(0,0,8)),(end,(0,0,0))]
  track('player_root',root);track('pc_chest',chest);track('pw_waist',[(0,(0,0,0)),(kick-10,(-12,-18,0)),(kick,(10,18,0)),(end,(0,0,0))]if name!='death_sword'else[(0,(0,0,0)),(kick,(-5,0,0)),(80,(-15,0,0)),(88,(-60,0,0)),(104,(-60,0,0)),(110,(-45,0,0)),(end,(0,0,0))])
  track('prl_right_leg',thigh);track('prfl_right_foreleg',knee)
- track('pll_left_leg',[(0,(0,0,0)),(end,(0,0,0))]if name=='death_sword'else[(0,(0,0,0)),(32,(-12,0,-8)),(kick-8,(35 if name!='death_sword'else -8,0,-15)),(kick,(-30,0,-12)),(end,(0,0,0))])
- track('plfl_left_foreleg',[(0,(0,0,0)),(end,(0,0,0))]if name=='death_sword'else[(0,(0,0,0)),(40,(-65 if name!='death_sword'else -8,0,0)),(kick,(-75 if name!='death_sword'else -10,0,0)),(end,(0,0,0))])
+ track('pll_left_leg',[(0,(0,0,0)),(end,(0,0,0))]if name=='death_sword'else[(0,(0,0,0)),(40,(45,0,-12)),(64,(65,0,-15)),(88,(45,0,-15)),(kick,(-45,0,-12)),(end,(0,0,0))]if name=='eternal_blizzard'else[(0,(0,0,0)),(32,(-12,0,-8)),(kick-8,(35,0,-15)),(kick,(-30,0,-12)),(end,(0,0,0))])
+ track('plfl_left_foreleg',[(0,(0,0,0)),(end,(0,0,0))]if name=='death_sword'else[(0,(0,0,0)),(40,(-60,0,0)),(64,(-45,0,0)),(88,(-40,0,0)),(kick,(-75,0,0)),(end,(0,0,0))]if name=='eternal_blizzard'else[(0,(0,0,0)),(40,(-65,0,0)),(kick,(-75,0,0)),(end,(0,0,0))])
  for right in [True,False]:
   sign=1 if right else -1
   if name=='death_sword':
-   if right:arm=[(0,(-15,0,8)),(16,(-20,0,8)),(44,(-20,0,8)),(60,(-40,0,5)),(kick,(-35,0,8)),(82,(30,-40,35)),(84,(115,-40,45)),(86,(190,-40,45)),(88,(250,-40,35)),(94,(220,-40,5)),(96,(190,-40,-20)),(98,(150,-40,-10)),(100,(110,-40,0)),(104,(80,-40,0)),(108,(80,-40,-15)),(end,(0,0,0))]
+   if right:arm=[(0,(-15,0,8)),(16,(-20,0,8)),(44,(-20,0,8)),(60,(-40,0,5)),(kick,(-35,0,8)),(82,(30,-40,35)),(84,(115,-40,45)),(86,(190,-40,45)),(88,(250,-40,35)),(94,(250,-40,35)),(96,(190,-40,-20)),(98,(150,-40,-10)),(100,(110,-40,0)),(104,(80,-40,0)),(108,(80,-40,-15)),(end,(0,0,0))]
 
    else:arm=[(0,(-15,0,-8)),(44,(-20,0,-8)),(60,(-40,0,-5)),(82,(-45,0,-8)),(94,(-40,0,-10)),(100,(-20,-10,-20)),(110,(10,0,-12)),(end,(0,0,0))]
 
@@ -67,6 +68,7 @@ def actor(rig,name,end,kick):
   from generate_summons import ROOT
   (ROOT/'death_sword-knife.csv').write_text(hand_path(m,end,'shot_knife_edge'))
   (ROOT/'death_sword-support.csv').write_text(hand_path(m,end,'shot_support_boot'))
+  (ROOT/'death_sword-right.csv').write_text(hand_path(m,end,'shot_boot'))
 def finish(m,ids,spin=False):
  g=m.group('shot_effect',ids)
  if spin:
@@ -108,16 +110,32 @@ def effects():
    if j:f.append(([f'{j-1}_0',f'{j-1}_1',f'{j}_1',f'{j}_0'],7 if strand==0 else 6))
   ids.append(add_mesh(m,'red_drill_helix_'+str(strand),v,f))
  finish(m,ids,True)
- m=mesh_model('motionrp_blizzard_orb',COLORS);ids=[oval(m,'icy_core',(0,0,0),(8.5,8.5,8.5),5,rows=10,sides=16)]
+ m=mesh_model('motionrp_blizzard_orb',COLORS);ids=[oval(m,'icy_core',(0,0,0),(8.5,9.5,8.5),5,rows=8,sides=12)]
  for k in range(4):
   v={};f=[]
   for j in range(41):
    a=j*math.tau/40;r=11.5;tilt=k*math.pi/4
    for side in [0,1]:
-    x=(r+side*1.3)*math.cos(a);y=(r+side*1.3)*math.sin(a);v[f'{j}_{side}']=[x,y*math.cos(tilt),y*math.sin(tilt)]
+    x=(r+side*3.2)*math.cos(a);y=(r+side*3.2)*math.sin(a);v[f'{j}_{side}']=[x,y*math.cos(tilt),y*math.sin(tilt)]
    if j:f.append(([f'{j-1}_0',f'{j-1}_1',f'{j}_1',f'{j}_0'],4 if k%2 else 3))
   ids.append(add_mesh(m,'white_ice_ribbon_'+str(k),v,f))
  finish(m,ids,True)
+ for wake in [False,True]:
+  m=mesh_model('motionrp_blizzard_wake'if wake else'motionrp_blizzard_wind',COLORS);ids=[]
+  for strand in range(3):
+   for edge in [False,True]:
+    v={};f=[]
+    for j in range(65):
+     p=j/64;y=p*64;r=(14+18*p)if not wake else(4+22*p);a=p*math.tau*1.6+strand*math.tau/3
+     width=.045 if edge else .15
+     for side in [0,1]:
+      q=a+side*width;x=r*math.cos(q);z=r*math.sin(q);v[f'{j}_{side}']=[x,z,-y]if wake else[x,y,z]
+     if j and j%12!=0:f.append(([f'{j-1}_0',f'{j-1}_1',f'{j}_1',f'{j}_0'],3 if edge else 4))
+    ids.append(add_mesh(m,f'wind_{strand}_{edge}',v,f))
+  g=m.group('winter_wind',ids);axis=(lambda i:(0,0,i*90))if wake else(lambda i:(0,i*90,0))
+  a=animation('spin',.8,{g['uuid']:animator(g,[(i*.2,axis(i))for i in range(5)])});a['loop']='loop';m.data['animations']=[a]
+  for e in m.data['elements']:e['light_emission']=15
+  m.save()
  m=mesh_model('motionrp_blizzard_flake',COLORS);ids=[]
  for k in range(6):
   a=k*math.tau/6

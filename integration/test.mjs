@@ -334,19 +334,23 @@ if(process.env.MOTIONRP_INAZUMA_ONLY==='1'){
    await waitFor(()=>tokens(a)===1,'new shot item');await a.equip(a.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');await menu(a);await deposit(a);assert.equal(registered(a),1);await closeMenu(a);
    spawns.forEach(s=>s.clear());removed.forEach(s=>s.clear());const start=output.length,origin=a.entity.position.clone();active=id;a._testLookUp();await sleep(150);a._testLeftClick();
    try{await waitFor(()=>output.slice(start).includes('Inazuma-'+id+' phase: CHARGE'),'charge '+id);}catch(e){throw new Error(e.message+' messages='+JSON.stringify(a._testMessages.slice(-8)));}
-   await waitFor(()=>output.slice(start).includes('Inazuma-'+id+' kick tick='),'kick '+id);
+   await waitFor(()=>output.slice(start).includes('Inazuma-'+id+(id==='death_sword'?' shot tick=':' kick tick=')),'kick '+id);
    const contact=output.slice(start).match(/contactGap=([^\s]+)/);assert.ok(contact&&+contact[1]<1e-8,'ball meets animated foot');
    await waitFor(()=>output.slice(start).includes('Inazuma-'+id+' impact tick='),'impact '+id);await waitFor(cleanup,'cleanup '+id);await waitFor(()=>a.entity.position.distanceTo(origin)<.03,'pilot restored '+id);
    assert.ok(spawns[0].size>5&&spawns[1].size>5);assert.equal(spawns[2].size,0);
    assert.ok(particles.some(p=>p.shot===id&&p.type===(id==='eternal_blizzard'?'snowflake':'dust')));
    assert.ok(!(await readPlayerData(names[0])).BukkitValues?.['motionrp:aerial_return_v1']);
    if(id==='death_sword'){
-    const text=output.slice(start);assert.ok(text.includes('strike tick=78 contactGap=0.0'));assert.ok(text.includes('dark conversion tick=80'));assert.ok(text.includes('kick tick=104'));
-    const knife=text.match(/knife minimumGap=([^ ]+) release tick=104/);assert.ok(knife&&+knife[1]>.02&&+knife[1]<.2,'Hand edge passes close to the dark ball without touching');
+    const text=output.slice(start);assert.ok(text.includes('strike tick=78 contactGap=0.0'));assert.ok(text.includes('dark conversion tick=80'));assert.ok(text.includes('shot tick=106 trigger=hand'));assert.ok(!text.includes('kick tick='),'The final shot has no second foot kick');
+    const knife=text.match(/knife minimumGap=([^ ]+) release tick=106/);assert.ok(knife&&+knife[1]>.02&&+knife[1]<.2,'Hand edge passes close to the dark ball without touching');
     assert.ok(pilotY.every(y=>Math.abs(y-origin.y)<.03),'Grounded sword kick never lifts the pilot');
-    const bend=text.match(/deep bend forward=([^ ]+) up=([^ ]+) supportHeight=([^ ]+) pilotHeight=([^\r\n]+)/);
-    assert.ok(bend&&+bend[1]>.95&&+bend[2]>0&&+bend[2]<.3,'Torso folds forward almost horizontally during the hand chop');assert.ok(+bend[3]<.12&&Math.abs(+bend[4])<.03,'Support boot and player stay grounded');
+    const bend=text.match(/deep bend forward=([^ ]+) up=([^ ]+) supportHeight=([^ ]+) rightHeight=([^ ]+) pilotHeight=([^\r\n]+)/);
+    assert.ok(bend&&+bend[1]>.95&&+bend[2]>0&&+bend[2]<.3,'Torso folds forward almost horizontally during the hand chop');assert.ok(+bend[3]<.12&&+bend[4]<.12&&Math.abs(+bend[5])<.03,'Support boot and player stay grounded');
+    const hold=text.match(/hand hold drift=([^\r\n]+)/);assert.ok(hold&&+hold[1]<.03,'Hand remains still for several ticks before the chop');
     assert.ok(text.indexOf('strike tick=78')<text.indexOf('displays dark_ball'),'Football changes to blue-black only after the strike');
+   }
+   if(id==='eternal_blizzard'){
+    const text=output.slice(start);assert.ok(text.includes('freeze tick=32'));assert.ok(text.includes('displays frozen_ball'));assert.ok(text.includes('displays frozen_wake'));assert.ok(text.includes('displays snowflake_5'));assert.ok(text.indexOf('displays frozen_wake')>text.indexOf('kick tick=110'));
    }
    pass(id+' item plays charge, live-foot kick, themed projectile, impact and cleanup; OFF viewers see nothing');
    await menu(a);while(registered(a)>0){const slot=a.currentWindow.slots.findIndex((item,i)=>i<a.currentWindow.inventoryStart&&item?.name==='paper');await click(a,slot);}await closeMenu(a);

@@ -15,7 +15,7 @@ class InazumaShotTest {
  }
  @Test void swordDarkensOnlyAfterItsPhysicalStrikeAndThenReleases(){
   var sword=InazumaShot.DEATH_SWORD;assertEquals(78,sword.strike());assertTrue(sword.strike()<sword.auraStart());assertTrue(sword.auraStart()<sword.kick);
-  assertEquals("DARKEN",sword.phase(85));assertEquals("SHOT",sword.phase(104));
+  assertEquals("DARKEN",sword.phase(85));assertEquals("SHOT",sword.phase(106));
  }
  @Test void playerClipsHaveAnimatedTorsoBothLegsAndALiveBootAttachment()throws Exception{
   for(var shot:InazumaShot.values()){
@@ -40,8 +40,28 @@ class InazumaShotTest {
  @Test void old055SwordIsRecognizedForUpgrade()throws Exception{
   String name="players/motionrp_death_sword.bbmodel";try(var in=new java.util.zip.GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.55.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
  }
+ @Test void swordPlantsBothFeetDuringItsHeldHandChop()throws Exception{
+  try(var in=Objects.requireNonNull(getClass().getResourceAsStream("/bettermodel/death_sword-right.csv"))){
+   var rows=new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8).lines().map(l->Double.parseDouble(l.split(",")[2])).toList();
+   for(int t=92;t<=108;t++)assertTrue(rows.get(t)<.12,"The kicking leg must be planted before the hand-only release");
+  }
+  var m=load("players/motionrp_death_sword");var tracks=m.getAsJsonArray("animations").get(0).getAsJsonObject().getAsJsonObject("animators");
+  var arm=tracks.entrySet().stream().map(e->e.getValue().getAsJsonObject()).filter(e->e.get("name").getAsString().equals("pra_right_arm")).findFirst().orElseThrow();
+  var held=arm.getAsJsonArray("keyframes").asList().stream().map(JsonElement::getAsJsonObject).filter(k->Math.abs(k.get("time").getAsDouble()-4.5)<1e-6||Math.abs(k.get("time").getAsDouble()-4.8)<1e-6).toList();
+  assertEquals(2,held.size());assertEquals(held.get(0).get("data_points"),held.get(1).get("data_points"));assertEquals(6,InazumaShot.DEATH_SWORD.handHoldEnd()-InazumaShot.DEATH_SWORD.handHoldStart());
+ }
+ @Test void blizzardUsesOneTiltedTurnAndAnIndependentWindEffect()throws Exception{
+  var m=load("players/motionrp_eternal_blizzard");var tracks=m.getAsJsonArray("animations").get(0).getAsJsonObject().getAsJsonObject("animators");
+  var root=tracks.entrySet().stream().map(e->e.getValue().getAsJsonObject()).filter(e->e.get("name").getAsString().equals("player_root")).findFirst().orElseThrow();
+  double maxYaw=0;boolean tilted=false;
+  for(var raw:root.getAsJsonArray("keyframes")){var p=raw.getAsJsonObject().getAsJsonArray("data_points").get(0).getAsJsonObject();maxYaw=Math.max(maxYaw,p.get("y").getAsDouble());tilted|=Math.abs(p.get("x").getAsDouble())>=25&&Math.abs(p.get("z").getAsDouble())>=20;}
+  assertEquals(360,maxYaw);assertTrue(tilted);
+ }
+ @Test void old056RevisionsAreRecognizedForUpgrade()throws Exception{
+  for(String name:List.of("players/motionrp_death_sword.bbmodel","players/motionrp_eternal_blizzard.bbmodel","models/motionrp_blizzard_orb.bbmodel"))try(var in=new java.util.zip.GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.56.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
+ }
  @Test void projectileMeshesHaveDistinctSilhouettesAndNoSolidCubeStandins()throws Exception{
-  for(String id:List.of("death_sword_edge","death_spear_drill","blizzard_orb","blizzard_flake")){
+  for(String id:List.of("death_sword_edge","death_spear_drill","blizzard_orb","blizzard_flake","blizzard_wind","blizzard_wake")){
    var m=load("models/motionrp_"+id);assertTrue(m.getAsJsonArray("elements").size()>=5);
    for(var e:m.getAsJsonArray("elements"))assertEquals("mesh",e.getAsJsonObject().get("type").getAsString());
   }

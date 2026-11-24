@@ -18,7 +18,7 @@ final class SummonAssets {
     static List<String> models(String effect) {
         return switch(effect) {
             case "death_sword" -> List.of("motionrp_football","motionrp_death_sword_edge","motionrp_death_sword_core");
-            case "eternal_blizzard" -> List.of("motionrp_football","motionrp_blizzard_orb","motionrp_blizzard_flake");
+            case "eternal_blizzard" -> List.of("motionrp_football","motionrp_blizzard_orb","motionrp_blizzard_flake","motionrp_blizzard_wind","motionrp_blizzard_wake");
             case "death_spear" -> List.of("motionrp_football","motionrp_death_spear_drill");
             case "fire_tornado" -> List.of("motionrp_football");
             case "emperor_penguin_1" -> List.of("motionrp_football","motionrp_emperor_penguin_red");
