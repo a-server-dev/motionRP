@@ -2,8 +2,8 @@ package dev.aserver.motionrp.core;
 
 /** Reference clip ranges exclude menus, celebration and the repeated second spear shot. */
 public enum InazumaShot {
- DEATH_SWORD("death_sword",.8,6.166667,106,123,0),
- ETERNAL_BLIZZARD("eternal_blizzard",0,6.6,110,146,2.4),
+ DEATH_SWORD("death_sword",.8,6.166667,110,123,0),
+ ETERNAL_BLIZZARD("eternal_blizzard",0,6.6,112,146,2.4),
  DEATH_SPEAR("death_spear",0,5.5,72,120,1.8);
  public final String id;public final double sourceStart,sourceEnd,jumpHeight;public final int kick,impact,end;
  InazumaShot(String id,double start,double finish,int kick,int impact,double height){this.id=id;sourceStart=start;sourceEnd=finish;this.kick=kick;this.impact=impact;end=(int)Math.round((finish-start)*20*1.2);jumpHeight=height;}
