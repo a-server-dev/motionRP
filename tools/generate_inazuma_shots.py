@@ -19,25 +19,27 @@ def actor(rig,name,end,kick):
   m['animations'][0]['animators'][g['uuid']]=animator(g,[(t/20,v)for t,v in keys],channel)
  track('player_root',[(0,(0,0,0)),(end,(0,0,0))],'position')
  if name=='death_sword':
-  thigh=[(0,(0,0,0)),(16,(85,0,6)),(44,(85,0,6)),(52,(35,0,8)),(60,(-35,0,8)),(68,(-70,0,8)),(72,(-70,0,8)),(kick,(110,0,4)),(78,(125,0,4)),(82,(-35,0,8)),(88,(0,0,0)),(110,(0,0,0)),(114,(5,0,0)),(end,(5,0,0))]
-  knee=[(0,(0,0,0)),(16,(-20,0,0)),(44,(-20,0,0)),(52,(-60,0,0)),(60,(-90,0,0)),(68,(-105,0,0)),(72,(-105,0,0)),(kick,(0,0,0)),(78,(0,0,0)),(82,(-110,0,0)),(88,(0,0,0)),(110,(0,0,0)),(114,(-5,0,0)),(end,(-5,0,0))]
+  # The ball stays on the ground; a single front kick approaches it.
+  thigh=[(0,(0,0,0)),(40,(0,0,0)),(52,(-20,0,0)),(62,(10,0,0)),(68,(45,0,0)),(72,(50,0,0)),(78,(50,0,0)),(82,(65,0,0)),(88,(20,0,0)),(end,(20,0,0))]
+  knee=[(0,(0,0,0)),(40,(0,0,0)),(52,(-55,0,0)),(62,(-75,0,0)),(68,(-55,0,0)),(72,(0,0,0)),(78,(0,0,0)),(82,(0,0,0)),(88,(-20,0,0)),(end,(-20,0,0))]
   chest=[(0,(0,0,0)),(18,(-8,0,0)),(44,(-8,0,0)),(60,(35,-15,0)),(70,(42,-25,-4)),(kick,(-12,15,0)),(80,(-4,-4,0)),(88,(0,-12,3)),(94,(0,-12,3)),(96,(-10,-4,1)),(100,(-16,8,-2)),(104,(-20,15,-3)),(106,(-18,15,-3)),(110,(-20,15,0)),(114,(-20,15,7)),(end,(-20,15,7))]
   root=[(0,(0,0,0)),(end,(0,0,0))]
  elif name=='eternal_blizzard':
-  thigh=[(0,(0,0,0)),(6,(-12,0,5)),(12,(20,0,5)),(18,(55,0,6)),(22,(85,0,6)),(24,(65,25,10)),(28,(-45,-30,15)),(32,(90,30,15)),(36,(-20,-15,8)),(42,(0,0,0)),(48,(0,0,0)),(52,(25,0,15)),(60,(45,0,25)),(74,(-40,0,20)),(88,(-65,0,15)),(96,(-85,0,10)),(104,(-85,0,10)),(106,(-65,0,8)),(108,(115,0,5)),(kick,(115,0,5)),(kick+4,(135,0,8)),(end,(0,0,0))]
-  knee=[(0,(0,0,0)),(6,(-15,0,0)),(12,(-20,0,0)),(18,(-40,0,0)),(22,(-20,0,0)),(24,(-65,0,0)),(28,(-65,0,0)),(32,(-50,0,0)),(36,(-25,0,0)),(42,(0,0,0)),(48,(0,0,0)),(52,(-40,0,0)),(60,(-90,0,0)),(88,(-105,0,0)),(96,(-115,0,0)),(104,(-115,0,0)),(106,(-80,0,0)),(108,(0,0,0)),(kick+8,(0,0,0)),(end,(0,0,0))]
-  chest=[(0,(0,0,0)),(22,(-5,0,0)),(24,(-5,20,-8)),(28,(-5,-20,8)),(32,(-5,20,-8)),(36,(-5,-10,0)),(42,(0,0,0)),(48,(0,0,0)),(52,(-15,0,0)),(65,(-20,-10,-8)),(90,(-18,-25,-10)),(96,(-18,-25,-10)),(104,(-18,-25,-10)),(108,(15,25,5)),(kick,(20,30,8)),(kick+8,(-25,10,8)),(end,(0,0,0))]
-  root=[(0,(0,0,0)),(22,(0,0,0)),(28,(-10,0,-12)),(32,(5,0,12)),(36,(0,0,0)),(42,(0,0,0)),(48,(0,0,0)),(52,(-15,0,-12)),(64,(-25,90,-25)),(76,(-35,180,-30)),(84,(-30,240,-25)),(88,(-20,300,-15)),(100,(-15,330,-8)),(106,(-12,345,0)),(kick,(0,360,0)),(118,(15,360,5)),(end,(0,360,0))]
+  # One front/back exchange, then a wide, one-hand-down crouch for a full second.
+  thigh=[(0,(0,0,0)),(6,(-12,0,5)),(12,(20,0,5)),(18,(55,0,6)),(22,(85,0,6)),(24,(65,25,10)),(28,(-45,-30,15)),(32,(-20,-15,8)),(40,(60,0,55)),(60,(60,0,55)),(64,(25,0,15)),(74,(45,0,25)),(84,(-40,0,20)),(96,(-85,0,10)),(104,(-85,0,10)),(106,(-65,0,8)),(108,(115,0,5)),(kick,(115,0,5)),(kick+4,(135,0,8)),(end,(0,0,0))]
+  knee=[(0,(0,0,0)),(6,(-15,0,0)),(12,(-20,0,0)),(18,(-40,0,0)),(22,(-20,0,0)),(24,(-65,0,0)),(28,(-65,0,0)),(32,(-25,0,0)),(40,(-105,0,0)),(60,(-105,0,0)),(64,(-40,0,0)),(74,(-90,0,0)),(96,(-115,0,0)),(104,(-115,0,0)),(106,(-80,0,0)),(108,(0,0,0)),(kick+8,(0,0,0)),(end,(0,0,0))]
+  chest=[(0,(0,0,0)),(22,(-5,0,0)),(24,(-5,20,-8)),(28,(-5,-20,8)),(32,(-10,-10,0)),(40,(-40,0,0)),(60,(-40,0,0)),(64,(-15,0,0)),(84,(-20,-10,-8)),(96,(-18,-25,-10)),(104,(-18,-25,-10)),(108,(15,25,5)),(kick,(20,30,8)),(kick+8,(-25,10,8)),(end,(0,0,0))]
+  root=[(0,(0,0,0)),(22,(0,0,0)),(28,(-10,0,-12)),(32,(0,0,0)),(40,(0,0,0)),(60,(0,0,0)),(64,(-15,0,-12)),(74,(-25,90,-25)),(84,(-35,180,-30)),(90,(-30,270,-25)),(96,(-20,300,-15)),(100,(-15,330,-8)),(106,(-12,345,0)),(kick,(0,360,0)),(118,(15,360,5)),(end,(0,360,0))]
 
  else:
   thigh=[(0,(0,0,0)),(12,(80,0,15)),(30,(60,0,20)),(44,(65,0,20)),(kick-10,(-55,0,12)),(kick-4,(-55,0,12)),(kick,(125,0,5)),(kick+7,(140,0,5)),(end,(0,0,0))]
   knee=[(0,(0,0,0)),(20,(-80,0,0)),(44,(-70,0,0)),(kick-10,(-105,0,0)),(kick-4,(-105,0,0)),(kick,(0,0,0)),(kick+7,(0,0,0)),(end,(0,0,0))]
   chest=[(0,(-10,0,0)),(26,(-30,-20,-10)),(kick-10,(-25,-35,-15)),(kick,(35,30,15)),(kick+10,(25,25,12)),(end,(0,0,0))]
   root=[(0,(0,0,0)),(30,(0,0,-12)),(kick-4,(0,0,-12)),(kick,(0,0,8)),(end,(0,0,0))]
- track('player_root',root);track('pc_chest',chest);track('pw_waist',[(0,(0,0,0)),(24,(0,25,0)),(28,(0,-25,0)),(32,(0,25,0)),(36,(0,-10,0)),(42,(0,0,0)),(48,(0,0,0)),(90,(-8,-20,0)),(104,(-8,-20,0)),(108,(15,20,0)),(114,(-10,5,0)),(end,(0,0,0))]if name=='eternal_blizzard'else[(0,(0,0,0)),(kick-10,(-12,-18,0)),(kick,(10,18,0)),(end,(0,0,0))]if name!='death_sword'else[(0,(0,0,0)),(kick,(-5,0,0)),(80,(-8,-10,0)),(88,(0,-18,0)),(94,(0,-18,0)),(96,(-16,-12,-2)),(100,(-35,2,-4)),(104,(-48,14,-4)),(106,(-52,18,-4)),(110,(-45,20,0)),(114,(-45,25,8)),(end,(-45,25,8))])
+ track('player_root',root);track('pc_chest',chest);track('pw_waist',[(0,(0,0,0)),(24,(0,25,0)),(28,(0,-25,0)),(32,(0,-10,0)),(40,(-30,0,0)),(60,(-30,0,0)),(64,(0,0,0)),(90,(-8,-20,0)),(104,(-8,-20,0)),(108,(15,20,0)),(114,(-10,5,0)),(end,(0,0,0))]if name=='eternal_blizzard'else[(0,(0,0,0)),(kick-10,(-12,-18,0)),(kick,(10,18,0)),(end,(0,0,0))]if name!='death_sword'else[(0,(0,0,0)),(kick,(-5,0,0)),(80,(-8,-10,0)),(88,(0,-18,0)),(94,(0,-18,0)),(96,(-16,-12,-2)),(100,(-35,2,-4)),(104,(-48,14,-4)),(106,(-52,18,-4)),(110,(-45,20,0)),(114,(-45,25,8)),(end,(-45,25,8))])
  track('prl_right_leg',thigh);track('prfl_right_foreleg',knee)
- track('pll_left_leg',[(0,(0,0,0)),(110,(0,0,0)),(114,(20,0,0)),(end,(20,0,0))]if name=='death_sword'else[(0,(0,0,0)),(22,(-15,0,-8)),(24,(-40,-25,-10)),(28,(85,30,-15)),(32,(-45,-30,-15)),(36,(25,15,-8)),(42,(0,0,0)),(48,(0,0,0)),(52,(45,0,-12)),(64,(65,0,-15)),(88,(45,0,-15)),(kick,(-45,0,-12)),(end,(0,0,0))]if name=='eternal_blizzard'else[(0,(0,0,0)),(32,(-12,0,-8)),(kick-8,(35,0,-15)),(kick,(-30,0,-12)),(end,(0,0,0))])
- track('plfl_left_foreleg',[(0,(0,0,0)),(110,(0,0,0)),(114,(-20,0,0)),(end,(-20,0,0))]if name=='death_sword'else[(0,(0,0,0)),(22,(-25,0,0)),(24,(-65,0,0)),(28,(-55,0,0)),(32,(-65,0,0)),(36,(-40,0,0)),(42,(0,0,0)),(48,(0,0,0)),(52,(-60,0,0)),(64,(-45,0,0)),(88,(-40,0,0)),(kick,(-75,0,0)),(end,(0,0,0))]if name=='eternal_blizzard'else[(0,(0,0,0)),(40,(-65,0,0)),(kick,(-75,0,0)),(end,(0,0,0))])
+ track('pll_left_leg',[(0,(0,0,0)),(78,(0,0,0)),(92,(5,0,0)),(end,(5,0,0))]if name=='death_sword'else[(0,(0,0,0)),(22,(-15,0,-8)),(24,(-40,-25,-10)),(28,(85,30,-15)),(32,(25,15,-8)),(40,(60,0,-55)),(60,(60,0,-55)),(64,(45,0,-12)),(84,(65,0,-15)),(96,(45,0,-15)),(kick,(-45,0,-12)),(end,(0,0,0))]if name=='eternal_blizzard'else[(0,(0,0,0)),(32,(-12,0,-8)),(kick-8,(35,0,-15)),(kick,(-30,0,-12)),(end,(0,0,0))])
+ track('plfl_left_foreleg',[(0,(0,0,0)),(78,(0,0,0)),(92,(-5,0,0)),(end,(-5,0,0))]if name=='death_sword'else[(0,(0,0,0)),(22,(-25,0,0)),(24,(-65,0,0)),(28,(-55,0,0)),(32,(-40,0,0)),(40,(-105,0,0)),(60,(-105,0,0)),(64,(-60,0,0)),(84,(-45,0,0)),(96,(-40,0,0)),(kick,(-75,0,0)),(end,(0,0,0))]if name=='eternal_blizzard'else[(0,(0,0,0)),(40,(-65,0,0)),(kick,(-75,0,0)),(end,(0,0,0))])
  for right in [True,False]:
   sign=1 if right else -1
   if name=='death_sword':
@@ -46,23 +48,35 @@ def actor(rig,name,end,kick):
    else:arm=[(0,(-15,0,-8)),(44,(-20,0,-8)),(60,(-40,0,-5)),(82,(-15,-15,-20)),(94,(-15,-15,-20)),(100,(-35,-10,-25)),(106,(-55,0,-20)),(110,(-70,-10,-40)),(114,(-85,-15,-50)),(end,(-85,-15,-50))]
 
   elif name=='eternal_blizzard':
-   arm=[(0,(0,0,sign*8)),(22,(-25 if right else 25,0,sign*35)),(40,(-40 if right else -20,0,sign*70)),(74,(-60 if right else 30,0,sign*65)),(96,(-70 if right else 110,0,sign*45)),(104,(-70 if right else 110,0,sign*45)),(108,(45 if right else -35,-10 if right else 10,sign*35)),(114,(65 if right else -55,0,sign*25)),(end,(0,0,0))]
+   arm=[(0,(0,0,sign*8)),(22,(-25 if right else 25,0,sign*35)),(28,(-40 if right else -20,0,sign*70)),(40,(70 if right else -100,15 if right else -15,5 if right else -35)),(60,(70 if right else -100,15 if right else -15,5 if right else -35)),(64,(-40 if right else -20,0,sign*70)),(84,(-60 if right else 30,0,sign*65)),(96,(-70 if right else 110,0,sign*45)),(104,(-70 if right else 110,0,sign*45)),(108,(45 if right else -35,-10 if right else 10,sign*35)),(114,(65 if right else -55,0,sign*25)),(end,(0,0,0))]
   else:arm=[(0,(0,0,sign*8)),(30,(-20,0,sign*70)),(kick-12,(-50 if right else 80,0,sign*65)),(kick,(75 if right else -25,0,sign*45)),(kick+10,(30 if right else -20,0,sign*35)),(end,(0,0,0))]
   track('pra_right_arm'if right else'pla_left_arm',arm)
   forearm=[(0,(0,0,0)),(30,(30,0,0)),(kick,(45,0,0)),(end,(0,0,0))]
+  if name=='eternal_blizzard':forearm=[(0,(0,0,0)),(28,(30,0,0)),(40,(0,0,0)),(60,(0,0,0)),(84,(30,0,0)),(kick,(45,0,0)),(end,(0,0,0))]
   if name=='death_sword'and right:forearm=[(0,(0,0,0)),(30,(55,0,0)),(kick,(15,0,0)),(82,(10,0,0)),(88,(0,0,0)),(104,(0,0,0)),(end,(0,0,0))]
   if name=='death_sword'and not right:forearm=[(0,(0,0,0)),(30,(30,0,0)),(kick,(45,0,0)),(106,(0,0,0)),(end,(0,0,0))]
   track('prfa_right_forearm'if right else'plfa_left_forearm',forearm)
- track('h_ph_head',[(0,(20,0,0)),(kick-12,(15,-15,0)),(kick,(10,10,0)),(94,(10,20,0)),(110,(15,-10,0)),(114,(20,-15,0)),(end,(20,-15,0))]if name=='death_sword'else[(0,(-20,0,0)),(12,(-25,0,0)),(22,(30,0,0)),(44,(35,0,0)),(68,(15,0,0)),(96,(-15,20,0)),(104,(-15,20,0)),(kick,(-5,0,0)),(end,(0,0,0))]if name=='eternal_blizzard'else[(0,(20,0,0)),(kick-12,(15,-15,0)),(kick,(10,10,0)),(end,(0,0,0))])
+ track('h_ph_head',[(0,(20,0,0)),(kick-12,(15,-15,0)),(kick,(10,10,0)),(94,(10,20,0)),(110,(15,-10,0)),(114,(20,-15,0)),(end,(20,-15,0))]if name=='death_sword'else[(0,(-20,0,0)),(12,(-25,0,0)),(22,(30,0,0)),(32,(35,0,0)),(40,(60,0,0)),(60,(60,0,0)),(84,(15,0,0)),(96,(-15,20,0)),(104,(-15,20,0)),(kick,(-5,0,0)),(end,(0,0,0))]if name=='eternal_blizzard'else[(0,(20,0,0)),(kick-12,(15,-15,0)),(kick,(10,10,0)),(end,(0,0,0))])
+ if name=='eternal_blizzard':
+  g=next(g for g in m['groups']if g['name']=='pw_waist')
+  m['animations'][0]['animators'][g['uuid']]['keyframes']+=animator(g,[(0,(0,0,0)),(34/20,(0,0,0)),(42/20,(0,-2,0)),(62/20,(0,-2,0)),(66/20,(0,0,0)),(end/20,(0,0,0))],'position')['keyframes']
  if name=='death_sword':
-  for bone,angle,z in [('prl_right_leg',5,3),('pll_left_leg',20,-3)]:
+  # Set the right foot forward as it settles after impact, not at the very end.
+  for bone,angle,z in [('prl_right_leg',20,-3),('pll_left_leg',5,3)]:
    g=next(g for g in m['groups']if g['name']==bone)
    fore=next(g for g in m['groups']if g['name']==('prfl_right_foreleg'if bone=='prl_right_leg'else'plfl_left_foreleg'))
-   drop=-(g['origin'][1]-fore['origin'][1])*(1-math.cos(math.radians(angle)))
    entry=m['animations'][0]['animators'][g['uuid']]
-   keys=[(0,(0,0,0))]+[(t/20,(0,-(g['origin'][1]-fore['origin'][1])*(1-math.cos(math.radians(angle*(t-112)/4))),z*(t-112)/4))for t in range(112,117)]+[(end/20,(0,drop,z))]
+   keys=[(0,(0,0,0)),(80/20,(0,0,0))]
+   for t in range(81,95):
+    p=(t-80)/14
+    bend=20 if bone=='prl_right_leg'else 5*p
+    # Ground compensation begins only after the kicking leg returns.
+    drop=-(g['origin'][1]-fore['origin'][1])*(1-math.cos(math.radians(bend)))
+    keys.append((t/20,(0,drop if bone=='pll_left_leg'or t>=90 else drop*(t-80)/10,z*p)))
+   keys.append((end/20,keys[-1][1]))
    entry['keyframes']+=animator(g,keys,'position')['keyframes']
- attachments=[('shot_knife_edge' ,'prfa_right_forearm',[3.75,11.25,-1.875]),('shot_support_boot','plfl_left_foreleg',[-1.875,.65,-1.8]),('shot_upper','pc_chest',[0,22,0]),('shot_trail_hand','plfa_left_forearm',[-5.625,11.25,0])]if name=='death_sword'else[('ice_other_boot','plfl_left_foreleg',[-1.875,.65,-1.8])]if name=='eternal_blizzard'else[]
+
+ attachments=[('shot_knife_edge' ,'prfa_right_forearm',[3.75,11.25,-1.875]),('shot_support_boot','plfl_left_foreleg',[-1.875,.65,-1.8]),('shot_upper','pc_chest',[0,22,0]),('shot_trail_hand','plfa_left_forearm',[-5.625,11.25,0])]if name=='death_sword'else[('ice_other_boot','plfl_left_foreleg',[-1.875,.65,-1.8]),('ice_ground_hand','prfa_right_forearm',[5.625,11.25,0]),('ice_upper','pc_chest',[0,22,0])]if name=='eternal_blizzard'else[]
  for label,parent,origin in attachments+[('shot_boot','prfl_right_foreleg',[1.875,.65,-1.8]),('shot_torso','pc_chest',[0,17,0])]:
   g={'name':label,'uuid':ident(name+'/'+label),'origin':origin,'rotation':[0,0,0],'export':True};m['groups'].append(g)
   uid=next(x['uuid']for x in m['groups']if x['name']==parent)
@@ -73,12 +87,20 @@ def actor(rig,name,end,kick):
      if add(n['children']):return True
    return False
   assert add(m['outliner'])
+ if name=='eternal_blizzard':
+  from generate_rasengan import hand_path
+  rows=[list(map(float,l.split(',')))for l in hand_path(m,end,'shot_boot').splitlines()]
+  g=next(g for g in m['groups']if g['name']=='player_root')
+  base=rows[0][2]
+  keys=[(0,(0,0,0)),(32/20,(0,0,0))]+[(t/20,(0,(base-rows[t][2])*16,0))for t in range(34,73)]+[(80/20,(0,0,0)),(end/20,(0,0,0))]
+  m['animations'][0]['animators'][g['uuid']]['keyframes']+=animator(g,keys,'position')['keyframes']
  save('players/motionrp_'+name+'.bbmodel',m)
  if name=='eternal_blizzard':
   from generate_rasengan import hand_path
   from generate_summons import ROOT
   (ROOT/'eternal_blizzard-boot.csv').write_text(hand_path(m,end,'shot_boot'))
   (ROOT/'eternal_blizzard-other.csv').write_text(hand_path(m,end,'ice_other_boot'))
+  (ROOT/'eternal_blizzard-ground.csv').write_text(hand_path(m,end,'ice_ground_hand'))
  if name=='death_sword':
   from generate_rasengan import hand_path
   from generate_summons import ROOT
