@@ -155,13 +155,20 @@ class InazumaShotTest {
    assertTrue(keys.stream().noneMatch(k->k.get("time").getAsDouble()>3.65&&k.get("time").getAsDouble()<4.5));
   }
  }
- @Test void spearReusesTheCompleteScissorSequenceAtItsOwnDuration()throws Exception{
+ @Test void spearOnlyReusesTheScissorStrokeWithoutTurnsOrLandings()throws Exception{
   var m=load("players/motionrp_death_spear");var clip=m.getAsJsonArray("animations").get(0).getAsJsonObject();assertEquals("death_spear",clip.get("name").getAsString());assertEquals(6.6,clip.get("length").getAsDouble());
-  assertEquals(108,InazumaShot.DEATH_SPEAR.kick);assertTrue(InazumaShot.DEATH_SPEAR.height(5)>.4);assertEquals(0,InazumaShot.DEATH_SPEAR.height(25));assertEquals("RIGHT_TURN",InazumaShot.DEATH_SPEAR.phase(15));
+  assertEquals(86,InazumaShot.DEATH_SPEAR.kick);assertEquals(0,InazumaShot.DEATH_SPEAR.height(25));assertEquals(9.4,InazumaShot.DEATH_SPEAR.height(60));assertEquals("PINCH",InazumaShot.DEATH_SPEAR.phase(70));
+  var root=clip.getAsJsonObject("animators").entrySet().stream().map(e->e.getValue().getAsJsonObject()).filter(e->e.get("name").getAsString().equals("player_root")).findFirst().orElseThrow();for(var k:root.getAsJsonArray("keyframes"))assertEquals(0,k.getAsJsonObject().getAsJsonArray("data_points").get(0).getAsJsonObject().get("y").getAsDouble());
   assertTrue(m.getAsJsonArray("groups").asList().stream().anyMatch(g->g.getAsJsonObject().get("name").getAsString().equals("ice_other_boot")));
  }
  @Test void old063ActorsAreRecognizedForUpgrade()throws Exception{
   for(String name:List.of("players/motionrp_death_sword.bbmodel","players/motionrp_eternal_blizzard.bbmodel","players/motionrp_death_spear.bbmodel"))try(var in=new java.util.zip.GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.63.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
+ }
+ @Test void spearKeepsItsFullSkinVolumeOutsideTheSphereThroughThePinch()throws Exception{
+  try(var in=Objects.requireNonNull(getClass().getResourceAsStream("/bettermodel/death_spear-clearance.csv"))){var d=new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8).lines().map(l->Arrays.stream(l.split(",")).mapToDouble(Double::parseDouble).toArray()).toList();for(int t=58;t<=88;t++)for(double clearance:d.get(t))assertTrue(clearance>.015,"Full oriented calf/foot skin must clear the ball, not merely its locator");}
+ }
+ @Test void old064ModelsAreRecognizedForUpgrade()throws Exception{
+  for(String name:List.of("players/motionrp_fire_tornado.bbmodel","players/motionrp_death_spear.bbmodel"))try(var in=new java.util.zip.GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.64.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
  }
  @Test void projectileMeshesHaveDistinctSilhouettesAndNoSolidCubeStandins()throws Exception{
   for(String id:List.of("death_sword_edge","death_spear_drill","blizzard_orb","blizzard_flake","blizzard_wind","blizzard_wake")){

@@ -8,7 +8,7 @@ from generate_summons import player,animator,save,ident,RIG_SHA,animation
 from generate_energy import mesh_model,add_mesh
 from generate_battle_visuals import oval
 COLORS=[(8,5,22,255),(22,26,94,255),(27,80,255,255),(66,195,255,255),(235,252,255,255),(152,231,255,255),(205,8,35,255),(255,69,81,255)]
-SHOTS={'death_sword':(129,74),'eternal_blizzard':(278,238),'death_spear':(132,108)}
+SHOTS={'death_sword':(129,74),'eternal_blizzard':(278,238),'death_spear':(132,86)}
 def ice_tick(reference):
  # Remove the 32-tick intro; pre-turn motion runs at 1.5x, subsequent motion at 1x.
  return int(math.floor((max(0,reference-32)/1.5 if reference<=136 else 104/1.5+reference-136)+.5))
@@ -192,18 +192,72 @@ def actor(rig,name,end,kick):
   (ROOT/'death_sword-hip.csv').write_text(hand_path(m,end,'phip_hip'))
  return m
 
-def spear_from_scissor(blizzard):
+def spear_actor(rig):
  from generate_rasengan import hand_path
  from generate_summons import ROOT
- m=copy.deepcopy(blizzard);m['name']=m['model_identifier']='motionrp_death_spear';clip=m['animations'][0];clip['name']='death_spear';clip['length']=132/20
- for entry in clip['animators'].values():
-  unique={}
-  for k in entry['keyframes']:
-   t=max(0,min(132,int(math.floor((k['time']*20+2)*132/211+.5))-2));k['time']=t/20;unique[(k['channel'],t)]=k
-  entry['keyframes']=list(unique.values())
+ m=player(rig,'death_spear',6.6,{})
+ def track(b,keys):
+  g=next(g for g in m['groups']if g['name']==b);m['animations'][0]['animators'][g['uuid']]=animator(g,[(t/20,v)for t,v in keys])
+ track('player_root',[(0,(0,0,0)),(132,(0,0,0))])
+ track('prl_right_leg',[(0,(0,0,0)),(6,(45,0,0)),(12,(45,0,0)),(20,(65,0,0)),(30,(45,0,0)),(40,(75,0,10)),(52,(100,0,15)),(58,(90,0,15)),(84,(90,0,15)),(94,(45,0,12)),(120,(0,0,0)),(132,(0,0,0))])
+ track('prfl_right_foreleg',[(0,(0,0,0)),(12,(0,0,0)),(20,(-35,0,0)),(40,(-80,0,0)),(52,(-110,0,0)),(84,(-80,0,0)),(94,(-65,0,0)),(120,(0,0,0)),(132,(0,0,0))])
+ track('pll_left_leg',[(0,(0,0,0)),(20,(-15,0,-10)),(40,(40,0,-20)),(58,(70,0,-20)),(84,(70,0,-20)),(94,(30,0,-15)),(120,(0,0,0)),(132,(0,0,0))])
+ track('plfl_left_foreleg',[(0,(0,0,0)),(20,(-20,0,0)),(40,(-80,0,0)),(58,(-100,0,0)),(84,(-100,0,0)),(94,(-65,0,0)),(120,(0,0,0)),(132,(0,0,0))])
+ track('pc_chest',[(0,(0,0,0)),(26,(-15,0,0)),(50,(-25,-15,0)),(60,(-20,-20,-5)),(64,(-15,-25,-8)),(70,(-15,-25,-8)),(78,(-10,10,0)),(84,(10,25,8)),(92,(-15,15,0)),(116,(0,0,0)),(132,(0,0,0))])
+ track('pw_waist',[(0,(0,0,0)),(50,(-5,-10,0)),(64,(-5,-15,0)),(70,(-5,-15,0)),(84,(5,15,0)),(98,(0,0,0)),(132,(0,0,0))])
+ for right in [True,False]:
+  sign=1 if right else -1
+  track('pra_right_arm'if right else'pla_left_arm',[(0,(0,0,sign*10)),(30,(-30,0,sign*55)),(52,(-65 if right else 75,0,sign*65)),(64,(-55 if right else 95,sign*-20,sign*40)),(70,(-55 if right else 95,sign*-20,sign*40)),(84,(70 if right else -45,sign*20,sign*35)),(98,(25,0,sign*30)),(132,(0,0,0))])
+  track('prfa_right_forearm'if right else'plfa_left_forearm',[(0,(0,0,0)),(52,(25,0,0)),(64,(65,0,0)),(70,(65,0,0)),(84,(15,0,0)),(116,(0,0,0)),(132,(0,0,0))])
+ track('h_ph_head',[(0,(15,0,0)),(34,(-25,0,0)),(58,(25,10,0)),(70,(25,10,0)),(84,(-10,-10,0)),(116,(0,0,0)),(132,(0,0,0))])
+ def attach(label,parent,origin):
+  g={'name':label,'uuid':ident('death_spear/'+label),'origin':origin,'rotation':[0,0,0],'export':True};m['groups'].append(g)
+  uid=next(g['uuid']for g in m['groups']if g['name']==parent)
+  def add(ns):
+   for n in ns:
+    if isinstance(n,dict):
+     if n['uuid']==uid:n['children'].append({'uuid':g['uuid'],'children':[]});return True
+     if add(n['children']):return True
+   return False
+  assert add(m['outliner'])
+ for right in [True,False]:
+  bone='prfl_right_foreleg'if right else'plfl_left_foreleg';sign=1 if right else -1
+  attach('shot_boot'if right else'ice_other_boot',bone,[sign*1.875,.65,-1.8])
+  x=0 if right else -3.75
+  for suffix,p in [('o',[x,0,-1.875]),('x',[x+3.75,0,-1.875]),('y',[x,5.625,-1.875]),('z',[x,0,1.875])]:attach(('pinch_r_'if right else'pinch_l_')+suffix,bone,p)
+ # Reuse only the two-foot brushing technique, with an aggressive brace and fast opposing stroke.
+ for right in [True,False]:
+  leg='prl_right_leg'if right else'pll_left_leg';knee='prfl_right_foreleg'if right else'plfl_left_foreleg'
+  hips=[list(map(float,l.split(',')))for l in hand_path(m,132,leg).splitlines()];upper=5.625/16;lower=math.hypot(4.975,1.8)/16;rest=math.atan2(1.8,4.975);tk=[];kk=[]
+  for t in range(58,89):
+   ready=min(1,(t-58)/6);p=max(0,min(1,(t-78)/6));p=p*p*(3-2*p)
+   side=(.77*(1-ready)+.745*ready)*(1 if right else -1)
+   f=.13+(.10*(1-2*p)if right else -.10*(1-2*p))*ready
+   y=.72*(1-ready)+.60*ready
+   dx=side-hips[t][0];df=f-(hips[t][1]-.05);dy=y-(hips[t][2]-.03);reach=math.sqrt(dx*dx+df*df+dy*dy)
+   assert abs(upper-lower)<reach<upper+lower,(right,t,reach)
+   a=math.atan2(math.hypot(dx,df),-dy)+math.acos((upper*upper+reach*reach-lower*lower)/(2*upper*reach));bend=math.acos((reach*reach-upper*upper-lower*lower)/(2*upper*lower))
+   tk.append((t/20,(math.degrees(a),-math.degrees(math.atan2(dx,df)),0)));kk.append((t/20,(-math.degrees(bend+rest),0,0)))
+  for bone,keys in [(leg,tk),(knee,kk)]:
+   g=next(g for g in m['groups']if g['name']==bone);entry=m['animations'][0]['animators'][g['uuid']];entry['keyframes']=[k for k in entry['keyframes']if not 58/20<=k['time']<=88/20]+animator(g,keys)['keyframes']
  save('players/motionrp_death_spear.bbmodel',m)
- for suffix,bone in [('boot','shot_boot'),('other','ice_other_boot'),('ground','ice_ground_hand')]:
-  (ROOT/('death_spear-'+suffix+'.csv')).write_text(hand_path(m,132,bone))
+ for suffix,bone in [('boot','shot_boot'),('other','ice_other_boot')]: (ROOT/('death_spear-'+suffix+'.csv')).write_text(hand_path(m,132,bone))
+ # Exact sphere-to-transformed-calf-box clearance, including the foot/skin volume.
+ clearance=[]
+ def dot(a,b):return sum(x*y for x,y in zip(a,b))
+ def sub(a,b):return[x-y for x,y in zip(a,b)]
+ def norm(a):return math.sqrt(dot(a,a))
+ points={label:[[float(v)for v in row.split(',')]for row in hand_path(m,132,label).splitlines()]for label in ['pinch_'+side+'_'+axis for side in ['r','l']for axis in ['o','x','y','z']]}
+ for t in range(132):
+  ds=[]
+  for side in ['r','l']:
+   o=points['pinch_'+side+'_o'][t];nearest=o[:];d=sub([0,.18,.63],o)
+   for axis in ['x','y','z']:
+    v=sub(points['pinch_'+side+'_'+axis][t],o);length=norm(v);u=[n/length for n in v];q=max(0,min(length,dot(d,u)));nearest=[a+q*b for a,b in zip(nearest,u)]
+   ds.append(norm(sub(nearest,[0,.18,.63]))-5.25/16)
+  clearance.append(','.join(f'{d:.8f}'for d in ds))
+ (ROOT/'death_spear-clearance.csv').write_text('\n'.join(clearance)+'\n')
+
 
 def finish(m,ids,spin=False):
  g=m.group('shot_effect',ids)
@@ -283,5 +337,5 @@ def effects():
 if __name__=='__main__':
  raw=Path(sys.argv[1]).read_bytes();assert hashlib.sha256(raw).hexdigest()==RIG_SHA
  built={name:actor(json.loads(raw),name,end,kick)for name,(end,kick)in SHOTS.items()if name!='death_spear'}
- spear_from_scissor(built['eternal_blizzard'])
+ spear_actor(json.loads(raw))
  effects()

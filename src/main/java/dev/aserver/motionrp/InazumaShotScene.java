@@ -21,7 +21,7 @@ final class InazumaShotScene extends SummonScene {
  }
  @Override String phase(){return shot.phase(tick);}
  private int sword(int reference){return SwordShotTimeline.at(reference);}
- private boolean scissor(){return shot!=InazumaShot.DEATH_SWORD;}
+ private boolean scissor(){return shot==InazumaShot.ETERNAL_BLIZZARD;}
  private int trick(int clock){return ScissorShotTimeline.at(shot==InazumaShot.ETERNAL_BLIZZARD,clock);}
  private int ice(int reference){return trick(BlizzardTimeline.at(reference));}
  private Location boot(){var p=body.bone("shot_boot").worldPosition();return owner.getLocation().add(p.x,p.y,p.z);}
@@ -45,7 +45,7 @@ final class InazumaShotScene extends SummonScene {
  @Override void update(){
   body.update(TrackerUpdateAction.togglePart(false),b->Set.of("pri_right_item","pli_left_item").contains(b.name().rawName()));if(!movePilot())return;
   // The scoop and high kick meet fixed points on a free ball arc; no pre-impact foot attraction.
-  if(tick==0){swordBallRest=at(.1171875,.80800776,.34421627);swordKickTarget=at(.1171875,.84406910,1.06542876);ballAt=shot==InazumaShot.DEATH_SWORD?swordBallRest.clone():at(.12,.4,.35);ball=model("motionrp_football",ballAt,1,"ball");ball.update(TrackerUpdateAction.moveDuration(1));trace("duration="+shot.end+" source="+shot.sourceStart+".."+shot.sourceEnd+" durationScale="+shot.durationScale);}
+  if(tick==0){swordBallRest=at(.1171875,.80800776,.34421627);swordKickTarget=at(.1171875,.84406910,1.06542876);ballAt=shot==InazumaShot.DEATH_SWORD||shot==InazumaShot.DEATH_SPEAR?swordBallRest.clone():at(.12,.4,.35);ball=model("motionrp_football",ballAt,1,"ball");ball.update(TrackerUpdateAction.moveDuration(1));trace("duration="+shot.end+" source="+shot.sourceStart+".."+shot.sourceEnd+" durationScale="+shot.durationScale);}
   if(tick==shot.auraStart()){
    String id=switch(shot){case DEATH_SWORD->"motionrp_death_sword_edge";case ETERNAL_BLIZZARD->"motionrp_blizzard_wind";case DEATH_SPEAR->"motionrp_death_spear_drill";};
    if(shot==InazumaShot.DEATH_SWORD){
@@ -76,6 +76,16 @@ final class InazumaShotScene extends SummonScene {
      swordContact=ballAt.clone();particle(ballAt,Particle.CRIT,18,.12,.08);particle(ballAt,Particle.SWEEP_ATTACK,1,0,0);
      sound(ballAt,Sound.ENTITY_PLAYER_ATTACK_STRONG,1.4f,.8f);trace("strike tick="+tick+" contactGap="+ballAt.distance(target)+" bootHeight="+(boot().getY()-owner.getLocation().getY()));
     }
+   }else if(shot==InazumaShot.DEATH_SPEAR){
+    if(tick<=10)ballAt=swordBallRest.clone();
+    else ballAt=blend(swordBallRest,at(0,.13,10),1-Math.pow(1-progress(tick,10,38),2));
+    if(tick==10)trace("spear loft contactGap="+ballAt.distance(contact()));
+    if(tick==38)trace("spear apex height="+(ballAt.getY()-origin.getY()));
+    if(tick==78){sound(ballAt,Sound.ENTITY_PLAYER_ATTACK_STRONG,1.4f,.6f);particle(boot(),Particle.CRIT,8,.08,.02);}
+    if(tick>=66&&tick<=86){
+     var rp=body.bone("shot_boot").worldPosition();var lp=body.bone("ice_other_boot").worldPosition();
+     trace("spear pinch tick="+tick+" rightClearance="+spearClearance("pinch_r_")+" leftClearance="+spearClearance("pinch_l_")+" rightForward="+(rp.x*forward().getX()+rp.z*forward().getZ())+" leftForward="+(lp.x*forward().getX()+lp.z*forward().getZ())+" ballScale=1");
+    }
    }else{
     Location top=at(0,1,shot==InazumaShot.ETERNAL_BLIZZARD?4.4:3.3);
     if(tick<=ice(44)){
@@ -96,10 +106,11 @@ final class InazumaShotScene extends SummonScene {
     if(tick>=trick(32))ball.scaler(ModelScaler.value((float)(.7+.7*smooth(tick,trick(32),ice(116)))));
    }
    Vector spin=forward();if(scissor()&&tick>=ice(44)&&tick<=trick(18)){double angle=progress(tick,ice(44),trick(18))*Math.PI*2;spin=new Vector(Math.sin(angle),Math.sin(angle*.5)*.4,Math.cos(angle));}
+   if(shot==InazumaShot.DEATH_SPEAR&&tick>=78&&tick<=shot.kick){double p=progress(tick,78,shot.kick),a=p*p*Math.PI*6;spin=new Vector(Math.sin(a),.25*Math.sin(a*.5),Math.cos(a));}
    pose(ball,ballAt,spin);
    if(aura!=null){aura.scaler(ModelScaler.value((float)(.2+1.0*smooth(tick,shot.auraStart(),shot.kick))));pose(aura,shot==InazumaShot.ETERNAL_BLIZZARD?owner.getLocation():ballAt,forward());}
    if(tick%2==0&&tick>=shot.auraStart())chargeParticles();
-   if(tick==shot.strike())trace("contactGap="+ballAt.distance(target)+" boot="+ballAt.getX()+","+ballAt.getY()+","+ballAt.getZ());
+   if(tick==shot.strike()&&shot!=InazumaShot.DEATH_SPEAR)trace("contactGap="+ballAt.distance(target)+" boot="+ballAt.getX()+","+ballAt.getY()+","+ballAt.getZ());
   }
   if(shot==InazumaShot.DEATH_SWORD&&tick>=sword(88)&&tick<=shot.kick){
    var edge=body.bone("shot_knife_edge").worldPosition();Location hand=owner.getLocation().add(edge.x,edge.y,edge.z);double gap=hand.distance(ballAt)-5.25/16;
@@ -127,7 +138,7 @@ final class InazumaShotScene extends SummonScene {
   }
   if(shot==InazumaShot.DEATH_SWORD&&tick>=shot.strike()&&tick<=shot.kick)trace("ball level tick="+tick+" height="+(ballAt.getY()-origin.getY()));
   if(tick==shot.kick){
-   shotStart=shot==InazumaShot.DEATH_SWORD?ballAt.clone():contact();previousBall=shotStart.clone();ballAt=shotStart;pose(ball,ballAt,forward());
+   shotStart=shot!=InazumaShot.ETERNAL_BLIZZARD?ballAt.clone():contact();previousBall=shotStart.clone();ballAt=shotStart;pose(ball,ballAt,forward());
    if(shot==InazumaShot.DEATH_SWORD){
     sound(ballAt,Sound.ENTITY_PLAYER_ATTACK_SWEEP,1.4f,.65f);trace("shot tick="+tick+" trigger=hand");
    }else{
@@ -144,6 +155,13 @@ final class InazumaShotScene extends SummonScene {
    double angle=tick*.15+i*Math.PI/3;Location center=tick<shot.kick?ballAt:previousBall;
    if(center!=null)pose(flakes.get(i),center.clone().add(Math.cos(angle)*1.5,Math.sin(angle)*1.5,Math.sin(angle*.6)*.5),forward());
   }
+ }
+ private double spearClearance(String prefix){
+  var p=body.bone(prefix+"o").worldPosition();Vector o=new Vector(p.x,p.y,p.z),center=ballAt.toVector().subtract(owner.getLocation().toVector()),delta=center.clone().subtract(o),nearest=o.clone();
+  for(String axis:List.of("x","y","z")){
+   var q=body.bone(prefix+axis).worldPosition();Vector v=new Vector(q.x,q.y,q.z).subtract(o);double length=v.length();v.normalize();nearest.add(v.clone().multiply(Math.clamp(delta.dot(v),0,length)));
+  }
+  return nearest.distance(center)-5.25/16;
  }
  private void chargeParticles(){
   boolean ice=shot==InazumaShot.ETERNAL_BLIZZARD;Color color=ice?Color.fromRGB(110,225,255):shot==InazumaShot.DEATH_SWORD?Color.fromRGB(25,65,245):Color.fromRGB(235,20,45);

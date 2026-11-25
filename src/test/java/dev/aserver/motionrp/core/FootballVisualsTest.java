@@ -21,10 +21,10 @@ class FootballVisualsTest {
  @Test void old047FireIsRecognizedForAutomaticUpgrade()throws Exception{
   String name="players/motionrp_fire_tornado.bbmodel";try(var in=new GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.47.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
  }
- @Test void horizontalKickIsBankedLeftByAQuarterTurn(){
+ @Test void horizontalKickRollsRightByAQuarterTurnFromThePreviousPose(){
   for(int tick=68;tick<=72;tick++){
    var frame=FootballFootPath.at(true,tick);var side=unit(sub(frame.side(),frame.torso()));
-   assertEquals(0,side.right(),1e-6);assertTrue(side.height()<-.98,"Side axis must turn left/down by 90 degrees");
+   assertTrue(side.right()>.98);assertEquals(0,side.height(),1e-6,"A 90-degree right roll puts the former downward side axis horizontally to the right");
   }
  }
  @Test void old048FireIsRecognizedForAutomaticUpgrade()throws Exception{
@@ -53,7 +53,7 @@ class FootballVisualsTest {
   try(var in=Objects.requireNonNull(getClass().getResourceAsStream("/bettermodel/fire_tornado-support.csv"))){
    var right=new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8).lines().map(l->Arrays.stream(l.split(",")).mapToDouble(Double::parseDouble).toArray()).toList();
    for(int t=66;t<=68;t++){assertTrue(right.get(t)[1]>.15);assertTrue(FootballFootPath.at(true,t).boot().forward()<right.get(t)[1]-.8);}
-   for(int t=72;t<=74;t++){assertTrue(right.get(t)[1]<-.5);assertTrue(FootballFootPath.at(true,t).boot().forward()>right.get(t)[1]+.8);}
+   for(int t=72;t<=74;t++){assertTrue(right.get(t)[1]<-.3);assertTrue(FootballFootPath.at(true,t).boot().forward()>right.get(t)[1]+.6);}
   }
  }
  @Test void revised054AssetsAreRecognizedForUpgrade()throws Exception{

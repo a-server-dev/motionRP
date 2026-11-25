@@ -365,8 +365,8 @@ if(process.env.MOTIONRP_INAZUMA_ONLY==='1'){
     const legs=[...text.matchAll(/ice leg tick=(\d+) forward=([^\r\n]+)/g)];assert.equal(legs.length,2);assert.ok(+legs[0][2]<-.15&&+legs[1][2]>+legs[0][2]+.4,'Rearward leg hold leads into a forward strike');
    }
    if(id==='death_spear'){
-    const text=output.slice(start);assert.ok(text.includes('loft tick=5 footGap=0.0'));assert.ok(text.includes('right turn complete tick=21'));assert.ok(text.includes('land reset tick=24'));assert.ok(text.includes('land reset tick=43'));assert.ok(text.includes('kick tick=108'));
-    const brush=[...text.matchAll(/foot brush tick=(\d+) rightSide=([^ ]+) leftSide=([^ ]+) rightForward=([^ ]+) leftForward=([^\r\n]+)/g)];assert.equal(brush.length,2);assert.ok(brush.every(m=>+m[2]>.2&&+m[3]<-.2)&&+brush[0][4]>+brush[0][5]&&+brush[1][4]<+brush[1][5],'Spear reuses the opposing-foot brush and rightward landing turn');
+    const text=output.slice(start);assert.ok(text.includes('spear apex height=10'));assert.ok(text.includes('kick tick=86'));assert.ok(!text.includes('right turn complete')&&!text.includes('land reset'));
+    const pinch=[...text.matchAll(/spear pinch tick=(\d+) rightClearance=([^ ]+) leftClearance=([^ ]+) rightForward=([^ ]+) leftForward=([^ ]+) ballScale=1/g)];assert.ok(pinch.length>=20);assert.ok(pinch.every(m=>+m[2]>.005&&+m[3]>.005),'Neither complete foot/calf mesh enters the undeformed sphere');assert.ok(+pinch[0][4]>+pinch[0][5]&&+pinch.at(-1)[4]<+pinch.at(-1)[5],'Strong opposing scissor stroke, no turn or landing');
    }
    pass(id+' item plays charge, live-foot kick, themed projectile, impact and cleanup; OFF viewers see nothing');
    await menu(a);while(registered(a)>0){const slot=a.currentWindow.slots.findIndex((item,i)=>i<a.currentWindow.inventoryStart&&item?.name==='paper');await click(a,slot);}await closeMenu(a);
@@ -443,7 +443,7 @@ if(process.env.MOTIONRP_FOOTBALL_ONLY==='1'){
     assert.ok(output.slice(begin).includes('kick contact at live boot'),'Ball releases at the live animated boot');
     const bodyAxis=output.slice(begin).match(/Football-fire_tornado kick body axis forward=([^ ]+) up=([^\r\n]+)/);
     const bank=output.slice(begin).match(/Football-fire_tornado kick bank side up=([^\r\n]+)/);
-    assert.ok(bank&&+bank[1]<-.98,'Native horizontal body is banked 90 degrees left');
+    assert.ok(bank&&Math.abs(+bank[1])<.03,'Native whole-body pose is rolled 90 degrees right from the previous downward-facing side axis');
     assert.ok(bodyAxis,'Native torso orientation measured at release');
     assert.ok(+bodyAxis[1]>.95,'Head points in the shot direction');
     assert.ok(+bodyAxis[2]<-.08&&+bodyAxis[2]>-.3,'Head is slightly below the horizontal torso');

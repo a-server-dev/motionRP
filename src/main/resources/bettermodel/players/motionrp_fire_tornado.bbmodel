@@ -3614,10 +3614,10 @@
               "time": 3.6,
               "interpolation": "linear",
               "color": -1,
-              "uuid": "4d2b0685-8bc5-5467-a240-102babe3f22b",
+              "uuid": "d08beb73-1883-53d1-b0b0-6a21d9e88511",
               "data_points": [
                 {
-                  "x": "-20.0",
+                  "x": "-5.0",
                   "y": "-0.0",
                   "z": "12.0"
                 }
@@ -3628,10 +3628,10 @@
               "time": 3.7428571428571433,
               "interpolation": "linear",
               "color": -1,
-              "uuid": "0c9f1c62-8a44-5755-b35f-219b0c894a8d",
+              "uuid": "b9fc84ab-cc0b-5f68-87d5-1f72db312422",
               "data_points": [
                 {
-                  "x": "-35.0",
+                  "x": "-15.0",
                   "y": "-0.0",
                   "z": "12.0"
                 }
@@ -3642,10 +3642,10 @@
               "time": 3.8857142857142857,
               "interpolation": "linear",
               "color": -1,
-              "uuid": "ca75ccf0-7c1e-56a5-bad7-db7d0b65acb8",
+              "uuid": "9de884a9-396a-5fee-b2f1-d57a2e640148",
               "data_points": [
                 {
-                  "x": "-35.0",
+                  "x": "-15.0",
                   "y": "-0.0",
                   "z": "12.0"
                 }
@@ -5133,11 +5133,11 @@
               "time": 3.3000000000000003,
               "interpolation": "linear",
               "color": -1,
-              "uuid": "73eecd03-7405-514d-8eb1-ac5af2ad2a26",
+              "uuid": "3c408fd9-6238-54fb-8b1b-8c6f21fc0b73",
               "data_points": [
                 {
                   "x": "0",
-                  "y": "90",
+                  "y": "0",
                   "z": "0"
                 }
               ]
@@ -5147,11 +5147,11 @@
               "time": 4.1,
               "interpolation": "linear",
               "color": -1,
-              "uuid": "3bdc9cbd-00cc-535f-a718-deeb85a18c04",
+              "uuid": "a92e2f36-cfaa-5a30-bf72-a55c46db734c",
               "data_points": [
                 {
                   "x": "0",
-                  "y": "90",
+                  "y": "0",
                   "z": "0"
                 }
               ]
