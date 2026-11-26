@@ -8,13 +8,13 @@ public final class FootballTimeline {
  public static double smooth(int tick,int from,int to){double p=progress(tick,from,to);return p*p*(3-2*p);}
  public static int charge(boolean fire){return 20;}
  public static int jump(boolean fire){return fire?26:70;}
- public static int kick(boolean fire){return fire?68:98;}
- public static int impact(boolean fire){return fire?88:124;}
- public static int land(boolean fire){return fire?98:156;}
+ public static int kick(boolean fire){return fire?70:98;}
+ public static int impact(boolean fire){return fire?90:124;}
+ public static int land(boolean fire){return fire?100:156;}
  public static int end(boolean fire){return fire?112:174;}
  public static double height(int tick,boolean fire){
   if(!fire)return 0; // No.1 plants the supporting leg; it is not a bicycle kick.
-  return FIRE_HEIGHT*smooth(tick,26,46)*(1-smooth(tick,68,98));
+  return FIRE_HEIGHT*smooth(tick,26,46)*(1-smooth(tick,70,100));
  }
  public static double approach(int tick,boolean fire){return fire?0:.65*smooth(tick,70,98)*(1-smooth(tick,146,174));}
  public static double distance(int tick){return RANGE*progress(tick,KICK,IMPACT);}

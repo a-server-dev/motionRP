@@ -189,6 +189,9 @@ class InazumaShotTest {
   var before=old.getAsJsonArray("animations").get(0).getAsJsonObject().getAsJsonObject("animators");var after=current.getAsJsonArray("animations").get(0).getAsJsonObject().getAsJsonObject("animators");
   var root=before.entrySet().stream().filter(e->e.getValue().getAsJsonObject().get("name").getAsString().equals("player_root")).findFirst().orElseThrow();assertEquals(root.getValue(),after.get(root.getKey()));
  }
+ @Test void old071ModelsAreRecognizedForUpgrade()throws Exception{
+  for(String name:List.of("players/motionrp_fire_tornado.bbmodel","models/motionrp_susanoo_armor.bbmodel"))try(var in=new java.util.zip.GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.71.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
+ }
  @Test void old070ModelsAreRecognizedForUpgrade()throws Exception{
   for(String name:List.of("players/motionrp_fire_tornado.bbmodel","players/motionrp_eternal_blizzard.bbmodel","players/motionrp_death_sword.bbmodel"))try(var in=new java.util.zip.GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.70.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
  }

@@ -12,6 +12,22 @@ import static dev.aserver.motionrp.core.SusanooTimeline.*;
 final class SusanooScene extends SummonScene {
     private static final Particle.DustOptions VIOLET=new Particle.DustOptions(Color.fromRGB(84,193,255),1.5f);
     private DummyTracker ribs,armor,slash;
+    private static final double[][] BODY_BOXES=readBodyBoxes();
+    private static double[][] readBodyBoxes(){
+        try(var in=SusanooScene.class.getResourceAsStream("/bettermodel/susanoo-body-boxes.csv")){
+            return new String(java.util.Objects.requireNonNull(in).readAllBytes(),java.nio.charset.StandardCharsets.UTF_8).lines().map(l->java.util.Arrays.stream(l.split(",")).mapToDouble(Double::parseDouble).toArray()).toArray(double[][]::new);
+        }catch(java.io.IOException e){throw new java.io.UncheckedIOException(e);}
+    }
+    private void checkBladeClearance(){
+        var o=armor.bone("clear_body_o").worldPosition();var axes=new org.joml.Vector3f[3];double unit=0;
+        for(int i=0;i<3;i++){axes[i]=armor.bone("clear_body_"+"xyz".charAt(i)).worldPosition().sub(o,new org.joml.Vector3f());unit=axes[i].length()/16;axes[i].normalize();}
+        double minimum=Double.POSITIVE_INFINITY;
+        for(int distance=10;distance<=60;distance+=5){
+            var p=armor.bone("clear_blade_"+distance).worldPosition().sub(o,new org.joml.Vector3f());double[] local={p.dot(axes[0])/unit,57+p.dot(axes[1])/unit,p.dot(axes[2])/unit};
+            for(var box:BODY_BOXES){double squared=0;for(int i=0;i<3;i++){double d=Math.max(0,Math.max(box[i]-local[i],local[i]-box[i+3]));squared+=d*d;}minimum=Math.min(minimum,Math.sqrt(squared)-3);}
+        }
+        trace("blade clearance tick="+tick+" minimum="+minimum);
+    }
     private final AerialAnchor pilot;private static final float SCALE=10;
     SusanooScene(MotionPlugin plugin,Player owner) { super(plugin,owner,"Susanoo",END,128,true);pilot=new AerialAnchor(plugin,owner); }
     @Override public boolean ownsMove(Location from,Location to) {return pilot.owns(from,to);}
@@ -41,6 +57,7 @@ final class SusanooScene extends SummonScene {
         if(tick==FADE) {pilot.close();trace("pilot returned before fade tick="+tick);}
         if(tick==READY+104||tick==END-4){var blade=armor.bone("waist_blade_-1").worldPosition();trace("blade held tick="+tick+" height="+blade.y); }
         if(tick==READY) armor.animate("slash",AnimationModifier.DEFAULT_WITH_PLAY_ONCE);
+        if(armor!=null&&tick>=READY&&tick<=FADE&&tick%2==0&&plugin.getConfig().getBoolean("debug-input"))checkBladeClearance();
         if(tick==SLASH || tick==RIGHT_SLASH) {
             slash=model(SummonAssets.SLASH,at(0,20,35),11f,tick==SLASH?"slash_left":"slash_right");
             slash.update(TrackerUpdateAction.viewRange(3));

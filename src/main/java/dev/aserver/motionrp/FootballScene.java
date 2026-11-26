@@ -33,6 +33,7 @@ final class FootballScene extends SummonScene {
  @Override String phase(){return FootballTimeline.phase(tick,fire);}
  private Location attach(FootballFootPath.Point p,int t){return at(p.right(),p.forward()+approach(t,fire),p.height()+height(t,fire));}
  private Location boot(int t){return attach(FootballFootPath.at(fire,t).boot(),t);}
+ private Location loftStart(){var p=FootballFootPath.at(true,8).boot();return at(p.right(),p.forward(),.30);}
  private Location calf(int t){return attach(FootballFootPath.at(fire,t).calf(),t);}
  private Location liveBoot(){var p=body.bone("football_boot").worldPosition();return owner.getLocation().add(p.x,p.y,p.z);}
  private Location contact(){return (fire?liveBoot():boot(kick(false))).add(at(0,.25,.03).toVector().subtract(origin.toVector()));}
@@ -56,14 +57,14 @@ final class FootballScene extends SummonScene {
   body.update(TrackerUpdateAction.togglePart(false),b->Set.of("pri_right_item","pli_left_item").contains(b.name().rawName()));
   int release=kick(fire),hit=FootballTimeline.impact(fire);
   if((fire&&tick>=jump(true)&&tick<=land(true))||(!fire&&tick>=70)){
-   Location seat=at(0,approach(tick,fire),height(tick,fire)),from=owner.getLocation();if(fire)seat.setYaw(origin.getYaw()+(float)(180*smooth(tick,74,96)));Vector delta=seat.toVector().subtract(from.toVector());int samples=Math.max(1,(int)Math.ceil(delta.length()/.18));
+   Location seat=at(0,approach(tick,fire),height(tick,fire)),from=owner.getLocation();if(fire)seat.setYaw(origin.getYaw()+(float)(180*smooth(tick,70,90)));Vector delta=seat.toVector().subtract(from.toVector());int samples=Math.max(1,(int)Math.ceil(delta.length()/.18));
    for(int i=1;i<=samples;i++){
     Vector shift=delta.clone().multiply(i/(double)samples);Location check=from.clone().add(shift);
     if(!check.getWorld().isChunkLoaded(check.getBlockX()>>4,check.getBlockZ()>>4)||owner.wouldCollideUsing(owner.getBoundingBox().shift(shift))){plugin.playback().stop(owner.getUniqueId());return;}
    }
    if(!flight.moveTo(seat,origin)){plugin.playback().stop(owner.getUniqueId());return;}
   }
-  if(tick==0){ballPosition=at(.12,fire?.9:1.55,.3);ball=model("motionrp_football",ballPosition,1,"football");ball.update(TrackerUpdateAction.moveDuration(1));ball.rotation(()->new ModelRotation(tick*17,origin.getYaw()+tick*23));}
+  if(tick==0){ballPosition=fire?loftStart():at(.12,1.55,.3);ball=model("motionrp_football",ballPosition,1,"football");ball.update(TrackerUpdateAction.moveDuration(1));ball.rotation(()->new ModelRotation(tick*17,origin.getYaw()+tick*23));}
   if(tick==charge(fire)){
    if(fire)sound(origin,Sound.ITEM_FIRECHARGE_USE,1.4f,.65f);
    else for(int i=0;i<5;i++){
@@ -76,10 +77,11 @@ final class FootballScene extends SummonScene {
   if(tick<release||(fire&&tick==release)){
    Location target=contact();
    if(fire){
-    if(tick<8)ballPosition=blend(at(.12,.9,.3),boot(8).add(0,.15,0),smooth(tick,4,8));
+    if(tick==FootballBallArc.TOSS)trace("scoop release tick="+tick+" footDistance="+loftStart().distance(liveBoot()));
+    if(tick<FootballBallArc.TOSS)ballPosition=loftStart();
     else{
      Location expected=boot(release+4).add(at(0,.25,.03).toVector().subtract(origin.toVector()));
-     var point=FootballBallArc.at(tick,local(boot(8).add(0,.15,0)),local(expected),local(target));
+     var point=FootballBallArc.at(tick,local(loftStart()),local(expected),local(target));
      ballPosition=at(point.right(),point.forward(),point.height());
      if(tick==FootballBallArc.APEX_TICK||tick>=release-4)trace("lob tick="+tick+" height="+(ballPosition.getY()-origin.getY())+" contactGap="+ballPosition.distance(target));
     }

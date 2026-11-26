@@ -427,12 +427,13 @@ if(process.env.MOTIONRP_FOOTBALL_ONLY==='1'){
 
    if(id==='fire_tornado'){
     assert.ok(fireParticles.length>20,'Flame ribbons were sent around the airborne body');
+    const scoop=output.slice(begin).match(/scoop release tick=10 footDistance=([^\r\n]+)/);assert.ok(scoop&&+scoop[1]<.45,'Initial lob starts when the left boot reaches the ball');
     assert.ok(fireParticles.every(p=>p.y>origin.y+6.5),'Flames follow the body high above the ground');
     assert.ok(!/displays (fire_spiral|burning_boot)/.test(output.slice(begin)),'Standing cone models are not used');
     const footMotion=[...output.slice(begin).matchAll(/Football-fire_tornado live foot tick=(\d+) forward=([^ ]+)/g)].map(m=>({tick:+m[1],forward:+m[2]}));
     assert.equal(footMotion.length,6,'Native boot samples cover windup, release and follow-through');
-    assert.ok(footMotion.slice(-2).every(p=>p.forward>.01),'Rendered boot swings forward through contact after the rear hold');
-    assert.equal(footMotion.at(-1).tick,70);assert.ok(footMotion.find(p=>p.tick===68).forward>.1,'Boot is travelling forward when the ball releases');
+    assert.ok(footMotion.some(p=>p.tick>=70&&p.forward>.1),'Rendered boot swings through release before holding the kicked pose');
+    assert.equal(footMotion.at(-1).tick,72);assert.ok(footMotion.find(p=>p.tick===70).forward>.1,'Boot is travelling forward when the ball releases');
     const legs=[...output.slice(begin).matchAll(/leg exchange tick=(\d+) left=([^ ]+) right=([^\r\n]+)/g)].map(m=>({tick:+m[1],left:+m[2],right:+m[3]}));
     assert.equal(legs.length,2);assert.ok(legs[0].left<legs[0].right-.6,'Rear left boot and forward right boot during hold');assert.ok(legs[1].left>legs[1].right+.6,'Forward left boot and rear right boot after kick');
     assert.ok(footMotion.every(p=>p.forward>-.05)&&footMotion.reduce((sum,p)=>sum+p.forward,0)>.4,'A small preload is followed by a strong forward strike');
@@ -440,7 +441,7 @@ if(process.env.MOTIONRP_FOOTBALL_ONLY==='1'){
     const lob=[...output.slice(begin).matchAll(/Football-fire_tornado lob tick=(\d+) height=([^ ]+) contactGap=([^\r\n]+)/g)].map(m=>({tick:+m[1],height:+m[2],gap:+m[3]}));
     assert.equal(lob.find(p=>p.tick===32)?.height,15,'Only the ball rises to fifteen blocks');
     assert.ok(lob.find(p=>p.tick===67)?.gap>.15,'Ball is still falling towards the boot before the kick');
-    assert.ok(lob.find(p=>p.tick===68)?.gap<1e-8,'Falling ball meets the live boot exactly at release without snapping');
+    assert.ok(lob.find(p=>p.tick===70)?.gap<1e-8,'Falling ball meets the live boot exactly at release without snapping');
     assert.ok(output.slice(begin).includes('kick contact at live boot'),'Ball releases at the live animated boot');
     const bodyAxis=output.slice(begin).match(/Football-fire_tornado kick body axis forward=([^ ]+) up=([^ ]+) right=([^\r\n]+)/);
     const bank=output.slice(begin).match(/Football-fire_tornado kick bank side up=([^\r\n]+)/);
@@ -1018,6 +1019,7 @@ if(process.env.MOTIONRP_SUSANOO_SMOKE==='1'){
   const origin=a.entity.position.clone(),begin=output.length;a._testLookUp();await sleep(150);a._testLeftClick();
   await waitFor(()=>output.slice(begin).includes('pilot seated scale=10.0'),'full giant and elevated pilot',20000);assert.ok(a.entity.position.y>origin.y+45);
   await waitFor(()=>output.slice(begin).includes('blade held tick=232'),'weapon stays elevated through fade',20000);
+  const gaps=[...output.slice(begin).matchAll(/blade clearance tick=(\d+) minimum=([^\r\n]+)/g)];assert.ok(gaps.length>40&&gaps.every(m=>+m[2]>-.05),'The actual rendered blade transform clears chest and helmet throughout both cuts');
   const holds=[...output.slice(begin).matchAll(/blade held tick=(\d+) height=([^\r\n]+)/g)];assert.equal(holds.length,2);assert.ok(holds.every(m=>+m[2]>.1),'The blade root never drops to bind-pose ground height');
   await waitFor(()=>spawns.size>100&&[...spawns].every(id=>removed.has(id)),'all giant displays removed',20000);assert.ok(a.entity.position.distanceTo(origin)<.03);
   assert.ok(output.slice(begin).includes('draw-cut ground blast and wind start')&&output.slice(begin).includes('kesa ground blast and wind start'));

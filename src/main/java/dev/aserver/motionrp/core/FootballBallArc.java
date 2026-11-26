@@ -4,7 +4,7 @@ import static dev.aserver.motionrp.core.FootballFootPath.Point;
 
 /** A high lob that reaches the animated boot only on the shot's contact tick. */
 public final class FootballBallArc {
- public static final int TOSS=8,APEX_TICK=32;
+ public static final int TOSS=10,APEX_TICK=32;
  public static final double APEX_HEIGHT=15;
  private FootballBallArc(){}
  private static Point blend(Point a,Point b,double p){return new Point(a.right()+(b.right()-a.right())*p,a.forward()+(b.forward()-a.forward())*p,a.height()+(b.height()-a.height())*p);}

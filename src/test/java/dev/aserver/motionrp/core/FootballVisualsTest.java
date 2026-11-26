@@ -6,24 +6,28 @@ import static org.junit.jupiter.api.Assertions.*;
 import static dev.aserver.motionrp.core.FootballFootPath.*;
 class FootballVisualsTest {
  @Test void bootMovesTowardsTheShotAtContactInsteadOfSwingingBackwards(){
-  int contact=FootballTimeline.kick(true);
-  for(int t=contact-2;t<=contact+5;t++)assertTrue(FootballFootPath.at(true,t).boot().forward()>FootballFootPath.at(true,t-1).boot().forward(),"Foot must travel forwards through contact tick "+t);
+  int contact=68; // Authored boot contact; scene release allows the renderer lead.
+  for(int t=contact-2;t<=contact;t++)assertTrue(FootballFootPath.at(true,t).boot().forward()>FootballFootPath.at(true,t-1).boot().forward(),"Foot must travel forwards through contact tick "+t);
   assertEquals(8,FootballTimeline.height(50,true));assertEquals(8,FootballTimeline.height(contact,true));
   assertEquals(0,FootballTimeline.height(FootballTimeline.land(true),true),1e-9);
  }
  @Test void headPointsScreenRightInFrontViewParallelToTheGroundAtContact(){
-  for(int tick=68;tick<=72;tick++){
+  for(int tick=68;tick<=70;tick++){
    var frame=FootballFootPath.at(true,tick);var axis=unit(sub(frame.upper(),frame.torso()));
    assertTrue(axis.right()>.98,"The longitudinal body axis points right, not toward the camera/shot");assertEquals(0,axis.forward(),1e-6);
    assertEquals(0,axis.height(),1e-6,"Torso is parallel to the ground");
   }
  }
- @Test void followThroughTipsTheHeadTowardsTheShotWhileHalfTurning(){
-  var f=FootballFootPath.at(true,85);var axis=unit(sub(f.upper(),f.torso()));
-  assertTrue(axis.forward()>.7&&axis.height()>.5,"The follow-through twists toward the kick instead of simply standing upright");
+ @Test void initialLeftFootScoopIsVisibleBeforeTheJump(){
+  var rest=FootballFootPath.at(true,0).boot();var lifted=FootballFootPath.at(true,12).boot();
+  assertTrue(lifted.height()>rest.height()+.6&&lifted.forward()>.6,"Actually raise the left foot instead of only tilting the head");
+ }
+ @Test void followThroughHoldsTheSidewaysPoseAndTurnsClockwiseFromAbove(){
+  for(int t=70;t<=90;t++){var f=FootballFootPath.at(true,t);var axis=unit(sub(f.upper(),f.torso()));assertEquals(0,axis.height(),1e-6,"Do not straighten the body before the turn completes");}
+  var f=FootballFootPath.at(true,80);var axis=unit(sub(f.upper(),f.torso()));assertTrue(axis.forward()<-.98,"Top-view clockwise turn has the opposite yaw sign from the old counterclockwise turn");
  }
  @Test void landingBringsTheBodyUprightBeforeTouchdown(){
-  for(int t=94;t<112;t++){
+  for(int t=98;t<112;t++){
    var f=FootballFootPath.at(true,t);var axis=unit(sub(f.upper(),f.torso()));
    assertTrue(axis.height()>.98,"Recover before landing rather than flip into the floor");
    assertTrue(f.boot().height()>=0,"Left boot stays above the floor");
@@ -36,7 +40,7 @@ class FootballVisualsTest {
   String name="players/motionrp_fire_tornado.bbmodel";try(var in=new GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.47.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
  }
  @Test void horizontalKickHasAnUprightSideAxisWhileItsLongAxisPointsRight(){
-  for(int tick=68;tick<=72;tick++){
+  for(int tick=68;tick<=70;tick++){
    var frame=FootballFootPath.at(true,tick);var side=unit(sub(frame.side(),frame.torso()));
    assertTrue(side.height()<-.98);assertEquals(0,side.right(),1e-6);
   }

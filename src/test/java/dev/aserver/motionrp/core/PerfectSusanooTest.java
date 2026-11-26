@@ -41,6 +41,23 @@ class PerfectSusanooTest {
         }
     }
 
+    @Test void bladeSweepClearsChestAndHelmetBetweenAnimationKeys()throws Exception{
+        JsonObject model;try(var in=getClass().getResourceAsStream("/bettermodel/models/motionrp_susanoo_armor.bbmodel")){model=JsonParser.parseString(new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();}
+        var clip=model.getAsJsonArray("animations").get(0).getAsJsonObject();Map<String,JsonObject> groups=new HashMap<>();Map<String,String> names=new HashMap<>(),parents=new HashMap<>();
+        for(var raw:model.getAsJsonArray("groups")){var g=raw.getAsJsonObject();String id=g.get("uuid").getAsString();groups.put(id,g);names.put(g.get("name").getAsString(),id);}
+        var math=new RasenganAssetsTest();math.parentTree(model.getAsJsonArray("outliner"),null,parents);
+        var boxes=model.getAsJsonArray("elements").asList().stream().map(JsonElement::getAsJsonObject).filter(e->{String n=e.get("name").getAsString();return n.startsWith("breastplate_")||n.startsWith("temple_")||n.startsWith("helmet_crown")||n.startsWith("tengu_face_contour");}).toList();
+        for(int frame=0;frame<=208;frame++){
+            double t=frame/40.0;var origin=math.posedPoint(names.get("battle_torso"),new double[]{0,57,0},t,clip,groups,parents);double[][] basis=new double[3][];
+            for(int axis=0;axis<3;axis++){double[] p={0,57,0};p[axis]++;basis[axis]=math.posedPoint(names.get("battle_torso"),p,t,clip,groups,parents);for(int j=0;j<3;j++)basis[axis][j]-=origin[j];}
+            for(int distance=10;distance<=60;distance+=2){
+                var world=math.posedPoint(names.get("waist_blade_-1"),new double[]{0,0,-distance},t,clip,groups,parents);double[] point={0,57,0};
+                for(int axis=0;axis<3;axis++)for(int j=0;j<3;j++)point[axis]+=(world[j]-origin[j])*basis[axis][j];
+                for(var box:boxes){double squared=0;for(int j=0;j<3;j++){double lo=box.getAsJsonArray("from").get(j).getAsDouble(),hi=box.getAsJsonArray("to").get(j).getAsDouble();double d=Math.max(0,Math.max(lo-point[j],point[j]-hi));squared+=d*d;}assertTrue(squared>9,"Blade thickness must clear the torso and helmet at t="+t);}
+            }
+        }
+    }
+
     @Test void drawnBladeAndScabbardRemainInTheHandsThroughBothCuts() throws Exception {
         JsonObject model;
         try(var in=getClass().getResourceAsStream("/bettermodel/models/motionrp_susanoo_armor.bbmodel")){model=JsonParser.parseString(new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();}

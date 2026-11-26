@@ -22,7 +22,7 @@ class FootballAssetsTest {
   var spin=tracks.entrySet().stream().map(e->e.getValue().getAsJsonObject()).filter(e->e.get("name").getAsString().equals("football_spin")).findFirst().orElseThrow();
   double previous=0;int quarters=0;
   for(var raw:spin.getAsJsonArray("keyframes")){var k=raw.getAsJsonObject();double y=k.getAsJsonArray("data_points").get(0).getAsJsonObject().get("y").getAsDouble();assertTrue(y-previous<=90.001);if(y>previous)quarters++;previous=y;}
-  assertEquals(2520,previous);assertEquals(28,quarters);assertEquals(112,FootballTimeline.end(true));assertEquals(68,FootballTimeline.kick(true));
+  assertEquals(2520,previous);assertEquals(28,quarters);assertEquals(112,FootballTimeline.end(true));assertEquals(70,FootballTimeline.kick(true));
  }
  @Test void entireBodyIncludingBothThighsSharesTheSpinParent()throws Exception{
   var model=load("players/motionrp_fire_tornado");var names=new HashMap<String,String>();

@@ -8,7 +8,7 @@ import json,math,hashlib
 from pathlib import Path
 from collections import defaultdict
 from hollow_kinematics import matrix,mul,vector,euler
-from generate_summons import Model,ROOT,RIG_SHA,player,save,animator,animation
+from generate_summons import Model,ROOT,RIG_SHA,player,save,animator,animation,ident
 BLUE=[(17,65,150,255),(164,242,255,255),(10,34,92,255),(222,255,255,255),
       (39,154,235,255),(73,169,245,255),(31,95,187,255),(101,218,255,255)]
 
@@ -204,6 +204,21 @@ def complete():
     unfold=animation('unfurl',3.4,{})
     for side,g in zip([-1,1],wings):unfold['animators'][g['uuid']]=animator(g,[(0,(0,side*65,side*28)),(1,(0,side*35,side*15)),(3.4,(0,0,0))])
     unfold['animators'].update(a.m.idle_tracks)
+    # Empty bone probes verify the blade's real server transform, including
+    # interpolated frames, without adding any rendered geometry.
+    def probe(name,parent,point):
+        g={'name':name,'uuid':ident('susanoo/'+name),'origin':list(point),'rotation':[0,0,0],'export':True};a.m.data['groups'].append(g)
+        def bind(nodes):
+            for node in nodes:
+                if isinstance(node,dict):
+                    if node['uuid']==parent['uuid']:node['children'].append({'uuid':g['uuid'],'children':[]});return True
+                    if bind(node['children']):return True
+            return False
+        assert bind(a.m.data['outliner'])
+    for name,point in [('o',(0,57,0)),('x',(16,57,0)),('y',(0,73,0)),('z',(0,57,16))]:probe('clear_body_'+name,a.m.torso,point)
+    for distance in range(10,61,5):probe('clear_blade_'+str(distance),weapons['blade_-1'],(0,0,-distance))
+    boxes=[e for e in a.m.data['elements']if e['name'].startswith(('breastplate_','temple_','helmet_crown','tengu_face_contour'))]
+    (ROOT/'susanoo-body-boxes.csv').write_text('\n'.join(','.join(str(v)for v in e['from']+e['to'])for e in boxes)+'\n')
     # Keep the final pose alive past scene cleanup; a once clip resetting to bind
     # pose would put independently positioned weapon roots back on the ground.
     slash['length']=8
@@ -236,12 +251,18 @@ def continuous(keys):
                 while rot[i]-out[-1][1][i]<-180:rot[i]+=360
         out.append((t,rot))
     return out
+def blade_rotation(direction):
+    # A fixed roll keeps Euler interpolation from flipping the blade down through
+    # the helmet when an overhead direction crosses the forward/back boundary.
+    x,y,z=normalized(direction)
+    return [math.degrees(math.asin(max(-1,min(1,y)))),math.degrees(math.atan2(-x,-z)),0]
+
 def choreograph(m,slash,arms,weapons):
-    hilt=[(0,(-18,59,-7)),(.45,(-18,59,-7)),(.8,(-7,68,-23)),(1.15,(26,72,-32)),(1.3,(26,72,-32)),(1.5,(43,65,-8)),(1.8,(30,60,-10)),(2.05,(34,78,-18)),(2.3,(18,97,-18)),(2.7,(10,112,-12)),(3.3,(10,112,-12)),(3.5,(-6,58,-20)),(4.2,(-6,58,-20)),(5.2,(24,44,-2))]
-    axis=[(0,(0,-.24,.97)),(.45,(0,-.24,.97)),(.8,(-.8,0,.6)),(1.3,(-.8,0,.6)),(1.5,(.98,-.04,-.2)),(1.8,(.85,-.12,-.5)),(2.3,(.05,.5,.87)),(2.7,(.15,.8,.58)),(3.3,(.15,.8,.58)),(3.5,(-.55,-.45,-.70)),(4.2,(-.55,-.45,-.70)),(5.2,(0,-.2,-.98))]
+    hilt=[(0,(-18,59,-7)),(.45,(-18,59,-7)),(.8,(-7,68,-27)),(1.15,(26,72,-32)),(1.3,(26,72,-32)),(1.5,(43,65,-8)),(1.8,(30,60,-10)),(2.05,(34,78,-18)),(2.3,(18,97,-18)),(2.7,(10,112,-12)),(3.3,(10,112,-12)),(3.4,(10,112,-12)),(3.5,(-6,58,-20)),(4.2,(-6,58,-20)),(5.2,(24,44,-2))]
+    axis=[(0,(0,-.24,.97)),(.45,(0,-.24,.97)),(.8,(-.8,0,.6)),(1.3,(-.9,0,-.4)),(1.5,(.98,-.04,-.2)),(1.8,(.85,-.12,-.5)),(2.3,(.05,.5,.87)),(2.7,(.15,.8,.58)),(3.3,(.15,.8,.58)),(3.4,(0,0,-1)),(3.5,(-.55,-.45,-.70)),(4.2,(-.55,-.45,-.70)),(5.2,(0,-.2,-.98))]
     torso=[(0,(0,-12,0)),(.8,(0,-22,-4)),(1.15,(-4,-38,-6)),(1.3,(-4,-38,-6)),(1.5,(12,40,8)),(1.8,(8,35,5)),(2.25,(-6,10,0)),(2.7,(-14,-20,-6)),(3.3,(-18,-28,-6)),(3.5,(22,30,12)),(4.2,(14,22,8)),(5.2,(0,0,0))]
     torso=[(t,(x*(.15 if 2.25<=t<=4.2 else .3),y*(.25 if 2.25<=t<=4.2 else .4),z*.2)) for t,(x,y,z) in torso]
-    sheath=[(0,(-18,59,-7)),(.45,(-18,59,-7)),(.8,(-7,68,-23)),(1.15,(-31,67,9)),(1.8,(-31,67,9)),(2.3,(-18,59,-7)),(5.2,(-18,59,-7))]
+    sheath=[(0,(-18,59,-7)),(.45,(-18,59,-7)),(.8,(-7,68,-27)),(1.15,(-31,67,9)),(1.8,(-31,67,9)),(2.3,(-18,59,-7)),(5.2,(-18,59,-7))]
     sheath_axis=[(0,(0,-.24,.97)),(.45,(0,-.24,.97)),(.8,(-.8,0,.6)),(1.8,(-.8,0,.6)),(2.3,(0,-.24,.97)),(5.2,(0,-.24,.97))]
     tracks={}
     def track(g,ch,keys):
@@ -252,7 +273,7 @@ def choreograph(m,slash,arms,weapons):
         ur=[];fr=[]
         for tick in range(105):
             t=tick/20;h=interp(hilt,t);d=normalized(interp(axis,t));sh=interp(sheath,t);sd=normalized(interp(sheath_axis,t))
-            if side==1:hand=interp([(0,(28,38,-3)),(.45,(-8,64,-23)),(.8,(-7,68,-23))],t) if t<.8 else h
+            if side==1:hand=interp([(0,(28,38,-3)),(.45,(-8,64,-23)),(.8,(-7,68,-27))],t) if t<.8 else h
             else:hand=interp([(0,(-28,38,-3)),(.45,(-18,59,-7)),(.8,tuple(sh[i]+sd[i]*14 for i in range(3)))],t) if t<.8 else [sh[i]+sd[i]*14 for i in range(3)]
             shoulder=[side*24,81,0];delta=[hand[i]-shoulder[i] for i in range(3)];dist=math.sqrt(sum(v*v for v in delta));assert 4.999<dist<45.01,(side,t,dist)
             aim=normalized(delta);along=(20*20-25*25+dist*dist)/(2*dist);height=math.sqrt(max(0,400-along*along));ref=[side*.25,-.2,-1];dot=sum(ref[i]*aim[i] for i in range(3));bend=normalized([ref[i]-dot*aim[i] for i in range(3)])
@@ -266,7 +287,7 @@ def choreograph(m,slash,arms,weapons):
             t=tick/20
             if name.endswith('_1'):p=[18,59,-7];d=[0,-.24,.97]
             else:p=interp(sheath if name.startswith('sheath') else hilt,t);d=interp(sheath_axis if name.startswith('sheath') else axis,t)
-            positions.append((t,p));rotations.append((t,euler(direction_rotation(d))))
+            positions.append((t,p));rotations.append((t,blade_rotation(d)))
         track(g,'position',positions);track(g,'rotation',rotations)
     track(m.torso,'rotation',torso)
     slash['animators']=tracks
