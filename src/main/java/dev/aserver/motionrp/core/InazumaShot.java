@@ -2,7 +2,7 @@ package dev.aserver.motionrp.core;
 
 /** Piecewise shot timing: Sword doubles its approach; Blizzard removes its intro and accelerates pre-turn action. */
 public enum InazumaShot {
- DEATH_SWORD("death_sword",.8,6.166667,SwordShotTimeline.SHOT,SwordShotTimeline.IMPACT,0),
+ DEATH_SWORD("death_sword",.8,6.166667,SwordShotTimeline.SHOT,SwordShotTimeline.IMPACT,.5),
  ETERNAL_BLIZZARD("eternal_blizzard",1.6,13.917,BlizzardTimeline.KICK,BlizzardTimeline.IMPACT,3.0,1.0),
  DEATH_SPEAR("death_spear",0,5.5,86,120,9.4);
  public final String id;public final double sourceStart,sourceEnd,jumpHeight,durationScale;public final int kick,impact,end;
@@ -14,7 +14,7 @@ public enum InazumaShot {
  public int handHoldEnd(){return SwordShotTimeline.at(94);}
  public int auraStart(){return this==DEATH_SWORD?SwordShotTimeline.at(80):this==ETERNAL_BLIZZARD?32:70;}
  public double height(int tick){
-  if(this==DEATH_SWORD)return 0;
+  if(this==DEATH_SWORD)return .5*FootballTimeline.smooth(tick,39,44)*(1-FootballTimeline.smooth(tick,61,71));
   if(this==DEATH_SPEAR)return jumpHeight*FootballTimeline.smooth(tick,26,60)*(1-FootballTimeline.smooth(tick,89,125));
   return ScissorShotTimeline.height(true,tick,jumpHeight);
  }

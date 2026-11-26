@@ -345,12 +345,13 @@ if(process.env.MOTIONRP_INAZUMA_ONLY==='1'){
     const levels=[...text.matchAll(/ball level tick=(\d+) height=([^\r\n]+)/g)];assert.ok(levels.length>=46&&levels.some(m=>+m[1]===84));assert.ok(levels.every(m=>Math.abs(+m[2]-+levels[0][2])<1e-8)&&+levels[0][2]>1,'Ball height stays fixed from the high kick through the hand chop and projectile');
     const highKick=text.match(/strike tick=39 contactGap=([^ ]+) bootHeight=([^\r\n]+)/);assert.ok(highKick&&+highKick[1]<.04&&+highKick[2]>1,'Grounded front kick is restored at waist height');
     const knife=text.match(/knife minimumGap=([^ ]+) release tick=71/);assert.ok(knife&&+knife[1]>.02&&+knife[1]<.2,'Hand edge passes close to the dark ball without touching');
-    assert.ok(pilotY.every(y=>Math.abs(y-origin.y)<.03),'Grounded sword kick never lifts the pilot');
+    assert.ok(Math.max(...pilotY)-origin.y>.45&&Math.max(...pilotY)-origin.y<.55,'Sword rises half a block after the kick');
     const poses=[...text.matchAll(/torso phase=(hold|swing) forward=([^ ]+) up=([^ ]+) supportHeight=([^ ]+) rightHeight=([^ ]+) pilotHeight=([^\r\n]+)/g)];
     assert.equal(poses.length,2);const before=poses.find(m=>m[1]==='hold'),after=poses.find(m=>m[1]==='swing');
     assert.ok(+before[3]>.9&&Math.abs(+before[2])<.05,'No premature forward fold while holding the knife hand');
     assert.ok(+after[2]>.65&&+after[3]<.65,'Forward drive follows the hand chop');
-    assert.ok(poses.every(m=>+m[4]<.12&&+m[5]<.12&&Math.abs(+m[6])<.03),'Both feet stay planted throughout the hand-only finish');
+    assert.ok(Math.abs(+before[6]-.5)<.03&&Math.abs(+after[6])<.03,'Half-block hover ends exactly on the hand release');
+    assert.ok(poses.every(m=>+m[4]<.12&&+m[5]<.12),'Both feet remain aligned with the hovering actor during the hand finish');
     const finish=text.match(/finish lowHand=([^ ]+) raisedHand=([^ ]+) leftFoot=([^ ]+) rightFoot=([^ ]+) stance=([^ ]+) hip=([^ ]+) armReach=([^\r\n]+)/);assert.ok(finish&&+finish[3]<.12&&+finish[4]<.12&&+finish[5]<-.4&&+finish[6]<.6,'Completed chop stays grounded without an extra finishing flourish');
     const hold=text.match(/hand hold drift=([^\r\n]+)/);assert.ok(hold&&+hold[1]<.03,'Hand remains still for several ticks before the chop');
     assert.ok(text.indexOf('strike tick=39')<text.indexOf('displays dark_ball'),'Football changes to blue-black only after the strike');
@@ -451,7 +452,7 @@ if(process.env.MOTIONRP_FOOTBALL_ONLY==='1'){
     const landing=output.slice(begin).match(/Football-fire_tornado landing up=([^ ]+) left=([^ ]+) right=([^ ]+) pilot=([^\r\n]+)/);
     assert.ok(landing&&+landing[1]>.98&&+landing[2]>=-.03&&+landing[2]<.15&&+landing[3]>=-.03&&+landing[3]<.15&&Math.abs(+landing[4])<.03,'Upright body and both soles meet the floor at touchdown');
     pass('Fire Tornado rises eight blocks and wraps the tilted body in ordinary flame particles');
-    pass('The faster Fire Tornado releases during the actual forward kick after four corkscrew turns');
+    pass('The faster Fire Tornado releases during the actual forward kick after seven corkscrew turns');
    }else{
     const birdIds=new Set([...output.slice(begin).matchAll(/Football-emperor_penguin_1 displays red_penguin_\d+ ids=([0-9,]+)/g)].flatMap(m=>m[1].split(',').map(Number)));
     const looks=penguinLooks.filter(p=>birdIds.has(p.entityId));
@@ -1000,6 +1001,31 @@ if(process.env.MOTIONRP_PERFORMANCE_ONLY==='1') {
 }
 
 // Short verification against a fixture created by the full suite; never touches a real server.
+if(process.env.MOTIONRP_SUSANOO_SMOKE==='1'){
+ let code=0;
+ try{
+  fs.copyFileSync(path.join(project,`build/libs/motionRP-${version}.jar`),path.join(run,'plugins/MotionRP.jar'));
+  log=fs.createWriteStream(path.join(project,'build/susanoo-smoke.log'));await startServer();
+  if(output.includes('Updated bundled model'))await waitFor(()=>output.includes('Bundled Rasengan models loaded'),'updated giant assets finish reloading',120000);
+  const timer=setInterval(()=>consoleCommand('motionrp status'),500);
+  try{await waitFor(()=>output.includes('susanoo: 利用可能'),'Susanoo assets loaded',120000);}finally{clearInterval(timer);}
+  const name='Susa'+String(Date.now()).slice(-5),a=await connect(name),b=await connect(name+'B');
+  consoleCommand(`tp ${name} .5 -60 .5 0 0`);consoleCommand(`tp ${name}B 4.5 -60 .5 0 0`);await sleep(500);
+  consoleCommand('motionrp give controller '+name);consoleCommand('motionrp give motion susanoo 1 '+name);
+  await waitFor(()=>tokens(a)===1,'Susanoo item');await a.equip(a.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');await menu(a);await deposit(a);await closeMenu(a);
+  const spawns=new Set(),removed=new Set();b._client.on('spawn_entity',p=>{if(p.type===b.registry.entitiesByName.item_display.id)spawns.add(p.entityId);});b._client.on('entity_destroy',p=>p.entityIds.forEach(id=>removed.add(id)));
+  const origin=a.entity.position.clone(),begin=output.length;a._testLookUp();await sleep(150);a._testLeftClick();
+  await waitFor(()=>output.slice(begin).includes('pilot seated scale=10.0'),'full giant and elevated pilot',20000);assert.ok(a.entity.position.y>origin.y+45);
+  await waitFor(()=>output.slice(begin).includes('blade held tick=232'),'weapon stays elevated through fade',20000);
+  const holds=[...output.slice(begin).matchAll(/blade held tick=(\d+) height=([^\r\n]+)/g)];assert.equal(holds.length,2);assert.ok(holds.every(m=>+m[2]>.1),'The blade root never drops to bind-pose ground height');
+  await waitFor(()=>spawns.size>100&&[...spawns].every(id=>removed.has(id)),'all giant displays removed',20000);assert.ok(a.entity.position.distanceTo(origin)<.03);
+  assert.ok(output.slice(begin).includes('draw-cut ground blast and wind start')&&output.slice(begin).includes('kesa ground blast and wind start'));
+  pass('Susanoo formation, both cuts, elevated blade during fade and complete cleanup');
+ }catch(e){code=1;console.error(e.stack);}
+ finally{for(const b of bots)try{b.quit();}catch{}await stopServer();log?.end();}
+ process.exit(code);
+}
+
 if(process.env.MOTIONRP_NOBLE_ONLY==='1') {
   let code=0;
   try {
@@ -1133,7 +1159,7 @@ m=json.load(open(sys.argv[2]));mesh=next(e for e in m['elements'] if e['name']==
     await waitFor(()=>output.slice(seatBegin).includes('pilot seated scale=10.0'),'final neck seat');assert.ok(a.entity.position.y>seatOrigin.y+50);
     await waitFor(()=>output.slice(seatBegin).includes('Susanoo phase: FADE'),'final neck return',20000);assert.ok(a.entity.position.distanceTo(seatOrigin)<.01);
     await waitFor(()=>['owner','observer'].every(role=>[...spawned[role]].every(id=>removed[role].has(id))),'final full giant cleanup');
-    for(const phrase of ['draw left waist scabbard','blade clears scabbard','draw-cut ground blast and wind start','kesa ground blast and wind start'])assert.ok(output.slice(seatBegin).includes(phrase),phrase);
+    for(const phrase of ['draw left waist scabbard','blade clears scabbard','draw-cut ground blast and wind start','kesa ground blast and wind start','blade held tick=232'])assert.ok(output.slice(seatBegin).includes(phrase),phrase);
     pass('Final complete Susanoo sheath draw, two ground blasts, scale-ten neck seat and grounded return');
     assert.ok(!/Excalibur scene failed|GaeBolg scene failed|Kamehameha scene failed|GenkiDama scene failed|Susanoo scene failed/.test(output));
     fs.writeFileSync(path.join(project,'build/noble-smoke-result.json'),JSON.stringify({passed:checks.length,checks},null,2));

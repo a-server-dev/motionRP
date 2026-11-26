@@ -39,6 +39,7 @@ final class SusanooScene extends SummonScene {
             trace("pilot seated scale="+SCALE+" y="+owner.getY()); }
         if(tick>ARMOR+44 && tick<FADE){var seat=SusanooPilotPath.at(tick);Location target=at(seat.right(),seat.forward(),seat.height());target.setYaw(owner.getYaw());target.setPitch(owner.getPitch());if(!pilot.moveTo(target,origin)){plugin.playback().stop(owner.getUniqueId());return;}}
         if(tick==FADE) {pilot.close();trace("pilot returned before fade tick="+tick);}
+        if(tick==READY+104||tick==END-4){var blade=armor.bone("waist_blade_-1").worldPosition();trace("blade held tick="+tick+" height="+blade.y); }
         if(tick==READY) armor.animate("slash",AnimationModifier.DEFAULT_WITH_PLAY_ONCE);
         if(tick==SLASH || tick==RIGHT_SLASH) {
             slash=model(SummonAssets.SLASH,at(0,20,35),11f,tick==SLASH?"slash_left":"slash_right");

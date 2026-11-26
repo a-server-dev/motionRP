@@ -204,6 +204,13 @@ def complete():
     unfold=animation('unfurl',3.4,{})
     for side,g in zip([-1,1],wings):unfold['animators'][g['uuid']]=animator(g,[(0,(0,side*65,side*28)),(1,(0,side*35,side*15)),(3.4,(0,0,0))])
     unfold['animators'].update(a.m.idle_tracks)
+    # Keep the final pose alive past scene cleanup; a once clip resetting to bind
+    # pose would put independently positioned weapon roots back on the ground.
+    slash['length']=8
+    for entry in slash['animators'].values():
+        for channel in ['position','rotation']:
+            keys=[k for k in entry['keyframes']if k['channel']==channel]
+            if keys:entry['keyframes'].append(dict(max(keys,key=lambda k:k['time']),time=8))
     a.m.data['animations']=[slash,unfold];a.m.save()
 
 def interp(keys,t):
@@ -230,11 +237,11 @@ def continuous(keys):
         out.append((t,rot))
     return out
 def choreograph(m,slash,arms,weapons):
-    hilt=[(0,(-18,59,-7)),(.45,(-18,59,-7)),(.8,(-7,68,-12)),(1.15,(26,72,-32)),(1.3,(26,72,-32)),(1.5,(43,65,-8)),(1.8,(30,60,-10)),(2.05,(34,78,-18)),(2.3,(18,97,12)),(2.7,(10,112,10)),(3.3,(10,112,10)),(3.5,(-6,58,-20)),(4.2,(-6,58,-20)),(5.2,(24,44,-2))]
+    hilt=[(0,(-18,59,-7)),(.45,(-18,59,-7)),(.8,(-7,68,-23)),(1.15,(26,72,-32)),(1.3,(26,72,-32)),(1.5,(43,65,-8)),(1.8,(30,60,-10)),(2.05,(34,78,-18)),(2.3,(18,97,-18)),(2.7,(10,112,-12)),(3.3,(10,112,-12)),(3.5,(-6,58,-20)),(4.2,(-6,58,-20)),(5.2,(24,44,-2))]
     axis=[(0,(0,-.24,.97)),(.45,(0,-.24,.97)),(.8,(-.8,0,.6)),(1.3,(-.8,0,.6)),(1.5,(.98,-.04,-.2)),(1.8,(.85,-.12,-.5)),(2.3,(.05,.5,.87)),(2.7,(.15,.8,.58)),(3.3,(.15,.8,.58)),(3.5,(-.55,-.45,-.70)),(4.2,(-.55,-.45,-.70)),(5.2,(0,-.2,-.98))]
     torso=[(0,(0,-12,0)),(.8,(0,-22,-4)),(1.15,(-4,-38,-6)),(1.3,(-4,-38,-6)),(1.5,(12,40,8)),(1.8,(8,35,5)),(2.25,(-6,10,0)),(2.7,(-14,-20,-6)),(3.3,(-18,-28,-6)),(3.5,(22,30,12)),(4.2,(14,22,8)),(5.2,(0,0,0))]
     torso=[(t,(x*(.15 if 2.25<=t<=4.2 else .3),y*(.25 if 2.25<=t<=4.2 else .4),z*.2)) for t,(x,y,z) in torso]
-    sheath=[(0,(-18,59,-7)),(.45,(-18,59,-7)),(.8,(-7,68,-12)),(1.15,(-31,67,9)),(1.8,(-31,67,9)),(2.3,(-18,59,-7)),(5.2,(-18,59,-7))]
+    sheath=[(0,(-18,59,-7)),(.45,(-18,59,-7)),(.8,(-7,68,-23)),(1.15,(-31,67,9)),(1.8,(-31,67,9)),(2.3,(-18,59,-7)),(5.2,(-18,59,-7))]
     sheath_axis=[(0,(0,-.24,.97)),(.45,(0,-.24,.97)),(.8,(-.8,0,.6)),(1.8,(-.8,0,.6)),(2.3,(0,-.24,.97)),(5.2,(0,-.24,.97))]
     tracks={}
     def track(g,ch,keys):
@@ -245,10 +252,10 @@ def choreograph(m,slash,arms,weapons):
         ur=[];fr=[]
         for tick in range(105):
             t=tick/20;h=interp(hilt,t);d=normalized(interp(axis,t));sh=interp(sheath,t);sd=normalized(interp(sheath_axis,t))
-            if side==1:hand=interp([(0,(26,44,-2)),(.45,(-12,63,-7)),(.8,(-7,68,-12))],t) if t<.8 else h
-            else:hand=interp([(0,(-26,44,-2)),(.45,(-18,59,-7)),(.8,tuple(sh[i]+sd[i]*14 for i in range(3)))],t) if t<.8 else [sh[i]+sd[i]*14 for i in range(3)]
+            if side==1:hand=interp([(0,(28,38,-3)),(.45,(-8,64,-23)),(.8,(-7,68,-23))],t) if t<.8 else h
+            else:hand=interp([(0,(-28,38,-3)),(.45,(-18,59,-7)),(.8,tuple(sh[i]+sd[i]*14 for i in range(3)))],t) if t<.8 else [sh[i]+sd[i]*14 for i in range(3)]
             shoulder=[side*24,81,0];delta=[hand[i]-shoulder[i] for i in range(3)];dist=math.sqrt(sum(v*v for v in delta));assert 4.999<dist<45.01,(side,t,dist)
-            aim=normalized(delta);along=(20*20-25*25+dist*dist)/(2*dist);height=math.sqrt(max(0,400-along*along));ref=[side,0,.45];dot=sum(ref[i]*aim[i] for i in range(3));bend=normalized([ref[i]-dot*aim[i] for i in range(3)])
+            aim=normalized(delta);along=(20*20-25*25+dist*dist)/(2*dist);height=math.sqrt(max(0,400-along*along));ref=[side*.25,-.2,-1];dot=sum(ref[i]*aim[i] for i in range(3));bend=normalized([ref[i]-dot*aim[i] for i in range(3)])
             elbow=[shoulder[i]+aim[i]*along+bend[i]*height for i in range(3)]
             a=direction_rotation([elbow[i]-shoulder[i] for i in range(3)],True);b=direction_rotation([hand[i]-elbow[i] for i in range(3)],True)
             ur.append((t,euler(a)));fr.append((t,euler(mul(transpose(a),b))))

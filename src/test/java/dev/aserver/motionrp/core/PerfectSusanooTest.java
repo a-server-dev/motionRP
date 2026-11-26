@@ -6,12 +6,20 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class PerfectSusanooTest {
-    @Test void swordMotionIsPreservedWhileTorsoMotionIsReducedAndArmorDetailsIncrease()throws Exception{
+    @Test void swordStaysPosedPastFadeWhileTorsoMotionRemainsRestrained()throws Exception{
         JsonObject old,current;
         try(var in=getClass().getResourceAsStream("/bundled-0.20.0/models_motionrp_susanoo_armor.bbmodel.gz");var gzip=new java.util.zip.GZIPInputStream(in)){old=JsonParser.parseString(new String(gzip.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();}
         try(var in=getClass().getResourceAsStream("/bettermodel/models/motionrp_susanoo_armor.bbmodel")){current=JsonParser.parseString(new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();}
         var before=old.getAsJsonArray("animations").get(0).getAsJsonObject().getAsJsonObject("animators");var after=current.getAsJsonArray("animations").get(0).getAsJsonObject().getAsJsonObject("animators");
-        for(var entry:before.entrySet())if(!entry.getValue().getAsJsonObject().get("name").getAsString().equals("battle_torso"))assertEquals(entry.getValue(),after.get(entry.getKey()),"Keep the existing arm, sword and scabbard paths");
+        var clip=current.getAsJsonArray("animations").get(0).getAsJsonObject();
+        assertTrue(clip.get("length").getAsDouble()*20>SusanooTimeline.END-SusanooTimeline.READY,"Weapons must not reset before fade cleanup");
+        for(var raw:after.entrySet()){
+            var entry=raw.getValue().getAsJsonObject();
+            if(entry.get("name").getAsString().startsWith("blade")){
+                var positions=entry.getAsJsonArray("keyframes").asList().stream().map(JsonElement::getAsJsonObject).filter(k->k.get("channel").getAsString().equals("position")).toList();
+                assertEquals(positions.get(positions.size()-2).get("data_points"),positions.get(positions.size()-1).get("data_points"));
+            }
+        }
         var torso=after.entrySet().stream().map(e->e.getValue().getAsJsonObject()).filter(t->t.get("name").getAsString().equals("battle_torso")).findFirst().orElseThrow();
         for(var raw:torso.getAsJsonArray("keyframes")){var key=raw.getAsJsonObject();double t=key.get("time").getAsDouble();if(t>=2.7&&t<=4.2){var v=key.getAsJsonArray("data_points").get(0).getAsJsonObject();assertTrue(Math.abs(v.get("x").getAsDouble())<5&&Math.abs(v.get("y").getAsDouble())<10&&Math.abs(v.get("z").getAsDouble())<3);}}
         assertTrue(current.getAsJsonArray("elements").size()>old.getAsJsonArray("elements").size()+150);

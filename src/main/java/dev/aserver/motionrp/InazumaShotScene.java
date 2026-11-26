@@ -95,7 +95,7 @@ final class InazumaShotScene extends SummonScene {
      Location toe=boot().add(0,.25,0);ballAt=tick<ice(38)?at(.12,.4,.35):toe;
      if(tick==ice(44)){blizzardLiftStart=ballAt.clone();trace("loft tick="+tick+" footGap="+(ballAt.distance(boot())-.25));}
     }else if(tick<=trick(34)){
-     Location center=at(.20,.15,tick<=18?shot.height(tick)+.42:1.27);ballAt=tick<trick(10)?blend(blizzardLiftStart,center,smooth(tick,ice(44),trick(10))):center;
+     Location center=at(0,.15,tick<=18?shot.height(tick)+.42:1.27);ballAt=tick<trick(10)?blend(blizzardLiftStart,center,smooth(tick,ice(44),trick(10))):center;
      if(tick%2==0)particle(ballAt,Particle.SNOWFLAKE,3,.1,.005);
      if(tick==trick(10)||tick==trick(18)){
       var left=body.bone("ice_other_boot").worldPosition();Location lf=owner.getLocation().add(left.x,left.y,left.z);Vector rv=boot().toVector().subtract(ballAt.toVector()),lv=lf.toVector().subtract(ballAt.toVector()),side=at(1,0,0).toVector().subtract(origin.toVector());

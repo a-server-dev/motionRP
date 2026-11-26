@@ -157,7 +157,7 @@ def reference_actors(rig):
      key['time']=retime(key['time']*20)/20
      if entry['name']=='player_root'and key['channel']=='rotation':key['data_points'][0]['y']=0
    # Explicit quarter turns prevent quaternion interpolation taking a shortcut.
-   track('football_spin',[(0,(0,0,0)),(26,(0,0,0))]+[(28+i*1.75,(0,i*90,0))for i in range(17)]+[(108,(0,1440,0))])
+   track('football_spin',[(0,(0,0,0)),(26,(0,0,0))]+[(28+i*1.0,(0,i*90,0))for i in range(29)]+[(108,(0,2520,0))])
    # Keep the face normal aligned with the shot; bank via the root's Z axis.
    track('football_bank',[(0,(0,0,0)),(108,(0,0,0))])
    # BetterModel's player track is evaluated ahead of the scene tick.
@@ -167,6 +167,15 @@ def reference_actors(rig):
     for key in entry['keyframes']:
      if key['time']>0:key['time']+=4/20
    end=112;m['animations'][0]['length']=end/20
+   # Load the jump with the arms close to the sides, then drive them up after takeoff.
+   for bone in ['pra_right_arm','pla_left_arm','prfa_right_forearm','plfa_left_forearm','prl_right_leg','pll_left_leg','prfl_right_foreleg','plfl_left_foreleg']:
+    g=next(g for g in m['groups']if g['name']==bone);e=m['animations'][0]['animators'][g['uuid']];right='right'in bone;sign=1 if right else -1
+    arm='arm'in bone;knee='foreleg'in bone;fore='forearm'in bone
+    if arm:r=[(0,(0,0,sign*5 if not fore else 0)),(18,(-15 if not fore else 20,0,sign*8 if not fore else 0)),(24,(-30 if not fore else 35,0,sign*8 if not fore else 0)),(28,(45 if not fore else 65,0,sign*15 if not fore else 0)),(34,(70 if not fore else 45,0,sign*28 if not fore else 0))]
+    else:r=[(18,(10 if not knee else -20,0,0)),(24,(35 if not knee else -65,0,0)),(28,(-10 if not knee else -10,0,0)),(34,(35 if not knee else -60,0,sign*10 if not knee else 0))]
+    e['keyframes']=[k for k in e['keyframes']if k['channel']!='rotation'or k['time']>34/20]+animator(g,[(t/20,v)for t,v in r])['keyframes']
+   entry=m['animations'][0]['animators'][root['uuid']]
+   entry['keyframes']=[k for k in entry['keyframes']if k['channel']!='position']+animator(root,[(0,(0,0,0)),(18/20,(0,0,0)),(24/20,(0,-1.8,0)),(28/20,(0,0,0)),(end/20,(0,0,0))],'position')['keyframes']
    # Face the body's long axis to the player's right, parallel to the ground.
    # A root yaw changes heading after the horizontal pitch; bank alone only rolls the body.
    def sample(entry,ch,t):

@@ -95,8 +95,7 @@ class RasenganAssetsTest {
         assertEquals(3,counts.size(),"Weapons should have different geometry");
         var armor=read("models/motionrp_susanoo_armor.bbmodel");
         assertEquals("slash",armor.getAsJsonArray("animations").get(0).getAsJsonObject().get("name").getAsString());
-        assertEquals((SusanooTimeline.FADE-SusanooTimeline.READY)/20.0,
-                armor.getAsJsonArray("animations").get(0).getAsJsonObject().get("length").getAsDouble());
+        assertTrue(armor.getAsJsonArray("animations").get(0).getAsJsonObject().get("length").getAsDouble()>(SusanooTimeline.END-SusanooTimeline.READY)/20.0);
         double top=0;
         for(var element:armor.getAsJsonArray("elements")) top=Math.max(top,element.getAsJsonObject().getAsJsonArray("to").get(1).getAsDouble());
         assertTrue(top*2/16>5.5,"Upper-body guardian should tower over the caster");

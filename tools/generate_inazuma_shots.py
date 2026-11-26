@@ -62,6 +62,18 @@ def edited_brush():
    if i:j=backs[i-1][j]
  return result
 
+def blizzard_brush():
+ # Keep the knees outside the pelvis and below the waist; no axial leg spin.
+ result={}
+ upper=5.625/16;lower=math.hypot(4.975,1.8)/16;rest=math.atan2(1.8,4.975)
+ for right in [True,False]:
+  leg='prl_right_leg'if right else'pll_left_leg';knee='prfl_right_foreleg'if right else'plfl_left_foreleg';result[leg]=[];result[knee]=[]
+  for i in range(11):
+   q=i/10;q=q*q*(3-2*q);dx=(.55-.1171875)*(1 if right else -1);df=.22*(1-2*q)*(1 if right else -1);dy=.42-.733125;dist=math.sqrt(dx*dx+df*df+dy*dy)
+   a=math.atan2(math.hypot(dx,df),-dy)+math.acos((upper*upper+dist*dist-lower*lower)/(2*upper*dist));bend=math.acos((dist*dist-upper*upper-lower*lower)/(2*upper*lower))
+   result[leg].append((math.degrees(a),-math.degrees(math.atan2(dx,df)),0));result[knee].append((-math.degrees(bend+rest),0,0))
+ return result
+
 def actor(rig,name,end,kick):
  m=player(rig,name,end/20,{})
  def track(b,keys,channel='rotation'):
@@ -219,12 +231,12 @@ def actor(rig,name,end,kick):
   def smooth(x,a,b):
    q=max(0,min(1,(x-a)/(b-a)));return q*q*(3-2*q)
   # Reuse the confirmed scissor pose sequence, then blend into the existing turn/crouch.
-  brush=edited_brush()
+  brush=blizzard_brush()
   for right in [True,False]:
    leg='prl_right_leg'if right else'pll_left_leg';knee='prfl_right_foreleg'if right else'plfl_left_foreleg'
    thigh_keys=[((8+i)/20,v)for i,v in enumerate(brush[leg])]
    knee_keys=[((8+i)/20,v)for i,v in enumerate(brush[knee])]
-   thigh_keys.extend([(20/20,(30 if right else 70,0,10 if right else -15)),(28/20,(45 if right else 65,0,35 if right else -40)),(38/20,(60,0,55 if right else -55))])
+   thigh_keys.extend([(20/20,(70,-100 if right else 100,0)),(28/20,(45 if right else 65,-40 if right else 40,35 if right else -40)),(38/20,(60,0,55 if right else -55))])
    knee_keys.extend([(20/20,(-75 if right else -100,0,0)),(28/20,(-100 if right else -105,0,0)),(38/20,(-105,0,0))])
    for bone,keys in [(leg,thigh_keys),(knee,knee_keys)]:
     g=next(g for g in m['groups']if g['name']==bone);entry=m['animations'][0]['animators'][g['uuid']]
@@ -247,6 +259,14 @@ def actor(rig,name,end,kick):
    x,y,z=[float(a['data_points'][0][axis])*(1-q)+float(b['data_points'][0][axis])*q for axis in'xyz'];clock=t+2;pilot=.85*smooth(clock,2,12)*(1-smooth(clock,24,39));lift=max(0,.070625-min(r[t][2],l[t][2])-pilot)
    fixed.append((t/20,(x,y+lift*16,z)))
   entry['keyframes']=[k for k in entry['keyframes']if k['channel']!='position'or not 18/20<=k['time']<=38/20]+animator(root,fixed,'position')['keyframes']
+  # Finish the crouch a couple of frames before the landing event so client
+  # interpolation cannot leave the supporting palm hovering at touchdown.
+  for entry in m['animations'][0]['animators'].values():
+   unique={}
+   for k in sorted(entry['keyframes'],key=lambda k:k['time']):
+    if 36/20<=k['time']<=38/20:k['time']=36/20
+    unique[(k['channel'],k['time'])]=k
+   entry['keyframes']=list(unique.values())
 
  save('players/motionrp_'+name+'.bbmodel',m)
  if name=='eternal_blizzard':
