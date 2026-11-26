@@ -434,19 +434,19 @@ if(process.env.MOTIONRP_FOOTBALL_ONLY==='1'){
     assert.equal(footMotion.at(-1).tick,68);
     const legs=[...output.slice(begin).matchAll(/leg exchange tick=(\d+) left=([^ ]+) right=([^\r\n]+)/g)].map(m=>({tick:+m[1],left:+m[2],right:+m[3]}));
     assert.equal(legs.length,2);assert.ok(legs[0].left<legs[0].right-.6,'Rear left boot and forward right boot during hold');assert.ok(legs[1].left>legs[1].right+.6,'Forward left boot and rear right boot after kick');
-    assert.ok(footMotion.slice(0,2).every(p=>Math.abs(p.forward)<.06),'Drawn-back foot pauses before the kick');
-    assert.ok(footMotion.at(-1).forward>.3,'Left boot accelerates into a strong forward kick');
+    assert.ok(footMotion.every(p=>p.forward>-.005)&&footMotion.reduce((sum,p)=>sum+p.forward,0)>.4,'Kick sweeps steadily forward through the strike window');
+    assert.ok(Math.max(...footMotion.map(p=>p.forward))>.2,'Left boot accelerates strongly during the forward stroke');
     const lob=[...output.slice(begin).matchAll(/Football-fire_tornado lob tick=(\d+) height=([^ ]+) contactGap=([^\r\n]+)/g)].map(m=>({tick:+m[1],height:+m[2],gap:+m[3]}));
     assert.equal(lob.find(p=>p.tick===32)?.height,15,'Only the ball rises to fifteen blocks');
     assert.ok(lob.find(p=>p.tick===67)?.gap>.15,'Ball is still falling towards the boot before the kick');
     assert.ok(lob.find(p=>p.tick===68)?.gap<1e-8,'Falling ball meets the live boot exactly at release without snapping');
     assert.ok(output.slice(begin).includes('kick contact at live boot'),'Ball releases at the live animated boot');
-    const bodyAxis=output.slice(begin).match(/Football-fire_tornado kick body axis forward=([^ ]+) up=([^\r\n]+)/);
+    const bodyAxis=output.slice(begin).match(/Football-fire_tornado kick body axis forward=([^ ]+) up=([^ ]+) right=([^\r\n]+)/);
     const bank=output.slice(begin).match(/Football-fire_tornado kick bank side up=([^\r\n]+)/);
-    assert.ok(bank&&Math.abs(+bank[1])<.03,'Native whole-body pose is rolled 90 degrees right from the previous downward-facing side axis');
+    assert.ok(bank&&+bank[1]>.98,'Body side axis stays upright while the whole torso lies to the right');
     assert.ok(bodyAxis,'Native torso orientation measured at release');
-    assert.ok(+bodyAxis[1]>.95,'Head points in the shot direction');
-    assert.ok(+bodyAxis[2]<-.08&&+bodyAxis[2]>-.3,'Head is slightly below the horizontal torso');
+    assert.ok(+bodyAxis[3]>.98&&Math.abs(+bodyAxis[1])<.03,'Head-to-waist axis points to the player right, not the shot direction');
+    assert.ok(Math.abs(+bodyAxis[2])<.03,'Body long axis is parallel to the ground');
     pass('Fire Tornado rises eight blocks and wraps the tilted body in ordinary flame particles');
     pass('The faster Fire Tornado releases during the actual forward kick after four corkscrew turns');
    }else{

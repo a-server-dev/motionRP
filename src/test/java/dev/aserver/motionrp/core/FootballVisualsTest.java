@@ -7,24 +7,27 @@ import static dev.aserver.motionrp.core.FootballFootPath.*;
 class FootballVisualsTest {
  @Test void bootMovesTowardsTheShotAtContactInsteadOfSwingingBackwards(){
   int contact=FootballTimeline.kick(true);
-  for(int t=contact+2;t<=contact+4;t++)assertTrue(FootballFootPath.at(true,t).boot().forward()>FootballFootPath.at(true,t-1).boot().forward(),"Foot must travel forwards through contact tick "+t);
+  for(int t=contact-3;t<=contact+5;t++)assertTrue(FootballFootPath.at(true,t).boot().forward()>FootballFootPath.at(true,t-1).boot().forward(),"Foot must travel forwards through contact tick "+t);
   assertEquals(8,FootballTimeline.height(50,true));assertEquals(8,FootballTimeline.height(contact,true));
   assertEquals(0,FootballTimeline.height(FootballTimeline.land(true),true),1e-9);
  }
- @Test void headPointsTowardsTheShotAndSlightlyDownAtContact(){
+ @Test void headPointsToThePlayersRightParallelToTheGroundAtContact(){
   for(int tick=68;tick<=72;tick++){
    var frame=FootballFootPath.at(true,tick);var axis=unit(sub(frame.upper(),frame.torso()));
-   assertTrue(axis.forward()>.95,"Head must point into the shot, not behind it");
-   assertTrue(axis.height()<-.08&&axis.height()>-.3,"Torso must be nearly horizontal with the head slightly lower");
+   assertTrue(axis.right()>.98,"The longitudinal body axis points right, not toward the camera/shot");assertEquals(0,axis.forward(),1e-6);
+   assertEquals(0,axis.height(),1e-6,"Torso is parallel to the ground");
   }
+ }
+ @Test void old065FireIsRecognizedForUpgrade()throws Exception{
+  String name="players/motionrp_fire_tornado.bbmodel";try(var in=new GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.65.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
  }
  @Test void old047FireIsRecognizedForAutomaticUpgrade()throws Exception{
   String name="players/motionrp_fire_tornado.bbmodel";try(var in=new GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.47.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
  }
- @Test void horizontalKickRollsRightByAQuarterTurnFromThePreviousPose(){
+ @Test void horizontalKickHasAnUprightSideAxisWhileItsLongAxisPointsRight(){
   for(int tick=68;tick<=72;tick++){
    var frame=FootballFootPath.at(true,tick);var side=unit(sub(frame.side(),frame.torso()));
-   assertTrue(side.right()>.98);assertEquals(0,side.height(),1e-6,"A 90-degree right roll puts the former downward side axis horizontally to the right");
+   assertTrue(side.height()>.98);assertEquals(0,side.right(),1e-6);
   }
  }
  @Test void old048FireIsRecognizedForAutomaticUpgrade()throws Exception{
@@ -41,7 +44,7 @@ class FootballVisualsTest {
   String name="players/motionrp_fire_tornado.bbmodel";try(var in=new GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.50.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
  }
  @Test void rearBootPausesBeforeTheFastForwardSwing(){
-  var a=FootballFootPath.at(true,66).boot();var b=FootballFootPath.at(true,68).boot();var impact=FootballFootPath.at(true,72).boot();
+  var a=FootballFootPath.at(true,63).boot();var b=FootballFootPath.at(true,64).boot();var impact=FootballFootPath.at(true,68).boot();
   assertTrue(a.forward()<-.3&&b.forward()<-.3,"Boot must be drawn back before the shot");
   assertTrue(Math.abs(a.forward()-b.forward())<.05,"Hold the drawn-back foot before swinging");
   assertTrue(impact.forward()-b.forward()>.6,"A large forward swing must follow the hold");
@@ -52,7 +55,7 @@ class FootballVisualsTest {
  @Test void legsExchangeFrontAndBackAcrossTheKick()throws Exception{
   try(var in=Objects.requireNonNull(getClass().getResourceAsStream("/bettermodel/fire_tornado-support.csv"))){
    var right=new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8).lines().map(l->Arrays.stream(l.split(",")).mapToDouble(Double::parseDouble).toArray()).toList();
-   for(int t=66;t<=68;t++){assertTrue(right.get(t)[1]>.15);assertTrue(FootballFootPath.at(true,t).boot().forward()<right.get(t)[1]-.8);}
+   for(int t=63;t<=64;t++){assertTrue(right.get(t)[1]>.15);assertTrue(FootballFootPath.at(true,t).boot().forward()<right.get(t)[1]-.8);}
    for(int t=72;t<=74;t++){assertTrue(right.get(t)[1]<-.3);assertTrue(FootballFootPath.at(true,t).boot().forward()>right.get(t)[1]+.6);}
   }
  }

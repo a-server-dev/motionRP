@@ -16,7 +16,7 @@ public final class FootballBallArc {
   Point falling=blend(peak,expectedContact,p*p);
   // Correct the small renderer timing difference only at the end of the fall;
   // the ball must not follow the boot throughout the wind-up.
-  double correction=FootballTimeline.smooth(tick,contact-4,contact);
+  double correction=FootballTimeline.smooth(tick,contact-2,contact);
   return new Point(falling.right()+(liveContact.right()-expectedContact.right())*correction,
    falling.forward()+(liveContact.forward()-expectedContact.forward())*correction,
    falling.height()+(liveContact.height()-expectedContact.height())*correction);

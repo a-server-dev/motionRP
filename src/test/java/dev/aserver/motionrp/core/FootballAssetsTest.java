@@ -13,7 +13,7 @@ class FootballAssetsTest {
     var g=m.getAsJsonArray("groups").asList().stream().map(JsonElement::getAsJsonObject).filter(b->b.get("name").getAsString().equals(bone)).findFirst().orElseThrow();
     var keys=tracks.getAsJsonObject(g.get("uuid").getAsString()).getAsJsonArray("keyframes");assertTrue(keys.size()>=2);
     if(bone.contains("foreleg"))for(var key:keys)assertTrue(key.getAsJsonObject().getAsJsonArray("data_points").get(0).getAsJsonObject().get("x").getAsDouble()<=0,"Knees must not bend forward");
-    if(bone.contains("_leg"))assertTrue(keys.asList().stream().anyMatch(k->Math.abs(k.getAsJsonObject().get("time").getAsDouble()-(id.contains("_2_")?FootballTimeline.KICK:(FootballTimeline.kick(id.equals("fire_tornado"))+(id.equals("fire_tornado")?4:0)))/20.0)<.001));
+    if(bone.contains("_leg"))assertTrue(keys.asList().stream().anyMatch(k->Math.abs(k.getAsJsonObject().get("time").getAsDouble()-(id.contains("_2_")?FootballTimeline.KICK:(FootballTimeline.kick(id.equals("fire_tornado"))))/20.0)<.001));
    }
   }
  }
@@ -42,9 +42,14 @@ class FootballAssetsTest {
   var tracks=model.getAsJsonArray("animations").get(0).getAsJsonObject().getAsJsonObject("animators");
   for(String name:List.of("pll_left_leg","prl_right_leg")){
    var keys=tracks.getAsJsonObject(groups.get(name).get("uuid").getAsString()).getAsJsonArray("keyframes");
-   var contact=keys.asList().stream().map(JsonElement::getAsJsonObject).filter(k->Math.abs(k.get("time").getAsDouble()-3.6)<1e-6).findFirst().orElseThrow();
-   double pitch=contact.getAsJsonArray("data_points").get(0).getAsJsonObject().get("x").getAsDouble();assertEquals(name.equals("pll_left_leg")?165:-5,pitch);
+   var contact=keys.asList().stream().map(JsonElement::getAsJsonObject).filter(k->Math.abs(k.get("time").getAsDouble()-3.4)<1e-6).findFirst().orElseThrow();
+   double pitch=contact.getAsJsonArray("data_points").get(0).getAsJsonObject().get("x").getAsDouble();assertEquals(name.equals("pll_left_leg")?-60:70,pitch);
   }
+ }
+ @Test void fireRetainsItsOriginalLeadingRestSegment()throws Exception{
+  var m=load("players/motionrp_fire_tornado");var tracks=m.getAsJsonArray("animations").get(0).getAsJsonObject().getAsJsonObject("animators");
+  var root=tracks.entrySet().stream().map(e->e.getValue().getAsJsonObject()).filter(e->e.get("name").getAsString().equals("player_root")).findFirst().orElseThrow();
+  double first=root.getAsJsonArray("keyframes").asList().stream().map(JsonElement::getAsJsonObject).filter(k->k.get("channel").getAsString().equals("rotation")&&k.get("time").getAsDouble()>0).mapToDouble(k->k.get("time").getAsDouble()*20).min().orElseThrow();assertEquals(28.8,first,1e-6);
  }
  private JsonObject node(JsonArray nodes,String id){
   for(var raw:nodes)if(raw.isJsonObject()){var n=raw.getAsJsonObject();if(n.get("uuid").getAsString().equals(id))return n;var child=node(n.getAsJsonArray("children"),id);if(child!=null)return child;}return null;
