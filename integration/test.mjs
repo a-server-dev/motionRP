@@ -366,7 +366,7 @@ if(process.env.MOTIONRP_INAZUMA_ONLY==='1'){
    }
    if(id==='death_spear'){
     const text=output.slice(start);assert.ok(text.includes('spear apex height=10'));assert.ok(text.includes('kick tick=86'));assert.ok(!text.includes('right turn complete')&&!text.includes('land reset'));
-    const pinch=[...text.matchAll(/spear pinch tick=(\d+) rightClearance=([^ ]+) leftClearance=([^ ]+) rightForward=([^ ]+) leftForward=([^ ]+) ballScale=1/g)];assert.ok(pinch.length>=20);assert.ok(pinch.every(m=>+m[2]>.005&&+m[3]>.005),'Neither complete foot/calf mesh enters the undeformed sphere');assert.ok(+pinch[0][4]>+pinch[0][5]&&+pinch.at(-1)[4]<+pinch.at(-1)[5],'Strong opposing scissor stroke, no turn or landing');
+    const pinch=[...text.matchAll(/spear pinch tick=(\d+) rightClearance=([^ ]+) leftClearance=([^ ]+) rightForward=([^ ]+) leftForward=([^ ]+) ballScale=1/g)];assert.ok(pinch.length>=20);assert.ok(pinch.every(m=>+m[2]>.005&&+m[3]>.005),'Neither complete foot/calf mesh enters the undeformed sphere');assert.ok(pinch.every(m=>+m[4]<+m[5]),'Edited front/back scissor stance is preserved');assert.ok(Math.min(...pinch.map(m=>+m[4]))<+pinch[0][4]-.015,'Rear foot brushes backward before release');
    }
    pass(id+' item plays charge, live-foot kick, themed projectile, impact and cleanup; OFF viewers see nothing');
    await menu(a);while(registered(a)>0){const slot=a.currentWindow.slots.findIndex((item,i)=>i<a.currentWindow.inventoryStart&&item?.name==='paper');await click(a,slot);}await closeMenu(a);

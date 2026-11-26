@@ -167,6 +167,17 @@ class InazumaShotTest {
  @Test void spearKeepsItsFullSkinVolumeOutsideTheSphereThroughThePinch()throws Exception{
   try(var in=Objects.requireNonNull(getClass().getResourceAsStream("/bettermodel/death_spear-clearance.csv"))){var d=new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8).lines().map(l->Arrays.stream(l.split(",")).mapToDouble(Double::parseDouble).toArray()).toList();for(int t=58;t<=88;t++)for(double clearance:d.get(t))assertTrue(clearance>.015,"Full oriented calf/foot skin must clear the ball, not merely its locator");}
  }
+ @Test void editedSpearKeepsTheOpposingFrontBackLegPoses()throws Exception{
+  var tracks=load("players/motionrp_death_spear").getAsJsonArray("animations").get(0).getAsJsonObject().getAsJsonObject("animators");
+  for(var e:Map.of("prl_right_leg",-39.8585194204,"pll_left_leg",92.6955805796).entrySet()){
+   var track=tracks.entrySet().stream().map(x->x.getValue().getAsJsonObject()).filter(x->x.get("name").getAsString().equals(e.getKey())).findFirst().orElseThrow();
+   var key=track.getAsJsonArray("keyframes").asList().stream().map(JsonElement::getAsJsonObject).filter(k->Math.abs(k.get("time").getAsDouble()-2.9)<1e-6).findFirst().orElseThrow();
+   assertEquals(e.getValue(),key.getAsJsonArray("data_points").get(0).getAsJsonObject().get("x").getAsDouble(),1e-8);
+  }
+ }
+ @Test void old066SpearIsRecognizedForUpgrade()throws Exception{
+  String name="players/motionrp_death_spear.bbmodel";try(var in=new java.util.zip.GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.66.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
+ }
  @Test void old064ModelsAreRecognizedForUpgrade()throws Exception{
   for(String name:List.of("players/motionrp_fire_tornado.bbmodel","players/motionrp_death_spear.bbmodel"))try(var in=new java.util.zip.GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.64.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
  }

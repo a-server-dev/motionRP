@@ -225,21 +225,20 @@ def spear_actor(rig):
   attach('shot_boot'if right else'ice_other_boot',bone,[sign*1.875,.65,-1.8])
   x=0 if right else -3.75
   for suffix,p in [('o',[x,0,-1.875]),('x',[x+3.75,0,-1.875]),('y',[x,5.625,-1.875]),('z',[x,0,1.875])]:attach(('pinch_r_'if right else'pinch_l_')+suffix,bone,p)
- # Reuse only the two-foot brushing technique, with an aggressive brace and fast opposing stroke.
- for right in [True,False]:
-  leg='prl_right_leg'if right else'pll_left_leg';knee='prfl_right_foreleg'if right else'plfl_left_foreleg'
-  hips=[list(map(float,l.split(',')))for l in hand_path(m,132,leg).splitlines()];upper=5.625/16;lower=math.hypot(4.975,1.8)/16;rest=math.atan2(1.8,4.975);tk=[];kk=[]
-  for t in range(58,89):
-   ready=min(1,(t-58)/6);p=max(0,min(1,(t-78)/6));p=p*p*(3-2*p)
-   side=(.77*(1-ready)+.745*ready)*(1 if right else -1)
-   f=.13+(.10*(1-2*p)if right else -.10*(1-2*p))*ready
-   y=.72*(1-ready)+.60*ready
-   dx=side-hips[t][0];df=f-(hips[t][1]-.05);dy=y-(hips[t][2]-.03);reach=math.sqrt(dx*dx+df*df+dy*dy)
-   assert abs(upper-lower)<reach<upper+lower,(right,t,reach)
-   a=math.atan2(math.hypot(dx,df),-dy)+math.acos((upper*upper+reach*reach-lower*lower)/(2*upper*reach));bend=math.acos((reach*reach-upper*upper-lower*lower)/(2*upper*lower))
-   tk.append((t/20,(math.degrees(a),-math.degrees(math.atan2(dx,df)),0)));kk.append((t/20,(-math.degrees(bend+rest),0,0)))
-  for bone,keys in [(leg,tk),(knee,kk)]:
-   g=next(g for g in m['groups']if g['name']==bone);entry=m['animations'][0]['animators'][g['uuid']];entry['keyframes']=[k for k in entry['keyframes']if not 58/20<=k['time']<=88/20]+animator(g,keys)['keyframes']
+ # Preserve the contributor's front/back scissor poses as the source of truth.
+ authored=json.loads((Path(__file__).parent/'authored/motionrp_death_spear.bbmodel').read_text())
+ for bone in ['prl_right_leg','prfl_right_foreleg','pll_left_leg','plfl_left_foreleg']:
+  g=next(g for g in m['groups']if g['name']==bone)
+  source=next(v for v in authored['animations'][0]['animators'].values()if v['name']==bone)
+  keys=sorted(source['keyframes'],key=lambda k:k['time'])
+  values=[]
+  for k in keys:
+   t=k['time'];v=tuple(float(k['data_points'][0][a])for a in 'xyz')
+   # Give the large scissor reversal and recovery enough frames to connect.
+   if abs(t-2.6)<1e-6:t=2.4
+   if abs(t-4.7)<1e-6:t=5.0
+   values.append((t,v))
+  m['animations'][0]['animators'][g['uuid']]=animator(g,values)
  save('players/motionrp_death_spear.bbmodel',m)
  for suffix,bone in [('boot','shot_boot'),('other','ice_other_boot')]: (ROOT/('death_spear-'+suffix+'.csv')).write_text(hand_path(m,132,bone))
  # Exact sphere-to-transformed-calf-box clearance, including the foot/skin volume.
@@ -251,10 +250,10 @@ def spear_actor(rig):
  for t in range(132):
   ds=[]
   for side in ['r','l']:
-   o=points['pinch_'+side+'_o'][t];nearest=o[:];d=sub([0,.18,.63],o)
+   o=points['pinch_'+side+'_o'][t];nearest=o[:];d=sub([.20,.20,.45],o)
    for axis in ['x','y','z']:
     v=sub(points['pinch_'+side+'_'+axis][t],o);length=norm(v);u=[n/length for n in v];q=max(0,min(length,dot(d,u)));nearest=[a+q*b for a,b in zip(nearest,u)]
-   ds.append(norm(sub(nearest,[0,.18,.63]))-5.25/16)
+   ds.append(norm(sub(nearest,[.20,.20,.45]))-5.25/16)
   clearance.append(','.join(f'{d:.8f}'for d in ds))
  (ROOT/'death_spear-clearance.csv').write_text('\n'.join(clearance)+'\n')
 

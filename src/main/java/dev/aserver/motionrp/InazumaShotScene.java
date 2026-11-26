@@ -79,6 +79,8 @@ final class InazumaShotScene extends SummonScene {
    }else if(shot==InazumaShot.DEATH_SPEAR){
     if(tick<=10)ballAt=swordBallRest.clone();
     else ballAt=blend(swordBallRest,at(0,.13,10),1-Math.pow(1-progress(tick,10,38),2));
+    // Follow the edited front/back scissor gap while the player reaches the apex.
+    if(tick>38)ballAt=blend(at(0,.13,10),at(.20,.15,9.82),smooth(tick,38,60));
     if(tick==10)trace("spear loft contactGap="+ballAt.distance(contact()));
     if(tick==38)trace("spear apex height="+(ballAt.getY()-origin.getY()));
     if(tick==78){sound(ballAt,Sound.ENTITY_PLAYER_ATTACK_STRONG,1.4f,.6f);particle(boot(),Particle.CRIT,8,.08,.02);}
