@@ -375,14 +375,53 @@ if(process.env.MOTIONRP_INAZUMA_ONLY==='1'){
   // The new total exceeds one 27-slot item: give all must preserve every entry.
   consoleCommand('clear '+names[0]);await sleep(300);consoleCommand('motionrp give all '+names[0]);await waitFor(()=>a.inventory.items().filter(i=>i.name==='carrot_on_a_stick').length===2,'two full-set pages');
   const sets=a.inventory.items().filter(i=>i.name==='carrot_on_a_stick');let total=0;
-  for(const item of sets){await a.equip(item,'hand');await menu(a);total+=registered(a);await closeMenu(a);}
-  assert.equal(total,28);pass('give all distributes all 28 motions across two independently editable controller items');
+  for(const item of sets){if(item.slot>=36&&item.slot<45){a.setQuickBarSlot(item.slot-36);await sleep(300);}else await a.equip(item,'hand');await menu(a);total+=registered(a);await closeMenu(a);}
+  assert.equal(total,30);pass('give all distributes all 30 motions across two independently editable controller items');
   // Cancel while airborne and verify no later projectile or stale pilot journal.
   consoleCommand('clear '+names[0]);await sleep(250);consoleCommand('motionrp give controller '+names[0]);consoleCommand('motionrp give motion eternal_blizzard 1 '+names[0]);await waitFor(()=>tokens(a)===1,'cancel shot item');await a.equip(a.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');await menu(a);await deposit(a);await closeMenu(a);
   spawns.forEach(s=>s.clear());removed.forEach(s=>s.clear());const cancel=output.length,origin=a.entity.position.clone();a._testLeftClick();await waitFor(()=>a.entity.position.y>origin.y+1,'airborne before cancel');a._testLeftClick();await waitFor(cleanup,'cancel removes all effects');await waitFor(()=>a.entity.position.distanceTo(origin)<.03,'cancel restores pilot');await sleep(4000);assert.ok(!output.slice(cancel).includes(' kick tick='));
   pass('cancelling the spinning ice shot restores the player and suppresses the later kick');
  }catch(e){code=1;console.error(e.stack);}
  finally{for(const bot of bots)try{bot.quit();}catch{}try{await stopServer();}catch{}log?.end();fs.writeFileSync(path.join(project,'build/inazuma-smoke-result.json'),JSON.stringify({passed:code===0,version,checks},null,2));}
+ process.exit(code);
+}
+
+if(process.env.MOTIONRP_PISTOL_BALSE_ONLY==='1'){
+ let code=0;
+ try{
+  fs.copyFileSync(path.join(project,`build/libs/motionRP-${version}.jar`),path.join(run,'plugins/MotionRP.jar'));
+  log=fs.createWriteStream(path.join(project,'build/pistol-balse-smoke.log'));await startServer();
+  if(output.includes('Updated bundled model'))await waitFor(()=>output.includes('Bundled Rasengan models loaded'),'new asset reload completes',120000);
+  const start=output.length,timer=setInterval(()=>consoleCommand('motionrp status'),500);
+  try{await waitFor(()=>['gigant_pistol','balse','susanoo'].every(id=>output.slice(start).includes(id+': 利用可能')),'new motions loaded',90000);}finally{clearInterval(timer);}
+  for(const file of ['players/motionrp_gigant_pistol.bbmodel','players/motionrp_balse_left.bbmodel','players/motionrp_balse_right.bbmodel','models/motionrp_gigant_fist.bbmodel','models/motionrp_balse_light.bbmodel','models/motionrp_susanoo_armor.bbmodel'])assert.deepEqual(fs.readFileSync(path.join(run,'plugins/BetterModel',file)),fs.readFileSync(path.join(project,'src/main/resources/bettermodel',file)));
+  pass('New actors, fist, crystal/light and detailed Susanoo blade load in BetterModel');
+  const n=String(Date.now()).slice(-5),an='NewA'+n,bn='NewB'+n,cn='NewC'+n;
+  const a=await connect(an),b=await connect(bn),c=await connect(cn);
+  consoleCommand('fill -4 -60 -4 9 -54 6 air');consoleCommand('fill -4 -61 -4 9 -61 6 grass_block');
+  for(const [name,x]of [[an,.5],[bn,2.5],[cn,6.5]])consoleCommand(`tp ${name} ${x} -60 .5 0 0`);
+  c.chat('/motionrp view off');await sleep(500);
+  const spawned=[new Set(),new Set(),new Set()],removed=[new Set(),new Set(),new Set()],fx=[0,0,0];
+  for(const[i,bot]of[a,b,c].entries()){
+   bot._client.on('spawn_entity',p=>{if(p.type===bot.registry.entitiesByName.item_display.id)spawned[i].add(p.entityId);});
+   bot._client.on('entity_destroy',p=>p.entityIds.forEach(id=>removed[i].add(id)));
+   bot._client.on('world_particles',()=>fx[i]++);
+  }
+  const clean=()=>spawned.every((ids,i)=>[...ids].every(id=>removed[i].has(id)));
+  const reset=()=>{spawned.forEach(s=>s.clear());removed.forEach(s=>s.clear());fx.fill(0);};
+  consoleCommand('motionrp give controller '+an);consoleCommand('motionrp give motion gigant_pistol 1 '+an);await waitFor(()=>tokens(a)===1,'pistol item');
+  await a.equip(a.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');await menu(a);await deposit(a);await closeMenu(a);
+  let begin=output.length;a._testLeftClick();await waitFor(()=>output.slice(begin).includes('GigantPistol giant fist impact'),'punch impact',15000);await waitFor(clean,'punch cleanup',12000);
+  assert.ok(fx[0]>10&&fx[1]>10&&fx[2]===0);assert.ok(spawned[0].size>1&&spawned[1].size>1&&spawned[2].size===0);pass('Inflation, windup and giant punch play with visibility filtering and complete cleanup');
+  reset();begin=output.length;a.chat('/motionrp balse');await waitFor(()=>b._testMessages.some(m=>m.includes('balse accept '+an)),'nearest Balse invitation');assert.equal(spawned[0].size,0);
+  b.chat('/motionrp accept');await waitFor(()=>output.slice(begin).includes('Balse shared flash released'),'shared flash',15000);
+  assert.equal(output.slice(begin).split('Balse shared flash released').length-1,1);await waitFor(clean,'paired flash cleanup',15000);
+  assert.ok(fx[0]>100&&fx[1]>100&&fx[2]===0);assert.equal(spawned[2].size,0);pass('Balse requires consent, emits one shared expanding light and many particles, then cleans both roles');
+  reset();begin=output.length;a.chat('/motionrp balse');await sleep(500);b.chat('/motionrp accept');await waitFor(()=>output.slice(begin).includes('Balse phase: HANDS'),'pair restarted');b.chat('/motionrp balse cancel');await waitFor(clean,'cancel pair cleanup');await sleep(4000);assert.ok(!output.slice(begin).includes('shared flash released'));pass('Either participant can cancel Balse before release without a delayed flash');
+  consoleCommand('clear '+an);await sleep(300);consoleCommand('motionrp give all '+an);await waitFor(()=>a.inventory.items().filter(i=>i.name==='carrot_on_a_stick').length===2,'two full-set items');let total=0;for(const item of a.inventory.items().filter(i=>i.name==='carrot_on_a_stick')){if(item.slot>=36&&item.slot<45){a.setQuickBarSlot(item.slot-36);await sleep(300);}else await a.equip(item,'hand');await menu(a);total+=registered(a);await closeMenu(a);}assert.equal(total,30);pass('give all includes the new solo and pair entries across both set items');
+  assert.ok(!/Balse scene failed|GigantPistol scene failed|Motion playback failed/.test(output));
+ }catch(e){code=1;console.error(e.stack);}
+ finally{for(const bot of bots)try{bot.quit();}catch{}try{await stopServer();}catch{}log?.end();fs.writeFileSync(path.join(project,'build/pistol-balse-smoke-result.json'),JSON.stringify({passed:code===0,version,checks},null,2));}
  process.exit(code);
 }
 
@@ -451,7 +490,7 @@ if(process.env.MOTIONRP_FOOTBALL_ONLY==='1'){
     assert.ok(+bodyAxis[3]>.98&&Math.abs(+bodyAxis[1])<.03,'Head points screen-right in a frontal view');
     assert.ok(Math.abs(+bodyAxis[2])<.03,'Body long axis is parallel to the ground');
     const recovery=[...output.slice(begin).matchAll(/recovery tick=(\d+) leftHeight=([^ ]+) rightHeight=([^\r\n]+)/g)];
-    assert.ok(recovery.length>=10&&+recovery.at(-1)[1]-+recovery[0][1]>=18,'Foot lowering must be a visible stage rather than a six-tick pose reset');
+    assert.ok(recovery.length>=10&&+recovery[0][1]<=84&&+recovery.at(-1)[1]-+recovery[0][1]>=18,'Foot lowering must be a visible stage rather than a six-tick pose reset');
     assert.ok(recovery.every(m=>+m[2]>=-.01&&+m[3]>=-.01)&&+recovery[0][2]>+recovery.at(-1)[2]+1,'Both feet descend without going through the floor');
     const landing=output.slice(begin).match(/Football-fire_tornado landing up=([^ ]+) left=([^ ]+) right=([^ ]+) pilot=([^\r\n]+)/);
     assert.ok(landing&&+landing[1]>.98&&+landing[2]>=-.03&&+landing[2]<.15&&+landing[3]>=-.03&&+landing[3]<.15&&Math.abs(+landing[4])<.03,'Upright body and both soles meet the floor at touchdown');

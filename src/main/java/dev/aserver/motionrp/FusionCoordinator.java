@@ -14,21 +14,22 @@ final class FusionCoordinator implements AutoCloseable {
  private record Run(Player left,Player right,AerialAnchor leftAnchor,AerialAnchor rightAnchor,Location center,boolean battle,BrolyState broly,boolean penguin){}
  private final MotionPlugin plugin;private final PairSessions sessions=new PairSessions();private final Map<UUID,Run> runs=new HashMap<>();private final Set<UUID> starting=new HashSet<>();
  FusionCoordinator(MotionPlugin plugin){this.plugin=plugin;}
- private MotionCatalog.Definition definition(boolean left,String kind){if(kind.equals("emperor_penguin_2")){String id="emperor_penguin_2_"+(left?"left":"right");return new MotionCatalog.Definition(id,"皇帝ペンギン2号","motionrp_"+id,id,dev.aserver.motionrp.core.FootballTimeline.END+10,null,id);}boolean battle=kind.equals("finalbattle"),broly=kind.equals("broly");String id=broly?(left?"broly_attacker":"broly_victim"):battle?(left?"final_battle_naruto":"final_battle_sasuke"):(left?"fusion_left":"fusion_right");return new MotionCatalog.Definition(id,broly?"岩盤":battle?"ナルト VS サスケ 最終決戦":"フュージョン", "motionrp_"+id,id,(broly?dev.aserver.motionrp.core.BrolyTimeline.END:battle?dev.aserver.motionrp.core.FinalBattleTimeline.END:END)+10,null,id);}
+ private MotionCatalog.Definition definition(boolean left,String kind){if(kind.equals("balse")){String id="balse_"+(left?"left":"right");return new MotionCatalog.Definition(id,"バルス","motionrp_"+id,id,150,null,id);}if(kind.equals("emperor_penguin_2")){String id="emperor_penguin_2_"+(left?"left":"right");return new MotionCatalog.Definition(id,"皇帝ペンギン2号","motionrp_"+id,id,dev.aserver.motionrp.core.FootballTimeline.END+10,null,id);}boolean battle=kind.equals("finalbattle"),broly=kind.equals("broly");String id=broly?(left?"broly_attacker":"broly_victim"):battle?(left?"final_battle_naruto":"final_battle_sasuke"):(left?"fusion_left":"fusion_right");return new MotionCatalog.Definition(id,broly?"岩盤":battle?"ナルト VS サスケ 最終決戦":"フュージョン", "motionrp_"+id,id,(broly?dev.aserver.motionrp.core.BrolyTimeline.END:battle?dev.aserver.motionrp.core.FinalBattleTimeline.END:END)+10,null,id);}
  boolean command(Player player,String[] args){return command(player,args,"fusion");}
  boolean finalBattle(Player player,String[] args){return command(player,args,"finalbattle");}
  boolean penguin(Player player,String[] args){plugin.tell(player,"皇帝ペンギン2号は三人用対応まで休止中です。");return true;}
+ boolean balse(Player player,String[] args){return command(player,args,"balse");}
  boolean broly(Player player,String[] args){return command(player,args,"broly");}
  String unavailable(String kind){for(boolean left:new boolean[]{true,false}){String error=plugin.playback().unavailable(definition(left,kind));if(error!=null)return error;}return null;}
  boolean inviteNearest(Player player,String kind){
-  if(!Set.of("fusion","broly").contains(kind)){plugin.tell(player,"この二人用モーションは現在利用できません。");return true;}
+  if(!Set.of("fusion","broly","balse").contains(kind)){plugin.tell(player,"この二人用モーションは現在利用できません。");return true;}
   var nearest=Bukkit.getOnlinePlayers().stream().filter(p->p!=player&&p.isOnline()&&!p.isDead()&&p.getWorld()==player.getWorld()&&player.canSee(p)&&p.canSee(player)&&p.getLocation().distanceSquared(player.getLocation())<=64).min(Comparator.comparingDouble((Player p)->p.getLocation().distanceSquared(player.getLocation())).thenComparing(p->p.getUniqueId().toString()));
   if(nearest.isEmpty()){plugin.tell(player,"8ブロック以内に招待できるプレイヤーがいません。");return true;}return command(player,new String[]{kind,nearest.get().getName()},kind);
  }
  boolean acceptCurrent(Player player,String invitationId){
   var incoming=sessions.incoming(player.getUniqueId(),System.currentTimeMillis());
   if(incoming.isEmpty()||(invitationId!=null&&!incoming.get().id().toString().equalsIgnoreCase(invitationId))){plugin.tell(player,"その招待は期限切れ、または既に無効です。");return true;}
-  var invite=incoming.get();if(!Set.of("fusion","broly").contains(invite.kind())){plugin.tell(player,"この二人用モーションは現在利用できません。");return true;}
+  var invite=incoming.get();if(!Set.of("fusion","broly","balse").contains(invite.kind())){plugin.tell(player,"この二人用モーションは現在利用できません。");return true;}
   var other=Bukkit.getPlayer(invite.from());if(other==null){sessions.cancel(player.getUniqueId());plugin.tell(player,"招待者がオフラインです。");return true;}
   return command(player,new String[]{invite.kind(),"accept",other.getName()},invite.kind());
  }
@@ -38,7 +39,7 @@ final class FusionCoordinator implements AutoCloseable {
  }
  private boolean command(Player player,String[] args,String command){
   if(command.equals("emperor_penguin_2")){plugin.tell(player,"皇帝ペンギン2号は三人用対応まで休止中です。");return true;}
-  boolean battle=command.equals("finalbattle"),broly=command.equals("broly");String title=command.equals("emperor_penguin_2")?"皇帝ペンギン2号":broly?"岩盤":battle?"最終決戦":"フュージョン";
+  boolean battle=command.equals("finalbattle"),broly=command.equals("broly");String title=command.equals("balse")?"バルス":command.equals("emperor_penguin_2")?"皇帝ペンギン2号":broly?"岩盤":battle?"最終決戦":"フュージョン";
   if(!player.hasPermission("motionrp.use")){plugin.tell(player,"権限がありません。");return true;}
   if(args.length==1&&!battle)return inviteNearest(player,command);
   if(args.length==2&&args[1].equalsIgnoreCase("accept")&&!battle){var invite=sessions.incoming(player.getUniqueId(),System.currentTimeMillis());if(invite.isEmpty()||!invite.get().kind().equals(command)){plugin.tell(player,"この演出の有効な招待がありません。");return true;}return acceptCurrent(player,null);}
@@ -65,7 +66,7 @@ final class FusionCoordinator implements AutoCloseable {
  private void start(Player left,Player right,String kind){
   boolean battle=kind.equals("finalbattle"),broly=kind.equals("broly");
   left.closeInventory();right.closeInventory();
-  Location center=left.getLocation().clone();center.setPitch(0);Location lp=kind.equals("emperor_penguin_2")?offset(center,-dev.aserver.motionrp.core.FootballTimeline.PAIR_SPACING):broly?center.clone():battle?battlePosition(center,true,0,58):offset(center,-HALF_SPACING),rp=kind.equals("emperor_penguin_2")?offset(center,dev.aserver.motionrp.core.FootballTimeline.PAIR_SPACING):broly?right.getLocation().clone():battle?battlePosition(center,false,0,58):offset(center,HALF_SPACING);
+  Location center=left.getLocation().clone();center.setPitch(0);Location lp=kind.equals("emperor_penguin_2")?offset(center,-dev.aserver.motionrp.core.FootballTimeline.PAIR_SPACING):broly?center.clone():battle?battlePosition(center,true,0,58):offset(center,kind.equals("balse")?-.55:-HALF_SPACING),rp=kind.equals("emperor_penguin_2")?offset(center,dev.aserver.motionrp.core.FootballTimeline.PAIR_SPACING):broly?right.getLocation().clone():battle?battlePosition(center,false,0,58):offset(center,kind.equals("balse")?.55:HALF_SPACING);
   var la=new AerialAnchor(plugin,left);var ra=new AerialAnchor(plugin,right);
   starting.add(left.getUniqueId());starting.add(right.getUniqueId());
   try{

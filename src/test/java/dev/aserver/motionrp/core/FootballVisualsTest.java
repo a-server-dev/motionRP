@@ -23,13 +23,13 @@ class FootballVisualsTest {
   assertTrue(lifted.height()>rest.height()+.6&&lifted.forward()>.6,"Actually raise the left foot instead of only tilting the head");
  }
  @Test void followThroughHoldsTheSidewaysPoseAndTurnsClockwiseFromAbove(){
-  for(int t=70;t<=90;t++){var f=FootballFootPath.at(true,t);var axis=unit(sub(f.upper(),f.torso()));assertEquals(0,axis.height(),1e-6,"Do not straighten the body before the turn completes");}
-  var f=FootballFootPath.at(true,80);var axis=unit(sub(f.upper(),f.torso()));assertTrue(axis.forward()<-.98,"Top-view clockwise turn has the opposite yaw sign from the old counterclockwise turn");
+  for(int t=70;t<=74;t++){var f=FootballFootPath.at(true,t);var axis=unit(sub(f.upper(),f.torso()));assertEquals(0,axis.height(),1e-6,"Do not straighten the body before the turn completes");}
+  var f=FootballFootPath.at(true,80);var axis=unit(sub(f.upper(),f.torso()));assertTrue(axis.forward()<-.5,"Top-view clockwise turn has the opposite yaw sign from the old counterclockwise turn");
  }
  @Test void recoveryLowersTheFeetOverASeparateLandingStage(){
-  double previous=FootballFootPath.at(true,90).boot().height();
-  for(int t=91;t<=108;t++){double h=FootballFootPath.at(true,t).boot().height();assertTrue(h<=previous+.001,"The kicking foot must move down smoothly after the turn");previous=h;}
-  assertTrue(FootballFootPath.at(true,90).boot().height()-previous>1);
+  double previous=FootballFootPath.at(true,74).boot().height();
+  for(int t=75;t<=98;t++){double h=FootballFootPath.at(true,t).boot().height();assertTrue(h<=previous+.001,"The kicking foot must move down smoothly after the turn");previous=h;}
+  assertTrue(FootballFootPath.at(true,74).boot().height()-previous>1);
   assertEquals(112,FootballTimeline.land(true));assertEquals(128,FootballTimeline.end(true));
  }
  @Test void old072FireIsRecognizedForUpgrade()throws Exception{

@@ -192,13 +192,13 @@ def reference_actors(rig):
    # Keep the original leading rest keys: their timing controls BetterModel's player-animation lead.
    entry['keyframes']=[k for k in entry['keyframes']if k['channel']!='rotation'or k['time']<42/20]+animator(root,[(t,v)for t,v in keys if t>=42/20])['keyframes']
    # Keep the sideways kicking orientation until the clockwise (top-view) turn
-   # is complete. Only then bring the feet underneath the body for landing.
+   # continues. Begin drawing the feet under the body midway through flight.
    entry=m['animations'][0]['animators'][root['uuid']]
    def clockwise(t):
     q=max(0,min(1,(t-70)/20));return q*q*(3-2*q)
    entry['keyframes']=[k for k in entry['keyframes']if k['channel']!='rotation'or k['time']<69/20]+animator(root,[(t/20,(0,-180*clockwise(t),0))for t in range(69,end+1)])['keyframes']
    e=m['animations'][0]['animators'][bank['uuid']]
-   e['keyframes']=animator(bank,[(0,(0,0,0)),(68/20,(0,0,0)),(69/20,(0,0,-90))]+[(t/20,(0,0,-90*(1-(lambda q:q*q*(3-2*q))((t-90)/18))))for t in range(90,109)]+[(end/20,(0,0,0))])['keyframes']
+   e['keyframes']=animator(bank,[(0,(0,0,0)),(68/20,(0,0,0)),(69/20,(0,0,-90))]+[(t/20,(0,0,-90*(1-(lambda q:q*q*(3-2*q))((t-74)/24))))for t in range(74,99)]+[(end/20,(0,0,0))])['keyframes']
 
    # Counterbalance the sideways torso: left boot strikes forward, right boot extends back.
    for b,contact,follow in [('pll_left_leg',-60,60),('prl_right_leg',120,-60)]:
@@ -221,14 +221,14 @@ def reference_actors(rig):
     landing=[(69/20,kicked),(70/20,kicked)]
     leg=bone in ['prl_right_leg','pll_left_leg','prfl_right_foreleg','plfl_left_foreleg'];knee='foreleg'in bone;right='right'in bone;sg=1 if right else -1
     tucked=(-105,0,0)if knee else(70,0,sg*8)
-    for t in range(90,109):
+    for t in range(74,99):
      if leg:
-      if t<=97:
-       q=(t-90)/7;q=q*q*(3-2*q);pose=tuple(a+(b-a)*q for a,b in zip(kicked,tucked))
+      if t<=83:
+       q=(t-74)/9;q=q*q*(3-2*q);pose=tuple(a+(b-a)*q for a,b in zip(kicked,tucked))
       else:
-       q=(t-97)/11;q=q*q*(3-2*q);pose=tuple(a+(b-a)*q for a,b in zip(tucked,landed))
+       q=(t-83)/15;q=q*q*(3-2*q);pose=tuple(a+(b-a)*q for a,b in zip(tucked,landed))
      else:
-      q=(t-90)/18;q=q*q*(3-2*q);pose=tuple(a+(b-a)*q for a,b in zip(kicked,landed))
+      q=(t-74)/24;q=q*q*(3-2*q);pose=tuple(a+(b-a)*q for a,b in zip(kicked,landed))
      landing.append((t/20,pose))
     if leg:landing.extend([(112/20,(-75 if knee else 40,0,0 if knee else sg*8)),(120/20,(-35 if knee else 20,0,0 if knee else sg*5)),(128/20,(0,0,0))])
     else:landing.extend([(116/20,tuple(landed)),(128/20,(0,0,0))])

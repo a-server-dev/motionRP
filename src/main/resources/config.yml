@@ -4,6 +4,18 @@ debug-input: false
 # BetterModel/players にあるプレイヤーモデルを指定します。
 # 標準の steve.bbmodel に含まれる roll を初期モーションとして使用します。
 motions:
+  gigant_pistol:
+    name: ギア3・ギガントピストル
+    model: motionrp_gigant_pistol
+    animation: gigant_pistol
+    effect: gigant_pistol
+    max-ticks: 160
+  balse:
+    name: バルス（二人用）
+    model: motionrp_balse_left
+    animation: balse_left
+    effect: pair_balse
+    max-ticks: 150
   death_sword:
     name: デスソード
     model: motionrp_death_sword

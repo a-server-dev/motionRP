@@ -172,14 +172,25 @@ def complete():
     # Both swords begin sheathed at the waist. Only the left blade is drawn.
     weapons={}
     for side in [-1,1]:
-        for j in range(18):
-            z=-10-j*2.9;t=j/17;w=5.1*(1-.85*t*t)
-            c(f'katana_blade_{side}_{j}',[side*2*t*t,0,z],[w,1.1,3.2],5)
-            c(f'katana_edge_{side}_{j}',[side*2*t*t-w/2,0,z],[.55,1.5,3.2],3)
-            if j%3==0:c(f'blade_hamon_{side}_{j}',[side*2*t*t,.7,z],[w*.45,.3,2],1)
+        # Dense tapered sections keep the same envelope and weapon pivots.
+        for j in range(36):
+            z=-9.3-j*1.45;t=j/35;w=5.1*(1-.85*t*t);x=side*2*t*t
+            c(f'katana_blade_{side}_{j}',[x,0,z],[w,1.1,1.65],5)
+            c(f'katana_edge_{side}_{j}',[x-w/2,0,z],[.38,1.25,1.65],3)
+            for face in [-1,1]:
+                c(f'blade_ridge_{side}_{j}_{face}',[x+w*.15,face*.59,z],[w*.34,.15,1.65],7)
+                c(f'blade_hamon_{side}_{j}_{face}',[x-w*.23+.13*math.sin(j*1.5),face*.65,z],[.24,.12,1.5],1)
+                c(f'blade_fuller_{side}_{j}_{face}',[x+w*.31,face*.57,z],[.16,.12,1.5],0)
         c(f'katana_hilt_{side}',[0,0,0],[2.2,2.2,13],0)
-        for j in range(6):c(f'hilt_wrap_{side}_{j}',[0,0,-5+j*1.8],[2.7,2.7,.6],7)
+        for j in range(12):
+            for face in [-1,1]:
+                c(f'hilt_wrap_{side}_{j}_{face}',[0,face*1.18,-5+j*.95],[2.6,.3,.5],7,[0,face*22.5,0])
         c(f'katana_guard_{side}',[0,0,-7],[12,3,2.5],7)
+        for sign in [-1,1]:
+            c(f'guard_bevel_{side}_{sign}',[sign*5.3,0,-7],[1.2,3.4,3],1)
+            c(f'guard_engraving_{side}_{sign}',[sign*3,1.6,-7],[2.4,.25,1.1],0)
+        c(f'blade_habaki_{side}',[0,0,-8.5],[5.6,1.6,1.6],1)
+        c(f'hilt_pommel_{side}',[0,0,6.5],[2.8,2.8,1.1],1)
         weapons[f'blade_{side}']=a.joint(f'waist_blade_{side}',(0,0,0))
         for j in range(18):
             z=-10-j*2.9;w=6*(1-.7*(j/17)**2)

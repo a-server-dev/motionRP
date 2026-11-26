@@ -8,7 +8,7 @@ commands:
   motionrp:
     description: モーションの登録・管理
     aliases: [mrp]
-    usage: /motionrp [gui|view|fusion|broly|accept|give|reload|configreload|status|pack]
+    usage: /motionrp [gui|view|fusion|broly|balse|accept|give|reload|configreload|status|pack]
   goalperformance:
     description: ゴールパフォーマンスを直接再生
     usage: /goalperformance [ronaldo|mbappe|kneeslide|kazu|stop]

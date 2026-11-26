@@ -112,7 +112,7 @@ final class FootballScene extends SummonScene {
    Location foot=liveBoot();Vector aim=at(0,1,0).toVector().subtract(origin.toVector());
    if(previousBoot!=null)trace("live foot tick="+tick+" forward="+foot.toVector().subtract(previousBoot.toVector()).dot(aim)+" xyz="+foot.getX()+","+foot.getY()+","+foot.getZ());previousBoot=foot;
   }
-  if(fire&&tick>=94&&tick<=land(true)&&tick%2==0&&plugin.getConfig().getBoolean("debug-input")){
+  if(fire&&tick>=78&&tick<=land(true)&&tick%2==0&&plugin.getConfig().getBoolean("debug-input")){
    var a=body.bone("football_boot").worldPosition();var b=body.bone("football_support_boot").worldPosition();double lift=owner.getLocation().getY()-origin.getY();trace("recovery tick="+tick+" leftHeight="+(a.y+lift)+" rightHeight="+(b.y+lift));
   }
   if(fire&&tick==land(true)){

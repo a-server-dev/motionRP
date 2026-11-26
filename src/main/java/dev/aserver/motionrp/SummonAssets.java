@@ -17,6 +17,8 @@ final class SummonAssets {
     static final String EXCALIBUR_CHARGE="motionrp_excalibur_charge",EXCALIBUR_WAVE="motionrp_excalibur_wave";
     static List<String> models(String effect) {
         return switch(effect) {
+            case "gigant_pistol" -> List.of("motionrp_gigant_fist");
+            case "balse_left","balse_right" -> List.of("motionrp_balse_crystal","motionrp_balse_light");
             case "death_sword" -> List.of("motionrp_football","motionrp_death_sword_edge","motionrp_death_sword_core");
             case "eternal_blizzard" -> List.of("motionrp_football","motionrp_blizzard_orb","motionrp_blizzard_flake","motionrp_blizzard_wind","motionrp_blizzard_wake");
             case "death_spear" -> List.of("motionrp_football","motionrp_death_spear_drill");
