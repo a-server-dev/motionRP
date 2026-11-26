@@ -27,7 +27,7 @@ motions:
     model: motionrp_fire_tornado
     animation: fire_tornado
     effect: fire_tornado
-    max-ticks: 122
+    max-ticks: 138
   emperor_penguin_1:
     name: 皇帝ペンギン1号
     model: motionrp_emperor_penguin_1

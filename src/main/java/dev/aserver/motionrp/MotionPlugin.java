@@ -58,7 +58,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
         }
         for(String football:java.util.List.of("fire_tornado","emperor_penguin_1")){
             String base="motions."+football+".";
-            if(("motionrp_"+football).equals(getConfig().getString(base+"model"))&&(getConfig().getInt(base+"max-ticks")==174||(football.equals("fire_tornado")&&getConfig().getInt(base+"max-ticks")==188))){
+            if(("motionrp_"+football).equals(getConfig().getString(base+"model"))&&(getConfig().getInt(base+"max-ticks")==174||(football.equals("fire_tornado")&&(getConfig().getInt(base+"max-ticks")==188||getConfig().getInt(base+"max-ticks")==122)))){
                 getConfig().set(base+"max-ticks",dev.aserver.motionrp.core.FootballTimeline.end(football.equals("fire_tornado"))+10);saveConfig();
             }
         }

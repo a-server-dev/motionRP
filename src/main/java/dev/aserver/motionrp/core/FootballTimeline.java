@@ -10,11 +10,11 @@ public final class FootballTimeline {
  public static int jump(boolean fire){return fire?26:70;}
  public static int kick(boolean fire){return fire?70:98;}
  public static int impact(boolean fire){return fire?90:124;}
- public static int land(boolean fire){return fire?100:156;}
- public static int end(boolean fire){return fire?112:174;}
+ public static int land(boolean fire){return fire?112:156;}
+ public static int end(boolean fire){return fire?128:174;}
  public static double height(int tick,boolean fire){
   if(!fire)return 0; // No.1 plants the supporting leg; it is not a bicycle kick.
-  return FIRE_HEIGHT*smooth(tick,26,46)*(1-smooth(tick,70,100));
+  return FIRE_HEIGHT*smooth(tick,26,46)*(1-smooth(tick,70,112));
  }
  public static double approach(int tick,boolean fire){return fire?0:.65*smooth(tick,70,98)*(1-smooth(tick,146,174));}
  public static double distance(int tick){return RANGE*progress(tick,KICK,IMPACT);}

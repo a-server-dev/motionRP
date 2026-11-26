@@ -450,6 +450,9 @@ if(process.env.MOTIONRP_FOOTBALL_ONLY==='1'){
     const face=output.slice(begin).match(/kick facing forward=([^\r\n]+)/);assert.ok(face&&+face[1]>.98,'Chest and face point along the shot, independently of the horizontal body axis');
     assert.ok(+bodyAxis[3]>.98&&Math.abs(+bodyAxis[1])<.03,'Head points screen-right in a frontal view');
     assert.ok(Math.abs(+bodyAxis[2])<.03,'Body long axis is parallel to the ground');
+    const recovery=[...output.slice(begin).matchAll(/recovery tick=(\d+) leftHeight=([^ ]+) rightHeight=([^\r\n]+)/g)];
+    assert.ok(recovery.length>=10&&+recovery.at(-1)[1]-+recovery[0][1]>=18,'Foot lowering must be a visible stage rather than a six-tick pose reset');
+    assert.ok(recovery.every(m=>+m[2]>=-.01&&+m[3]>=-.01)&&+recovery[0][2]>+recovery.at(-1)[2]+1,'Both feet descend without going through the floor');
     const landing=output.slice(begin).match(/Football-fire_tornado landing up=([^ ]+) left=([^ ]+) right=([^ ]+) pilot=([^\r\n]+)/);
     assert.ok(landing&&+landing[1]>.98&&+landing[2]>=-.03&&+landing[2]<.15&&+landing[3]>=-.03&&+landing[3]<.15&&Math.abs(+landing[4])<.03,'Upright body and both soles meet the floor at touchdown');
     const half=output.slice(begin).match(/landing half-turn facing=([^ ]+) yawDelta=([^\r\n]+)/);assert.ok(half&&+half[1]<-.98&&Math.abs(Math.abs(+half[2])-180)<.1,'Model and player finish a half turn together');

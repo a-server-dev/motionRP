@@ -166,7 +166,7 @@ def reference_actors(rig):
    for entry in m['animations'][0]['animators'].values():
     for key in entry['keyframes']:
      if key['time']>0:key['time']+=4/20
-   end=112;m['animations'][0]['length']=end/20
+   end=128;m['animations'][0]['length']=end/20
    # Load the jump with the arms close to the sides, then drive them up after takeoff.
    for bone in ['pra_right_arm','pla_left_arm','prfa_right_forearm','plfa_left_forearm','prl_right_leg','pll_left_leg','prfl_right_foreleg','plfl_left_foreleg']:
     g=next(g for g in m['groups']if g['name']==bone);e=m['animations'][0]['animators'][g['uuid']];right='right'in bone;sign=1 if right else -1
@@ -198,7 +198,7 @@ def reference_actors(rig):
     q=max(0,min(1,(t-70)/20));return q*q*(3-2*q)
    entry['keyframes']=[k for k in entry['keyframes']if k['channel']!='rotation'or k['time']<69/20]+animator(root,[(t/20,(0,-180*clockwise(t),0))for t in range(69,end+1)])['keyframes']
    e=m['animations'][0]['animators'][bank['uuid']]
-   e['keyframes']=animator(bank,[(0,(0,0,0)),(68/20,(0,0,0)),(69/20,(0,0,-90))]+[(t/20,(0,0,-90*(1-(lambda q:q*q*(3-2*q))((t-90)/6))))for t in range(90,97)]+[(end/20,(0,0,0))])['keyframes']
+   e['keyframes']=animator(bank,[(0,(0,0,0)),(68/20,(0,0,0)),(69/20,(0,0,-90))]+[(t/20,(0,0,-90*(1-(lambda q:q*q*(3-2*q))((t-90)/18))))for t in range(90,109)]+[(end/20,(0,0,0))])['keyframes']
 
    # Counterbalance the sideways torso: left boot strikes forward, right boot extends back.
    for b,contact,follow in [('pll_left_leg',-60,60),('prl_right_leg',120,-60)]:
@@ -219,13 +219,20 @@ def reference_actors(rig):
     g=next(g for g in m['groups']if g['name']==bone);e=m['animations'][0]['animators'][g['uuid']]
     kicked=sample(e,'rotation',68);landed=sample(e,'rotation',98)
     landing=[(69/20,kicked),(70/20,kicked)]
-    for t in range(90,97):
-     q=(t-90)/6;q=q*q*(3-2*q);landing.append((t/20,tuple(a+(b-a)*q for a,b in zip(kicked,landed))))
-    if bone in ['prl_right_leg','pll_left_leg','prfl_right_foreleg','plfl_left_foreleg']:
-     right='right'in bone;knee='foreleg'in bone;sg=1 if right else -1
-     landing.extend([(100/20,(-75 if knee else 40,0,0 if knee else sg*8)),(105/20,(-35 if knee else 20,0,0 if knee else sg*5)),(112/20,(0,0,0))])
-     e['keyframes']=[k for k in e['keyframes']if k['channel']!='rotation'or k['time']<69/20]+animator(g,landing)['keyframes']
-    else:e['keyframes']=[k for k in e['keyframes']if k['channel']!='rotation'or k['time']<69/20 or k['time']>98/20]+animator(g,landing)['keyframes']
+    leg=bone in ['prl_right_leg','pll_left_leg','prfl_right_foreleg','plfl_left_foreleg'];knee='foreleg'in bone;right='right'in bone;sg=1 if right else -1
+    tucked=(-105,0,0)if knee else(70,0,sg*8)
+    for t in range(90,109):
+     if leg:
+      if t<=97:
+       q=(t-90)/7;q=q*q*(3-2*q);pose=tuple(a+(b-a)*q for a,b in zip(kicked,tucked))
+      else:
+       q=(t-97)/11;q=q*q*(3-2*q);pose=tuple(a+(b-a)*q for a,b in zip(tucked,landed))
+     else:
+      q=(t-90)/18;q=q*q*(3-2*q);pose=tuple(a+(b-a)*q for a,b in zip(kicked,landed))
+     landing.append((t/20,pose))
+    if leg:landing.extend([(112/20,(-75 if knee else 40,0,0 if knee else sg*8)),(120/20,(-35 if knee else 20,0,0 if knee else sg*5)),(128/20,(0,0,0))])
+    else:landing.extend([(116/20,tuple(landed)),(128/20,(0,0,0))])
+    e['keyframes']=[k for k in e['keyframes']if k['channel']!='rotation'or k['time']<69/20]+animator(g,landing)['keyframes']
 
   if fire:
    parent=next(g for g in m['groups']if g['name']=='prfl_right_foreleg')
@@ -258,10 +265,10 @@ def reference_actors(rig):
    # Absorb impact by lowering the connected pelvis as the knees bend; keep
    # both soles on the floor rather than letting the feet lift off on recovery.
    feet=[[[float(v)for v in l.split(',')]for l in hand_path(m,end,b).splitlines()]for b in ['football_boot','football_support_boot']]
-   e=m['animations'][0]['animators'][root['uuid']];pos=[(95/20,tuple(sample(e,'position',95)))]
-   for t in range(96,end):
+   e=m['animations'][0]['animators'][root['uuid']];pos=[(107/20,tuple(sample(e,'position',107)))]
+   for t in range(108,end):
     x,y,z=sample(e,'position',t);pos.append((t/20,(x,y+(.070625-min(feet[0][t][2],feet[1][t][2]))*16,z)))
-   pos.append((end/20,(0,0,0)));e['keyframes']=[k for k in e['keyframes']if k['channel']!='position'or k['time']<96/20]+animator(root,pos,'position')['keyframes']
+   pos.append((end/20,(0,0,0)));e['keyframes']=[k for k in e['keyframes']if k['channel']!='position'or k['time']<108/20]+animator(root,pos,'position')['keyframes']
    paths=[hand_path(m,end,b).strip().splitlines()for b in ['football_boot','football_calf','football_torso','football_upper','football_side']]
    (ROOT/'fire_tornado-support.csv').write_text(hand_path(m,end,'football_support_boot'))
   save('players/motionrp_'+name+'.bbmodel',m)

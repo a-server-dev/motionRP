@@ -26,8 +26,17 @@ class FootballVisualsTest {
   for(int t=70;t<=90;t++){var f=FootballFootPath.at(true,t);var axis=unit(sub(f.upper(),f.torso()));assertEquals(0,axis.height(),1e-6,"Do not straighten the body before the turn completes");}
   var f=FootballFootPath.at(true,80);var axis=unit(sub(f.upper(),f.torso()));assertTrue(axis.forward()<-.98,"Top-view clockwise turn has the opposite yaw sign from the old counterclockwise turn");
  }
+ @Test void recoveryLowersTheFeetOverASeparateLandingStage(){
+  double previous=FootballFootPath.at(true,90).boot().height();
+  for(int t=91;t<=108;t++){double h=FootballFootPath.at(true,t).boot().height();assertTrue(h<=previous+.001,"The kicking foot must move down smoothly after the turn");previous=h;}
+  assertTrue(FootballFootPath.at(true,90).boot().height()-previous>1);
+  assertEquals(112,FootballTimeline.land(true));assertEquals(128,FootballTimeline.end(true));
+ }
+ @Test void old072FireIsRecognizedForUpgrade()throws Exception{
+  String name="players/motionrp_fire_tornado.bbmodel";try(var in=new java.util.zip.GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.72.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
+ }
  @Test void landingBringsTheBodyUprightBeforeTouchdown(){
-  for(int t=98;t<112;t++){
+  for(int t=108;t<128;t++){
    var f=FootballFootPath.at(true,t);var axis=unit(sub(f.upper(),f.torso()));
    assertTrue(axis.height()>.98,"Recover before landing rather than flip into the floor");
    assertTrue(f.boot().height()>=0,"Left boot stays above the floor");
