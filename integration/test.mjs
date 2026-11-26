@@ -430,12 +430,12 @@ if(process.env.MOTIONRP_FOOTBALL_ONLY==='1'){
     assert.ok(fireParticles.every(p=>p.y>origin.y+6.5),'Flames follow the body high above the ground');
     assert.ok(!/displays (fire_spiral|burning_boot)/.test(output.slice(begin)),'Standing cone models are not used');
     const footMotion=[...output.slice(begin).matchAll(/Football-fire_tornado live foot tick=(\d+) forward=([^ ]+)/g)].map(m=>({tick:+m[1],forward:+m[2]}));
-    assert.equal(footMotion.length,4,'Four native boot samples before release');
+    assert.equal(footMotion.length,6,'Native boot samples cover windup, release and follow-through');
     assert.ok(footMotion.slice(-2).every(p=>p.forward>.01),'Rendered boot swings forward through contact after the rear hold');
-    assert.equal(footMotion.at(-1).tick,68);
+    assert.equal(footMotion.at(-1).tick,70);assert.ok(footMotion.find(p=>p.tick===68).forward>.1,'Boot is travelling forward when the ball releases');
     const legs=[...output.slice(begin).matchAll(/leg exchange tick=(\d+) left=([^ ]+) right=([^\r\n]+)/g)].map(m=>({tick:+m[1],left:+m[2],right:+m[3]}));
     assert.equal(legs.length,2);assert.ok(legs[0].left<legs[0].right-.6,'Rear left boot and forward right boot during hold');assert.ok(legs[1].left>legs[1].right+.6,'Forward left boot and rear right boot after kick');
-    assert.ok(footMotion.every(p=>p.forward>-.005)&&footMotion.reduce((sum,p)=>sum+p.forward,0)>.4,'Kick sweeps steadily forward through the strike window');
+    assert.ok(footMotion.every(p=>p.forward>-.05)&&footMotion.reduce((sum,p)=>sum+p.forward,0)>.4,'A small preload is followed by a strong forward strike');
     assert.ok(Math.max(...footMotion.map(p=>p.forward))>.2,'Left boot accelerates strongly during the forward stroke');
     const lob=[...output.slice(begin).matchAll(/Football-fire_tornado lob tick=(\d+) height=([^ ]+) contactGap=([^\r\n]+)/g)].map(m=>({tick:+m[1],height:+m[2],gap:+m[3]}));
     assert.equal(lob.find(p=>p.tick===32)?.height,15,'Only the ball rises to fifteen blocks');
@@ -451,6 +451,7 @@ if(process.env.MOTIONRP_FOOTBALL_ONLY==='1'){
     assert.ok(Math.abs(+bodyAxis[2])<.03,'Body long axis is parallel to the ground');
     const landing=output.slice(begin).match(/Football-fire_tornado landing up=([^ ]+) left=([^ ]+) right=([^ ]+) pilot=([^\r\n]+)/);
     assert.ok(landing&&+landing[1]>.98&&+landing[2]>=-.03&&+landing[2]<.15&&+landing[3]>=-.03&&+landing[3]<.15&&Math.abs(+landing[4])<.03,'Upright body and both soles meet the floor at touchdown');
+    const half=output.slice(begin).match(/landing half-turn facing=([^ ]+) yawDelta=([^\r\n]+)/);assert.ok(half&&+half[1]<-.98&&Math.abs(Math.abs(+half[2])-180)<.1,'Model and player finish a half turn together');
     pass('Fire Tornado rises eight blocks and wraps the tilted body in ordinary flame particles');
     pass('The faster Fire Tornado releases during the actual forward kick after seven corkscrew turns');
    }else{

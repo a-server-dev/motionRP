@@ -187,11 +187,13 @@ def reference_actors(rig):
     x,_,z=sample(entry,'rotation',t);p=max(0,min(1,(t-42)/22));p=p*p*(3-2*p);q=max(0,min(1,(t-84)/20));q=q*q*(3-2*q);keys.append((t/20,(x*(1-p*(1-q)),0,-90*p*(1-q))))
    # Keep the original leading rest keys: their timing controls BetterModel's player-animation lead.
    entry['keyframes']=[k for k in entry['keyframes']if k['channel']!='rotation'or k['time']<42/20]+animator(root,[(t,v)for t,v in keys if t>=42/20])['keyframes']
-   # Recover directly from the horizontal kick instead of tumbling through another flip.
+   # Apply the half turn above the sideways bank so the head actually swings toward the shot.
    entry=m['animations'][0]['animators'][root['uuid']]
    def recover(t):
     q=max(0,min(1,(t-78)/16));return q*q*(3-2*q)
-   entry['keyframes']=[k for k in entry['keyframes']if k['channel']!='rotation'or k['time']<78/20]+animator(root,[(t/20,(0,0,-90*(1-recover(t))))for t in range(78,end+1)])['keyframes']
+   entry['keyframes']=[k for k in entry['keyframes']if k['channel']!='rotation'or k['time']<74/20]+animator(root,[(t/20,(0,180*(lambda q:q*q*(3-2*q))(max(0,min(1,(t-74)/22))),0))for t in range(74,end+1)])['keyframes']
+   e=m['animations'][0]['animators'][bank['uuid']]
+   e['keyframes']=animator(bank,[(0,(0,0,0)),(73/20,(0,0,0))]+[(t/20,(0,0,-90*(1-recover(t))))for t in range(74,end+1)])['keyframes']
 
    # Counterbalance the sideways torso: left boot strikes forward, right boot extends back.
    for b,contact,follow in [('pll_left_leg',-60,60),('prl_right_leg',120,-60)]:

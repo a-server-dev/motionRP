@@ -18,6 +18,10 @@ class FootballVisualsTest {
    assertEquals(0,axis.height(),1e-6,"Torso is parallel to the ground");
   }
  }
+ @Test void followThroughTipsTheHeadTowardsTheShotWhileHalfTurning(){
+  var f=FootballFootPath.at(true,85);var axis=unit(sub(f.upper(),f.torso()));
+  assertTrue(axis.forward()>.7&&axis.height()>.5,"The follow-through twists toward the kick instead of simply standing upright");
+ }
  @Test void landingBringsTheBodyUprightBeforeTouchdown(){
   for(int t=94;t<112;t++){
    var f=FootballFootPath.at(true,t);var axis=unit(sub(f.upper(),f.torso()));

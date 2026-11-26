@@ -56,7 +56,7 @@ final class FootballScene extends SummonScene {
   body.update(TrackerUpdateAction.togglePart(false),b->Set.of("pri_right_item","pli_left_item").contains(b.name().rawName()));
   int release=kick(fire),hit=FootballTimeline.impact(fire);
   if((fire&&tick>=jump(true)&&tick<=land(true))||(!fire&&tick>=70)){
-   Location seat=at(0,approach(tick,fire),height(tick,fire)),from=owner.getLocation();Vector delta=seat.toVector().subtract(from.toVector());int samples=Math.max(1,(int)Math.ceil(delta.length()/.18));
+   Location seat=at(0,approach(tick,fire),height(tick,fire)),from=owner.getLocation();if(fire)seat.setYaw(origin.getYaw()+(float)(180*smooth(tick,74,96)));Vector delta=seat.toVector().subtract(from.toVector());int samples=Math.max(1,(int)Math.ceil(delta.length()/.18));
    for(int i=1;i<=samples;i++){
     Vector shift=delta.clone().multiply(i/(double)samples);Location check=from.clone().add(shift);
     if(!check.getWorld().isChunkLoaded(check.getBlockX()>>4,check.getBlockZ()>>4)||owner.wouldCollideUsing(owner.getBoundingBox().shift(shift))){plugin.playback().stop(owner.getUniqueId());return;}
@@ -106,13 +106,15 @@ final class FootballScene extends SummonScene {
    double lf=left.toVector().subtract(owner.getLocation().toVector()).dot(aim),rf=right.x*aim.getX()+right.z*aim.getZ();
    trace("leg exchange tick="+tick+" left="+lf+" right="+rf);
   }
-  if(fire&&tick>=release-4&&tick<=release){
+  if(fire&&tick>=release-4&&tick<=release+2){
    Location foot=liveBoot();Vector aim=at(0,1,0).toVector().subtract(origin.toVector());
    if(previousBoot!=null)trace("live foot tick="+tick+" forward="+foot.toVector().subtract(previousBoot.toVector()).dot(aim)+" xyz="+foot.getX()+","+foot.getY()+","+foot.getZ());previousBoot=foot;
   }
   if(fire&&tick==land(true)){
+   flight.finishAtCurrent();
    var torso=body.bone("football_torso").worldPosition();var axis=body.bone("football_upper").worldPosition().sub(torso,new org.joml.Vector3f()).normalize();
    trace("landing up="+axis.y+" left="+body.bone("football_boot").worldPosition().y+" right="+body.bone("football_support_boot").worldPosition().y+" pilot="+(owner.getLocation().getY()-origin.getY()));
+   var front=body.bone("football_front").worldPosition().sub(torso,new org.joml.Vector3f()).normalize();Vector aim=at(0,1,0).toVector().subtract(origin.toVector());trace("landing half-turn facing="+(front.x*aim.getX()+front.z*aim.getZ())+" yawDelta="+(owner.getYaw()-origin.getYaw()));
   }
   if(tick==release){
    if(fire){

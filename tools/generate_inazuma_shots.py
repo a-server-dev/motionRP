@@ -210,12 +210,14 @@ def actor(rig,name,end,kick):
    target=max(targets,key=lambda k:k['time'])
    if target['time']<4:continue
    old=[k for k in entry['keyframes']if k['channel']=='rotation']
-   start=max((k for k in old if k['time']<=3.65),key=lambda k:k['time'],default=old[0])
-   a=[float(start['data_points'][0][c])for c in'xyz'];b=[float(target['data_points'][0][c])for c in'xyz'];keys=[]
-   for t in range(73,91):
-    q=max(0,min(1,(t-73)/10));q=q*q*(3-2*q)
-    keys.append((t/20,tuple(x+(y-x)*q for x,y in zip(a,b))))
-   entry['keyframes']=[k for k in entry['keyframes']if k['channel']!='rotation'or k['time']<3.65]+animator(groups[entry['name']],keys)['keyframes']
+   lo=max((k for k in old if k['time']<=3.05),key=lambda k:k['time'],default=old[0]);hi=min((k for k in old if k['time']>=3.05),key=lambda k:k['time'],default=old[-1]);q=(3.05-lo['time'])/(hi['time']-lo['time'])if hi['time']!=lo['time']else 0
+   a=[float(lo['data_points'][0][c])*(1-q)+float(hi['data_points'][0][c])*q for c in'xyz'];b=[float(target['data_points'][0][c])for c in'xyz'];keys=[]
+   for t in range(61,91):
+    q=max(0,min(1,(t-61)/10));q=q*q*(3-2*q)
+    value=[x+(y-x)*q for x,y in zip(a,b)]
+    if entry['name']=='pra_right_arm'and 61<t<71:value[2]+=42*math.sin(math.pi*(t-61)/10)
+    keys.append((t/20,tuple(value)))
+   entry['keyframes']=[k for k in entry['keyframes']if k['channel']!='rotation'or k['time']<3.05]+animator(groups[entry['name']],keys)['keyframes']
   # Lower the connected pelvis as a whole; never separate the leg sockets.
   from generate_rasengan import hand_path
   right=[list(map(float,l.split(',')))for l in hand_path(m,end,'shot_boot').splitlines()];left=[list(map(float,l.split(',')))for l in hand_path(m,end,'shot_support_boot').splitlines()]
@@ -370,6 +372,25 @@ def spear_actor(rig):
    ds.append(norm(sub(nearest,[.20,.20,.45]))-5.25/16)
   clearance.append(','.join(f'{d:.8f}'for d in ds))
  (ROOT/'death_spear-clearance.csv').write_text('\n'.join(clearance)+'\n')
+ return m
+
+
+def transplant_spear_brush(blizzard,spear):
+ from generate_rasengan import hand_path
+ from generate_summons import ROOT
+ source={v['name']:v for v in spear['animations'][0]['animators'].values()}
+ bones=['prl_right_leg','prfl_right_foreleg','pll_left_leg','plfl_left_foreleg','pra_right_arm','prfa_right_forearm','pla_left_arm','plfa_left_forearm','pc_chest','pw_waist','h_ph_head']
+ for bone in bones:
+  g=next(g for g in blizzard['groups']if g['name']==bone);entry=blizzard['animations'][0]['animators'][g['uuid']];keys=sorted([k for k in source[bone]['keyframes']if k['channel']=='rotation'],key=lambda k:k['time']);copied=[]
+  for i in range(11):
+   time=(70+i)/20;a=max((k for k in keys if k['time']<=time),key=lambda k:k['time'],default=keys[0]);b=min((k for k in keys if k['time']>=time),key=lambda k:k['time'],default=keys[-1]);q=(time-a['time'])/(b['time']-a['time'])if b['time']!=a['time']else 0
+   copied.append(((8+i)/20,tuple(float(a['data_points'][0][c])*(1-q)+float(b['data_points'][0][c])*q for c in'xyz')))
+  # Only bridge the legs into the existing turn; root's full revolution, its
+  # timing, and every landing/crouch pose remain the previous release's data.
+  entry['keyframes']=[k for k in entry['keyframes']if k['channel']!='rotation'or (not 8/20<=k['time']<=18/20 and not (bone in bones[:4]and abs(k['time']-1)<1e-6))]+animator(g,copied)['keyframes']
+ save('players/motionrp_eternal_blizzard.bbmodel',blizzard)
+ for suffix,bone in [('boot','shot_boot'),('other','ice_other_boot'),('ground','ice_ground_hand'),('trail','ice_trail_hand'),('shoulder','ice_left_shoulder')]:
+  (ROOT/('eternal_blizzard-'+suffix+'.csv')).write_text(hand_path(blizzard,211,bone))
 
 
 def finish(m,ids,spin=False):
@@ -450,5 +471,6 @@ def effects():
 if __name__=='__main__':
  raw=Path(sys.argv[1]).read_bytes();assert hashlib.sha256(raw).hexdigest()==RIG_SHA
  built={name:actor(json.loads(raw),name,end,kick)for name,(end,kick)in SHOTS.items()if name!='death_spear'}
- spear_actor(json.loads(raw))
+ spear=spear_actor(json.loads(raw))
+ transplant_spear_brush(built['eternal_blizzard'],spear)
  effects()

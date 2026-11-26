@@ -90,9 +90,9 @@ class InazumaShotTest {
  @Test void blizzardOpposesItsFeetThenLandsBeforeTheMainJump()throws Exception{
   var paths=new ArrayList<List<double[]>>();
   for(String side:List.of("boot","other"))try(var in=Objects.requireNonNull(getClass().getResourceAsStream("/bettermodel/eternal_blizzard-"+side+".csv"))){paths.add(new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8).lines().map(l->Arrays.stream(l.split(",")).mapToDouble(Double::parseDouble).toArray()).toList());}
-  for(int t=8;t<=18;t++){
-   assertTrue(paths.get(0).get(t)[0]>.5,"Right boot remains outside the torso");
-   assertTrue(paths.get(1).get(t)[0]<-.5,"Left boot remains outside the torso");
+  for(String side:List.of("boot","other"))try(var in=Objects.requireNonNull(getClass().getResourceAsStream("/bettermodel/death_spear-"+side+".csv"))){
+   var spear=new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8).lines().map(l->Arrays.stream(l.split(",")).mapToDouble(Double::parseDouble).toArray()).toList();
+   for(int i=0;i<=10;i++)assertArrayEquals(spear.get(70+i),paths.get(side.equals("boot")?0:1).get(8+i),1e-7,"Reuse the confirmed move without generating a new split stance");
   }
   for(int t=39;t<=69;t++){
    assertTrue(Math.abs(paths.get(0).get(t)[0]-paths.get(1).get(t)[0])>1);
@@ -174,6 +174,23 @@ class InazumaShotTest {
    var key=track.getAsJsonArray("keyframes").asList().stream().map(JsonElement::getAsJsonObject).filter(k->Math.abs(k.get("time").getAsDouble()-4.0)<1e-6).findFirst().orElseThrow();
    assertEquals(e.getValue(),key.getAsJsonArray("data_points").get(0).getAsJsonObject().get("x").getAsDouble(),1e-8);
   }
+ }
+ @Test void swordSettlesIntoTheEditedFinishDuringTheHandCut()throws Exception{
+  var tracks=load("players/motionrp_death_sword").getAsJsonArray("animations").get(0).getAsJsonObject().getAsJsonObject("animators");
+  for(String name:List.of("pw_waist","phip_hip","pra_right_arm","prfa_right_forearm","prl_right_leg","pll_left_leg","prfl_right_foreleg","plfl_left_foreleg")){
+   var keys=tracks.entrySet().stream().map(e->e.getValue().getAsJsonObject()).filter(e->e.get("name").getAsString().equals(name)).findFirst().orElseThrow().getAsJsonArray("keyframes").asList().stream().map(JsonElement::getAsJsonObject).filter(k->k.get("channel").getAsString().equals("rotation")).toList();
+   var onCut=keys.stream().filter(k->k.get("time").getAsDouble()<=3.55).max(Comparator.comparingDouble(k->k.get("time").getAsDouble())).orElseThrow();var last=keys.stream().max(Comparator.comparingDouble(k->k.get("time").getAsDouble())).orElseThrow();
+   assertEquals(last.get("data_points"),onCut.get("data_points"),"Do not wait until after landing to adopt the final pose");
+  }
+ }
+ @Test void blizzardKeepsItsPreviousRootTurnAndLanding()throws Exception{
+  JsonObject old;try(var in=new java.util.zip.GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.70.0/players_motionrp_eternal_blizzard.bbmodel.gz")))){old=JsonParser.parseString(new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();}
+  var current=load("players/motionrp_eternal_blizzard");
+  var before=old.getAsJsonArray("animations").get(0).getAsJsonObject().getAsJsonObject("animators");var after=current.getAsJsonArray("animations").get(0).getAsJsonObject().getAsJsonObject("animators");
+  var root=before.entrySet().stream().filter(e->e.getValue().getAsJsonObject().get("name").getAsString().equals("player_root")).findFirst().orElseThrow();assertEquals(root.getValue(),after.get(root.getKey()));
+ }
+ @Test void old070ModelsAreRecognizedForUpgrade()throws Exception{
+  for(String name:List.of("players/motionrp_fire_tornado.bbmodel","players/motionrp_eternal_blizzard.bbmodel","players/motionrp_death_sword.bbmodel"))try(var in=new java.util.zip.GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.70.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
  }
  @Test void old069ModelsAreRecognizedForUpgrade()throws Exception{
   for(String name:List.of("players/motionrp_fire_tornado.bbmodel","players/motionrp_eternal_blizzard.bbmodel","models/motionrp_susanoo_armor.bbmodel"))try(var in=new java.util.zip.GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.69.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
