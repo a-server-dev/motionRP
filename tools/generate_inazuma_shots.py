@@ -16,6 +16,52 @@ def ice_tick(reference):
 def sword_tick(reference):
  return int(math.floor((reference/2 if reference<=78 else reference-39)+.5))
 
+def edited_brush():
+ # One shared, editable front/back scissor movement, independent of scene timing.
+ source=json.loads((Path(__file__).parent/'authored/motionrp_death_spear.bbmodel').read_text())
+ result={}
+ for bone in ['prl_right_leg','prfl_right_foreleg','pll_left_leg','plfl_left_foreleg']:
+  ks=sorted(next(v for v in source['animations'][0]['animators'].values()if v['name']==bone)['keyframes'],key=lambda k:k['time'])
+  def sample(t):
+   a=max((k for k in ks if k['time']<=t),key=lambda k:k['time'],default=ks[0]);b=min((k for k in ks if k['time']>=t),key=lambda k:k['time'],default=ks[-1]);q=(t-a['time'])/(b['time']-a['time'])if b['time']!=a['time']else 0
+   return tuple(float(a['data_points'][0][c])*(1-q)+float(b['data_points'][0][c])*q for c in 'xyz')
+  result[bone]=[sample((52+i*.6)/20)for i in range(11)]
+ # Sweep each calf around the unchanged sphere instead of through it.
+ def rotate(v,r):
+  x,y,z=v;rx,ry,rz=map(math.radians,r);y,z=y*math.cos(rx)-z*math.sin(rx),y*math.sin(rx)+z*math.cos(rx);x,z=x*math.cos(ry)+z*math.sin(ry),-x*math.sin(ry)+z*math.cos(ry);return[x*math.cos(rz)-y*math.sin(rz),x*math.sin(rz)+y*math.cos(rz),z]
+ def gap(thigh,knee,right):
+  x=1.875 if right else -1.875;hip=[x,11.25,0];joint=[x,5.625,0]
+  def point(p):
+   a=rotate([p[j]-joint[j]for j in range(3)],knee);a=[a[j]+joint[j]-hip[j]for j in range(3)];a=rotate(a,thigh);return[a[j]+hip[j]for j in range(3)]
+  x0=0 if right else -3.75;o=point([x0,0,-1.875]);center=[3.2,6.72,-2.4];d=[center[j]-o[j]for j in range(3)];nearest=o[:]
+  for p in [[x0+3.75,0,-1.875],[x0,5.625,-1.875],[x0,0,1.875]]:
+   v=[a-b for a,b in zip(point(p),o)];n=math.sqrt(sum(a*a for a in v));u=[a/n for a in v];q=max(0,min(n,sum(a*b for a,b in zip(d,u))));nearest=[a+q*b for a,b in zip(nearest,u)]
+  return math.dist(nearest,center)/16-5.25/16
+ for right in [True,False]:
+  leg='prl_right_leg'if right else'pll_left_leg';knee='prfl_right_foreleg'if right else'plfl_left_foreleg';layers=[]
+  for i in range(11):
+   pose=result[leg][i];bend=result[knee][i];candidates=[]
+   for dx in [0,-15,15,-30,30,-45,45,-60,60,-90,90]:
+    for dy in range(-120,121,15):
+     for dz in range(-90,91,15):
+      p=(pose[0]+dx,pose[1]+dy,pose[2]+dz)
+      if gap(p,bend,right)>.04:candidates.append((2*dx*dx+dy*dy+dz*dz,p))
+   if gap(pose,bend,right)>.025:candidates.append((0,pose))
+   assert candidates,(right,i)
+   layers.append([(0,pose)]if i==10 and gap(pose,bend,right)>.025 else sorted(candidates,key=lambda c:c[0])[:100])
+  costs=[c for c,p in layers[0]];backs=[]
+  for i in range(1,11):
+   new=[];links=[]
+   for cost,pose in layers[i]:
+    score,j=min((v+8*sum((a-b)**2 for a,b in zip(pose,layers[i-1][j][1])),j)for j,v in enumerate(costs))
+    new.append(score+cost);links.append(j)
+   costs=new;backs.append(links)
+  j=min(range(len(costs)),key=costs.__getitem__)
+  for i in range(10,-1,-1):
+   result[leg][i]=layers[i][j][1]
+   if i:j=backs[i-1][j]
+ return result
+
 def actor(rig,name,end,kick):
  m=player(rig,name,end/20,{})
  def track(b,keys,channel='rotation'):
@@ -172,21 +218,12 @@ def actor(rig,name,end,kick):
   from generate_rasengan import hand_path
   def smooth(x,a,b):
    q=max(0,min(1,(x-a)/(b-a)));return q*q*(3-2*q)
-  # The right foot approaches from the front and the left from behind, brushing opposite sides.
+  # Reuse the confirmed scissor pose sequence, then blend into the existing turn/crouch.
+  brush=edited_brush()
   for right in [True,False]:
    leg='prl_right_leg'if right else'pll_left_leg';knee='prfl_right_foreleg'if right else'plfl_left_foreleg'
-   hips=[list(map(float,l.split(',')))for l in hand_path(m,end,leg).splitlines()]
-   upper=5.625/16;lower=math.hypot(4.975,1.8)/16;rest=math.atan2(1.8,4.975)
-   thigh_keys=[];knee_keys=[]
-   for t in range(8,17):
-    p=(t-8)/8;clock=t+2;pilot=.85*smooth(clock,2,12)*(1-smooth(clock,24,39))
-    dx=(.34 if right else -.34)-hips[t][0]
-    target_f=.32+(.24*(1-2*p)if right else -.24*(1-2*p))
-    df=target_f-(hips[t][1]-.05);dy=1.35-pilot-(hips[t][2]-.03)
-    reach=math.sqrt(dx*dx+df*df+dy*dy);assert abs(upper-lower)<reach<upper+lower,(right,t,reach)
-    a=math.atan2(math.hypot(dx,df),-dy)+math.acos((upper*upper+reach*reach-lower*lower)/(2*upper*reach))
-    bend=math.acos((reach*reach-upper*upper-lower*lower)/(2*upper*lower))
-    thigh_keys.append((t/20,(math.degrees(a),-math.degrees(math.atan2(dx,df)),0)));knee_keys.append((t/20,(-math.degrees(bend+rest),0,0)))
+   thigh_keys=[((8+i)/20,v)for i,v in enumerate(brush[leg])]
+   knee_keys=[((8+i)/20,v)for i,v in enumerate(brush[knee])]
    thigh_keys.extend([(20/20,(30 if right else 70,0,10 if right else -15)),(28/20,(45 if right else 65,0,35 if right else -40)),(38/20,(60,0,55 if right else -55))])
    knee_keys.extend([(20/20,(-75 if right else -100,0,0)),(28/20,(-100 if right else -105,0,0)),(38/20,(-105,0,0))])
    for bone,keys in [(leg,thigh_keys),(knee,knee_keys)]:
@@ -272,16 +309,30 @@ def spear_actor(rig):
   for k in keys:
    t=k['time'];v=tuple(float(k['data_points'][0][a])for a in 'xyz')
    # Give the large scissor reversal and recovery enough frames to connect.
-   if abs(t-2.6)<1e-6:t=2.4
+   if abs(t-2.6)<1e-6:t=3.5
+   elif 2.9<=t<=4.4:t=(80+(t*20-58)*8/30)/20
    if abs(t-4.7)<1e-6:t=5.0
    values.append((t,v))
   m['animations'][0]['animators'][g['uuid']]=animator(g,values)
+ # Crouch, drive both legs down at takeoff, tuck, and hold at the apex before the brush.
+ brush=edited_brush()
+ for bone in brush:
+  g=next(g for g in m['groups']if g['name']==bone);entry=m['animations'][0]['animators'][g['uuid']]
+  knee='foreleg'in bone;right='right'in bone
+  jump=[(20,(-65 if knee else 35,0,0)),(25,(-70 if knee else 40,0,0)),(31,(0 if knee else -8,0,0)),(44,brush[bone][0]),(68,brush[bone][0])]
+  keys=[(t/20,v)for t,v in jump]+[((70+i)/20,v)for i,v in enumerate(brush[bone])]
+  entry['keyframes']=[k for k in entry['keyframes']if k['time']<20/20 or k['time']>80/20]+animator(g,keys)['keyframes']
  # The arm stroke and the foot reversal share a single clock.
  for entry in m['animations'][0]['animators'].values():
   if entry['name']in ['pra_right_arm','pla_left_arm','prfa_right_forearm','plfa_left_forearm','pc_chest','pw_waist','h_ph_head']:
    for key in entry['keyframes']:
     t=key['time']*20
-    if 52<=t<=84:key['time']=(48+(t-52)*10/32)/20
+    if 52<=t<=84:key['time']=(70+(t-52)*10/32)/20
+   first=next((k for k in entry['keyframes']if abs(k['time']-3.5)<1e-6),None)
+   if first:
+    held=copy.deepcopy(first);held['time']=58/20;entry['keyframes'].append(held)
+ root=next(g for g in m['groups']if g['name']=='player_root')
+ m['animations'][0]['animators'][root['uuid']]['keyframes']+=animator(root,[(0,(0,0,0)),(12/20,(0,0,0)),(20/20,(0,-1.8,0)),(25/20,(0,-1.8,0)),(31/20,(0,0,0)),(132/20,(0,0,0))],'position')['keyframes']
  save('players/motionrp_death_spear.bbmodel',m)
  for suffix,bone in [('boot','shot_boot'),('other','ice_other_boot')]: (ROOT/('death_spear-'+suffix+'.csv')).write_text(hand_path(m,132,bone))
  # Exact sphere-to-transformed-calf-box clearance, including the foot/skin volume.

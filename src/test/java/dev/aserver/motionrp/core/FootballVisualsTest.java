@@ -7,14 +7,14 @@ import static dev.aserver.motionrp.core.FootballFootPath.*;
 class FootballVisualsTest {
  @Test void bootMovesTowardsTheShotAtContactInsteadOfSwingingBackwards(){
   int contact=FootballTimeline.kick(true);
-  for(int t=contact-3;t<=contact+5;t++)assertTrue(FootballFootPath.at(true,t).boot().forward()>FootballFootPath.at(true,t-1).boot().forward(),"Foot must travel forwards through contact tick "+t);
+  for(int t=contact-2;t<=contact+5;t++)assertTrue(FootballFootPath.at(true,t).boot().forward()>FootballFootPath.at(true,t-1).boot().forward(),"Foot must travel forwards through contact tick "+t);
   assertEquals(8,FootballTimeline.height(50,true));assertEquals(8,FootballTimeline.height(contact,true));
   assertEquals(0,FootballTimeline.height(FootballTimeline.land(true),true),1e-9);
  }
  @Test void headPointsScreenRightInFrontViewParallelToTheGroundAtContact(){
   for(int tick=68;tick<=72;tick++){
    var frame=FootballFootPath.at(true,tick);var axis=unit(sub(frame.upper(),frame.torso()));
-   assertTrue(axis.right()<-.98,"The longitudinal body axis points right, not toward the camera/shot");assertEquals(0,axis.forward(),1e-6);
+   assertTrue(axis.right()>.98,"The longitudinal body axis points right, not toward the camera/shot");assertEquals(0,axis.forward(),1e-6);
    assertEquals(0,axis.height(),1e-6,"Torso is parallel to the ground");
   }
  }

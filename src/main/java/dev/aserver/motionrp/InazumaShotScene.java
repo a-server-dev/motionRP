@@ -83,7 +83,8 @@ final class InazumaShotScene extends SummonScene {
     if(tick>38)ballAt=blend(at(0,.13,10),at(.20,.15,9.82),smooth(tick,38,60));
     if(tick==10)trace("spear loft contactGap="+ballAt.distance(contact()));
     if(tick==38)trace("spear apex height="+(ballAt.getY()-origin.getY()));
-    if(tick==48){sound(ballAt,Sound.ENTITY_PLAYER_ATTACK_STRONG,1.4f,.6f);particle(boot(),Particle.CRIT,8,.08,.02);}
+    if(tick==60||tick==69)trace("spear apex pause tick="+tick+" height="+(owner.getLocation().getY()-origin.getY()));
+    if(tick==70){sound(ballAt,Sound.ENTITY_PLAYER_ATTACK_STRONG,1.4f,.6f);particle(boot(),Particle.CRIT,8,.08,.02);}
     if(tick>=66&&tick<=86){
      var rp=body.bone("shot_boot").worldPosition();var lp=body.bone("ice_other_boot").worldPosition();
      trace("spear pinch tick="+tick+" rightClearance="+spearClearance("pinch_r_")+" leftClearance="+spearClearance("pinch_l_")+" rightForward="+(rp.x*forward().getX()+rp.z*forward().getZ())+" leftForward="+(lp.x*forward().getX()+lp.z*forward().getZ())+" ballScale=1");
@@ -94,7 +95,7 @@ final class InazumaShotScene extends SummonScene {
      Location toe=boot().add(0,.25,0);ballAt=tick<ice(38)?at(.12,.4,.35):toe;
      if(tick==ice(44)){blizzardLiftStart=ballAt.clone();trace("loft tick="+tick+" footGap="+(ballAt.distance(boot())-.25));}
     }else if(tick<=trick(34)){
-     Location center=at(0,.32,1.35);ballAt=tick<trick(10)?blend(blizzardLiftStart,center,smooth(tick,ice(44),trick(10))):center;
+     Location center=at(.20,.15,tick<=18?shot.height(tick)+.42:1.27);ballAt=tick<trick(10)?blend(blizzardLiftStart,center,smooth(tick,ice(44),trick(10))):center;
      if(tick%2==0)particle(ballAt,Particle.SNOWFLAKE,3,.1,.005);
      if(tick==trick(10)||tick==trick(18)){
       var left=body.bone("ice_other_boot").worldPosition();Location lf=owner.getLocation().add(left.x,left.y,left.z);Vector rv=boot().toVector().subtract(ballAt.toVector()),lv=lf.toVector().subtract(ballAt.toVector()),side=at(1,0,0).toVector().subtract(origin.toVector());
@@ -108,7 +109,7 @@ final class InazumaShotScene extends SummonScene {
     if(tick>=trick(32))ball.scaler(ModelScaler.value((float)(.7+.7*smooth(tick,trick(32),ice(116)))));
    }
    Vector spin=forward();if(scissor()&&tick>=ice(44)&&tick<=trick(18)){double angle=progress(tick,ice(44),trick(18))*Math.PI*2;spin=new Vector(Math.sin(angle),Math.sin(angle*.5)*.4,Math.cos(angle));}
-   if(shot==InazumaShot.DEATH_SPEAR&&tick>=48&&tick<=shot.kick){double p=progress(tick,48,58),a=p*p*Math.PI*6;spin=new Vector(Math.sin(a),.25*Math.sin(a*.5),Math.cos(a));}
+   if(shot==InazumaShot.DEATH_SPEAR&&tick>=70&&tick<=shot.kick){double p=progress(tick,70,80),a=p*p*Math.PI*6;spin=new Vector(Math.sin(a),.25*Math.sin(a*.5),Math.cos(a));}
    pose(ball,ballAt,spin);
    if(aura!=null){aura.scaler(ModelScaler.value((float)(.2+1.0*smooth(tick,shot.auraStart(),shot.kick))));pose(aura,shot==InazumaShot.ETERNAL_BLIZZARD?owner.getLocation():ballAt,forward());}
    if(tick%2==0&&tick>=shot.auraStart())chargeParticles();
@@ -126,7 +127,7 @@ final class InazumaShotScene extends SummonScene {
     trace("torso phase="+(tick==sword(94)?"hold":"swing")+" forward="+(upper.x*forward().getX()+upper.z*forward().getZ())+" up="+upper.y+" supportHeight="+support.y+" rightHeight="+body.bone("shot_boot").worldPosition().y+" pilotHeight="+(owner.getLocation().getY()-origin.getY()));
    }
   }
-  if(shot==InazumaShot.DEATH_SWORD&&tick==sword(120)){
+  if(shot==InazumaShot.DEATH_SWORD&&tick==shot.end-1){
    var lead=body.bone("shot_knife_edge").worldPosition();var trail=body.bone("shot_trail_hand").worldPosition();var left=body.bone("shot_support_boot").worldPosition();var right=body.bone("shot_boot").worldPosition();
    trace("finish lowHand="+lead.y+" raisedHand="+trail.y+" leftFoot="+left.y+" rightFoot="+right.y+" stance="+((left.x-right.x)*forward().getX()+(left.z-right.z)*forward().getZ())+" hip="+body.bone("shot_hip").worldPosition().y+" armReach="+((lead.x-trail.x)*forward().getX()+(lead.z-trail.z)*forward().getZ()));
   }

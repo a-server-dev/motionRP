@@ -43,7 +43,7 @@ class FootballAssetsTest {
   for(String name:List.of("pll_left_leg","prl_right_leg")){
    var keys=tracks.getAsJsonObject(groups.get(name).get("uuid").getAsString()).getAsJsonArray("keyframes");
    var contact=keys.asList().stream().map(JsonElement::getAsJsonObject).filter(k->Math.abs(k.get("time").getAsDouble()-3.4)<1e-6).findFirst().orElseThrow();
-   double pitch=contact.getAsJsonArray("data_points").get(0).getAsJsonObject().get("x").getAsDouble();assertEquals(name.equals("pll_left_leg")?-60:70,pitch);
+   double pitch=contact.getAsJsonArray("data_points").get(0).getAsJsonObject().get("x").getAsDouble();assertEquals(name.equals("pll_left_leg")?60:-60,pitch);
   }
  }
  @Test void fireRetainsItsOriginalLeadingRestSegment()throws Exception{

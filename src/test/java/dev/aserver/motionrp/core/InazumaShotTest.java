@@ -90,12 +90,13 @@ class InazumaShotTest {
  @Test void blizzardOpposesItsFeetThenLandsBeforeTheMainJump()throws Exception{
   var paths=new ArrayList<List<double[]>>();
   for(String side:List.of("boot","other"))try(var in=Objects.requireNonNull(getClass().getResourceAsStream("/bettermodel/eternal_blizzard-"+side+".csv"))){paths.add(new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8).lines().map(l->Arrays.stream(l.split(",")).mapToDouble(Double::parseDouble).toArray()).toList());}
-  // Both soles brush opposite sides while their forward strokes run in opposite directions.
-  for(int t=8;t<=16;t++){
-   var r=paths.get(0).get(t);var l=paths.get(1).get(t);assertEquals(.34,r[0],1e-6);assertEquals(-.34,l[0],1e-6);assertEquals(.74,r[1]+l[1],1e-6);
-   assertEquals(1.35,r[2]-.03+InazumaShot.ETERNAL_BLIZZARD.height(t+2),1e-6);assertEquals(1.35,l[2]-.03+InazumaShot.ETERNAL_BLIZZARD.height(t+2),1e-6);
+  // Same confirmed front/back scissor movement, with clearance around the sphere.
+  assertTrue(paths.get(0).get(8)[1]>paths.get(1).get(8)[1]+.4);
+  assertTrue(paths.get(0).get(18)[1]<paths.get(1).get(18)[1]-.4);
+  for(String side:List.of("boot","other"))try(var in=Objects.requireNonNull(getClass().getResourceAsStream("/bettermodel/death_spear-"+side+".csv"))){
+   var spear=new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8).lines().map(l->Arrays.stream(l.split(",")).mapToDouble(Double::parseDouble).toArray()).toList();
+   for(int i=0;i<=10;i++)assertArrayEquals(spear.get(70+i),paths.get(side.equals("boot")?0:1).get(8+i),1e-7);
   }
-  assertTrue(paths.get(0).get(8)[1]>paths.get(1).get(8)[1]+.4);assertTrue(paths.get(0).get(16)[1]<paths.get(1).get(16)[1]-.4);
   for(int t=39;t<=69;t++){
    assertTrue(Math.abs(paths.get(0).get(t)[0]-paths.get(1).get(t)[0])>1);
    for(var path:paths)assertTrue(path.get(t)[2]>=0&&path.get(t)[2]<.12);
@@ -160,7 +161,7 @@ class InazumaShotTest {
  @Test void spearOnlyReusesTheScissorStrokeWithoutTurnsOrLandings()throws Exception{
   var m=load("players/motionrp_death_spear");var clip=m.getAsJsonArray("animations").get(0).getAsJsonObject();assertEquals("death_spear",clip.get("name").getAsString());assertEquals(6.6,clip.get("length").getAsDouble());
   assertEquals(86,InazumaShot.DEATH_SPEAR.kick);assertEquals(0,InazumaShot.DEATH_SPEAR.height(25));assertEquals(9.4,InazumaShot.DEATH_SPEAR.height(60));assertEquals("PINCH",InazumaShot.DEATH_SPEAR.phase(70));
-  var root=clip.getAsJsonObject("animators").entrySet().stream().map(e->e.getValue().getAsJsonObject()).filter(e->e.get("name").getAsString().equals("player_root")).findFirst().orElseThrow();for(var k:root.getAsJsonArray("keyframes"))assertEquals(0,k.getAsJsonObject().getAsJsonArray("data_points").get(0).getAsJsonObject().get("y").getAsDouble());
+  var root=clip.getAsJsonObject("animators").entrySet().stream().map(e->e.getValue().getAsJsonObject()).filter(e->e.get("name").getAsString().equals("player_root")).findFirst().orElseThrow();for(var k:root.getAsJsonArray("keyframes"))if(k.getAsJsonObject().get("channel").getAsString().equals("rotation"))assertEquals(0,k.getAsJsonObject().getAsJsonArray("data_points").get(0).getAsJsonObject().get("y").getAsDouble());
   assertTrue(m.getAsJsonArray("groups").asList().stream().anyMatch(g->g.getAsJsonObject().get("name").getAsString().equals("ice_other_boot")));
  }
  @Test void old063ActorsAreRecognizedForUpgrade()throws Exception{
@@ -173,8 +174,19 @@ class InazumaShotTest {
   var tracks=load("players/motionrp_death_spear").getAsJsonArray("animations").get(0).getAsJsonObject().getAsJsonObject("animators");
   for(var e:Map.of("prl_right_leg",-39.8585194204,"pll_left_leg",92.6955805796).entrySet()){
    var track=tracks.entrySet().stream().map(x->x.getValue().getAsJsonObject()).filter(x->x.get("name").getAsString().equals(e.getKey())).findFirst().orElseThrow();
-   var key=track.getAsJsonArray("keyframes").asList().stream().map(JsonElement::getAsJsonObject).filter(k->Math.abs(k.get("time").getAsDouble()-2.9)<1e-6).findFirst().orElseThrow();
+   var key=track.getAsJsonArray("keyframes").asList().stream().map(JsonElement::getAsJsonObject).filter(k->Math.abs(k.get("time").getAsDouble()-4.0)<1e-6).findFirst().orElseThrow();
    assertEquals(e.getValue(),key.getAsJsonArray("data_points").get(0).getAsJsonObject().get("x").getAsDouble(),1e-8);
+  }
+ }
+ @Test void old068ActorsAreRecognizedForUpgrade()throws Exception{
+  for(String id:List.of("fire_tornado","death_spear","eternal_blizzard")){
+   String name="players/motionrp_"+id+".bbmodel";try(var in=new java.util.zip.GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.68.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
+  }
+ }
+ @Test void spearHoldsItsTuckedLegsAtTheApexBeforeTheBrush()throws Exception{
+  assertEquals(9.4,InazumaShot.DEATH_SPEAR.height(60));assertEquals(9.4,InazumaShot.DEATH_SPEAR.height(69));assertEquals("BRACE",InazumaShot.DEATH_SPEAR.phase(69));
+  for(String side:List.of("boot","other"))try(var in=Objects.requireNonNull(getClass().getResourceAsStream("/bettermodel/death_spear-"+side+".csv"))){
+   var p=new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8).lines().toList();assertEquals(p.get(60),p.get(68));assertNotEquals(p.get(70),p.get(80));
   }
  }
  @Test void old067ActorsAreRecognizedForUpgrade()throws Exception{
@@ -183,11 +195,11 @@ class InazumaShotTest {
   }
  }
  @Test void spearArmStrokeEndsWithTheFootReversalAndAuraStartsWithIt()throws Exception{
-  assertEquals(48,InazumaShot.DEATH_SPEAR.auraStart());
+  assertEquals(70,InazumaShot.DEATH_SPEAR.auraStart());
   var tracks=load("players/motionrp_death_spear").getAsJsonArray("animations").get(0).getAsJsonObject().getAsJsonObject("animators");
   for(String name:List.of("pra_right_arm","pla_left_arm")){
    var track=tracks.entrySet().stream().map(e->e.getValue().getAsJsonObject()).filter(e->e.get("name").getAsString().equals(name)).findFirst().orElseThrow();
-   var key=track.getAsJsonArray("keyframes").asList().stream().map(JsonElement::getAsJsonObject).filter(k->Math.abs(k.get("time").getAsDouble()-2.9)<1e-6).findFirst().orElseThrow();
+   var key=track.getAsJsonArray("keyframes").asList().stream().map(JsonElement::getAsJsonObject).filter(k->Math.abs(k.get("time").getAsDouble()-4.0)<1e-6).findFirst().orElseThrow();
    assertEquals(name.equals("pra_right_arm")?70:-45,key.getAsJsonArray("data_points").get(0).getAsJsonObject().get("x").getAsDouble());
   }
  }

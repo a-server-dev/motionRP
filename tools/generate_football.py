@@ -158,9 +158,8 @@ def reference_actors(rig):
      if entry['name']=='player_root'and key['channel']=='rotation':key['data_points'][0]['y']=0
    # Explicit quarter turns prevent quaternion interpolation taking a shortcut.
    track('football_spin',[(0,(0,0,0)),(26,(0,0,0))]+[(28+i*1.75,(0,i*90,0))for i in range(17)]+[(108,(0,1440,0))])
-   # Roll the entire horizontal body 90 degrees right from the previous kick pose.
-   # Keep the four-turn spin track independent and unbank before landing.
-   track('football_bank',[(0,(0,0,0)),(56,(0,0,0)),(58,(0,90,0)),(78,(0,90,0)),(90,(0,0,0)),(108,(0,0,0))])
+   # Keep the face normal aligned with the shot; bank via the root's Z axis.
+   track('football_bank',[(0,(0,0,0)),(108,(0,0,0))])
    # BetterModel's player track is evaluated ahead of the scene tick.
    # Hold the initial pose for four ticks so the visible boot reaches contact
    # during the scene's release, before the follow-through reverses its motion.
@@ -176,20 +175,20 @@ def reference_actors(rig):
     return[float(a['data_points'][0][axis])*(1-p)+float(b['data_points'][0][axis])*p for axis in'xyz']
    entry=m['animations'][0]['animators'][root['uuid']];keys=[]
    for t in range(end+1):
-    x,_,z=sample(entry,'rotation',t);p=max(0,min(1,(t-42)/22));p=p*p*(3-2*p);q=max(0,min(1,(t-84)/20));q=q*q*(3-2*q);keys.append((t/20,(x+(-90-x)*p*(1-q),90*p*(1-q),z)))
+    x,_,z=sample(entry,'rotation',t);p=max(0,min(1,(t-42)/22));p=p*p*(3-2*p);q=max(0,min(1,(t-84)/20));q=q*q*(3-2*q);keys.append((t/20,(x*(1-p*(1-q)),0,-90*p*(1-q))))
    # Keep the original leading rest keys: their timing controls BetterModel's player-animation lead.
    entry['keyframes']=[k for k in entry['keyframes']if k['channel']!='rotation'or k['time']<42/20]+animator(root,[(t,v)for t,v in keys if t>=42/20])['keyframes']
    # Recover directly from the horizontal kick instead of tumbling through another flip.
    entry=m['animations'][0]['animators'][root['uuid']]
    def recover(t):
     q=max(0,min(1,(t-78)/16));return q*q*(3-2*q)
-   entry['keyframes']=[k for k in entry['keyframes']if k['channel']!='rotation'or k['time']<78/20]+animator(root,[(t/20,(-90*(1-recover(t)),90*(1-recover(t)),0))for t in range(78,end+1)])['keyframes']
+   entry['keyframes']=[k for k in entry['keyframes']if k['channel']!='rotation'or k['time']<78/20]+animator(root,[(t/20,(0,0,-90*(1-recover(t))))for t in range(78,end+1)])['keyframes']
 
    # Counterbalance the sideways torso: left boot strikes forward, right boot extends back.
-   for b,contact,follow in [('pll_left_leg',120,-60),('prl_right_leg',-60,70)]:
+   for b,contact,follow in [('pll_left_leg',-60,60),('prl_right_leg',120,-60)]:
     g=next(g for g in m['groups']if g['name']==b);e=m['animations'][0]['animators'][g['uuid']]
     right=b=='prl_right_leg';sg=1 if right else -1
-    r=[(60.5,(contact,0,sg*8)),(64.5,(contact,0,sg*8)),(66,(0 if right else 35,0,sg*8)),(68,(follow,0,sg*8)),(74,(80 if right else -90,0,sg*8)),(78,(80 if right else -90,0,sg*8))]
+    r=[(60.5,(contact,0,sg*8)),(64.5,(contact,0,sg*8)),(66,(35 if right else 0,0,sg*8)),(68,(follow,0,sg*8)),(74,(-80 if right else 80,0,sg*8)),(78,(-80 if right else 80,0,sg*8))]
     e['keyframes']=[k for k in e['keyframes']if k['channel']!='rotation'or not 60.5/20<=k['time']<=78/20]+animator(g,[(t/20,v)for t,v in r])['keyframes']
     g=next(g for g in m['groups']if g['name']==('prfl_right_foreleg'if right else'plfl_left_foreleg'));e=m['animations'][0]['animators'][g['uuid']]
     r=[(60.5,(-45 if right else -105,0,0)),(64.5,(-45 if right else -105,0,0)),(66,(-60 if right else -75,0,0)),(68,(-75 if right else 0,0,0)),(74,(-70 if right else 0,0,0)),(78,(-70 if right else 0,0,0))]
@@ -222,11 +221,12 @@ def reference_actors(rig):
      if attach(node['children'],uid):return True
    return False
   paths=[]
-  for label,bone,origin in [('football_boot','prfl_right_foreleg',(1.875,.65,-1.8)),('football_calf','prfl_right_foreleg',(1.875,4.1,0)),('football_torso','pc_chest',(0,17,0)),('football_upper','pc_chest',(0,22,0)),('football_side','pc_chest',(5,17,0))]:
+  for label,bone,origin in [('football_boot','prfl_right_foreleg',(1.875,.65,-1.8)),('football_calf','prfl_right_foreleg',(1.875,4.1,0)),('football_torso','pc_chest',(0,17,0)),('football_upper','pc_chest',(0,22,0)),('football_side','pc_chest',(5,17,0)),('football_front','pc_chest',(0,17,-5))]:
+   if label=='football_front'and not fire:continue
    if fire and label in {'football_boot','football_calf'}:bone='plfl_left_foreleg';origin=(-origin[0],origin[1],origin[2])
    parent=next(g for g in m['groups']if g['name']==bone)
    g={'name':label,'uuid':ident(name+'/'+label),'origin':list(origin),'rotation':[0,0,0],'export':True};m['groups'].append(g);assert attach(m['outliner'],g['uuid'])
-   paths.append(hand_path(m,end,label).strip().splitlines())
+   if label!='football_front':paths.append(hand_path(m,end,label).strip().splitlines())
   save('players/motionrp_'+name+'.bbmodel',m)
   from generate_summons import ROOT
   (ROOT/(name+'-boot.csv')).write_text('\n'.join(','.join(row)for row in zip(*paths))+'\n')

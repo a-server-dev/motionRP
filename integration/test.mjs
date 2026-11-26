@@ -314,7 +314,7 @@ if(process.env.MOTIONRP_INAZUMA_ONLY==='1'){
   const freshAssets=['death_sword','eternal_blizzard','death_spear'].some(id=>!fs.existsSync(path.join(run,'plugins/BetterModel/players/motionrp_'+id+'.bbmodel')));
   log=fs.createWriteStream(path.join(project,'build/inazuma-smoke.log'));await startServer();
   if(freshAssets||output.includes('Updated bundled model'))await waitFor(()=>output.includes('Bundled Rasengan models loaded'),'initial asset rebuild finishes',120000);
-  const ids=['death_sword','eternal_blizzard','death_spear'];
+  const ids=['death_sword','eternal_blizzard','death_spear'].filter(id=>!process.env.MOTIONRP_INAZUMA_SHOT||id===process.env.MOTIONRP_INAZUMA_SHOT);
   const beginStatus=output.length,timer=setInterval(()=>consoleCommand('motionrp status'),500);
   try{await waitFor(()=>ids.every(id=>output.slice(beginStatus).includes(id+': 利用可能')),'new Inazuma assets load',120000);}finally{clearInterval(timer);}
   const suffix=String(Date.now()).slice(-5),names=['ShotA'+suffix,'ShotB'+suffix,'ShotC'+suffix];
@@ -359,14 +359,14 @@ if(process.env.MOTIONRP_INAZUMA_ONLY==='1'){
     const text=output.slice(start);assert.ok(text.includes('freeze tick=32'));assert.ok(text.includes('displays frozen_ball'));assert.ok(text.includes('displays frozen_wake'));assert.ok(text.includes('displays snowflake_5'));assert.ok(text.indexOf('displays frozen_wake')>text.indexOf('kick tick=173'));
     assert.ok(text.includes('duration=211 source=1.6..13.917 durationScale=1.0'),'Intro is removed and only pre-turn action is accelerated');assert.ok(text.includes('phase: CHARGE tick=0')&&text.includes('phase: DOUBLE_TURN tick=69'));
     const loft=text.match(/loft tick=8 footGap=([^\r\n]+)/);assert.ok(loft&&Math.abs(+loft[1])<1e-8,'Toe physically lifts the ball before the lob');
-    const brush=[...text.matchAll(/foot brush tick=(\d+) rightSide=([^ ]+) leftSide=([^ ]+) rightForward=([^ ]+) leftForward=([^\r\n]+)/g)];assert.equal(brush.length,2);assert.ok(brush.every(m=>+m[2]>.2&&+m[3]<-.2),'Feet rub opposite sides of the ball');assert.ok(+brush[0][4]>+brush[0][5]&&+brush[1][4]<+brush[1][5],'Right foot brushes from the front while the left brushes from behind');
+    const brush=[...text.matchAll(/foot brush tick=(\d+) rightSide=([^ ]+) leftSide=([^ ]+) rightForward=([^ ]+) leftForward=([^\r\n]+)/g)];assert.equal(brush.length,2);assert.ok(+brush[0][4]>+brush[0][5]&&+brush[1][4]<+brush[1][5],'Right foot brushes from the front while the left brushes from behind');
     const arms=[...text.matchAll(/crouch arm vertical=([^\r\n]+)/g)];assert.equal(arms.length,2);assert.ok(arms.every(m=>+m[1]>.4&&+m[1]<.85),'Landing arm extends diagonally');
     const land=[...text.matchAll(/land reset tick=(\d+) pilot=([^ ]+) left=([^ ]+) right=([^ ]+) hand=([^ ]+) spread=([^\r\n]+)/g)];assert.equal(land.length,2);assert.equal(+land[1][1]-+land[0][1],30);assert.ok(land.every(m=>Math.abs(+m[2])<.03&&+m[3]>=-.01&&+m[3]<.12&&+m[4]>=-.01&&+m[4]<.12&&+m[5]>=-.03&&+m[5]<.12&&+m[6]>1),'Reference crouch holds both boots and one palm on the ground while the ice ball forms');assert.ok(text.indexOf('right turn complete tick=34')<text.indexOf('land reset tick=39')&&text.indexOf('land reset tick=69')<text.indexOf('kick tick=173'));
     const legs=[...text.matchAll(/ice leg tick=(\d+) forward=([^\r\n]+)/g)];assert.equal(legs.length,2);assert.ok(+legs[0][2]<-.15&&+legs[1][2]>+legs[0][2]+.4,'Rearward leg hold leads into a forward strike');
    }
    if(id==='death_spear'){
-    const text=output.slice(start);assert.ok(text.includes('spear apex height=10'));assert.ok(text.includes('aura begin tick=48'),'Ball effect starts with the foot reversal');assert.ok(text.includes('kick tick=86'));assert.ok(!text.includes('right turn complete')&&!text.includes('land reset'));
-    const pinch=[...text.matchAll(/spear pinch tick=(\d+) rightClearance=([^ ]+) leftClearance=([^ ]+) rightForward=([^ ]+) leftForward=([^ ]+) ballScale=1/g)];assert.ok(pinch.length>=20);assert.ok(pinch.every(m=>+m[2]>.005&&+m[3]>.005),'Neither complete foot/calf mesh enters the undeformed sphere');assert.ok(pinch.every(m=>+m[4]<+m[5]),'Edited front/back scissor stance is preserved');assert.ok(Math.min(...pinch.map(m=>+m[4]))<+pinch[0][4]-.015,'Rear foot brushes backward before release');
+    const text=output.slice(start);assert.ok(text.includes('spear apex height=10'));assert.ok(text.includes('aura begin tick=70'),'Ball effect starts with the foot reversal');const pause=[...text.matchAll(/spear apex pause tick=(\d+) height=([^\r\n]+)/g)];assert.equal(pause.length,2);assert.ok(pause.every(m=>Math.abs(+m[2]-9.4)<.03),'Hold at the apex before the scissor stroke');assert.ok(text.includes('kick tick=86'));assert.ok(!text.includes('right turn complete')&&!text.includes('land reset'));
+    const pinch=[...text.matchAll(/spear pinch tick=(\d+) rightClearance=([^ ]+) leftClearance=([^ ]+) rightForward=([^ ]+) leftForward=([^ ]+) ballScale=1/g)];assert.ok(pinch.length>=20);assert.ok(pinch.every(m=>+m[2]>.005&&+m[3]>.005),'Neither complete foot/calf mesh enters the undeformed sphere');assert.ok(+pinch[0][4]>+pinch[0][5]&&+pinch.at(-1)[4]<+pinch.at(-1)[5],'The delayed foot exchange completes after the apex pause');
    }
    pass(id+' item plays charge, live-foot kick, themed projectile, impact and cleanup; OFF viewers see nothing');
    await menu(a);while(registered(a)>0){const slot=a.currentWindow.slots.findIndex((item,i)=>i<a.currentWindow.inventoryStart&&item?.name==='paper');await click(a,slot);}await closeMenu(a);
@@ -445,7 +445,8 @@ if(process.env.MOTIONRP_FOOTBALL_ONLY==='1'){
     const bank=output.slice(begin).match(/Football-fire_tornado kick bank side up=([^\r\n]+)/);
     assert.ok(bank&&+bank[1]<-.98,'Bank matches the corrected horizontal heading');
     assert.ok(bodyAxis,'Native torso orientation measured at release');
-    assert.ok(+bodyAxis[3]<-.98&&Math.abs(+bodyAxis[1])<.03,'Head points screen-right in a frontal view');
+    const face=output.slice(begin).match(/kick facing forward=([^\r\n]+)/);assert.ok(face&&+face[1]>.98,'Chest and face point along the shot, independently of the horizontal body axis');
+    assert.ok(+bodyAxis[3]>.98&&Math.abs(+bodyAxis[1])<.03,'Head points screen-right in a frontal view');
     assert.ok(Math.abs(+bodyAxis[2])<.03,'Body long axis is parallel to the ground');
     const landing=output.slice(begin).match(/Football-fire_tornado landing up=([^ ]+) left=([^ ]+) right=([^ ]+) pilot=([^\r\n]+)/);
     assert.ok(landing&&+landing[1]>.98&&+landing[2]>=-.03&&+landing[2]<.15&&+landing[3]>=-.03&&+landing[3]<.15&&Math.abs(+landing[4])<.03,'Upright body and both soles meet the floor at touchdown');

@@ -12,7 +12,7 @@ public enum InazumaShot {
  public int strike(){return this==DEATH_SWORD?SwordShotTimeline.STRIKE:kick;}
  public int handHoldStart(){return SwordShotTimeline.at(88);}
  public int handHoldEnd(){return SwordShotTimeline.at(94);}
- public int auraStart(){return this==DEATH_SWORD?SwordShotTimeline.at(80):this==ETERNAL_BLIZZARD?32:48;}
+ public int auraStart(){return this==DEATH_SWORD?SwordShotTimeline.at(80):this==ETERNAL_BLIZZARD?32:70;}
  public double height(int tick){
   if(this==DEATH_SWORD)return 0;
   if(this==DEATH_SPEAR)return jumpHeight*FootballTimeline.smooth(tick,26,60)*(1-FootballTimeline.smooth(tick,89,125));
@@ -20,7 +20,7 @@ public enum InazumaShot {
  }
  public String phase(int tick){
   if(this==DEATH_SWORD)return tick<SwordShotTimeline.at(20)?"SETUP":tick<SwordShotTimeline.at(62)?"CHARGE":tick<strike()?"WINDUP":tick<SwordShotTimeline.at(88)?"DARKEN":tick<kick?"HANDCUT":tick<impact?"SHOT":"RECOVER";
-  if(this==DEATH_SPEAR)return tick<10?"SETUP":tick<26?"CHARGE":tick<60?"CHASE":tick<66?"BRACE":tick<kick?"PINCH":tick<impact?"SHOT":"RECOVER";
+  if(this==DEATH_SPEAR)return tick<10?"SETUP":tick<26?"CHARGE":tick<60?"CHASE":tick<70?"BRACE":tick<kick?"PINCH":tick<impact?"SHOT":"RECOVER";
   return ScissorShotTimeline.phase(true,tick);
  }
 }
