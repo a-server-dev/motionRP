@@ -12,7 +12,7 @@ public enum InazumaShot {
  public int strike(){return this==DEATH_SWORD?SwordShotTimeline.STRIKE:kick;}
  public int handHoldStart(){return SwordShotTimeline.at(88);}
  public int handHoldEnd(){return SwordShotTimeline.at(94);}
- public int auraStart(){return this==DEATH_SWORD?SwordShotTimeline.at(80):this==ETERNAL_BLIZZARD?32:60;}
+ public int auraStart(){return this==DEATH_SWORD?SwordShotTimeline.at(80):this==ETERNAL_BLIZZARD?32:48;}
  public double height(int tick){
   if(this==DEATH_SWORD)return 0;
   if(this==DEATH_SPEAR)return jumpHeight*FootballTimeline.smooth(tick,26,60)*(1-FootballTimeline.smooth(tick,89,125));

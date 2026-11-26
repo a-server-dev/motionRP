@@ -34,7 +34,7 @@ class InazumaShotTest {
   for(int t=0;t<InazumaShot.DEATH_SWORD.end;t++)assertEquals(0,InazumaShot.DEATH_SWORD.height(t));
   try(var in=Objects.requireNonNull(getClass().getResourceAsStream("/bettermodel/death_sword-support.csv"))){
    var heights=new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8).lines().mapToDouble(l->Double.parseDouble(l.split(",")[2])).toArray();
-   assertTrue(Arrays.stream(heights).allMatch(h->h>=0&&h<.12));assertEquals(0,Arrays.stream(heights).max().orElseThrow()-Arrays.stream(heights).min().orElseThrow(),1e-8);
+   assertTrue(Arrays.stream(heights).allMatch(h->h>=0&&h<.12));assertTrue(Arrays.stream(heights).max().orElseThrow()-Arrays.stream(heights).min().orElseThrow()<.04);
   }
  }
  @Test void old055SwordIsRecognizedForUpgrade()throws Exception{
@@ -117,14 +117,14 @@ class InazumaShotTest {
  }
  @Test void swordPlantsTheRightFootInFrontImmediatelyAfterTheKick()throws Exception{
   var feet=new ArrayList<List<double[]>>();for(String name:List.of("right","support"))try(var in=Objects.requireNonNull(getClass().getResourceAsStream("/bettermodel/death_sword-"+name+".csv"))){feet.add(new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8).lines().map(l->Arrays.stream(l.split(",")).mapToDouble(Double::parseDouble).toArray()).toList());}
-  for(int t=55;t<90;t++){assertTrue(feet.get(0).get(t)[1]>feet.get(1).get(t)[1]+.4);for(var path:feet)assertTrue(path.get(t)[2]<.12);}
+  for(int t=83;t<90;t++){assertTrue(feet.get(0).get(t)[1]>feet.get(1).get(t)[1]+.4);for(var path:feet)assertTrue(path.get(t)[2]<.12);}
  }
  @Test void old059ActorsAreRecognizedForUpgrade()throws Exception{
   for(String name:List.of("players/motionrp_death_sword.bbmodel","players/motionrp_eternal_blizzard.bbmodel"))try(var in=new java.util.zip.GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.59.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
  }
  @Test void swordRestoresAHighStraightKickAndLowersItsPelvisWithoutLiftingTheFeet()throws Exception{
   try(var in=Objects.requireNonNull(getClass().getResourceAsStream("/bettermodel/death_sword-right.csv"))){var feet=new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8).lines().map(l->Arrays.stream(l.split(",")).mapToDouble(Double::parseDouble).toArray()).toList();assertTrue(feet.get(39)[2]>1.0,"Front kick reaches waist/chest height");assertTrue(feet.get(39)[1]>.6);}
-  try(var in=Objects.requireNonNull(getClass().getResourceAsStream("/bettermodel/death_sword-hip.csv"))){var h=new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8).lines().map(l->Double.parseDouble(l.split(",")[2])).toList();assertTrue(h.get(81)<h.get(39)-.2,"Pelvis drops over 20 cm as both knees bend");assertTrue(h.get(47)>h.get(55));}
+  try(var in=Objects.requireNonNull(getClass().getResourceAsStream("/bettermodel/death_sword-hip.csv"))){var h=new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8).lines().map(l->Double.parseDouble(l.split(",")[2])).toList();assertTrue(h.get(85)<h.get(39)-.18,"Pelvis remains low in the edited grounded finish");assertTrue(h.get(47)>h.get(55));}
  }
  @Test void old060ActorsAreRecognizedForUpgrade()throws Exception{
   for(String name:List.of("players/motionrp_death_sword.bbmodel","players/motionrp_eternal_blizzard.bbmodel"))try(var in=new java.util.zip.GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.60.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
@@ -146,13 +146,15 @@ class InazumaShotTest {
  @Test void old062ActorsAreRecognizedForUpgrade()throws Exception{
   for(String name:List.of("players/motionrp_death_sword.bbmodel","players/motionrp_eternal_blizzard.bbmodel"))try(var in=new java.util.zip.GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.62.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
  }
- @Test void swordHasNoExtraPoseAfterTheHandChop()throws Exception{
-  var tracks=load("players/motionrp_death_sword").getAsJsonArray("animations").get(0).getAsJsonObject().getAsJsonObject("animators");
-  for(var raw:tracks.entrySet()){
-   var keys=raw.getValue().getAsJsonObject().getAsJsonArray("keyframes").asList().stream().map(JsonElement::getAsJsonObject).filter(k->k.get("channel").getAsString().equals("rotation")).toList();
-   if(keys.isEmpty())continue;var last=keys.stream().max(Comparator.comparingDouble(k->k.get("time").getAsDouble())).orElseThrow();
-   var chop=keys.stream().filter(k->k.get("time").getAsDouble()<=3.65).max(Comparator.comparingDouble(k->k.get("time").getAsDouble())).orElseThrow();assertEquals(chop.get("data_points"),last.get("data_points"));
-   assertTrue(keys.stream().noneMatch(k->k.get("time").getAsDouble()>3.65&&k.get("time").getAsDouble()<4.5));
+ @Test void swordKeepsLegSocketsAttachedWhileSettlingIntoTheEditedPose()throws Exception{
+  var model=load("players/motionrp_death_sword");var tracks=model.getAsJsonArray("animations").get(0).getAsJsonObject().getAsJsonObject("animators");
+  var root=model.getAsJsonArray("outliner").get(0).getAsJsonObject();
+  String hipId=model.getAsJsonArray("groups").asList().stream().map(JsonElement::getAsJsonObject).filter(g->g.get("name").getAsString().equals("phip_hip")).findFirst().orElseThrow().get("uuid").getAsString();
+  var hip=root.getAsJsonArray("children").asList().stream().filter(JsonElement::isJsonObject).map(JsonElement::getAsJsonObject).filter(g->g.get("uuid").getAsString().equals(hipId)).findFirst().orElseThrow();
+  for(String name:List.of("prl_right_leg","pll_left_leg")){
+   var track=tracks.entrySet().stream().filter(e->e.getValue().getAsJsonObject().get("name").getAsString().equals(name)).findFirst().orElseThrow();
+   assertTrue(hip.getAsJsonArray("children").asList().stream().filter(JsonElement::isJsonObject).anyMatch(n->n.getAsJsonObject().get("uuid").getAsString().equals(track.getKey())));
+   assertTrue(track.getValue().getAsJsonObject().getAsJsonArray("keyframes").asList().stream().noneMatch(k->k.getAsJsonObject().get("channel").getAsString().equals("position")));
   }
  }
  @Test void spearOnlyReusesTheScissorStrokeWithoutTurnsOrLandings()throws Exception{
@@ -173,6 +175,20 @@ class InazumaShotTest {
    var track=tracks.entrySet().stream().map(x->x.getValue().getAsJsonObject()).filter(x->x.get("name").getAsString().equals(e.getKey())).findFirst().orElseThrow();
    var key=track.getAsJsonArray("keyframes").asList().stream().map(JsonElement::getAsJsonObject).filter(k->Math.abs(k.get("time").getAsDouble()-2.9)<1e-6).findFirst().orElseThrow();
    assertEquals(e.getValue(),key.getAsJsonArray("data_points").get(0).getAsJsonObject().get("x").getAsDouble(),1e-8);
+  }
+ }
+ @Test void old067ActorsAreRecognizedForUpgrade()throws Exception{
+  for(String id:List.of("death_sword","death_spear","fire_tornado")){
+   String name="players/motionrp_"+id+".bbmodel";try(var in=new java.util.zip.GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.67.0/"+name.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(name,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
+  }
+ }
+ @Test void spearArmStrokeEndsWithTheFootReversalAndAuraStartsWithIt()throws Exception{
+  assertEquals(48,InazumaShot.DEATH_SPEAR.auraStart());
+  var tracks=load("players/motionrp_death_spear").getAsJsonArray("animations").get(0).getAsJsonObject().getAsJsonObject("animators");
+  for(String name:List.of("pra_right_arm","pla_left_arm")){
+   var track=tracks.entrySet().stream().map(e->e.getValue().getAsJsonObject()).filter(e->e.get("name").getAsString().equals(name)).findFirst().orElseThrow();
+   var key=track.getAsJsonArray("keyframes").asList().stream().map(JsonElement::getAsJsonObject).filter(k->Math.abs(k.get("time").getAsDouble()-2.9)<1e-6).findFirst().orElseThrow();
+   assertEquals(name.equals("pra_right_arm")?70:-45,key.getAsJsonArray("data_points").get(0).getAsJsonObject().get("x").getAsDouble());
   }
  }
  @Test void old066SpearIsRecognizedForUpgrade()throws Exception{

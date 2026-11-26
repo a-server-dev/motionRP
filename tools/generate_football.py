@@ -160,7 +160,7 @@ def reference_actors(rig):
    track('football_spin',[(0,(0,0,0)),(26,(0,0,0))]+[(28+i*1.75,(0,i*90,0))for i in range(17)]+[(108,(0,1440,0))])
    # Roll the entire horizontal body 90 degrees right from the previous kick pose.
    # Keep the four-turn spin track independent and unbank before landing.
-   track('football_bank',[(0,(0,0,0)),(56,(0,0,0)),(58,(0,-90,0)),(78,(0,-90,0)),(96,(0,0,0)),(108,(0,0,0))])
+   track('football_bank',[(0,(0,0,0)),(56,(0,0,0)),(58,(0,90,0)),(78,(0,90,0)),(90,(0,0,0)),(108,(0,0,0))])
    # BetterModel's player track is evaluated ahead of the scene tick.
    # Hold the initial pose for four ticks so the visible boot reaches contact
    # during the scene's release, before the follow-through reverses its motion.
@@ -176,9 +176,15 @@ def reference_actors(rig):
     return[float(a['data_points'][0][axis])*(1-p)+float(b['data_points'][0][axis])*p for axis in'xyz']
    entry=m['animations'][0]['animators'][root['uuid']];keys=[]
    for t in range(end+1):
-    x,_,z=sample(entry,'rotation',t);p=max(0,min(1,(t-42)/22));p=p*p*(3-2*p);q=max(0,min(1,(t-84)/20));q=q*q*(3-2*q);keys.append((t/20,(x+(-90-x)*p*(1-q),-90*p*(1-q),z)))
+    x,_,z=sample(entry,'rotation',t);p=max(0,min(1,(t-42)/22));p=p*p*(3-2*p);q=max(0,min(1,(t-84)/20));q=q*q*(3-2*q);keys.append((t/20,(x+(-90-x)*p*(1-q),90*p*(1-q),z)))
    # Keep the original leading rest keys: their timing controls BetterModel's player-animation lead.
    entry['keyframes']=[k for k in entry['keyframes']if k['channel']!='rotation'or k['time']<42/20]+animator(root,[(t,v)for t,v in keys if t>=42/20])['keyframes']
+   # Recover directly from the horizontal kick instead of tumbling through another flip.
+   entry=m['animations'][0]['animators'][root['uuid']]
+   def recover(t):
+    q=max(0,min(1,(t-78)/16));return q*q*(3-2*q)
+   entry['keyframes']=[k for k in entry['keyframes']if k['channel']!='rotation'or k['time']<78/20]+animator(root,[(t/20,(-90*(1-recover(t)),90*(1-recover(t)),0))for t in range(78,end+1)])['keyframes']
+
    # Counterbalance the sideways torso: left boot strikes forward, right boot extends back.
    for b,contact,follow in [('pll_left_leg',120,-60),('prl_right_leg',-60,70)]:
     g=next(g for g in m['groups']if g['name']==b);e=m['animations'][0]['animators'][g['uuid']]
@@ -188,6 +194,12 @@ def reference_actors(rig):
     g=next(g for g in m['groups']if g['name']==('prfl_right_foreleg'if right else'plfl_left_foreleg'));e=m['animations'][0]['animators'][g['uuid']]
     r=[(60.5,(-45 if right else -105,0,0)),(64.5,(-45 if right else -105,0,0)),(66,(-60 if right else -75,0,0)),(68,(-75 if right else 0,0,0)),(74,(-70 if right else 0,0,0)),(78,(-70 if right else 0,0,0))]
     e['keyframes']=[k for k in e['keyframes']if k['channel']!='rotation'or not 60.5/20<=k['time']<=78/20]+animator(g,[(t/20,v)for t,v in r])['keyframes']
+   # Draw the legs under the pelvis before touchdown, then absorb the landing.
+   for b in ['pll_left_leg','prl_right_leg','plfl_left_foreleg','prfl_right_foreleg']:
+    g=next(g for g in m['groups']if g['name']==b);e=m['animations'][0]['animators'][g['uuid']]
+    old=sample(e,'rotation',78);right=b in ['prl_right_leg','prfl_right_foreleg'];knee='foreleg'in b;sg=1 if right else -1
+    r=[(78,old),(90,(-35 if knee else 22,0,0 if knee else sg*8)),(96,(-15 if knee else 10,0,0 if knee else sg*5)),(100,(-45 if knee else 26,0,0 if knee else sg*8)),(105,(-20 if knee else 12,0,0 if knee else sg*5)),(112,(0,0,0))]
+    e['keyframes']=[k for k in e['keyframes']if k['channel']!='rotation'or k['time']<78/20]+animator(g,[(t/20,v)for t,v in r])['keyframes']
 
   if fire:
    parent=next(g for g in m['groups']if g['name']=='prfl_right_foreleg')

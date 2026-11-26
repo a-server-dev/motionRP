@@ -131,6 +131,43 @@ def actor(rig,name,end,kick):
    if rot:
     held=copy.deepcopy(max(rot,key=lambda k:k['time']));held['time']=end/20
     entry['keyframes']=[k for k in keys if k['channel']!='rotation']+rot+[held]
+ if name=='death_sword':
+  # Keep thighs attached to the pelvis. Translating each thigh tore the hip seam.
+  groups={g['name']:g for g in m['groups']};root=next(n for n in m['outliner']if isinstance(n,dict)and n['uuid']==groups['player_root']['uuid'])
+  hip=next(n for n in root['children']if isinstance(n,dict)and n['uuid']==groups['phip_hip']['uuid'])
+  for bone in ['prl_right_leg','pll_left_leg']:
+   node=next(n for n in root['children']if isinstance(n,dict)and n['uuid']==groups[bone]['uuid'])
+   root['children'].remove(node);hip['children'].append(node)
+  authored=json.loads((Path(__file__).parent/'authored/motionrp_death_sword.bbmodel').read_text())
+  for source in authored['animations'][0]['animators'].values():
+   if source.get('keyframes')and source['name']in groups:
+    g=groups[source['name']]
+    m['animations'][0]['animators'].setdefault(g['uuid'],animator(g,[(0,(0,0,0)),(end/20,(0,0,0))]))
+  for entry in m['animations'][0]['animators'].values():
+   if entry['name']in ['prl_right_leg','pll_left_leg']:
+    entry['keyframes']=[k for k in entry['keyframes']if k['channel']!='position']
+   source=next((v for v in authored['animations'][0]['animators'].values()if v['name']==entry['name']),None)
+   targets=[k for k in source.get('keyframes',[])if k['channel']=='rotation']if source else []
+   if not targets:continue
+   target=max(targets,key=lambda k:k['time'])
+   if target['time']<4:continue
+   old=[k for k in entry['keyframes']if k['channel']=='rotation']
+   start=max((k for k in old if k['time']<=3.65),key=lambda k:k['time'],default=old[0])
+   a=[float(start['data_points'][0][c])for c in'xyz'];b=[float(target['data_points'][0][c])for c in'xyz'];keys=[]
+   for t in range(73,91):
+    q=max(0,min(1,(t-73)/10));q=q*q*(3-2*q)
+    keys.append((t/20,tuple(x+(y-x)*q for x,y in zip(a,b))))
+   entry['keyframes']=[k for k in entry['keyframes']if k['channel']!='rotation'or k['time']<3.65]+animator(groups[entry['name']],keys)['keyframes']
+  # Lower the connected pelvis as a whole; never separate the leg sockets.
+  from generate_rasengan import hand_path
+  right=[list(map(float,l.split(',')))for l in hand_path(m,end,'shot_boot').splitlines()];left=[list(map(float,l.split(',')))for l in hand_path(m,end,'shot_support_boot').splitlines()]
+  entry=m['animations'][0]['animators'][groups['player_root']['uuid']];pos=[]
+  for t in range(end):
+   # Undo the earlier grounding before applying a common floor correction.
+   ks=[k for k in entry['keyframes']if k['channel']=='position'];lo=max((k for k in ks if k['time']<=t/20),key=lambda k:k['time'],default=ks[0]);hi=min((k for k in ks if k['time']>=t/20),key=lambda k:k['time'],default=ks[-1]);q=(t/20-lo['time'])/(hi['time']-lo['time'])if hi['time']!=lo['time']else 0
+   y=float(lo['data_points'][0]['y'])*(1-q)+float(hi['data_points'][0]['y'])*q
+   pos.append((t/20,(0,y+(.070625-min(right[t][2],left[t][2]))*16,0)))
+  pos.append((end/20,pos[-1][1]));entry['keyframes']=[k for k in entry['keyframes']if k['channel']!='position']+animator(groups['player_root'],pos,'position')['keyframes']
  if name=='eternal_blizzard':
   from generate_rasengan import hand_path
   def smooth(x,a,b):
@@ -239,6 +276,12 @@ def spear_actor(rig):
    if abs(t-4.7)<1e-6:t=5.0
    values.append((t,v))
   m['animations'][0]['animators'][g['uuid']]=animator(g,values)
+ # The arm stroke and the foot reversal share a single clock.
+ for entry in m['animations'][0]['animators'].values():
+  if entry['name']in ['pra_right_arm','pla_left_arm','prfa_right_forearm','plfa_left_forearm','pc_chest','pw_waist','h_ph_head']:
+   for key in entry['keyframes']:
+    t=key['time']*20
+    if 52<=t<=84:key['time']=(48+(t-52)*10/32)/20
  save('players/motionrp_death_spear.bbmodel',m)
  for suffix,bone in [('boot','shot_boot'),('other','ice_other_boot')]: (ROOT/('death_spear-'+suffix+'.csv')).write_text(hand_path(m,132,bone))
  # Exact sphere-to-transformed-calf-box clearance, including the foot/skin volume.

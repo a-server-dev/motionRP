@@ -11,11 +11,18 @@ class FootballVisualsTest {
   assertEquals(8,FootballTimeline.height(50,true));assertEquals(8,FootballTimeline.height(contact,true));
   assertEquals(0,FootballTimeline.height(FootballTimeline.land(true),true),1e-9);
  }
- @Test void headPointsToThePlayersRightParallelToTheGroundAtContact(){
+ @Test void headPointsScreenRightInFrontViewParallelToTheGroundAtContact(){
   for(int tick=68;tick<=72;tick++){
    var frame=FootballFootPath.at(true,tick);var axis=unit(sub(frame.upper(),frame.torso()));
-   assertTrue(axis.right()>.98,"The longitudinal body axis points right, not toward the camera/shot");assertEquals(0,axis.forward(),1e-6);
+   assertTrue(axis.right()<-.98,"The longitudinal body axis points right, not toward the camera/shot");assertEquals(0,axis.forward(),1e-6);
    assertEquals(0,axis.height(),1e-6,"Torso is parallel to the ground");
+  }
+ }
+ @Test void landingBringsTheBodyUprightBeforeTouchdown(){
+  for(int t=94;t<112;t++){
+   var f=FootballFootPath.at(true,t);var axis=unit(sub(f.upper(),f.torso()));
+   assertTrue(axis.height()>.98,"Recover before landing rather than flip into the floor");
+   assertTrue(f.boot().height()>=0,"Left boot stays above the floor");
   }
  }
  @Test void old065FireIsRecognizedForUpgrade()throws Exception{
@@ -27,7 +34,7 @@ class FootballVisualsTest {
  @Test void horizontalKickHasAnUprightSideAxisWhileItsLongAxisPointsRight(){
   for(int tick=68;tick<=72;tick++){
    var frame=FootballFootPath.at(true,tick);var side=unit(sub(frame.side(),frame.torso()));
-   assertTrue(side.height()>.98);assertEquals(0,side.right(),1e-6);
+   assertTrue(side.height()<-.98);assertEquals(0,side.right(),1e-6);
   }
  }
  @Test void old048FireIsRecognizedForAutomaticUpgrade()throws Exception{

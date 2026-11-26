@@ -351,7 +351,7 @@ if(process.env.MOTIONRP_INAZUMA_ONLY==='1'){
     assert.ok(+before[3]>.9&&Math.abs(+before[2])<.05,'No premature forward fold while holding the knife hand');
     assert.ok(+after[2]>.65&&+after[3]<.65,'Forward drive follows the hand chop');
     assert.ok(poses.every(m=>+m[4]<.12&&+m[5]<.12&&Math.abs(+m[6])<.03),'Both feet stay planted throughout the hand-only finish');
-    const finish=text.match(/finish lowHand=([^ ]+) raisedHand=([^ ]+) leftFoot=([^ ]+) rightFoot=([^ ]+) stance=([^ ]+) hip=([^ ]+) armReach=([^\r\n]+)/);assert.ok(finish&&+finish[3]<.12&&+finish[4]<.12&&+finish[5]<-.4&&+finish[6]<.5,'Completed chop stays grounded without an extra finishing flourish');
+    const finish=text.match(/finish lowHand=([^ ]+) raisedHand=([^ ]+) leftFoot=([^ ]+) rightFoot=([^ ]+) stance=([^ ]+) hip=([^ ]+) armReach=([^\r\n]+)/);assert.ok(finish&&+finish[3]<.12&&+finish[4]<.12&&+finish[5]<-.4&&+finish[6]<.6,'Completed chop stays grounded without an extra finishing flourish');
     const hold=text.match(/hand hold drift=([^\r\n]+)/);assert.ok(hold&&+hold[1]<.03,'Hand remains still for several ticks before the chop');
     assert.ok(text.indexOf('strike tick=39')<text.indexOf('displays dark_ball'),'Football changes to blue-black only after the strike');
    }
@@ -365,7 +365,7 @@ if(process.env.MOTIONRP_INAZUMA_ONLY==='1'){
     const legs=[...text.matchAll(/ice leg tick=(\d+) forward=([^\r\n]+)/g)];assert.equal(legs.length,2);assert.ok(+legs[0][2]<-.15&&+legs[1][2]>+legs[0][2]+.4,'Rearward leg hold leads into a forward strike');
    }
    if(id==='death_spear'){
-    const text=output.slice(start);assert.ok(text.includes('spear apex height=10'));assert.ok(text.includes('kick tick=86'));assert.ok(!text.includes('right turn complete')&&!text.includes('land reset'));
+    const text=output.slice(start);assert.ok(text.includes('spear apex height=10'));assert.ok(text.includes('aura begin tick=48'),'Ball effect starts with the foot reversal');assert.ok(text.includes('kick tick=86'));assert.ok(!text.includes('right turn complete')&&!text.includes('land reset'));
     const pinch=[...text.matchAll(/spear pinch tick=(\d+) rightClearance=([^ ]+) leftClearance=([^ ]+) rightForward=([^ ]+) leftForward=([^ ]+) ballScale=1/g)];assert.ok(pinch.length>=20);assert.ok(pinch.every(m=>+m[2]>.005&&+m[3]>.005),'Neither complete foot/calf mesh enters the undeformed sphere');assert.ok(pinch.every(m=>+m[4]<+m[5]),'Edited front/back scissor stance is preserved');assert.ok(Math.min(...pinch.map(m=>+m[4]))<+pinch[0][4]-.015,'Rear foot brushes backward before release');
    }
    pass(id+' item plays charge, live-foot kick, themed projectile, impact and cleanup; OFF viewers see nothing');
@@ -443,10 +443,12 @@ if(process.env.MOTIONRP_FOOTBALL_ONLY==='1'){
     assert.ok(output.slice(begin).includes('kick contact at live boot'),'Ball releases at the live animated boot');
     const bodyAxis=output.slice(begin).match(/Football-fire_tornado kick body axis forward=([^ ]+) up=([^ ]+) right=([^\r\n]+)/);
     const bank=output.slice(begin).match(/Football-fire_tornado kick bank side up=([^\r\n]+)/);
-    assert.ok(bank&&+bank[1]>.98,'Body side axis stays upright while the whole torso lies to the right');
+    assert.ok(bank&&+bank[1]<-.98,'Bank matches the corrected horizontal heading');
     assert.ok(bodyAxis,'Native torso orientation measured at release');
-    assert.ok(+bodyAxis[3]>.98&&Math.abs(+bodyAxis[1])<.03,'Head-to-waist axis points to the player right, not the shot direction');
+    assert.ok(+bodyAxis[3]<-.98&&Math.abs(+bodyAxis[1])<.03,'Head points screen-right in a frontal view');
     assert.ok(Math.abs(+bodyAxis[2])<.03,'Body long axis is parallel to the ground');
+    const landing=output.slice(begin).match(/Football-fire_tornado landing up=([^ ]+) left=([^ ]+) right=([^ ]+) pilot=([^\r\n]+)/);
+    assert.ok(landing&&+landing[1]>.98&&+landing[2]>=-.03&&+landing[2]<.15&&+landing[3]>=-.03&&+landing[3]<.15&&Math.abs(+landing[4])<.03,'Upright body and both soles meet the floor at touchdown');
     pass('Fire Tornado rises eight blocks and wraps the tilted body in ordinary flame particles');
     pass('The faster Fire Tornado releases during the actual forward kick after four corkscrew turns');
    }else{

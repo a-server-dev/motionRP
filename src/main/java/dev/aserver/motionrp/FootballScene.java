@@ -110,6 +110,10 @@ final class FootballScene extends SummonScene {
    Location foot=liveBoot();Vector aim=at(0,1,0).toVector().subtract(origin.toVector());
    if(previousBoot!=null)trace("live foot tick="+tick+" forward="+foot.toVector().subtract(previousBoot.toVector()).dot(aim)+" xyz="+foot.getX()+","+foot.getY()+","+foot.getZ());previousBoot=foot;
   }
+  if(fire&&tick==land(true)){
+   var torso=body.bone("football_torso").worldPosition();var axis=body.bone("football_upper").worldPosition().sub(torso,new org.joml.Vector3f()).normalize();
+   trace("landing up="+axis.y+" left="+body.bone("football_boot").worldPosition().y+" right="+body.bone("football_support_boot").worldPosition().y+" pilot="+(owner.getLocation().getY()-origin.getY()));
+  }
   if(tick==release){
    if(fire){
     var torso=body.bone("football_torso").worldPosition();var upper=body.bone("football_upper").worldPosition();var axis=upper.sub(torso,new org.joml.Vector3f()).normalize();

@@ -51,7 +51,7 @@ final class InazumaShotScene extends SummonScene {
    if(shot==InazumaShot.DEATH_SWORD){
     audience.hide(ball);ball=model("motionrp_death_sword_core",ballAt,1,"dark_ball");ball.update(TrackerUpdateAction.moveDuration(1));trace("dark conversion tick="+tick);
    }
-   aura=model(id,ballAt,.2f,"charge_effect");aura.update(TrackerUpdateAction.moveDuration(1));
+   aura=model(id,ballAt,.2f,"charge_effect");trace("aura begin tick="+tick);aura.update(TrackerUpdateAction.moveDuration(1));
    if(shot!=InazumaShot.DEATH_SWORD)loop(aura,"spin");
    sound(origin,shot==InazumaShot.ETERNAL_BLIZZARD?Sound.BLOCK_AMETHYST_BLOCK_CHIME:Sound.BLOCK_RESPAWN_ANCHOR_CHARGE,1.2f,.65f);
 
@@ -83,7 +83,7 @@ final class InazumaShotScene extends SummonScene {
     if(tick>38)ballAt=blend(at(0,.13,10),at(.20,.15,9.82),smooth(tick,38,60));
     if(tick==10)trace("spear loft contactGap="+ballAt.distance(contact()));
     if(tick==38)trace("spear apex height="+(ballAt.getY()-origin.getY()));
-    if(tick==78){sound(ballAt,Sound.ENTITY_PLAYER_ATTACK_STRONG,1.4f,.6f);particle(boot(),Particle.CRIT,8,.08,.02);}
+    if(tick==48){sound(ballAt,Sound.ENTITY_PLAYER_ATTACK_STRONG,1.4f,.6f);particle(boot(),Particle.CRIT,8,.08,.02);}
     if(tick>=66&&tick<=86){
      var rp=body.bone("shot_boot").worldPosition();var lp=body.bone("ice_other_boot").worldPosition();
      trace("spear pinch tick="+tick+" rightClearance="+spearClearance("pinch_r_")+" leftClearance="+spearClearance("pinch_l_")+" rightForward="+(rp.x*forward().getX()+rp.z*forward().getZ())+" leftForward="+(lp.x*forward().getX()+lp.z*forward().getZ())+" ballScale=1");
@@ -108,7 +108,7 @@ final class InazumaShotScene extends SummonScene {
     if(tick>=trick(32))ball.scaler(ModelScaler.value((float)(.7+.7*smooth(tick,trick(32),ice(116)))));
    }
    Vector spin=forward();if(scissor()&&tick>=ice(44)&&tick<=trick(18)){double angle=progress(tick,ice(44),trick(18))*Math.PI*2;spin=new Vector(Math.sin(angle),Math.sin(angle*.5)*.4,Math.cos(angle));}
-   if(shot==InazumaShot.DEATH_SPEAR&&tick>=78&&tick<=shot.kick){double p=progress(tick,78,shot.kick),a=p*p*Math.PI*6;spin=new Vector(Math.sin(a),.25*Math.sin(a*.5),Math.cos(a));}
+   if(shot==InazumaShot.DEATH_SPEAR&&tick>=48&&tick<=shot.kick){double p=progress(tick,48,58),a=p*p*Math.PI*6;spin=new Vector(Math.sin(a),.25*Math.sin(a*.5),Math.cos(a));}
    pose(ball,ballAt,spin);
    if(aura!=null){aura.scaler(ModelScaler.value((float)(.2+1.0*smooth(tick,shot.auraStart(),shot.kick))));pose(aura,shot==InazumaShot.ETERNAL_BLIZZARD?owner.getLocation():ballAt,forward());}
    if(tick%2==0&&tick>=shot.auraStart())chargeParticles();
