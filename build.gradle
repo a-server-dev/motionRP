@@ -1,7 +1,7 @@
 plugins { id 'java' }
 
 group = 'dev.aserver.motionrp'
-version = '0.78.0'
+version = '0.79.0'
 
 repositories {
     mavenCentral()
@@ -54,9 +54,24 @@ tasks.register('sourceBundle', Zip) {
     from(projectDir) {
         include 'src/**', 'tools/**', 'docs/**', 'gradle/**', '.github/**', 'editor/**', 'projects/**'
         exclude 'editor/node_modules/**', 'editor/dist/**', 'editor/test-results/**', 'editor/public/community/**', 'editor/public/library.json'
-        include 'integration/*.mjs', 'integration/package*.json'
+        include 'integration/*.mjs', 'integration/package*.json', 'integration/probe/**', 'integration/probe-plugin.yml'
         include 'README.md', '.gitignore', '.gitattributes', 'build.gradle', 'settings.gradle', 'gradlew', 'gradlew.bat'
     }
     preserveFileTimestamps = false
     reproducibleFileOrder = true
+}
+
+// Explicit test fixture target; this source set is excluded from the production JAR.
+sourceSets {
+    cancellationProbe {
+        java.srcDir 'integration/probe'
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+    }
+}
+tasks.register('cancellationProbeJar', Jar) {
+    dependsOn tasks.named('cancellationProbeClasses')
+    from sourceSets.cancellationProbe.output
+    from('integration/probe-plugin.yml') { rename { 'plugin.yml' } }
+    archiveFileName = 'cancellation-probe.jar'
+    destinationDirectory = layout.buildDirectory.dir('integration-probe')
 }

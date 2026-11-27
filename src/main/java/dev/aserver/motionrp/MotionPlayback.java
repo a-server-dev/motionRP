@@ -12,9 +12,11 @@ import java.util.*;
 
 /** Owns only trackers created by MotionRP; never closes another plugin's model. */
 public final class MotionPlayback {
-    private record Playing(EntityTracker tracker, BukkitTask timeout, MotionScene scene, boolean filtered) {}
+    private record Playing(EntityTracker tracker, BukkitTask timeout, MotionScene scene, boolean filtered,String id,String name,int started) {}
     private final MotionPlugin plugin;
     private final Map<UUID, Playing> playing = new HashMap<>();
+    private final Map<UUID,String> lastStops=new LinkedHashMap<>(){@Override protected boolean removeEldestEntry(Map.Entry<UUID,String> entry){return size()>512;}};
+    public String lastStop(UUID player){return lastStops.getOrDefault(player,"停止の記録はありません。");}
 
     public MotionPlayback(MotionPlugin plugin) { this.plugin = plugin; }
 
@@ -73,7 +75,7 @@ public final class MotionPlayback {
         if (player.isDead() || player.isInsideVehicle() || player.isGliding() || player.isSleeping()) {
             plugin.tell(player, "現在の状態ではモーションを再生できません。"); return;
         }
-        stop(player.getUniqueId());
+        stop(player.getUniqueId(),"モーションの切替");
         var registry = BetterModel.registryOrNull(player.getUniqueId());
         if (registry != null && !registry.trackers().isEmpty()) {
             plugin.tell(player, "別のモデル表示を使用中です。先に解除してください。"); return;
@@ -123,11 +125,17 @@ public final class MotionPlayback {
                 case "titan_transform" -> new TitanScene(plugin,player,definition.model(),owned,Objects.requireNonNull(titan));
                 default -> definition.effect().startsWith("studio:")?new StudioScene(plugin,player,owned,plugin.studio().project(definition.effect())):null;
             };
-            var timeout = Bukkit.getScheduler().runTaskLater(plugin, () -> finish(uuid, owned), definition.maxTicks());
-            playing.put(uuid, new Playing(owned, timeout, scene,!definition.effect().equals("performance")));
+            var timeout = Bukkit.getScheduler().runTaskLater(plugin, () -> finish(uuid, owned,"再生時間上限"), definition.maxTicks());
+            playing.put(uuid, new Playing(owned, timeout, scene,!definition.effect().equals("performance"),definition.id(),definition.name(),Bukkit.getCurrentTick()));
+            owned.handleCloseEvent((closed,reason)->{
+                if(!plugin.isEnabled())return;
+                Runnable stop=()->finish(uuid,owned,"モデルの外部終了 ("+reason+")");
+                if(Bukkit.isPrimaryThread())stop.run();else Bukkit.getScheduler().runTask(plugin,stop);
+            });
             boolean started = owned.animate(definition.animation(), AnimationModifier.DEFAULT_WITH_PLAY_ONCE, () -> {
-                // Broly replaces phase clips at variable collision times; its scene and timeout own the end clock.
-                if (plugin.isEnabled() && !definition.effect().startsWith("studio:") && !Set.of("broly_attacker","broly_victim").contains(definition.effect())) Bukkit.getScheduler().runTask(plugin, () -> finish(uuid, owned));
+                // Completion callbacks are per bone and can also arrive when a clip
+                // is replaced. A scene's own timeline owns its entire lifetime.
+                if (plugin.isEnabled() && scene==null) Bukkit.getScheduler().runTask(plugin, () -> finish(uuid, owned,"アニメーション完了"));
             });
             if (!started) { stop(uuid); plugin.tell(player, "モーションを開始できませんでした。"); return; }
             if (scene != null) scene.start();
@@ -141,15 +149,19 @@ public final class MotionPlayback {
         }
     }
 
-    private void finish(UUID uuid, EntityTracker expected) {
+    private void finish(UUID uuid, EntityTracker expected,String reason) {
         var current = playing.get(uuid);
-        if (current != null && current.tracker == expected) stop(uuid);
+        if (current != null && current.tracker == expected) stop(uuid,reason);
     }
 
-    public void stop(UUID player) {
+    public void stop(UUID player) {stop(player,"演出終了・内部停止");}
+    public void stop(UUID player,String reason) {
         var current = playing.remove(player);
-        if(plugin.fusion()!=null)plugin.fusion().stopping(player);
+        if(plugin.fusion()!=null)plugin.fusion().stopping(player,reason);
         if (current == null) return;
+        String record=current.name+" ["+current.id+"] / "+reason+" / 開始から"+Math.max(0,Bukkit.getCurrentTick()-current.started)+"tick";
+        lastStops.put(player,record);
+        if(plugin.getConfig().getBoolean("debug-input",false))plugin.getLogger().info("Playback stopped: "+player+" "+record);
         current.timeout.cancel();
         try { if (current.scene != null) current.scene.close(); }
         finally { if (!current.tracker.isClosed()) current.tracker.close(); }
@@ -165,5 +177,5 @@ public final class MotionPlayback {
         }
     }
 
-    public void stopAll() { new ArrayList<>(playing.keySet()).forEach(this::stop); }
+    public void stopAll() { new ArrayList<>(playing.keySet()).forEach(id->stop(id,"プラグインの再読込・停止")); }
 }

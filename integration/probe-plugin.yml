@@ -1,0 +1,8 @@
+name: CancellationProbe
+version: '1.0'
+main: dev.aserver.motionrp.probe.CancellationProbe
+api-version: '26.3'
+depend: [MotionRP, BetterModel]
+commands:
+  motionprobe:
+    description: Disposable integration test fixture only

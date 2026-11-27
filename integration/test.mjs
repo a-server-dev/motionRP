@@ -386,6 +386,46 @@ if(process.env.MOTIONRP_INAZUMA_ONLY==='1'){
  process.exit(code);
 }
 
+if(process.env.MOTIONRP_CANCEL_ONLY==='1'){
+ let code=0;const probeJar=path.join(run,'plugins/CancellationProbe.jar');
+ try{
+  fs.copyFileSync(path.join(project,'build/integration-probe/cancellation-probe.jar'),probeJar);
+  fs.copyFileSync(path.join(project,`build/libs/motionRP-${version}.jar`),path.join(run,'plugins/MotionRP.jar'));
+  log=fs.createWriteStream(path.join(project,'build/cancellation-smoke.log'));await startServer();
+  const timer=setInterval(()=>consoleCommand('motionrp status'),500);
+  try{await waitFor(()=>['entei','gigant_pistol','roll','fire_tornado'].every(id=>output.includes(id+': 利用可能')),'cancellation sample motions available',90000);}finally{clearInterval(timer);}
+  const n=String(Date.now()).slice(-5),an='CancelA'+n,bn='CancelB'+n;
+  const a=await connect(an),b=await connect(bn);consoleCommand('fill -3 -61 -3 8 -61 6 grass_block');consoleCommand('fill -3 -60 -3 8 -54 6 air');consoleCommand(`tp ${an} .5 -60 .5 0 0`);consoleCommand(`tp ${bn} 4.5 -60 .5 0 0`);await sleep(400);
+  const ids=new Set(),removed=new Set();b._client.on('spawn_entity',p=>{if(p.type===b.registry.entitiesByName.item_display.id)ids.add(p.entityId);});b._client.on('entity_destroy',p=>p.entityIds.forEach(id=>removed.add(id)));
+  const clean=()=>ids.size>0&&[...ids].every(id=>removed.has(id));const reset=()=>{ids.clear();removed.clear();};
+  async function probe(action,active=true,name=an){let start=output.length;consoleCommand(`motionprobe ${action} ${name}`);await waitFor(()=>output.slice(start).includes(`CANCEL_PROBE ${action} ${name} active=${active}`),action+' expected active='+active);}
+  async function last(reason){let index=a._testMessages.length;a.chat('/motionrp laststop');await waitFor(()=>a._testMessages.slice(index).some(m=>m.includes(reason)),'own last-stop reason: '+reason);}
+  consoleCommand('motionrp give controller '+an);consoleCommand('motionrp give motion entei 1 '+an);await waitFor(()=>tokens(a)===1,'Entei token');await a.equip(a.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');await menu(a);await deposit(a);await closeMenu(a);
+  let begin=output.length;a._testLeftClick();await waitFor(()=>output.slice(begin).includes('Entei displays held_sun'),'scene active before harmless events');
+  for(const action of ['zero','sameheld','tiny','look'])await probe(action);
+  a._testStep(.2,.1,.2);await sleep(250);await probe('state');
+  await probe('fast');await sleep(900);await probe('state');
+  await waitFor(()=>output.slice(begin).includes('Entei sun impact; no terrain'),'scene survives shortened bone animations',15000);await waitFor(clean,'natural scene cleanup',12000);await last('演出完了');
+  assert.ok(!a._testMessages.some(m=>m.includes('再生:')));pass('Zero damage, same-slot notifications, tiny corrections, camera rotation and early bone completion cannot cancel a running scene');
+  for(const[action,reason]of [['hurt','ダメージ'],['far','外部テレポート'],['close','モデルの外部終了']]){
+   reset();begin=output.length;a._testLeftClick();await waitFor(()=>output.slice(begin).includes('Entei phase: GREAT_FLAME_CIRCLE'),'restart before '+action);await probe(action,false);await waitFor(clean,action+' cleanup');await last(reason);await sleep(250);
+  }
+  pass('Real damage, a real external teleport and external model closure still stop and clean up with an inspectable cause');
+  reset();begin=output.length;a._testLeftClick();await waitFor(()=>output.slice(begin).includes('Entei displays held_sun'),'click cancellation scene');a._testLeftClick();await waitFor(clean,'explicit click cleanup');await last('クリックで終了');pass('Deliberate repeat-click cancellation remains available');
+  // A second motion must also survive the same harmless server events.
+  consoleCommand('motionrp give controller '+bn);consoleCommand('motionrp give motion gigant_pistol 1 '+bn);await waitFor(()=>tokens(b)===1,'pistol token');await b.equip(b.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');await menu(b);await deposit(b);await closeMenu(b);
+  begin=output.length;b._testLeftClick();await waitFor(()=>output.slice(begin).includes('GigantPistol phase: INFLATE'),'second scene active');for(const action of ['zero','tiny','sameheld'])await probe(action,true,bn);await waitFor(()=>output.slice(begin).includes('GigantPistol giant fist impact'),'second scene reaches impact',15000);await sleep(4000);await probe('state',false,bn);pass('The shared fix also preserves Gigant Pistol through its full punch');
+  // Basic animations without an effect still finish on the model callback.
+  await menu(a);await click(a,0);await closeMenu(a);consoleCommand('clear '+an+' minecraft:paper');await sleep(250);consoleCommand('motionrp give motion roll 1 '+an);await waitFor(()=>tokens(a)===1,'roll token');await menu(a);await deposit(a);await closeMenu(a);
+  reset();a._testLeftClick();await waitFor(clean,'basic roll animation natural finish',15000);await last('アニメーション完了');pass('A basic animation without a scene still ends naturally');
+  await menu(a);await click(a,0);await closeMenu(a);consoleCommand('clear '+an+' minecraft:paper');await sleep(250);consoleCommand('motionrp give motion fire_tornado 1 '+an);await waitFor(()=>tokens(a)===1,'aerial token');await menu(a);await deposit(a);await closeMenu(a);reset();await probe('rotate',false);begin=output.length;a._testLeftClick();await waitFor(()=>output.slice(begin).includes('Football-fire_tornado landing up='),'owned flight survives rotation modifications',20000);await waitFor(clean,'aerial cleanup',12000);await probe('unrotate',false);await last('演出完了');pass('Aerial teleports remain owned when another plugin changes only their yaw or pitch');
+  let pair=output.length;a.chat('/motionrp balse');await waitFor(()=>b._testMessages.some(m=>m.includes('balse accept '+an)),'paired stop diagnosis invitation');b.chat('/motionrp accept');await waitFor(()=>output.slice(pair).includes('Balse phase: HANDS'),'paired stop diagnosis starts');await probe('hurt',false);let messages=b._testMessages.length;b.chat('/motionrp laststop');await waitFor(()=>b._testMessages.slice(messages).some(m=>m.includes('二人用の相手側: ダメージ')),'paired partner receives original stop cause');pass('Two-player stop diagnosis explains when the other participant caused the stop');
+  assert.ok(!/Entei scene failed|GigantPistol scene failed|Motion playback failed/.test(output));
+ }catch(e){code=1;console.error(e.stack);}
+ finally{for(const bot of bots)try{bot.quit();}catch{}try{await stopServer();}catch{}log?.end();fs.rmSync(probeJar,{force:true});fs.writeFileSync(path.join(project,'build/cancellation-smoke-result.json'),JSON.stringify({passed:code===0,version,checks},null,2));}
+ process.exit(code);
+}
+
 if(process.env.MOTIONRP_PISTOL_BALSE_ONLY==='1'){
  let code=0;
  try{

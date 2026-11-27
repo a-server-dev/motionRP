@@ -45,7 +45,7 @@ public final class LoadoutMenu implements Listener {
         }
         try {
             Loadout state = loadouts.read(player);
-            plugin.playback().stop(player.getUniqueId());
+            plugin.playback().stop(player.getUniqueId(),"登録GUIを開く");
             Holder holder = new Holder(player,items.setId(player.getInventory().getItemInMainHand()));
             render(holder, state);
             player.openInventory(holder.inventory);

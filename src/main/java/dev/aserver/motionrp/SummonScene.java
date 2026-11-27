@@ -40,7 +40,7 @@ abstract class SummonScene implements MotionScene {
         if(closed) return;
         try {
             if(!owner.isOnline() || owner.isDead() || owner.getWorld()!=origin.getWorld() || tick>=duration) {
-                plugin.playback().stop(owner.getUniqueId());return;
+                plugin.playback().stop(owner.getUniqueId(),tick>=duration?"演出完了":"プレイヤーの状態変更");return;
             }
             if(tick%5==0) audience.refresh();
             update();
@@ -49,7 +49,7 @@ abstract class SummonScene implements MotionScene {
             tick++;
         } catch(RuntimeException failure) {
             plugin.getLogger().log(Level.WARNING,prefix+" scene failed",failure);
-            plugin.playback().stop(owner.getUniqueId());
+            plugin.playback().stop(owner.getUniqueId(),"演出処理エラー");
         }
     }
     abstract void update();

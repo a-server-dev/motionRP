@@ -58,7 +58,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
         }
         for(String football:java.util.List.of("fire_tornado","emperor_penguin_1")){
             String base="motions."+football+".";
-            if(("motionrp_"+football).equals(getConfig().getString(base+"model"))&&(getConfig().getInt(base+"max-ticks")==174||(football.equals("fire_tornado")&&(getConfig().getInt(base+"max-ticks")==188||getConfig().getInt(base+"max-ticks")==122)))){
+            if(("motionrp_"+football).equals(getConfig().getString(base+"model"))&&(getConfig().getInt(base+"max-ticks")<dev.aserver.motionrp.core.FootballTimeline.end(football.equals("fire_tornado"))||getConfig().getInt(base+"max-ticks")==174||(football.equals("fire_tornado")&&(getConfig().getInt(base+"max-ticks")==188||getConfig().getInt(base+"max-ticks")==122)))){
                 getConfig().set(base+"max-ticks",dev.aserver.motionrp.core.FootballTimeline.end(football.equals("fire_tornado"))+10);saveConfig();
             }
         }
@@ -160,6 +160,11 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
     }
 
     @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if(args.length>0&&args[0].equalsIgnoreCase("laststop")){
+            if(!(sender instanceof Player player)){tell(sender,"プレイヤーのみ実行できます。");return true;}
+            if(!player.hasPermission("motionrp.use")){tell(sender,"権限がありません。");return true;}
+            tell(sender,playback.lastStop(player.getUniqueId()));return true;
+        }
         if(args.length>0&&args[0].equalsIgnoreCase("accept")){
             if(!(sender instanceof Player p)){tell(sender,"プレイヤーのみ実行できます。");return true;}if(args.length>2){tell(sender,"/motionrp accept [招待ID]");return true;}return fusion.acceptCurrent(p,args.length==2?args[1]:null);
         }
@@ -266,7 +271,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
     }
 
     private void usage(CommandSender sender) {
-        tell(sender, "/motionrp gui | view [on|off] | reload | status | configreload | pack status | pack publish");
+        tell(sender, "/motionrp gui | view [on|off] | laststop | reload | status | configreload | pack status | pack publish");
         tell(sender, "/motionrp balse [相手] | balse accept [招待者] | balse cancel");
         tell(sender, "/motionrp broly [相手] | broly accept [招待者] | broly cancel");
         tell(sender,"/motionrp accept — 届いている招待に参加");
@@ -278,7 +283,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
     @Override public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         List<String> choices = new ArrayList<>();
         if (args.length == 1) {
-            choices.add("gui");choices.add("view");choices.add("fusion");choices.add("broly");choices.add("balse");choices.add("accept");choices.add("reload");
+            choices.add("gui");choices.add("view");choices.add("fusion");choices.add("broly");choices.add("balse");choices.add("accept");choices.add("laststop");choices.add("reload");
             if(canGive(sender))choices.add("give");
             if (sender.hasPermission("motionrp.admin")) choices.addAll(List.of("configreload", "status", "pack"));
         } else if((args.length==2||args.length==3)&&(args[0].equalsIgnoreCase("fusion")||args[0].equalsIgnoreCase("broly")||args[0].equalsIgnoreCase("balse"))){if(args.length==2)choices.addAll(List.of("accept","cancel"));

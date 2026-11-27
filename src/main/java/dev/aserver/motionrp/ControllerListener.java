@@ -80,7 +80,7 @@ public final class ControllerListener implements Listener {
                 player.sendActionBar(Component.text("選択 " + (next.selected() + 1) + "/"+dev.aserver.motionrp.core.Loadout.SIZE+": " + name, NamedTextColor.AQUA));
                 return;
             }
-            if (plugin.playback().active(player.getUniqueId())) { plugin.playback().stop(player.getUniqueId()); return; }
+            if (plugin.playback().active(player.getUniqueId())) { plugin.playback().stop(player.getUniqueId(),"クリックで終了"); return; }
             var motion = state.current();
             if (motion == null) { plugin.tell(player, "モーションが未登録です。右クリックで登録してください。"); return; }
             var definition = plugin.catalog().motions().get(motion.id());
@@ -108,29 +108,32 @@ public final class ControllerListener implements Listener {
     }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void damage(EntityDamageEvent event) {
-        if (event.getEntity() instanceof Player player) plugin.playback().stop(player.getUniqueId());
+        if (event.getFinalDamage()>0 && event.getEntity() instanceof Player player) plugin.playback().stop(player.getUniqueId(),"ダメージ ("+event.getCause()+")");
     }
     @EventHandler public void quit(PlayerQuitEvent event) {
-        plugin.playback().stop(event.getPlayer().getUniqueId());
+        plugin.playback().stop(event.getPlayer().getUniqueId(),"退出");
         lastInput.remove(event.getPlayer().getUniqueId());
     }
     @EventHandler public void join(PlayerJoinEvent event) { plugin.items().refreshNames(event.getPlayer()); TitanState.recover(plugin,event.getPlayer());AerialAnchor.recover(plugin,event.getPlayer()); }
     @EventHandler public void respawn(PlayerRespawnEvent event) {
         Bukkit.getScheduler().runTask(plugin,()->{TitanState.recover(plugin,event.getPlayer());AerialAnchor.recover(plugin,event.getPlayer());});
     }
-    @EventHandler public void death(PlayerDeathEvent event) { plugin.playback().stop(event.getEntity().getUniqueId()); }
+    @EventHandler public void death(PlayerDeathEvent event) { plugin.playback().stop(event.getEntity().getUniqueId(),"死亡"); }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void teleport(PlayerTeleportEvent event) {
-        if (!plugin.playback().ownsMove(event.getPlayer(), event.getFrom(), event.getTo())) {
+        var from=event.getFrom();var to=event.getTo();
+        // Rotation-only teleports and tiny server corrections are not leaving the scene.
+        if(from.getWorld()==to.getWorld()&&from.distanceSquared(to)<=.05*.05)return;
+        if (!plugin.playback().ownsMove(event.getPlayer(), from, to)) {
             plugin.playback().externalTeleport(event.getPlayer());
             if(plugin.fusion()!=null)plugin.fusion().externalTeleport(event.getPlayer().getUniqueId());
-            plugin.playback().stop(event.getPlayer().getUniqueId());
+            plugin.playback().stop(event.getPlayer().getUniqueId(),"外部テレポート ("+event.getCause()+")");
         }
     }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void held(PlayerItemHeldEvent event) { if (plugin.playback().active(event.getPlayer().getUniqueId())) plugin.playback().stop(event.getPlayer().getUniqueId()); }
+    public void held(PlayerItemHeldEvent event) { if (event.getPreviousSlot()!=event.getNewSlot() && plugin.playback().active(event.getPlayer().getUniqueId())) plugin.playback().stop(event.getPlayer().getUniqueId(),"ホットバーの持ち替え"); }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void swap(PlayerSwapHandItemsEvent event) { if (plugin.playback().active(event.getPlayer().getUniqueId())) plugin.playback().stop(event.getPlayer().getUniqueId()); }
+    public void swap(PlayerSwapHandItemsEvent event) { if (plugin.playback().active(event.getPlayer().getUniqueId())) plugin.playback().stop(event.getPlayer().getUniqueId(),"左右の手の持ち替え"); }
     @EventHandler(priority = EventPriority.HIGHEST)
     public void breakBlock(BlockBreakEvent event) {
         if (plugin.items().controller(event.getPlayer().getInventory().getItemInMainHand())) event.setCancelled(true);

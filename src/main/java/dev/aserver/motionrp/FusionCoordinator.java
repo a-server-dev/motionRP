@@ -79,10 +79,10 @@ final class FusionCoordinator implements AutoCloseable {
   finally{starting.remove(left.getUniqueId());starting.remove(right.getUniqueId());}
  }
  void externalTeleport(UUID id){var run=runs.get(id);if(run!=null)(id.equals(run.left.getUniqueId())?run.leftAnchor:run.rightAnchor).finishAtCurrent();}
- void stopping(UUID id){
+ void stopping(UUID id,String reason){
   if(starting.contains(id))return;
   var run=runs.remove(id);sessions.cancel(id);if(run==null)return;runs.remove(run.left.getUniqueId());runs.remove(run.right.getUniqueId());
-  try{UUID other=id.equals(run.left.getUniqueId())?run.right.getUniqueId():run.left.getUniqueId();plugin.playback().stop(other);}
+  try{UUID other=id.equals(run.left.getUniqueId())?run.right.getUniqueId():run.left.getUniqueId();plugin.playback().stop(other,"二人用の相手側: "+reason);}
   finally{try{run.leftAnchor.close();}finally{run.rightAnchor.close();}}
  }
  UUID partner(UUID id){var run=runs.get(id);return run==null?null:(id.equals(run.left.getUniqueId())?run.right.getUniqueId():run.left.getUniqueId());}

@@ -27,7 +27,11 @@ final class AerialAnchor {
         try {boolean ok=player.teleport(seat,org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.PLUGIN);if(ok)last=seat.clone();return ok;}
         finally {from=null;to=null;player.setVelocity(new Vector());player.setFallDistance(0);}
     }
-    boolean owns(Location a,Location b) {return from!=null && from.equals(a) && to.equals(b);}
+    boolean owns(Location a,Location b) {return from!=null && samePosition(from,a) && samePosition(to,b);}
+    static boolean samePosition(Location a,Location b){
+        if(a==null||b==null||a.getWorld()!=b.getWorld())return false;
+        double x=a.getX()-b.getX(),y=a.getY()-b.getY(),z=a.getZ()-b.getZ();return x*x+y*y+z*z<=1e-10;
+    }
     void close() {
         if(!active)return;
         boolean returnToGround=last==null || (player.getWorld()==last.getWorld() && player.getLocation().distanceSquared(last)<.04);
