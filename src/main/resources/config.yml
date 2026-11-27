@@ -4,6 +4,12 @@ debug-input: false
 # BetterModel/players にあるプレイヤーモデルを指定します。
 # 標準の steve.bbmodel に含まれる roll を初期モーションとして使用します。
 motions:
+  entei:
+    name: 大炎戒・炎帝
+    model: motionrp_entei
+    animation: entei
+    effect: entei
+    max-ticks: 200
   gigant_pistol:
     name: ギア3・ギガントピストル
     model: motionrp_gigant_pistol

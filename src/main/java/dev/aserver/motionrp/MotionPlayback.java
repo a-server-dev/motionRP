@@ -97,6 +97,7 @@ public final class MotionPlayback {
             UUID uuid = player.getUniqueId();
             MotionScene scene = switch (definition.effect()) {
                 case "death_sword","eternal_blizzard","death_spear" -> new InazumaShotScene(plugin,player,owned,definition.effect());
+                case "entei" -> new EnteiScene(plugin,player,owned);
                 case "gigant_pistol" -> new GigantPistolScene(plugin,player,owned);
                 case "balse_left","balse_right" -> new BalseScene(plugin,player,owned,definition.effect().endsWith("left"));
                 case "fire_tornado","emperor_penguin_1" -> new FootballScene(plugin,player,owned,definition.effect());

@@ -5,7 +5,7 @@ import org.bukkit.entity.Player;
 /** The actor's actual skin arm inflates and stretches; the shoulder remains attached. */
 final class GigantPistolScene extends SummonScene {
  private final EntityTracker body;
- GigantPistolScene(MotionPlugin plugin,Player owner,EntityTracker body){super(plugin,owner,"GigantPistol",150,72,true);this.body=body;body.rotation(()->new ModelRotation(0,origin.getYaw()));}
+ GigantPistolScene(MotionPlugin plugin,Player owner,EntityTracker body){super(plugin,owner,"GigantPistol",150,128,true);this.body=body;body.rotation(()->new ModelRotation(0,origin.getYaw()));}
  @Override String phase(){return tick<12?"BITE":tick<48?"INFLATE":tick<64?"WINDUP":tick<74?"PUNCH":tick<100?"EXTENDED":"DEFLATE";}
  private static final double[][] PATH=readPath();
  private static double[][] readPath(){try(var in=GigantPistolScene.class.getResourceAsStream("/bettermodel/pistol-palm.csv")){return new String(java.util.Objects.requireNonNull(in).readAllBytes(),java.nio.charset.StandardCharsets.UTF_8).lines().map(l->java.util.Arrays.stream(l.split(",")).mapToDouble(Double::parseDouble).toArray()).toArray(double[][]::new);}catch(java.io.IOException e){throw new java.io.UncheckedIOException(e);}}

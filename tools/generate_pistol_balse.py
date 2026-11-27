@@ -77,9 +77,9 @@ def corrected_actors():
   if name=='gigant_pistol':
    # A normal-width shoulder grows along sixteen skin-mapped cross sections.
    # The forearm's inherited X/Y/Z scale is exactly 57, not a volume factor.
-   track('pra_right_arm',[(0,(1,1,1)),(.9,(1,1,1)),(2.4,(32,32,32)),(5.2,(32,32,32)),(6.7,(1,1,1)),(7.5,(1,1,1))],'scale')
+   track('pra_right_arm',[(0,(1,1,1)),(.9,(1,1,1)),(2.4,(64,64,64)),(5.2,(64,64,64)),(6.7,(1,1,1)),(7.5,(1,1,1))],'scale')
    def puff(t):return max(0,min(1,(t-.9)/1.5))*max(0,min(1,(6.7-t)/1.5))
-   track('prfa_right_forearm',[(i/20,((1+56*puff(i/20))/(1+31*puff(i/20)),)*3)for i in range(151)],'scale')
+   track('prfa_right_forearm',[(i/20,((1+56*puff(i/20))/(1+63*puff(i/20)),(1+113*puff(i/20))/(1+63*puff(i/20)),(1+56*puff(i/20))/(1+63*puff(i/20))))for i in range(151)],'scale')
    for i in range(16):
     label='pra_gigant_taper_'+str(i);g={'name':label,'uuid':ident(name+'/'+label),'origin':[5,22-5.5*i/16,0],'rotation':[0,0,0],'export':True};m['groups'].append(g);groups[label]=g
     def bind_taper(nodes):
@@ -89,7 +89,7 @@ def corrected_actors():
        if bind_taper(n['children']):return True
      return False
     assert bind_taper(m['outliner']);width=1+56*(i+.5)/16
-    track(label,[(j/20,((1+(width-1)*puff(j/20))/(1+31*puff(j/20)),1/16,(1+(width-1)*puff(j/20))/(1+31*puff(j/20))))for j in range(151)],'scale')
+    track(label,[(j/20,((1+(width-1)*puff(j/20))/(1+63*puff(j/20)),1.12/16,(1+(width-1)*puff(j/20))/(1+63*puff(j/20))))for j in range(151)],'scale')
    # Fixed shoulder and elbow positions: no detached or independently flying fist.
    track('pra_right_arm',[(0,(0,0,0)),(.5,(100,0,-12)),(.9,(100,0,-12)),(2.4,(135,-35,0)),(3.2,(145,-75,0)),(3.7,(126,0,0)),(5,(126,0,0)),(6.7,(126,0,0)),(7.4,(0,0,0)),(7.5,(0,0,0))])
    track('prfa_right_forearm',[(0,(0,0,0)),(.5,(65,0,0)),(.9,(65,0,0)),(2.4,(-30,0,0)),(3.2,(-40,0,0)),(3.7,(-36,0,0)),(5,(-36,0,0)),(6.7,(-36,0,0)),(7.4,(0,0,0)),(7.5,(0,0,0))])
