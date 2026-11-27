@@ -11,6 +11,7 @@ final class BalseScene extends SummonScene {
   body.update(TrackerUpdateAction.togglePart(false),b->java.util.Set.of("pri_right_item","pli_left_item").contains(b.name().rawName()));
   Location center=plugin.fusion().center(owner.getUniqueId());if(center==null){plugin.playback().stop(owner.getUniqueId());return;}center.add(0,1.35,0);
   double yaw=Math.toRadians(center.getYaw());center.add(-Math.sin(yaw)*.65,0,Math.cos(yaw)*.65);
+  if(tick==54){var v=body.bone("balse_palm").worldPosition();var palm=owner.getLocation().add(v.x,v.y,v.z);trace("palm contact leader="+leader+" gap="+palm.distance(center));}
   if(!leader)return;
   if(tick==36){crystal=model("motionrp_balse_crystal",center,.7f,"flying_stone");sound(center,Sound.BLOCK_AMETHYST_BLOCK_RESONATE,1,1.2f);}
   if(tick>=38&&tick<64&&tick%3==0){dust(center,new Particle.DustOptions(Color.fromRGB(100,230,255),1.8f),18,.4);particle(center,Particle.END_ROD,12,.5,.015);}

@@ -41,20 +41,21 @@ def complete():
     # Full boots, articulated greaves and thigh armor.
     for side in [-1,1]:
         x=side*9
+        c(f'solid_leg_core_{side}',[x,27,0],[14,48,14],0)
         for j in range(4):
-            c(f'boot_{side}_{j}',[x,1.5+j*1.3,-3+j*.8],[9-j*.4,1.5,15-j*1.4],6)
+            c(f'boot_{side}_{j}',[x,1.5+j*1.3,-3+j*.8],[16-j*.4,1.5,19-j*1.4],6)
         for toe in range(3):
             c(f'claw_{side}_{toe}',[x-3+toe*3,1.1,-11],[1.6,1.8,5],7,[22.5,0,0])
         for j in range(6):
-            y=8+j*3.3;w=7.8-j*.3
-            c(f'shin_lamella_{side}_{j}',[x,y,0],[w,3.6,8.5],6 if j%2 else 5)
-            c(f'shin_edge_{side}_{j}',[x,y+.8,-4.5],[w+.4,.65,.7],7)
-            c(f'shin_ridge_{side}_{j}',[x,y,-4.9],[1,2.5,1],1)
-        c(f'knee_shield_{side}',[x,29,-3],[10,7,8],5,[0,0,side*22.5])
-        c(f'knee_diamond_{side}',[x,29,-7.3],[4,4,.8],7,[0,0,45])
+            y=8+j*3.3;w=15.8-j*.3
+            c(f'shin_lamella_{side}_{j}',[x,y,0],[w,3.6,16.5],6 if j%2 else 5)
+            c(f'shin_edge_{side}_{j}',[x,y+.8,-8.5],[w+.4,.65,.7],7)
+            c(f'shin_ridge_{side}_{j}',[x,y,-8.9],[1,2.5,1],1)
+        c(f'knee_shield_{side}',[x,29,-3],[17,7,17],5,[0,0,side*22.5])
+        c(f'knee_diamond_{side}',[x,29,-11.3],[4,4,.8],7,[0,0,45])
         for j in range(4):
-            c(f'thigh_plate_{side}_{j}',[x,34+j*4,0],[9.5,4.4,10],6 if j%2 else 5)
-            c(f'thigh_trim_{side}_{j}',[x,35.5+j*4,-5.2],[9.7,.7,.8],7)
+            c(f'thigh_plate_{side}_{j}',[x,34+j*4,0],[16,4.4,17],6 if j%2 else 5)
+            c(f'thigh_trim_{side}_{j}',[x,35.5+j*4,-8.8],[16.2,.7,.8],7)
         for j in range(7):
             for sx in [-1,1]:
                 c(f'greave_rivet_{side}_{j}_{sx}',[x+sx*3.1,9+j*5,-5.1],[.65,.65,.65],1)
@@ -75,28 +76,34 @@ def complete():
             c(f'hakama_long_fold_{side}_{fold}',[side*(5+fold*4),43,-8.1],[2.5,17,1.1],0 if fold%2 else 4)
         c(f'waist_knot_{side}',[side*3,53,-10],[5,3,3],0,[0,0,side*22.5])
     a.joint('hakama_and_tassets',(0,55,0))
+    # A solid player-proportioned torso sits under independent overlapping armor.
+    # The upper body is raised 16 voxels below, giving 48-voxel torso and legs.
+    c('solid_torso_core',[0,63,0],[32,48,20],0)
+    for j in range(5):
+        c(f'abdominal_cuirass_{j}',[0,42+j*3.2,-11],[33,3.8,3],6 if j%2 else 5)
+        c(f'abdominal_trim_{j}',[0,41+j*3.2,-12.6],[33.3,.65,.5],7)
     for j in range(8):
-        y=57+j*3.2;w=20+min(j,5)*2.1
-        c(f'breastplate_{j}',[0,y,0],[w,3.5,15],5 if j%2 else 6)
-        c(f'chest_edge_{j}',[0,y+1,-7.8],[w+.5,.6,.8],7)
+        y=57+j*3.2;w=34+min(j,5)*.8
+        c(f'breastplate_{j}',[0,y,0],[w,3.5,24],5 if j%2 else 6)
+        c(f'chest_edge_{j}',[0,y+1,-12.8],[w+.5,.6,.8],7)
         for side in [-1,1]:
-            c(f'chest_flute_{side}_{j}',[side*(w*.32),y,-8.4],[1.3,2.8,.8],1)
-            c(f'breastplate_bevel_{side}_{j}',[side*w/2,y,-5.5],[2.3,3.5,4],4,[0,0,side*22.5])
+            c(f'chest_flute_{side}_{j}',[side*(w*.32),y,-13.4],[1.3,2.8,.8],1)
+            c(f'breastplate_bevel_{side}_{j}',[side*w/2,y,-10.5],[2.3,3.5,4],4,[0,0,side*22.5])
     for side in [-1,1]:
         for row in range(7):
             for col in range(4):
-                c(f'cuirass_rivet_{side}_{row}_{col}',[side*(3+col*3.4),58+row*3.2,-8.8],[.55,.55,.5],1)
-        c(f'chest_inner_ridge_{side}',[side*4,69,-8.8],[.7,19,.6],0)
+                c(f'cuirass_rivet_{side}_{row}_{col}',[side*(3+col*3.4),58+row*3.2,-13.8],[.55,.55,.5],1)
+        c(f'chest_inner_ridge_{side}',[side*4,69,-13.8],[.7,19,.6],0)
     c('neck_chakra_core',[0,84,-1.7],[12,10,11],5)
     c('neck_collar_edge',[0,83,-7.6],[13,1.5,1],7)
-    c('belt',[0,54,0],[25,4,16],0);c('belt_crest',[0,54,-8.5],[7,5,1.5],7)
+    c('belt',[0,38,0],[34,4,23],0);c('belt_crest',[0,38,-12.5],[7,5,1.5],7)
     for side in [-1,1]:
         for j in range(4):c(f'collar_{side}_{j}',[side*(3+j*3.3),82-j*1.1,-5],[4.5,3,6],7,[0,0,-side*22.5])
     for side in [-1,1]:
         for j in range(10):
             t=j/9
-            c(f'crossed_chest_lapel_{side}_{j}',[side*(12*(1-t)),80-24*t,-9],[4.4,3.5,1.5],5,[0,0,-side*22.5])
-            c(f'lapel_seam_{side}_{j}',[side*(12*(1-t)+1.1),80-24*t,-9.9],[.5,3.6,.3],0,[0,0,-side*22.5])
+            c(f'crossed_chest_lapel_{side}_{j}',[side*(12*(1-t)),80-24*t,-14],[4.4,3.5,1.5],5,[0,0,-side*22.5])
+            c(f'lapel_seam_{side}_{j}',[side*(12*(1-t)+1.1),80-24*t,-14.9],[.5,3.6,.3],0,[0,0,-side*22.5])
     a.joint('azure_breastplate',(0,55,0))
     # Sculpted menpo: recessed eyes, overhanging brows, fangs and a tapered long nose.
     for j,w in enumerate([8,11,14,17,17,15]):
@@ -119,15 +126,13 @@ def complete():
         for j in range(4):
             c(f'curved_fang_{side}_{j}',[side*(3.9-j*.25),91-j*.95,-8-j*.25],[1.3-j*.2,1.4,1.2],7)
         for j in range(11):
-            t=j/10;x=side*(9+9*t-3*t*t);y=104+14*math.sin(t*math.pi/2);z=1+4*t
+            t=j/10;x=side*(8+12*t-6*t*t);y=103+13*t*t;z=1+7*t
             c(f'swept_helmet_horn_{side}_{j}',[x,y,z],[max(.3,4.2*(1-t)),2.3,max(.35,4*(1-t))],4,[0,0,-side*22.5])
             c(f'horn_bevel_{side}_{j}',[x-side*.4,y,z-1.1*(1-t)],[.45,2.2,.5],4)
-        for tuft in range(3):
-            for j in range(6):
-                t=j/5
-                c(f'flame_crown_{side}_{tuft}_{j}',[side*(3+tuft*2.6+6*math.sin(t*math.pi/2)-4*t*t),103+tuft*.8+(6+tuft*1.4)*math.sin(t*math.pi*.8),-3+4*t],
-                  [max(.3,4.6*(1-t)),1.9,2.8*(1-t)+.3],4,[0,0,-side*22.5])
-                c(f'crown_carved_edge_{side}_{tuft}_{j}',[side*(2.6+tuft*2.6+6*math.sin(t*math.pi/2)-4*t*t),103+tuft*.8+(6+tuft*1.4)*math.sin(t*math.pi*.8),-4.2+4*t],[.25,1.5,.3],0)
+        for j in range(6):
+            c(f'kabuto_dome_{side}_{j}',[side*(3+j*1.15),103.5+2.8*math.cos(j/5*math.pi/2),2],[3.5,3.3,14-j*.7],4)
+            c(f'kabuto_rib_{side}_{j}',[side*(3+j*1.15),105.3+2.8*math.cos(j/5*math.pi/2),1],[.55,.7,12-j*.7],1)
+        c(f'helmet_fukigaeshi_{side}',[side*10,97,1],[4.8,10,14],6,[0,0,-side*22.5])
         for j in range(4):c(f'helmet_neck_guard_{side}_{j}',[side*(8+j*.5),89+j*2.8,5],[4.5,3.2,11],6)
     for j in range(15):
         t=j/14
@@ -143,6 +148,11 @@ def complete():
     c('forehead_gem_frame',[0,103,-6.3],[4.2,5.3,1],0,[0,0,45])
     c('forehead_diamond_plate',[0,103,-7.1],[2.4,3.6,.6],4,[0,0,45])
     c('forehead_carved_line',[0,103,-7.5],[.3,3.2,.2],0)
+    helmet_ids=set(a.parts)
+    for element in a.m.data['elements']:
+        if element['uuid']in helmet_ids:
+            for field in ['from','to','origin']:
+                element[field][0]*=1.35;element[field][2]*=1.15
     a.joint('tengu_helmet',(0,85,0))
     arm_joints=[]
     for side in [-1,1]:
@@ -153,16 +163,18 @@ def complete():
         for row in range(4):
             for col in range(5):c(f'pauldron_lacing_{side}_{row}_{col}',[side*(16+col*3),82-row*2,-9.2],[.65,.65,.7],1)
         a.joint(f'pauldron_{side}',(side*22,81,0))
-        c(f'upper_arm_{side}',[x,71,0],[8,20,9],5)
+        c(f'upper_arm_{side}',[x,71,0],[14,20,14],0)
+        for j in range(4):c(f'upper_arm_plate_{side}_{j}',[x,64+j*4,-7.4],[15.3,4.3,2],5)
         upper_parts=a.parts[:];a.parts=[]
+        c(f'solid_forearm_core_{side}',[x,48,0],[14,25,14],0)
         for j in range(6):
-            c(f'forearm_lamella_{side}_{j}',[x,42+j*3.2,-1],[10,3.5,11],6 if j%2 else 5)
-            c(f'bracer_ring_{side}_{j}',[x,43+j*3.2,-6.8],[10.5,.8,.8],7)
-        c(f'bracer_center_plate_{side}',[x,49,-7.2],[6,13,1.8],0)
-        c(f'bracer_inlaid_diamond_{side}',[x,50,-8.3],[3.5,5,.6],4,[0,0,45])
+            c(f'forearm_lamella_{side}_{j}',[x,42+j*3.2,-1],[16,3.5,17],6 if j%2 else 5)
+            c(f'bracer_ring_{side}_{j}',[x,43+j*3.2,-9.4],[16.5,.8,.8],7)
+        c(f'bracer_center_plate_{side}',[x,49,-9.7],[11,13,1.8],0)
+        c(f'bracer_inlaid_diamond_{side}',[x,50,-10.8],[3.5,5,.6],4,[0,0,45])
         for row in range(6):
             for edge in [-1,1]:c(f'bracer_stud_{side}_{row}_{edge}',[x+edge*4.3,43+row*3.2,-7],[.6,.6,.65],1)
-        c(f'palm_{side}',[x,36,0],[8,7,7],6)
+        c(f'palm_{side}',[x,36,0],[12,7,12],6)
         for digit in range(4):
             c(f'finger_{side}_{digit}',[x-3+digit*2,32.5,-2],[1.5,6,2.5],7)
             c(f'finger_joint_{side}_{digit}',[x-3+digit*2,34.5,-3.5],[1.6,1.5,1.5],1)
@@ -200,14 +212,18 @@ def complete():
         weapons[f'sheath_{side}']=a.joint(f'waist_scabbard_{side}',(0,0,0))
     wings=[]
     for side in [-1,1]:
-        for j in range(10):
-            c(f'wing_spar_{side}_{j}',[side*(19+j*6),81+j*1.7,10+j*.6],[8,4,5],7)
-        for feather in range(14):
-            base=26+feather*4.2;y=85+feather*.9;z=11+feather*.35
-            for j in range(7):
-                t=j/6;xx=side*(base+10*t);yy=y-(13+feather*1.8)*t;zz=z+8*t;w=5*(1-.78*t)
-                c(f'wing_feather_{side}_{feather}_{j}',[xx,yy,zz],[w,5.4,1.6],5 if feather%2 else 6,[0,0,-side*22.5])
-                c(f'feather_spine_{side}_{feather}_{j}',[xx,yy,zz-.95],[.65,5.5,.6],7,[0,0,-side*22.5])
+        for j in range(22):
+            t=j/21;x=side*(17+72*t);y=85+16*math.sin(t*math.pi*.82)
+            c(f'wing_scapular_surface_{side}_{j}',[x,y-12,12+6*t],[5.2,30*(1-.4*t),3],6)
+            c(f'wing_leading_ridge_{side}_{j}',[x,y+1,11+6*t],[5,3.5,3.5],5)
+            c(f'wing_leading_trim_{side}_{j}',[x,y+2.2,9.2+6*t],[4.9,.6,.8],7)
+        for feather in range(18):
+            u=feather/17;start=[side*(25+58*u),88+10*math.sin(u*math.pi),13+5*u]
+            end=[side*(start[0]*side+13+12*u),start[1]-17-12*u,16+6*u]
+            for j in range(9):
+                t=j/8;point=[start[i]+(end[i]-start[i])*t for i in range(3)]
+                c(f'wing_feather_{side}_{feather}_{j}',point,[7.5*(1-.35*t),5,2.2],5 if feather%2 else 6,[0,0,side*45])
+                c(f'feather_spine_{side}_{feather}_{j}',[point[0],point[1],point[2]-1.3],[.55,4.8,.5],7,[0,0,side*45])
         wings.append(a.joint('right_wing' if side==1 else 'left_wing',(side*17,82,10)))
     roots=a.m.data['outliner'][:];a.m.data['outliner']=roots[:3];a.m.torso=a.m.group('battle_torso',[],origin=(0,57,0));a.m.data['outliner'][-1]['children']=roots[3:]
     slash=animation('slash',5.2,{})
@@ -228,7 +244,24 @@ def complete():
         assert bind(a.m.data['outliner'])
     for name,point in [('o',(0,57,0)),('x',(16,57,0)),('y',(0,73,0)),('z',(0,57,16))]:probe('clear_body_'+name,a.m.torso,point)
     for distance in range(10,61,5):probe('clear_blade_'+str(distance),weapons['blade_-1'],(0,0,-distance))
-    boxes=[e for e in a.m.data['elements']if e['name'].startswith(('breastplate_','temple_','helmet_crown','tengu_face_contour'))]
+    # A 48-voxel torso now matches the 48-voxel leg core instead of a thin frame.
+    shifted=set();element_ids=set()
+    def collect(nodes):
+        for node in nodes:
+            if isinstance(node,dict):shifted.add(node['uuid']);collect(node['children'])
+            else:element_ids.add(node)
+    torso_node=next(n for n in a.m.data['outliner']if n['uuid']==a.m.torso['uuid']);collect([torso_node])
+    for g in a.m.data['groups']:
+        if g['uuid']in shifted:g['origin'][1]+=16
+    for e in a.m.data['elements']:
+        if e['uuid']in element_ids:
+            for field in ['from','to','origin']:e[field][1]+=16
+    # Pilot paths use the same rigid shift as the neck and helmet.
+    path=ROOT/'susanoo-pilot-path.csv';rows=[]
+    for line in path.read_text().splitlines():
+        r,f,y=map(float,line.split(','));rows.append(f'{r:.8f},{f:.8f},{y+10:.8f}')
+    path.write_text('\n'.join(rows)+'\n')
+    boxes=[e for e in a.m.data['elements']if e['name'].startswith(('solid_torso_core','breastplate_','temple_','helmet_crown','tengu_face_contour'))]
     (ROOT/'susanoo-body-boxes.csv').write_text('\n'.join(','.join(str(v)for v in e['from']+e['to'])for e in boxes)+'\n')
     # Keep the final pose alive past scene cleanup; a once clip resetting to bind
     # pose would put independently positioned weapon roots back on the ground.
@@ -269,12 +302,12 @@ def blade_rotation(direction):
     return [math.degrees(math.asin(max(-1,min(1,y)))),math.degrees(math.atan2(-x,-z)),0]
 
 def choreograph(m,slash,arms,weapons):
-    hilt=[(0,(-18,59,-7)),(.45,(-18,59,-7)),(.8,(-7,68,-27)),(1.15,(26,72,-32)),(1.3,(26,72,-32)),(1.5,(43,65,-8)),(1.8,(30,60,-10)),(2.05,(34,78,-18)),(2.3,(18,97,-18)),(2.7,(10,112,-12)),(3.3,(10,112,-12)),(3.4,(10,112,-12)),(3.5,(-6,58,-20)),(4.2,(-6,58,-20)),(5.2,(24,44,-2))]
-    axis=[(0,(0,-.24,.97)),(.45,(0,-.24,.97)),(.8,(-.8,0,.6)),(1.3,(-.9,0,-.4)),(1.5,(.98,-.04,-.2)),(1.8,(.85,-.12,-.5)),(2.3,(.05,.5,.87)),(2.7,(.15,.8,.58)),(3.3,(.15,.8,.58)),(3.4,(0,0,-1)),(3.5,(-.55,-.45,-.70)),(4.2,(-.55,-.45,-.70)),(5.2,(0,-.2,-.98))]
+    hilt=[(0,(-24,59,-7)),(.45,(-24,59,-7)),(.6,(-24,62,-29)),(.7,(-15,66,-31)),(.8,(-7,68,-27)),(1.15,(26,72,-32)),(1.3,(26,72,-32)),(1.5,(43,65,-8)),(1.8,(30,60,-10)),(2.05,(34,78,-18)),(2.3,(18,97,-18)),(2.7,(10,112,-12)),(3.3,(10,112,-12)),(3.4,(10,112,-12)),(3.5,(-6,58,-20)),(4.2,(-6,58,-20)),(5.2,(24,44,-2))]
+    axis=[(0,(0,-.24,.97)),(.45,(0,-.24,.97)),(.6,(-.8,0,.6)),(.8,(-.8,0,.6)),(1.3,(-.9,0,-.4)),(1.5,(.98,-.04,-.2)),(1.8,(.85,-.12,-.5)),(2.3,(.05,.5,.87)),(2.7,(.15,.8,.58)),(3.3,(.15,.8,.58)),(3.4,(0,0,-1)),(3.5,(-.55,-.45,-.70)),(4.2,(-.55,-.45,-.70)),(5.2,(0,-.2,-.98))]
     torso=[(0,(0,-12,0)),(.8,(0,-22,-4)),(1.15,(-4,-38,-6)),(1.3,(-4,-38,-6)),(1.5,(12,40,8)),(1.8,(8,35,5)),(2.25,(-6,10,0)),(2.7,(-14,-20,-6)),(3.3,(-18,-28,-6)),(3.5,(22,30,12)),(4.2,(14,22,8)),(5.2,(0,0,0))]
     torso=[(t,(x*(.15 if 2.25<=t<=4.2 else .3),y*(.25 if 2.25<=t<=4.2 else .4),z*.2)) for t,(x,y,z) in torso]
-    sheath=[(0,(-18,59,-7)),(.45,(-18,59,-7)),(.8,(-7,68,-27)),(1.15,(-31,67,9)),(1.8,(-31,67,9)),(2.3,(-18,59,-7)),(5.2,(-18,59,-7))]
-    sheath_axis=[(0,(0,-.24,.97)),(.45,(0,-.24,.97)),(.8,(-.8,0,.6)),(1.8,(-.8,0,.6)),(2.3,(0,-.24,.97)),(5.2,(0,-.24,.97))]
+    sheath=[(0,(-24,59,-7)),(.45,(-24,59,-7)),(.6,(-24,62,-29)),(.7,(-15,66,-31)),(.8,(-7,68,-27)),(1.15,(-31,67,9)),(1.8,(-31,67,9)),(2.3,(-24,59,-7)),(5.2,(-24,59,-7))]
+    sheath_axis=[(0,(0,-.24,.97)),(.45,(0,-.24,.97)),(.6,(-.8,0,.6)),(.8,(-.8,0,.6)),(1.8,(-.8,0,.6)),(2.3,(0,-.24,.97)),(5.2,(0,-.24,.97))]
     tracks={}
     def track(g,ch,keys):
         # Keep raw source Euler angles: these are model joints, not the player rig.
@@ -285,7 +318,7 @@ def choreograph(m,slash,arms,weapons):
         for tick in range(105):
             t=tick/20;h=interp(hilt,t);d=normalized(interp(axis,t));sh=interp(sheath,t);sd=normalized(interp(sheath_axis,t))
             if side==1:hand=interp([(0,(28,38,-3)),(.45,(-8,64,-23)),(.8,(-7,68,-27))],t) if t<.8 else h
-            else:hand=interp([(0,(-28,38,-3)),(.45,(-18,59,-7)),(.8,tuple(sh[i]+sd[i]*14 for i in range(3)))],t) if t<.8 else [sh[i]+sd[i]*14 for i in range(3)]
+            else:hand=interp([(0,(-28,38,-3)),(.45,(-24,59,-7)),(.8,tuple(sh[i]+sd[i]*14 for i in range(3)))],t) if t<.8 else [sh[i]+sd[i]*14 for i in range(3)]
             shoulder=[side*24,81,0];delta=[hand[i]-shoulder[i] for i in range(3)];dist=math.sqrt(sum(v*v for v in delta));assert 4.999<dist<45.01,(side,t,dist)
             aim=normalized(delta);along=(20*20-25*25+dist*dist)/(2*dist);height=math.sqrt(max(0,400-along*along));ref=[side*.25,-.2,-1];dot=sum(ref[i]*aim[i] for i in range(3));bend=normalized([ref[i]-dot*aim[i] for i in range(3)])
             elbow=[shoulder[i]+aim[i]*along+bend[i]*height for i in range(3)]
@@ -296,7 +329,7 @@ def choreograph(m,slash,arms,weapons):
         positions=[];rotations=[]
         for tick in range(105):
             t=tick/20
-            if name.endswith('_1'):p=[18,59,-7];d=[0,-.24,.97]
+            if name.endswith('_1'):p=[24,59,-7];d=[0,-.24,.97]
             else:p=interp(sheath if name.startswith('sheath') else hilt,t);d=interp(sheath_axis if name.startswith('sheath') else axis,t)
             positions.append((t,p));rotations.append((t,blade_rotation(d)))
         track(g,'position',positions);track(g,'rotation',rotations)

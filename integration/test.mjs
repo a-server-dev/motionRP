@@ -401,20 +401,23 @@ if(process.env.MOTIONRP_PISTOL_BALSE_ONLY==='1'){
   consoleCommand('fill -4 -60 -4 9 -54 6 air');consoleCommand('fill -4 -61 -4 9 -61 6 grass_block');
   for(const [name,x]of [[an,.5],[bn,2.5],[cn,6.5]])consoleCommand(`tp ${name} ${x} -60 .5 0 0`);
   c.chat('/motionrp view off');await sleep(500);
-  const spawned=[new Set(),new Set(),new Set()],removed=[new Set(),new Set(),new Set()],fx=[0,0,0];
+  const spawned=[new Set(),new Set(),new Set()],removed=[new Set(),new Set(),new Set()],fx=[0,0,0],armScales=new Map();
   for(const[i,bot]of[a,b,c].entries()){
    bot._client.on('spawn_entity',p=>{if(p.type===bot.registry.entitiesByName.item_display.id)spawned[i].add(p.entityId);});
    bot._client.on('entity_destroy',p=>p.entityIds.forEach(id=>removed[i].add(id)));
    bot._client.on('world_particles',()=>fx[i]++);
   }
+  const scaleKey=b.registry.entitiesByName.item_display.metadataKeys.indexOf('scale');b._client.on('entity_metadata',p=>{for(const e of p.metadata)if(e.key===scaleKey&&e.value.x>.01){if(!armScales.has(p.entityId))armScales.set(p.entityId,[]);armScales.get(p.entityId).push(e.value.x);}});
   const clean=()=>spawned.every((ids,i)=>[...ids].every(id=>removed[i].has(id)));
   const reset=()=>{spawned.forEach(s=>s.clear());removed.forEach(s=>s.clear());fx.fill(0);};
   consoleCommand('motionrp give controller '+an);consoleCommand('motionrp give motion gigant_pistol 1 '+an);await waitFor(()=>tokens(a)===1,'pistol item');
   await a.equip(a.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');await menu(a);await deposit(a);await closeMenu(a);
   let begin=output.length;a._testLeftClick();await waitFor(()=>output.slice(begin).includes('GigantPistol giant fist impact'),'punch impact',15000);await waitFor(clean,'punch cleanup',12000);
+  const arm=[...output.slice(begin).matchAll(/skin arm tick=(\d+) width=([^ ]+) reach=([^\r\n]+)/g)].map(m=>({tick:+m[1],width:+m[2],reach:+m[3]}));assert.equal(arm.length,3);assert.ok(arm[0].width<.3&&arm[1].width>2.5&&arm[1].width<3.3&&arm[2].reach>8&&arm[2].reach<12,'The actual player-skin arm must inflate by more than ten times and extend from the shoulder');assert.ok(!output.slice(begin).includes('displays inflated_fist'),'No separate static-color fist');const skinIds=output.slice(begin).match(/skin bones upper=(\d+) forearm=(\d+)/);assert.ok(skinIds);const scales=armScales.get(+skinIds[2]);assert.ok(scales?.length>5);const ratio=Math.max(...scales)/Math.min(...scales);assert.ok(ratio>10&&ratio<12,'The observer receives the actual skin forearm enlarged 10.8 times: '+ratio);
   assert.ok(fx[0]>10&&fx[1]>10&&fx[2]===0);assert.ok(spawned[0].size>1&&spawned[1].size>1&&spawned[2].size===0);pass('Inflation, windup and giant punch play with visibility filtering and complete cleanup');
   reset();begin=output.length;a.chat('/motionrp balse');await waitFor(()=>b._testMessages.some(m=>m.includes('balse accept '+an)),'nearest Balse invitation');assert.equal(spawned[0].size,0);
   b.chat('/motionrp accept');await waitFor(()=>output.slice(begin).includes('Balse shared flash released'),'shared flash',15000);
+  const palms=[...output.slice(begin).matchAll(/palm contact leader=(true|false) gap=([^\r\n]+)/g)];assert.equal(palms.length,2);assert.ok(palms.every(m=>+m[2]<.2),'Both actual animated palms must reach the shared stone');
   assert.equal(output.slice(begin).split('Balse shared flash released').length-1,1);await waitFor(clean,'paired flash cleanup',15000);
   assert.ok(fx[0]>100&&fx[1]>100&&fx[2]===0);assert.equal(spawned[2].size,0);pass('Balse requires consent, emits one shared expanding light and many particles, then cleans both roles');
   reset();begin=output.length;a.chat('/motionrp balse');await sleep(500);b.chat('/motionrp accept');await waitFor(()=>output.slice(begin).includes('Balse phase: HANDS'),'pair restarted');b.chat('/motionrp balse cancel');await waitFor(clean,'cancel pair cleanup');await sleep(4000);assert.ok(!output.slice(begin).includes('shared flash released'));pass('Either participant can cancel Balse before release without a delayed flash');

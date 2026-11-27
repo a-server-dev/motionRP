@@ -20,4 +20,26 @@ class PistolBalseAssetsTest {
  @Test void released073ModelsCanUpgradeWithoutOverwritingCustomModels()throws Exception{
   for(String file:List.of("players/motionrp_fire_tornado.bbmodel","models/motionrp_susanoo_armor.bbmodel"))try(var in=new java.util.zip.GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.73.0/"+file.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(file,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
  }
+ @Test void skinArmInflatesThroughItsOwnBonesWithoutChangingSkinGeometry()throws Exception{
+  var model=load("players/motionrp_gigant_pistol");
+  try(var in=new java.util.zip.GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.74.0/players_motionrp_gigant_pistol.bbmodel.gz")))){var old=JsonParser.parseReader(new InputStreamReader(in)).getAsJsonObject();assertEquals(old.get("elements"),model.get("elements"));assertEquals(old.get("textures"),model.get("textures"));}
+  for(var v:model.getAsJsonArray("animations").get(0).getAsJsonObject().getAsJsonObject("animators").entrySet()){
+   var track=v.getValue().getAsJsonObject();if(!Set.of("pra_right_arm","prfa_right_forearm").contains(track.get("name").getAsString()))continue;
+   assertTrue(track.getAsJsonArray("keyframes").asList().stream().map(JsonElement::getAsJsonObject).anyMatch(k->k.get("channel").getAsString().equals("scale")));
+   assertFalse(track.getAsJsonArray("keyframes").asList().stream().map(JsonElement::getAsJsonObject).anyMatch(k->k.get("channel").getAsString().equals("position")),"Do not disconnect the shoulder or elbow");
+  }
+ }
+ @Test void bothBalseHandsReachTheCrystalByBendingTheElbows()throws Exception{
+  for(String role:List.of("left","right")){
+   var model=load("players/motionrp_balse_"+role);Map<String,JsonObject> groups=new HashMap<>();Map<String,String> names=new HashMap<>(),parents=new HashMap<>();for(var raw:model.getAsJsonArray("groups")){var g=raw.getAsJsonObject();groups.put(g.get("uuid").getAsString(),g);names.put(g.get("name").getAsString(),g.get("uuid").getAsString());}
+   var math=new RasenganAssetsTest();math.parentTree(model.getAsJsonArray("outliner"),null,parents);var palm=math.posedOrigin(names.get("balse_palm"),2.5,model.getAsJsonArray("animations").get(0).getAsJsonObject(),groups,parents);assertArrayEquals(new double[]{role.equals("left")?8.8:-8.8,21.6,-10.4},palm,.0001);
+  }
+ }
+ @Test void thickBodyCoresAndLayeredWingsReplaceTheThinFrame()throws Exception{
+  var model=load("models/motionrp_susanoo_armor");var elements=model.getAsJsonArray("elements").asList().stream().map(JsonElement::getAsJsonObject).toList();
+  for(String name:List.of("solid_torso_core","solid_leg_core_-1","solid_leg_core_1")){
+   var parts=elements.stream().filter(e->e.get("name").getAsString().startsWith(name+"_")).toList();assertFalse(parts.isEmpty());double lo=parts.stream().mapToDouble(e->e.getAsJsonArray("from").get(1).getAsDouble()).min().orElseThrow(),hi=parts.stream().mapToDouble(e->e.getAsJsonArray("to").get(1).getAsDouble()).max().orElseThrow();assertEquals(48,hi-lo,.001);
+  }
+  for(String name:List.of("solid_forearm_core","upper_arm_plate","wing_scapular_surface","kabuto_dome","helmet_fukigaeshi"))assertTrue(elements.stream().anyMatch(e->e.get("name").getAsString().startsWith(name)));
+ }
 }

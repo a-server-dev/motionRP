@@ -23,7 +23,7 @@ final class SusanooScene extends SummonScene {
         for(int i=0;i<3;i++){axes[i]=armor.bone("clear_body_"+"xyz".charAt(i)).worldPosition().sub(o,new org.joml.Vector3f());unit=axes[i].length()/16;axes[i].normalize();}
         double minimum=Double.POSITIVE_INFINITY;
         for(int distance=10;distance<=60;distance+=5){
-            var p=armor.bone("clear_blade_"+distance).worldPosition().sub(o,new org.joml.Vector3f());double[] local={p.dot(axes[0])/unit,57+p.dot(axes[1])/unit,p.dot(axes[2])/unit};
+            var p=armor.bone("clear_blade_"+distance).worldPosition().sub(o,new org.joml.Vector3f());double[] local={p.dot(axes[0])/unit,73+p.dot(axes[1])/unit,p.dot(axes[2])/unit};
             for(var box:BODY_BOXES){double squared=0;for(int i=0;i<3;i++){double d=Math.max(0,Math.max(box[i]-local[i],local[i]-box[i+3]));squared+=d*d;}minimum=Math.min(minimum,Math.sqrt(squared)-3);}
         }
         trace("blade clearance tick="+tick+" minimum="+minimum);

@@ -1,5 +1,8 @@
 """Gear-three inflated fist and consensual two-player spell, editable BetterModel assets."""
 import sys,json,math,hashlib
+from generate_perfect_susanoo import direction_rotation,normalized,transpose,continuous
+from hollow_kinematics import mul,euler,matrix,vector
+from generate_summons import ident
 sys.dont_write_bytecode=True
 from pathlib import Path
 from generate_summons import Model,player,save,animation,animator,RIG_SHA
@@ -52,5 +55,64 @@ def generate(rig):
  for j in range(32):
   q=math.tau*j/32;parts.append(m.cube('halo_'+str(j),(9*math.cos(q),9*math.sin(q),0),(1,1,.5),1))
  g=m.group('radiant_halo',parts);a=animation('radiance',2,{});a['loop']='loop';a['animators'][g['uuid']]=animator(g,[(0,(0,0,0)),(1,(0,0,180)),(2,(0,0,360))]);m.data['animations']=[a];m.save()
+def corrected_actors():
+ from generate_summons import ROOT
+ # Undo the legacy pose-table X conversion for these newly authored arms.
+ for name in ['gigant_pistol','balse_left','balse_right']:
+  p=ROOT/('players/motionrp_'+name+'.bbmodel');m=json.loads(p.read_text());groups={g['name']:g for g in m['groups']};clip=m['animations'][0]
+  for entry in clip['animators'].values():
+   for k in entry['keyframes']:
+    if k['channel']=='rotation':k['data_points'][0]['x']=str(-float(k['data_points'][0]['x']))
+  def track(bone,keys,ch='rotation'):
+   g=groups[bone];part=animator(g,keys,ch);entry=clip['animators'].setdefault(g['uuid'],{'name':bone,'type':'bone','keyframes':[]});entry['keyframes']=[k for k in entry['keyframes']if k['channel']!=ch]+part['keyframes']
+  def probe(label,parent,point):
+   g={'name':label,'uuid':ident(name+'/'+label),'origin':list(point),'rotation':[0,0,0],'export':True};m['groups'].append(g)
+   def bind(nodes):
+    for n in nodes:
+     if isinstance(n,dict):
+      if n['uuid']==groups[parent]['uuid']:n['children'].append({'uuid':g['uuid'],'children':[]});return True
+      if bind(n['children']):return True
+    return False
+   assert bind(m['outliner'])
+  if name=='gigant_pistol':
+   # Enlarge actual player skin bones, with child scales relative to their parents.
+   track('pra_right_arm',[(0,(1,1,1)),(.9,(1,1,1)),(2.4,(8,5,8)),(5.2,(8,5,8)),(6.7,(1,1,1)),(7.5,(1,1,1))],'scale')
+   track('prfa_right_forearm',[(0,(1,1,1)),(.9,(1,1,1)),(2.4,(1.35,1,1.35)),(3.2,(1.35,1,1.35)),(3.7,(1.35,4,1.35)),(5.2,(1.35,4,1.35)),(6.7,(1,1,1)),(7.5,(1,1,1))],'scale')
+   # Fixed shoulder and elbow positions: no detached or independently flying fist.
+   track('pra_right_arm',[(0,(0,0,0)),(.5,(100,0,-12)),(.9,(100,0,-12)),(2.4,(75,-35,20)),(3.2,(80,-75,25)),(3.7,(90,0,0)),(5,(90,0,0)),(6.3,(90,0,0)),(6.7,(0,0,0)),(7.5,(0,0,0))])
+   track('prfa_right_forearm',[(0,(0,0,0)),(.5,(65,0,0)),(.9,(65,0,0)),(2.4,(30,0,0)),(3.2,(55,0,0)),(3.7,(0,0,0)),(5,(0,0,0)),(6.7,(0,0,0)),(7.5,(0,0,0))])
+   # Keep the giant shoulder outside the torso by bracing rather than crossing it.
+   track('pc_chest',[(0,(0,0,0)),(2.4,(-5,-12,0)),(3.2,(-5,-20,0)),(3.7,(10,0,0)),(5,(10,0,0)),(7.5,(0,0,0))])
+   for label,parent,point in [('pistol_shoulder','pra_right_arm',(5,22,0)),('pistol_elbow','prfa_right_forearm',(5,16.5,0)),('pistol_palm','prfa_right_forearm',(5,10,0)),('pistol_width_a','prfa_right_forearm',(3,12,0)),('pistol_width_b','prfa_right_forearm',(7,12,0))]:probe(label,parent,point)
+  else:
+   side=1 if name.endswith('left')else -1;upper='pra_right_arm'if side==1 else'pla_left_arm';fore='prfa_right_forearm'if side==1 else'plfa_left_forearm'
+   shoulder=[side*5,22,0];hand=[side*8.8,21.6,-10.4];delta=[hand[i]-shoulder[i]for i in range(3)];dist=math.sqrt(sum(v*v for v in delta));aim=normalized(delta)
+   along=(5.5**2-6.5**2+dist**2)/(2*dist);height=math.sqrt(5.5**2-along**2);ref=[side*.8,-1,0];dot=sum(ref[i]*aim[i]for i in range(3));bend=normalized([ref[i]-dot*aim[i]for i in range(3)])
+   elbow=[shoulder[i]+aim[i]*along+bend[i]*height for i in range(3)];a=direction_rotation([elbow[i]-shoulder[i]for i in range(3)],True);b=direction_rotation([hand[i]-elbow[i]for i in range(3)],True)
+   track(upper,[(0,(0,0,side*4)),(1.7,euler(a)),(5.5,euler(a)),(6.7,(0,0,side*4)),(7,(0,0,0))]);track(fore,[(0,(0,0,0)),(1.7,euler(mul(transpose(a),b))),(5.5,euler(mul(transpose(a),b))),(7,(0,0,0))]);track('pc_chest',[(0,(0,0,0)),(7,(0,0,0))])
+   probe('balse_palm',fore,(side*5,10,0))
+  if name=='gigant_pistol':
+   parents={}
+   def walk(nodes,parent=None):
+    for node in nodes:
+     if isinstance(node,dict):parents[node['uuid']]=parent;walk(node['children'],node['uuid'])
+   walk(m['outliner']);byid={g['uuid']:g for g in m['groups']}
+   def sample(uid,ch,t):
+    keys=[k for k in clip['animators'].get(uid,{}).get('keyframes',[])if k['channel']==ch]
+    if not keys:return [1,1,1]if ch=='scale'else[0,0,0]
+    a=max((k for k in keys if k['time']<=t),key=lambda k:k['time'],default=keys[0]);b=min((k for k in keys if k['time']>=t),key=lambda k:k['time'],default=keys[-1]);q=(t-a['time'])/(b['time']-a['time'])if a['time']!=b['time']else 0
+    return [float(a['data_points'][0][c])*(1-q)+float(b['data_points'][0][c])*q for c in 'xyz']
+   def point(label,t):
+    g=next(g for g in m['groups']if g['name']==label);p=g['origin'][:];uid=g['uuid']
+    while uid is not None:
+     o=byid[uid]['origin'];sc=sample(uid,'scale',t);delta=[(p[i]-o[i])*sc[i]for i in range(3)];v=vector(matrix(*sample(uid,'rotation',t)),delta);pos=sample(uid,'position',t);p=[o[i]+v[i]+pos[i]for i in range(3)];uid=parents[uid]
+    return p
+   def dist(a,b):return math.sqrt(sum((x-y)**2 for x,y in zip(a,b)))/16
+   rows=[]
+   for tick in range(150):
+    t=tick/20;p=point('pistol_palm',t);width=dist(point('pistol_width_a',t),point('pistol_width_b',t));reach=dist(point('pistol_shoulder',t),p);rows.append(','.join(f'{v:.8f}'for v in [p[0]/16,-p[2]/16,p[1]/16,width,reach]))
+   (ROOT/'pistol-palm.csv').write_text('\n'.join(rows)+'\n')
+  save('players/motionrp_'+name+'.bbmodel',m)
+
 if __name__=='__main__':
- raw=Path(sys.argv[1]).read_bytes();assert hashlib.sha256(raw).hexdigest()==RIG_SHA;generate(json.loads(raw))
+ raw=Path(sys.argv[1]).read_bytes();assert hashlib.sha256(raw).hexdigest()==RIG_SHA;generate(json.loads(raw));corrected_actors()

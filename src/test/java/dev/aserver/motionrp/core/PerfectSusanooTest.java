@@ -46,12 +46,12 @@ class PerfectSusanooTest {
         var clip=model.getAsJsonArray("animations").get(0).getAsJsonObject();Map<String,JsonObject> groups=new HashMap<>();Map<String,String> names=new HashMap<>(),parents=new HashMap<>();
         for(var raw:model.getAsJsonArray("groups")){var g=raw.getAsJsonObject();String id=g.get("uuid").getAsString();groups.put(id,g);names.put(g.get("name").getAsString(),id);}
         var math=new RasenganAssetsTest();math.parentTree(model.getAsJsonArray("outliner"),null,parents);
-        var boxes=model.getAsJsonArray("elements").asList().stream().map(JsonElement::getAsJsonObject).filter(e->{String n=e.get("name").getAsString();return n.startsWith("breastplate_")||n.startsWith("temple_")||n.startsWith("helmet_crown")||n.startsWith("tengu_face_contour");}).toList();
+        var boxes=model.getAsJsonArray("elements").asList().stream().map(JsonElement::getAsJsonObject).filter(e->{String n=e.get("name").getAsString();return n.startsWith("solid_torso_core")||n.startsWith("breastplate_")||n.startsWith("temple_")||n.startsWith("helmet_crown")||n.startsWith("tengu_face_contour");}).toList();
         for(int frame=0;frame<=208;frame++){
             double t=frame/40.0;var origin=math.posedPoint(names.get("battle_torso"),new double[]{0,57,0},t,clip,groups,parents);double[][] basis=new double[3][];
             for(int axis=0;axis<3;axis++){double[] p={0,57,0};p[axis]++;basis[axis]=math.posedPoint(names.get("battle_torso"),p,t,clip,groups,parents);for(int j=0;j<3;j++)basis[axis][j]-=origin[j];}
             for(int distance=10;distance<=60;distance+=2){
-                var world=math.posedPoint(names.get("waist_blade_-1"),new double[]{0,0,-distance},t,clip,groups,parents);double[] point={0,57,0};
+                var world=math.posedPoint(names.get("waist_blade_-1"),new double[]{0,16,-distance},t,clip,groups,parents);double[] point={0,57,0};
                 for(int axis=0;axis<3;axis++)for(int j=0;j<3;j++)point[axis]+=(world[j]-origin[j])*basis[axis][j];
                 for(var box:boxes){double squared=0;for(int j=0;j<3;j++){double lo=box.getAsJsonArray("from").get(j).getAsDouble(),hi=box.getAsJsonArray("to").get(j).getAsDouble();double d=Math.max(0,Math.max(lo-point[j],point[j]-hi));squared+=d*d;}assertTrue(squared>9,"Blade thickness must clear the torso and helmet at t="+t);}
             }
@@ -67,23 +67,23 @@ class PerfectSusanooTest {
         var math=new RasenganAssetsTest();math.parentTree(model.getAsJsonArray("outliner"),null,parents);
         for(int tick=16;tick<=104;tick++){
             double t=tick/20.0;
-            var right=math.posedPoint(names.get("forearm_1"),new double[]{24,36,0},t,clip,groups,parents);
+            var right=math.posedPoint(names.get("forearm_1"),new double[]{24,52,0},t,clip,groups,parents);
             var sword=math.posedOrigin(names.get("waist_blade_-1"),t,clip,groups,parents);
-            var left=math.posedPoint(names.get("forearm_-1"),new double[]{-24,36,0},t,clip,groups,parents);
-            var sheath=math.posedPoint(names.get("waist_scabbard_-1"),new double[]{0,0,-14},t,clip,groups,parents);
+            var left=math.posedPoint(names.get("forearm_-1"),new double[]{-24,52,0},t,clip,groups,parents);
+            var sheath=math.posedPoint(names.get("waist_scabbard_-1"),new double[]{0,16,-14},t,clip,groups,parents);
             assertArrayEquals(sword,right,.0001,"Right hand must hold the drawn left-waist sword");
             assertArrayEquals(sheath,left,.0001,"Left hand must hold the scabbard");
-            assertArrayEquals(math.posedPoint(names.get("battle_torso"),new double[]{18,59,-7},t,clip,groups,parents),math.posedOrigin(names.get("waist_blade_1"),t,clip,groups,parents),.0001,"Other sword stays at the waist");
+            assertArrayEquals(math.posedPoint(names.get("battle_torso"),new double[]{24,75,-7},t,clip,groups,parents),math.posedOrigin(names.get("waist_blade_1"),t,clip,groups,parents),.0001,"Other sword stays at the waist");
         }
         for(int tick=SusanooTimeline.ARMOR+44;tick<SusanooTimeline.FADE;tick++){
-            var point=math.posedPoint(names.get("battle_torso"),new double[]{0,82.8,-7.44},Math.max(0,(tick-SusanooTimeline.READY)/20.0),clip,groups,parents);
+            var point=math.posedPoint(names.get("battle_torso"),new double[]{0,98.8,-7.44},Math.max(0,(tick-SusanooTimeline.READY)/20.0),clip,groups,parents);
             var pilot=SusanooPilotPath.at(tick);assertEquals(point[0]*10/16,pilot.right(),.00001);assertEquals(-point[2]*10/16,pilot.forward(),.00001);assertEquals(point[1]*10/16,pilot.height(),.00001);
         }
-        var overhead=math.posedPoint(names.get("waist_blade_-1"),new double[]{0,0,-60},2.9,clip,groups,parents);
-        var crown=math.posedPoint(names.get("battle_torso"),new double[]{0,110,0},2.9,clip,groups,parents);
+        var overhead=math.posedPoint(names.get("waist_blade_-1"),new double[]{0,16,-60},2.9,clip,groups,parents);
+        var crown=math.posedPoint(names.get("battle_torso"),new double[]{0,126,0},2.9,clip,groups,parents);
         assertTrue(overhead[1]>crown[1]+20 && overhead[2]>crown[2]+15,"Wind the blade high and behind the head");
-        var firstA=math.posedPoint(names.get("waist_blade_-1"),new double[]{0,0,-60},1.3,clip,groups,parents);
-        var firstB=math.posedPoint(names.get("waist_blade_-1"),new double[]{0,0,-60},1.5,clip,groups,parents);
+        var firstA=math.posedPoint(names.get("waist_blade_-1"),new double[]{0,16,-60},1.3,clip,groups,parents);
+        var firstB=math.posedPoint(names.get("waist_blade_-1"),new double[]{0,16,-60},1.5,clip,groups,parents);
         assertTrue(Math.abs(firstB[0]-firstA[0])>70,"Draw cut sweeps the blade across a broad horizontal arc");
         var early=math.posedOrigin(names.get("waist_blade_-1"),.8,clip,groups,parents);
         var late=math.posedOrigin(names.get("waist_blade_-1"),1.15,clip,groups,parents);
