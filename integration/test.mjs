@@ -386,6 +386,42 @@ if(process.env.MOTIONRP_INAZUMA_ONLY==='1'){
  process.exit(code);
 }
 
+if(process.env.MOTIONRP_CHANNEL_ONLY==='1'){
+ let code=0;const probeJar=path.join(run,'plugins/CancellationProbe.jar');
+ try{
+  fs.copyFileSync(path.join(project,'build/integration-probe/cancellation-probe.jar'),probeJar);
+  fs.copyFileSync(path.join(project,`build/libs/motionRP-${version}.jar`),path.join(run,'plugins/MotionRP.jar'));
+  log=fs.createWriteStream(path.join(project,'build/channel-smoke.log'));await startServer();
+  const motions=['entei','death_sword','eternal_blizzard','death_spear','rasengan'];
+  const timer=setInterval(()=>consoleCommand('motionrp status'),500);
+  try{await waitFor(()=>motions.every(id=>output.includes(id+': 利用可能')),'channel test motions ready',90000);}finally{clearInterval(timer);}
+  const suffix=String(Date.now()).slice(-5),an='ChanA'+suffix,bn='ChanB'+suffix,cn='ChanC'+suffix;
+  const a=await connect(an),b=await connect(bn),c=await connect(cn);
+  consoleCommand('fill -3 -61 -3 10 -61 6 grass_block');consoleCommand('fill -3 -60 -3 10 -40 6 air');
+  for(const [name,x]of [[an,.5],[bn,3.5],[cn,6.5]])consoleCommand(`tp ${name} ${x} -60 .5 0 0`);await sleep(400);
+  const counts=[0,0],particles=[0,0],ids=new Set(),removed=new Set();
+  for(const [i,bot]of [b,c].entries()){bot._client.on('spawn_entity',p=>{if(p.type===bot.registry.entitiesByName.item_display.id){counts[i]++;if(i===0)ids.add(p.entityId);}});bot._client.on('world_particles',()=>particles[i]++);}
+  b._client.on('entity_destroy',p=>p.entityIds.forEach(id=>removed.add(id)));
+  async function probe(action){const begin=output.length;consoleCommand(`motionprobe ${action} ${cn}`);await waitFor(()=>output.slice(begin).includes(`CANCEL_PROBE ${action} ${cn}`),'probe '+action);}
+  consoleCommand('motionrp give controller '+an);await sleep(300);await a.equip(a.inventory.items().find(i=>i.name==='carrot_on_a_stick'),'hand');
+  for(const [index,id]of motions.entries()){
+   if(index){await menu(a);await click(a,0);await closeMenu(a);consoleCommand('clear '+an+' minecraft:paper');await sleep(250);}
+   consoleCommand('motionrp give motion '+id+' 1 '+an);await waitFor(()=>tokens(a)===1,id+' token');await menu(a);await deposit(a);await closeMenu(a);
+   await probe('orphan');if(index===0){await probe('duplicate');assert.ok(output.includes('CHANNEL_DUPLICATE_REPRODUCED'));pass('Old get-or-create call reproduces the exact duplicate channel exception');}
+   counts.fill(0);particles.fill(0);ids.clear();removed.clear();const begin=output.length;a._testLeftClick();
+   await waitFor(()=>counts[0]>0,id+' visible to registered viewer');await sleep(1200);
+   assert.equal(counts[1],0,id+' skips unregistered viewer models');assert.equal(particles[1],0,id+' skips unregistered viewer particles');
+   if(index===0){await probe('restore');await waitFor(()=>counts[1]>0,'viewer joins running scene after registration restored');pass('Restored viewer receives an already running scene without reinjection');}
+   await waitFor(()=>ids.size>0&&[...ids].every(n=>removed.has(n)),id+' full scene cleanup',25000);
+   assert.ok(!/scene failed|Motion playback failed/.test(output.slice(begin)),id+' must not throw');
+   const state=output.length;consoleCommand('motionprobe state '+an);await waitFor(()=>output.slice(state).includes(`CANCEL_PROBE state ${an} active=false`),id+' natural completion');
+   if(index!==0)await probe('restore');pass(id+' completes with an orphaned observer channel');
+  }
+ }catch(e){code=1;console.error(e.stack);}
+ finally{for(const bot of bots)try{bot.quit();}catch{}try{await stopServer();}catch{}log?.end();fs.rmSync(probeJar,{force:true});fs.writeFileSync(path.join(project,'build/channel-smoke-result.json'),JSON.stringify({passed:code===0,version,checks},null,2));}
+ process.exit(code);
+}
+
 if(process.env.MOTIONRP_CANCEL_ONLY==='1'){
  let code=0;const probeJar=path.join(run,'plugins/CancellationProbe.jar');
  try{

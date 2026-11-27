@@ -49,7 +49,7 @@ abstract class SummonScene implements MotionScene {
             tick++;
         } catch(RuntimeException failure) {
             plugin.getLogger().log(Level.WARNING,prefix+" scene failed",failure);
-            plugin.playback().stop(owner.getUniqueId(),"演出処理エラー");
+            plugin.playback().stop(owner.getUniqueId(),"演出処理エラー ("+failure.getClass().getSimpleName()+")");
         }
     }
     abstract void update();

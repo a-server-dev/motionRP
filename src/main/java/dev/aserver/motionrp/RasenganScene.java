@@ -6,7 +6,6 @@ import kr.toxicity.model.api.BetterModel;
 import kr.toxicity.model.api.animation.*;
 import kr.toxicity.model.api.bukkit.platform.BukkitAdapter;
 import kr.toxicity.model.api.profile.ModelProfile;
-import kr.toxicity.model.api.manager.PlayerManager;
 import kr.toxicity.model.api.tracker.*;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
@@ -96,13 +95,13 @@ public final class RasenganScene implements MotionScene {
                 orb.scaler(ModelScaler.value((float) frame.scale()));
             }
             if (frame.orbVisible() && tick % 2 == 0) spiral(ball, frame.scale());
-            if (frame.orbVisible()) WindEffects.swirl(viewers.values(), anchor.clone().add(0, .8, 0), tick, .85);
+            if (frame.orbVisible()) WindEffects.swirl(readyViewers(), anchor.clone().add(0, .8, 0), tick, .85);
             if (tick >= 20 && tick < 60 && tick % 20 == 0) sound(ball, Sound.ENTITY_BREEZE_WHIRL, .2f, 1.2f);
             if (tick == RasenganTimeline.THRUST_START) sound(ball, Sound.ENTITY_BREEZE_SHOOT, .8f, 1.1f);
             if (tick == RasenganTimeline.BURST) {
                 sound(ball, Sound.ENTITY_BREEZE_WIND_BURST, .75f, 1.1f);
-                WindEffects.burst(viewers.values(), ball);
-                for (Player viewer : viewers.values()) {
+                WindEffects.burst(readyViewers(), ball);
+                for (Player viewer : readyViewers()) {
                     if(!plugin.visibility().enabled(viewer.getUniqueId()))continue;
                     viewer.spawnParticle(Particle.DUST, ball, 24, .22, .22, .22, 0, CYAN);
                     viewer.spawnParticle(Particle.END_ROD, ball, 8, .16, .16, .16, .025);
@@ -179,7 +178,7 @@ public final class RasenganScene implements MotionScene {
     private void refreshViewers() {
         Set<UUID> eligible = new HashSet<>();
         for (Player player : Bukkit.getOnlinePlayers()) {
-            if (!plugin.visibility().enabled(player.getUniqueId()) || player.getWorld() != owner.getWorld() || !player.canSee(owner)
+            if (!ModelViewers.ready(player) || !plugin.visibility().enabled(player.getUniqueId()) || player.getWorld() != owner.getWorld() || !player.canSee(owner)
                     || player.getLocation().distanceSquared(owner.getLocation()) > Math.pow(plugin.visibility().range(48),2)) continue;
             eligible.add(player.getUniqueId());
             Player previous = viewers.put(player.getUniqueId(), player);
@@ -200,16 +199,16 @@ public final class RasenganScene implements MotionScene {
         }
     }
 
+    private Collection<Player> readyViewers(){return viewers.values().stream().filter(ModelViewers::ready).toList();}
+
     private void spawnForViewers(DummyTracker tracker) {
-        for (Player viewer : viewers.values()) spawnIfNeeded(tracker, viewer);
+        for (Player viewer : readyViewers()) spawnIfNeeded(tracker, viewer);
     }
 
     private void spawnIfNeeded(DummyTracker tracker, Player viewer) {
-        if (tracker.isSpawned(viewer.getUniqueId())) return;
+        if (!ModelViewers.ready(viewer) || tracker.isSpawned(viewer.getUniqueId())) return;
         var adapted = BukkitAdapter.adapt(viewer);
-        // DummyTracker.spawn silently declines an unregistered channel. Use the
-        // supported get-or-create API for real online players, then retry on refresh.
-        BetterModel.platform().manager(PlayerManager.class).player(adapted);
+        // Refresh retries when BetterModel has registered a real player.
         tracker.spawn(adapted);
         tracker.forceUpdate(true);
     }
@@ -219,7 +218,7 @@ public final class RasenganScene implements MotionScene {
         String ids = tracker.getPipeline().stream().filter(b -> b.getDisplay() != null)
                 .map(b -> Integer.toString(b.getDisplay().id())).collect(java.util.stream.Collectors.joining(","));
         plugin.getLogger().info("Rasengan displays " + kind + " ids=" + ids + " viewers=" + viewers.size());
-        for (Player viewer : viewers.values()) {
+        for (Player viewer : readyViewers()) {
                     if(!plugin.visibility().enabled(viewer.getUniqueId()))continue;
             var adapted = BukkitAdapter.adapt(viewer);
             boolean passesView = tracker.getPipeline().viewedPlayer().anyMatch(p -> p.uuid().equals(viewer.getUniqueId()));
@@ -231,11 +230,11 @@ public final class RasenganScene implements MotionScene {
     }
 
     private void smoke(Location at) {
-        for (Player viewer : viewers.values()) if(plugin.visibility().enabled(viewer.getUniqueId())) viewer.spawnParticle(Particle.POOF, at, 16, .23, .5, .23, .025);
+        for (Player viewer : readyViewers()) if(plugin.visibility().enabled(viewer.getUniqueId())) viewer.spawnParticle(Particle.POOF, at, 16, .23, .5, .23, .025);
     }
 
     private void sound(Location at, Sound sound, float volume, float pitch) {
-        for (Player viewer : viewers.values()) if(plugin.visibility().enabled(viewer.getUniqueId())) viewer.playSound(at, sound, SoundCategory.PLAYERS, volume, pitch);
+        for (Player viewer : readyViewers()) if(plugin.visibility().enabled(viewer.getUniqueId())) viewer.playSound(at, sound, SoundCategory.PLAYERS, volume, pitch);
     }
 
     private void spiral(Location ball, double scale) {
@@ -244,7 +243,7 @@ public final class RasenganScene implements MotionScene {
             double angle = tick * .65 + i * Math.PI / 2 + strand * Math.PI;
             double radius = (.12 + .07 * strand) * scale;
             Location point = ball.clone().add(Math.cos(angle) * radius, Math.sin(angle * 1.5) * radius, Math.sin(angle) * radius);
-            for (Player viewer : viewers.values()) if(plugin.visibility().enabled(viewer.getUniqueId())) viewer.spawnParticle(Particle.DUST, point, 1, 0, 0, 0, 0, strand == 0 ? CYAN : WHITE);
+            for (Player viewer : readyViewers()) if(plugin.visibility().enabled(viewer.getUniqueId())) viewer.spawnParticle(Particle.DUST, point, 1, 0, 0, 0, 0, strand == 0 ? CYAN : WHITE);
         }
     }
 

@@ -1,8 +1,6 @@
 package dev.aserver.motionrp;
 
-import kr.toxicity.model.api.BetterModel;
 import kr.toxicity.model.api.bukkit.platform.BukkitAdapter;
-import kr.toxicity.model.api.manager.PlayerManager;
 import kr.toxicity.model.api.tracker.DummyTracker;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -25,11 +23,11 @@ final class SceneAudience implements AutoCloseable {
     private final Set<DummyTracker> trackers = Collections.newSetFromMap(new IdentityHashMap<>());
     SceneAudience(Player owner) {this(owner,null,48);}
     SceneAudience(Player owner,org.bukkit.Location anchor,double range) {this.owner=owner;this.anchor=anchor;this.range=range;}
-    Collection<Player> players() { return viewers.values().stream().filter(p->visibility==null || visibility.enabled(p.getUniqueId())).toList(); }
+    Collection<Player> players() { return viewers.values().stream().filter(p->ModelViewers.ready(p)&&(visibility==null || visibility.enabled(p.getUniqueId()))).toList(); }
     void refresh() {
         Set<UUID> eligible = new HashSet<>();
         for (Player p : Bukkit.getOnlinePlayers()) {
-            if ((visibility!=null && !visibility.enabled(p.getUniqueId())) || p.getWorld() != owner.getWorld() || !p.canSee(owner)
+            if (!ModelViewers.ready(p) || (visibility!=null && !visibility.enabled(p.getUniqueId())) || p.getWorld() != owner.getWorld() || !p.canSee(owner)
                     || (!p.getUniqueId().equals(owner.getUniqueId()) && !participants.contains(p.getUniqueId()) && p.getLocation().distanceSquared(anchor==null?owner.getLocation():anchor) > Math.pow(visibility==null?range:visibility.range(range),2))) continue;
             eligible.add(p.getUniqueId());
             Player old = viewers.put(p.getUniqueId(), p);
@@ -62,9 +60,8 @@ final class SceneAudience implements AutoCloseable {
         tracker.close();
     }
     private void spawn(DummyTracker tracker, Player player) {
-        if (tracker.isSpawned(player.getUniqueId())) return;
+        if (!ModelViewers.ready(player) || tracker.isSpawned(player.getUniqueId())) return;
         var adapted = BukkitAdapter.adapt(player);
-        BetterModel.platform().manager(PlayerManager.class).player(adapted);
         tracker.spawn(adapted); tracker.forceUpdate(true);
     }
     @Override public void close() {
