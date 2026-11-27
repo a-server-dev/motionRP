@@ -23,15 +23,16 @@ final class EnteiScene extends SummonScene {
    }
    if(tick%20==0)sound(origin,Sound.BLOCK_FIRE_AMBIENT,1,.7f);
   }
-  if(tick==40){sun=model("motionrp_entei_sun",at(0,0,3),.5f,"held_sun");sun.update(TrackerUpdateAction.composite(TrackerUpdateAction.moveDuration(1),TrackerUpdateAction.viewRange(5)));loop(sun,"burn");}
+  if(tick==40){sun=model("motionrp_entei_sun",at(0,0,-13.6),13f,"held_sun");sun.update(TrackerUpdateAction.composite(TrackerUpdateAction.moveDuration(1),TrackerUpdateAction.viewRange(5)));loop(sun,"burn");}
   if(sun!=null){
-   double radius=.5+12.5*smooth(40,90);center=at(0,0,2.5+radius);
+   double radius=13;double rise=-13.6+29.1*smooth(40,90);center=at(0,0,rise);
    if(tick>=124){double q=smooth(124,158);center=at(0,64*q,15.5-2.5*q+7*Math.sin(q*Math.PI));}
    sun.scaler(ModelScaler.value((float)radius));sun.location(BukkitAdapter.adapt(center));sun.forceUpdate(true);
    if(tick%3==0){
     for(int j=0;j<32;j++){double a=j*Math.PI/16+tick*.08,p=(j%7-3)*.2;fx(center.clone().add(Math.cos(a)*radius*Math.cos(p),radius*Math.sin(p),Math.sin(a)*radius*Math.cos(p)),Particle.FLAME,3,.4,.06);}
     fx(center,Particle.LAVA,8,radius*.7,.01);
    }
+   if(tick==40||tick==65||tick==90)trace("sun rise tick="+tick+" radius="+radius+" centerHeight="+(center.getY()-origin.getY()));
    if(tick==90)trace("solar sphere ready radius=13.0 held above raised hand");
    if(tick==124){trace("sun thrown after windup");sound(origin,Sound.ENTITY_BLAZE_SHOOT,3,.5f);}
    if(tick==158){audience.hide(sun);sun=null;flash(center);fx(center,Particle.EXPLOSION_EMITTER,3,5,0);fx(center,Particle.FLAME,220,12,.25);fx(center,Particle.CLOUD,120,9,.18);sound(center,Sound.ENTITY_DRAGON_FIREBALL_EXPLODE,5.5f,.5f);trace("sun impact; no terrain or entity damage");}

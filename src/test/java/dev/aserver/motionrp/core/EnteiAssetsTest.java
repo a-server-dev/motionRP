@@ -17,6 +17,6 @@ class EnteiAssetsTest {
   var keys=arm.getAsJsonArray("keyframes").asList().stream().map(JsonElement::getAsJsonObject).filter(k->k.get("channel").getAsString().equals("rotation")).toList();assertTrue(keys.stream().anyMatch(k->k.get("time").getAsDouble()==4.5&&k.getAsJsonArray("data_points").get(0).getAsJsonObject().get("x").getAsDouble()>160));assertTrue(keys.stream().anyMatch(k->k.get("time").getAsDouble()==6&&k.getAsJsonArray("data_points").get(0).getAsJsonObject().get("x").getAsDouble()==95));
  }
  @Test void released076ArmCanUpgradeWithoutLosingUserEdits()throws Exception{
-  String file="players/motionrp_gigant_pistol.bbmodel";try(var in=new java.util.zip.GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.76.0/"+file.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(file,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
+  String file="players/motionrp_gigant_pistol.bbmodel";for(String version:List.of("0.76.0","0.77.0"))try(var in=new java.util.zip.GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-"+version+"/"+file.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(file,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
  }
 }
