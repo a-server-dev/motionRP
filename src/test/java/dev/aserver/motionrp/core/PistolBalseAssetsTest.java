@@ -42,4 +42,17 @@ class PistolBalseAssetsTest {
   }
   for(String name:List.of("solid_forearm_core","upper_arm_plate","wing_scapular_surface","kabuto_dome","helmet_fukigaeshi"))assertTrue(elements.stream().anyMatch(e->e.get("name").getAsString().startsWith(name)));
  }
+ @Test void upperArmTapersIntoAnExactlyFiftySevenTimesForearm()throws Exception{
+  var m=load("players/motionrp_gigant_pistol");var tracks=m.getAsJsonArray("animations").get(0).getAsJsonObject().getAsJsonObject("animators");double last=1;int sections=0;
+  double[] parent=null,fore=null;
+  for(var raw:m.getAsJsonArray("groups")){
+   var g=raw.getAsJsonObject();String name=g.get("name").getAsString();if(!name.startsWith("pra_gigant_taper_")&&!name.equals("pra_right_arm")&&!name.equals("prfa_right_forearm"))continue;
+   var keys=tracks.getAsJsonObject(g.get("uuid").getAsString()).getAsJsonArray("keyframes").asList().stream().map(JsonElement::getAsJsonObject).filter(k->k.get("channel").getAsString().equals("scale")&&Math.abs(k.get("time").getAsDouble()-2.4)<.00001).toList();assertEquals(1,keys.size());var v=keys.get(0).getAsJsonArray("data_points").get(0).getAsJsonObject();double[] xyz={v.get("x").getAsDouble(),v.get("y").getAsDouble(),v.get("z").getAsDouble()};
+   if(name.equals("pra_right_arm"))parent=xyz;else if(name.equals("prfa_right_forearm"))fore=xyz;else{double width=xyz[0]*32;assertTrue(width>last&&width<57);last=width;sections++;assertEquals(1.0/16,xyz[1],.00001);}
+  }
+  assertEquals(16,sections);assertNotNull(parent);assertNotNull(fore);for(int axis=0;axis<3;axis++)assertEquals(57,parent[axis]*fore[axis],.00001);
+ }
+ @Test void released075SkinArmUpgradesByItsKnownHash()throws Exception{
+  String file="players/motionrp_gigant_pistol.bbmodel";try(var in=new java.util.zip.GZIPInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/bundled-0.75.0/"+file.replace('/','_')+".gz")))){assertTrue(BundledAssetVersions.knownHashes(file,Set.of()).contains(BundledAssetUpdater.sha256(in.readAllBytes())));}
+ }
 }

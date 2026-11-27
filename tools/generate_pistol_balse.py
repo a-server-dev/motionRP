@@ -75,14 +75,26 @@ def corrected_actors():
     return False
    assert bind(m['outliner'])
   if name=='gigant_pistol':
-   # Enlarge actual player skin bones, with child scales relative to their parents.
-   track('pra_right_arm',[(0,(1,1,1)),(.9,(1,1,1)),(2.4,(8,5,8)),(5.2,(8,5,8)),(6.7,(1,1,1)),(7.5,(1,1,1))],'scale')
-   track('prfa_right_forearm',[(0,(1,1,1)),(.9,(1,1,1)),(2.4,(1.35,1,1.35)),(3.2,(1.35,1,1.35)),(3.7,(1.35,4,1.35)),(5.2,(1.35,4,1.35)),(6.7,(1,1,1)),(7.5,(1,1,1))],'scale')
+   # A normal-width shoulder grows along sixteen skin-mapped cross sections.
+   # The forearm's inherited X/Y/Z scale is exactly 57, not a volume factor.
+   track('pra_right_arm',[(0,(1,1,1)),(.9,(1,1,1)),(2.4,(32,32,32)),(5.2,(32,32,32)),(6.7,(1,1,1)),(7.5,(1,1,1))],'scale')
+   def puff(t):return max(0,min(1,(t-.9)/1.5))*max(0,min(1,(6.7-t)/1.5))
+   track('prfa_right_forearm',[(i/20,((1+56*puff(i/20))/(1+31*puff(i/20)),)*3)for i in range(151)],'scale')
+   for i in range(16):
+    label='pra_gigant_taper_'+str(i);g={'name':label,'uuid':ident(name+'/'+label),'origin':[5,22-5.5*i/16,0],'rotation':[0,0,0],'export':True};m['groups'].append(g);groups[label]=g
+    def bind_taper(nodes):
+     for n in nodes:
+      if isinstance(n,dict):
+       if n['uuid']==groups['pra_right_arm']['uuid']:n['children'].append({'uuid':g['uuid'],'children':[]});return True
+       if bind_taper(n['children']):return True
+     return False
+    assert bind_taper(m['outliner']);width=1+56*(i+.5)/16
+    track(label,[(j/20,((1+(width-1)*puff(j/20))/(1+31*puff(j/20)),1/16,(1+(width-1)*puff(j/20))/(1+31*puff(j/20))))for j in range(151)],'scale')
    # Fixed shoulder and elbow positions: no detached or independently flying fist.
-   track('pra_right_arm',[(0,(0,0,0)),(.5,(100,0,-12)),(.9,(100,0,-12)),(2.4,(75,-35,20)),(3.2,(80,-75,25)),(3.7,(90,0,0)),(5,(90,0,0)),(6.3,(90,0,0)),(6.7,(0,0,0)),(7.5,(0,0,0))])
-   track('prfa_right_forearm',[(0,(0,0,0)),(.5,(65,0,0)),(.9,(65,0,0)),(2.4,(30,0,0)),(3.2,(55,0,0)),(3.7,(0,0,0)),(5,(0,0,0)),(6.7,(0,0,0)),(7.5,(0,0,0))])
+   track('pra_right_arm',[(0,(0,0,0)),(.5,(100,0,-12)),(.9,(100,0,-12)),(2.4,(135,-35,0)),(3.2,(145,-75,0)),(3.7,(126,0,0)),(5,(126,0,0)),(6.7,(126,0,0)),(7.4,(0,0,0)),(7.5,(0,0,0))])
+   track('prfa_right_forearm',[(0,(0,0,0)),(.5,(65,0,0)),(.9,(65,0,0)),(2.4,(-30,0,0)),(3.2,(-40,0,0)),(3.7,(-36,0,0)),(5,(-36,0,0)),(6.7,(-36,0,0)),(7.4,(0,0,0)),(7.5,(0,0,0))])
    # Keep the giant shoulder outside the torso by bracing rather than crossing it.
-   track('pc_chest',[(0,(0,0,0)),(2.4,(-5,-12,0)),(3.2,(-5,-20,0)),(3.7,(10,0,0)),(5,(10,0,0)),(7.5,(0,0,0))])
+   track('pc_chest',[(0,(0,0,0)),(2.4,(-5,-12,0)),(3.2,(-5,-20,0)),(3.7,(0,0,0)),(5,(0,0,0)),(7.5,(0,0,0))])
    for label,parent,point in [('pistol_shoulder','pra_right_arm',(5,22,0)),('pistol_elbow','prfa_right_forearm',(5,16.5,0)),('pistol_palm','prfa_right_forearm',(5,10,0)),('pistol_width_a','prfa_right_forearm',(3,12,0)),('pistol_width_b','prfa_right_forearm',(7,12,0))]:probe(label,parent,point)
   else:
    side=1 if name.endswith('left')else -1;upper='pra_right_arm'if side==1 else'pla_left_arm';fore='prfa_right_forearm'if side==1 else'plfa_left_forearm'

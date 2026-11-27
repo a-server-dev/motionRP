@@ -13,6 +13,10 @@ final class GigantPistolScene extends SummonScene {
  private Location palm(){var p=frame();return at(p[0],p[1],p[2]);}
  @Override void update(){
   body.update(TrackerUpdateAction.togglePart(false),b->java.util.Set.of("pri_right_item","pli_left_item").contains(b.name().rawName()));
+  boolean taper=tick>=18&&tick<134;
+  body.update(TrackerUpdateAction.togglePart(!taper),b->b.name().rawName().equals("pra_right_arm"));
+  body.update(TrackerUpdateAction.togglePart(taper),b->b.name().rawName().startsWith("pra_gigant_taper_"));
+  if(tick==0)trace("taper bones ids="+java.util.stream.IntStream.of(0,8,15).mapToObj(i->Integer.toString(body.bone("gigant_taper_"+i).getDisplay().id())).collect(java.util.stream.Collectors.joining(",")));
   if(tick==18)sound(origin,Sound.ENTITY_BREEZE_CHARGE,1,.6f);
   if(tick>=18&&tick<48&&tick%4==0)particle(palm(),Particle.CLOUD,5,.35,.02);
   if(tick>=65&&tick<=78&&tick%2==0)particle(palm(),Particle.SWEEP_ATTACK,2,1,0);

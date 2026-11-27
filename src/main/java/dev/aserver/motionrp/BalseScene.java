@@ -16,9 +16,21 @@ final class BalseScene extends SummonScene {
   if(tick==36){crystal=model("motionrp_balse_crystal",center,.7f,"flying_stone");sound(center,Sound.BLOCK_AMETHYST_BLOCK_RESONATE,1,1.2f);}
   if(tick>=38&&tick<64&&tick%3==0){dust(center,new Particle.DustOptions(Color.fromRGB(100,230,255),1.8f),18,.4);particle(center,Particle.END_ROD,12,.5,.015);}
   if(tick==64){light=model("motionrp_balse_light",center,.1f,"blinding_light");loop(light,"radiance");sound(center,Sound.BLOCK_BEACON_ACTIVATE,3,.5f);sound(center,Sound.ENTITY_LIGHTNING_BOLT_THUNDER,2,1.5f);trace("shared flash released");}
-  if(light!=null){double q=Math.clamp((tick-64)/18.,0,1),fade=1-Math.clamp((tick-104)/28.,0,1);light.scaler(ModelScaler.value((float)Math.max(.01,(.1+q*10)*fade)));light.forceUpdate(true);
-   if(tick<=100&&tick%6==4){for(Player p:audience.players())p.spawnParticle(Particle.FLASH,center,1,0,0,0,0,Color.fromRGB(235,255,255));}
-   if(tick<=108&&tick%2==0){particle(center,Particle.END_ROD,70,4,.3);dust(center,new Particle.DustOptions(Color.fromRGB(225,255,255),3),40,3);}
+  if(light!=null){double q=Math.clamp((tick-64)/18.,0,1),fade=1-Math.clamp((tick-104)/28.,0,1);light.scaler(ModelScaler.value((float)Math.max(.01,(.1+q*18)*fade)));light.forceUpdate(true);
+   if(tick<=100&&tick%3==1){for(Player p:audience.players())p.spawnParticle(Particle.FLASH,center,1,0,0,0,0,Color.fromRGB(235,255,255));}
+   if(tick<=108&&tick%2==0){particle(center,Particle.END_ROD,120,6,.35);dust(center,new Particle.DustOptions(Color.fromRGB(225,255,255),4),120,5);}
+   if(tick<=108&&tick%2==0){
+    particle(center,Particle.FIREWORK,220,6,.25);
+    for(Player viewer:audience.players()){
+     Location eye=viewer.getEyeLocation(),glare=eye.clone().add(eye.getDirection().multiply(1.2));
+     viewer.spawnParticle(Particle.FIREWORK,glare,70,.65,.55,.65,.035,null,true);
+     viewer.spawnParticle(Particle.DUST,glare,120,.6,.5,.6,0,new Particle.DustOptions(Color.WHITE,4),true);
+     viewer.spawnParticle(Particle.END_ROD,glare,50,.7,.55,.7,.025,null,true);
+     if(tick%4==0)viewer.spawnParticle(Particle.FLASH,glare,1,0,0,0,0,Color.WHITE,true);
+    }
+    if(tick==64||tick==80)sound(center,Sound.ENTITY_FIREWORK_ROCKET_LARGE_BLAST,2,.8f);
+    if(tick==80)trace("whiteout: fireworks and eye-level white veil");
+   }
    if(tick>=68&&tick<=104&&tick%3==0){double radius=(tick-64)*.4;for(int j=0;j<32;j++){double a=j*Math.PI/16;dust(center.clone().add(radius*Math.cos(a),0,radius*Math.sin(a)),new Particle.DustOptions(Color.fromRGB(165,245,255),2.5f),1,0);}}
   }
  }
