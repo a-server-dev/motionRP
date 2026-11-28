@@ -45,6 +45,11 @@ public final class Loadout {
         return new Loadout(copy, next);
     }
 
+    public Loadout select(int index) {
+        if (slot(index) == null) throw new IllegalArgumentException("Empty motion slot");
+        return new Loadout(slots, index);
+    }
+
     public Loadout next() {
         return new Loadout(slots, firstOccupied(slots, (selected + 1) % SIZE));
     }

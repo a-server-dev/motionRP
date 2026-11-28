@@ -50,11 +50,12 @@ public final class ControllerListener implements Listener {
     private void right(Player player){
         if(!accept(player))return;
         if(plugin.fusion().controllerAccept(player))return;
-        plugin.menu().open(player);
+        if(player.isSneaking())plugin.selection().open(player);else plugin.menu().open(player);
     }
 
     private boolean accept(Player player) {
         if (!player.hasPermission("motionrp.use")) { plugin.tell(player, "この操作の権限がありません。"); return false; }
+        var held=player.getInventory().getItemInMainHand();plugin.items().refreshName(held);player.getInventory().setItemInMainHand(held);
         int now = Bukkit.getCurrentTick();
         Integer last = lastInput.get(player.getUniqueId());
         if (last != null && now - last < 4) return false;

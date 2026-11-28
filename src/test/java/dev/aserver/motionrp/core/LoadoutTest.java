@@ -62,6 +62,15 @@ class LoadoutTest {
         assertNotNull(state.current());
     }
 
+    @Test void directSelectionRetainsEscrowAndPersists() throws Exception {
+        var state=Loadout.empty().deposit(0,token("roll")).deposit(26,token("rasengan"));
+        var selected=state.select(26);
+        assertEquals(0,state.selected());assertEquals(26,selected.selected());assertEquals(state.count(),selected.count());
+        for(int i=0;i<Loadout.SIZE;i++)assertEquals(state.slot(i),selected.slot(i));
+        assertEquals(selected,new LoadoutCodec().decode(new LoadoutCodec().encode(selected)));
+        assertThrows(IllegalArgumentException.class,()->state.select(1));
+    }
+
     @Test void randomizedDepositsAndWithdrawalsConserveOwnedItemsAcrossSaveReloads() throws Exception {
         Random random = new Random(8312);
         int inventory = 64;

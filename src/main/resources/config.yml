@@ -195,6 +195,7 @@ motions:
 
 controller:
   name: モーションセット
+  # 標準は専用リモコン。独自モデルを使う場合のみ指定します。
   # item-model: motionrp:controller
 
 # URL方式の仮スキン: MHF_Golem。標準は添付PNGを埋め込んだ巨人体です。

@@ -31,10 +31,10 @@ public final class BundledModels {
     private final MotionPlugin plugin;
     public BundledModels(MotionPlugin plugin) { this.plugin = plugin; }
 
-    public void install() {
+    public void install(boolean extraAssetsChanged) {
         var betterModel = Objects.requireNonNull(Bukkit.getPluginManager().getPlugin("BetterModel"));
         Path root = betterModel.getDataFolder().toPath();
-        boolean changed = false;
+        boolean changed = extraAssetsChanged;
         try {
             // A fresh BetterModel folder may not seed its examples after our
             // namespaced player model creates players/. Keep the default roll usable.

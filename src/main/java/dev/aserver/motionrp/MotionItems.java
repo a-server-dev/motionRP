@@ -10,26 +10,29 @@ import org.bukkit.persistence.PersistentDataType;
 import java.util.List;
 
 public final class MotionItems {
+    private final MotionPlugin plugin;
     private final NamespacedKey kind;
     private final NamespacedKey motion;
     private final NamespacedKey controllerData,controllerId;
 
     public MotionItems(MotionPlugin plugin) {
+        this.plugin=plugin;
         kind = new NamespacedKey(plugin, "kind");
         motion = new NamespacedKey(plugin, "motion_id");
         controllerData=new NamespacedKey(plugin,"controller_loadout_v1");controllerId=new NamespacedKey(plugin,"controller_set_id");
     }
 
     public ItemStack controller(MotionCatalog catalog) {
-        ItemStack stack = new ItemStack(Material.CARROT_ON_A_STICK);
+        ItemStack stack = new ItemStack(Material.AMETHYST_SHARD);
         var meta = stack.getItemMeta();
         meta.displayName(text(catalog.controllerName(), NamedTextColor.GOLD));
         meta.lore(List.of(text("右クリック: 招待の承諾 / 登録GUI", NamedTextColor.GRAY),
                 text("左クリック: 再生・二人用招待 / 再クリック: 終了", NamedTextColor.GRAY),
+                text("シフト＋右クリック: 選択一覧・お気に入り", NamedTextColor.AQUA),
                 text("シフト＋左クリック: 次のモーション", NamedTextColor.GRAY)));
         meta.getPersistentDataContainer().set(kind, PersistentDataType.STRING, "controller");
         meta.setMaxStackSize(1);
-        if (catalog.controllerModel() != null) meta.setItemModel(catalog.controllerModel());
+        meta.setItemModel(catalog.controllerModel()==null?NamespacedKey.fromString("motionrp:controller"):catalog.controllerModel());
         stack.setItemMeta(meta);
         return stack;
     }
@@ -81,6 +84,15 @@ public final class MotionItems {
     }
 
     public void refreshName(ItemStack stack) {
+        if(controller(stack)){
+            var original=stack.getItemMeta();
+            stack.setType(Material.AMETHYST_SHARD);
+            var model=plugin.catalog().controllerModel();original.setItemModel(model==null?NamespacedKey.fromString("motionrp:controller"):model);
+            original.setMaxStackSize(1);
+            // Retain the original name, identity, escrow bytes and any custom tags.
+            original.lore(controller(plugin.catalog()).getItemMeta().lore());
+            stack.setItemMeta(original);return;
+        }
         String id=motionId(stack);if(id==null)return;
         var meta=stack.getItemMeta();if(meta.displayName()==null)return;
         String old=net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(meta.displayName());
@@ -88,7 +100,7 @@ public final class MotionItems {
         if(!old.equals(next)){meta.displayName(text(next,NamedTextColor.AQUA));stack.setItemMeta(meta);}
     }
     public void refreshNames(org.bukkit.entity.Player player) {
-        for(ItemStack stack:player.getInventory().getContents())if(stack!=null)refreshName(stack);
+        for(int i=0;i<player.getInventory().getSize();i++){var stack=player.getInventory().getItem(i);if(stack!=null){refreshName(stack);player.getInventory().setItem(i,stack);}}
     }
 
     public boolean controller(ItemStack stack) { return isKind(stack, "controller"); }

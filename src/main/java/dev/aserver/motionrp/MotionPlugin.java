@@ -16,6 +16,9 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
     private MotionItems items;
     private PlayerLoadouts loadouts;
     private LoadoutMenu menu;
+    private SelectionMenu selection;
+    private ControllerAssets controllerAssets;
+    SelectionMenu selection(){return selection;}
     private MotionPlayback playback;
     private StudioProjects studio;
     StudioProjects studio(){return studio;}
@@ -108,6 +111,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
         items = new MotionItems(this);
         loadouts = new PlayerLoadouts(this, items);
         menu = new LoadoutMenu(this, loadouts, items);
+        selection=new SelectionMenu(this);Bukkit.getPluginManager().registerEvents(selection,this);
         terrain=new TerrainOverlayManager();Bukkit.getPluginManager().registerEvents(terrain,this);
         visibility=new MotionVisibility(this);Bukkit.getPluginManager().registerEvents(visibility,this);
         playback = new MotionPlayback(this);fusion=new FusionCoordinator(this);
@@ -121,19 +125,23 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
         getServer().getPluginManager().registerEvents(performances,this);
         for(String name:java.util.List.of("goalperformance","hrperformance")){var c=Objects.requireNonNull(getCommand(name));c.setExecutor(performances);c.setTabCompleter(performances);}
         getLogger().info("MotionRP enabled: " + catalog.motions().size() + " motion(s), 27 slots per player.");
-        new BundledModels(this).install();
+        controllerAssets=new ControllerAssets(this);
+        // BetterModel may start its initial pack before dependent plugins enable.
+        // Rebuild once after subscribing so the controller is included on every restart.
+        new BundledModels(this).install(true);
         energyPack=new EnergyPackService(this);
         configureResourcePack();
     }
 
     @Override public void onDisable() {
+        if(controllerAssets!=null)controllerAssets.close();
         if(fusion!=null)fusion.close();
         if(energyPack!=null)energyPack.close();
         if(resourcePack!=null) resourcePack.close();
         try { if (playback != null) playback.stopAll(); }
         finally { if(terrain!=null) terrain.restoreAll(); }
         for (Player player : Bukkit.getOnlinePlayers()) {
-            if (player.getOpenInventory().getTopInventory().getHolder() instanceof LoadoutMenu.Holder) player.closeInventory();
+            if (player.getOpenInventory().getTopInventory().getHolder() instanceof LoadoutMenu.Holder || player.getOpenInventory().getTopInventory().getHolder() instanceof SelectionMenu.Holder) player.closeInventory();
         }
     }
 
