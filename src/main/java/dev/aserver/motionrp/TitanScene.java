@@ -66,9 +66,10 @@ final class TitanScene extends SummonScene {
         }
         if(tick==EXIT-2 && plugin.getConfig().getBoolean("debug-input",false)&&giant!=null){
             var hip=giant.bone(state.bundledSkin()?"titanbonephiphip":"phip_hip");
-            var chest=giant.bone(state.bundledSkin()?"titanbonepcchest":"pc_chest");
-            if(hip!=null&&chest!=null){var delta=chest.worldPosition().sub(hip.worldPosition(),new org.joml.Vector3f());var ahead=origin.getDirection();
-                trace("live tackle shoulderLead="+(delta.x*ahead.getX()+delta.z*ahead.getZ())+" shoulderRise="+delta.y);
+            var right=giant.bone(state.bundledSkin()?"titanboneprarightarm":"pra_right_arm");
+            var left=giant.bone(state.bundledSkin()?"titanboneplaleftarm":"pla_left_arm");
+            if(hip!=null&&right!=null&&left!=null){var delta=right.worldPosition().sub(hip.worldPosition(),new org.joml.Vector3f());var across=right.worldPosition().sub(left.worldPosition(),new org.joml.Vector3f());var ahead=origin.getDirection();
+                trace("live shoulder check rightLead="+(delta.x*ahead.getX()+delta.z*ahead.getZ())+" crossLead="+(across.x*ahead.getX()+across.z*ahead.getZ()));
             }
         }
         if(tick>=FLASH && tick<GROWN+8 && tick%4==2) {

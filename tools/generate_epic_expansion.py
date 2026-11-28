@@ -24,19 +24,8 @@ def myoo_player(rig):
  save('players/motionrp_kokujo_tengen_myoo.bbmodel',m);(ROOT/'kokujo_tengen_myoo-hand-path.csv').write_text(hand_path(m,220))
 
 def dragon_absorption_player():
- m=json.loads((ROOT/'players/motionrp_kokuryuha.bbmodel').read_text());m['animations'][0]['length']=16
- for side,upper,fore in [(1,'pra_right_arm','prfa_right_forearm'),(-1,'pla_left_arm','plfa_left_forearm')]:
-  dx=side*3-side*5;dy=14-22;l1=5.5;l2=math.hypot(.625,5.625);d=math.hypot(dx,dy);along=(l1*l1-l2*l2+d*d)/(2*d);h=math.sqrt(l1*l1-along*along);ex=along*dx/d-side*h*dy/d;ey=along*dy/d+side*h*dx/d
-  a=math.degrees(math.atan2(ey,ex)+math.pi/2);b=math.degrees(math.atan2(dy-ey,dx-ex)-math.atan2(-5.625,side*.625))-a
-  g={x['name']:x for x in m['groups']}
-  for name,angle in [(upper,a),(fore,b)]:
-   t=m['animations'][0]['animators'].get(g[name]['uuid']);keys=[]
-   if t:
-    for k in t['keyframes']:
-     if k['channel']=='rotation' and k['time']<=8:keys.append((k['time'],tuple(float(k['data_points'][0][v])for v in 'xyz')))
-   if not keys:keys=[(0,(0,0,0)),(8,(0,0,0))]
-   keys.extend([(10.4,(0,0,angle)),(16,(0,0,angle))]);put_track(m,name,keys)
- save('players/motionrp_kokuryuha.bbmodel',m);(ROOT/'kokuryuha-hand-path.csv').write_text(hand_path(m,320))
+ from generate_kokuryuha_rest import generate
+ generate()
 
 def dragon_cloak():
  a=palette_model('motionrp_black_dragon_cloak',FIRE);c=a.cube

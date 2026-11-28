@@ -93,16 +93,11 @@ final class EpicScene extends SummonScene {
   if(tick==208){cue(origin,Sound.ENTITY_ENDER_DRAGON_GROWL,1,.5f);trace("black dragon devoured caster; particle flame mantle formed");}
   if(tick>=188&&tick<320){
    double strength=Math.clamp((tick-188)/20.,0,1)*Math.clamp((320-tick)/24.,0,1);
-   // Shoulder roots and long, separated feather/flame fingers form two wings behind the caster.
-   // Keep the face, chest and legs clear instead of wrapping the body in a cylinder of smoke.
-   for(int side:new int[]{-1,1})for(int finger=0;finger<6;finger++)for(int j=0;j<12;j++){
-    double p=j/11.,spread=(.48+p*(3.6-finger*.22))*strength;
-    double height=1.55+p*(2.6-finger*.55)+.38*Math.sin(Math.PI*p);
-    double back=-.5-p*.8-.12*Math.sin(tick*.12+finger);
-    Location q=at(side*spread,back,height).add(owner.getLocation().toVector().subtract(origin.toVector()));
-    dust(q,BLACK,2,.035);
+   for(var p:BlackFlameMantle.samples(tick)){
+    Location q=at(p.right()*strength,p.forward(),p.height()*strength).add(owner.getLocation().toVector().subtract(origin.toVector()));
+    dust(q,new Particle.DustOptions(Color.fromRGB(5,4,7),2.1f),2,.045);
    }
-   if(tick==208)trace("black wings spread behind shoulders; body kept clear");
+   if(tick==208)trace("ragged black flame mantle; crown and torn side plumes; arms lowered");
   }
  }
 

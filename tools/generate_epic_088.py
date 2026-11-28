@@ -77,18 +77,18 @@ def titan():
  p=ROOT/'players/motionrp_titan_transform.bbmodel';m=json.loads(p.read_text());groups={g['name']:g for g in m['groups']}
  a=animation('titan_tackle',5.4,{});a['override']=True
  # Actual Blockbench rotations: torso folds forward while knees bend into a low drive.
- poses={'player_root':[(0,(0,0,0)),(.7,(-15,0,0)),(1.5,(-55,12,-8)),(2,(-65,12,-8)),(5.4,(-65,12,-8))],
- 'pw_waist':[(0,(0,0,0)),(1.5,(-5,0,0)),(5.4,(-5,0,0))],
- 'pc_chest':[(0,(0,0,0)),(1.5,(-8,8,0)),(5.4,(-8,8,0))],
- 'h_ph_head':[(0,(-10,0,0)),(1.5,(60,-8,4)),(5.4,(60,-8,4))],
- 'pra_right_arm':[(0,(5,0,15)),(1.5,(35,-15,32)),(5.4,(35,-15,32))],
- 'pla_left_arm':[(0,(5,0,-15)),(1.5,(55,15,-25)),(5.4,(55,15,-25))],
- 'prfa_right_forearm':[(0,(0,0,0)),(1.5,(110,0,0)),(5.4,(110,0,0))],
- 'plfa_left_forearm':[(0,(0,0,0)),(1.5,(100,0,0)),(5.4,(100,0,0))],
- 'prl_right_leg':[(0,(0,0,0)),(.7,(45,0,12)),(1.5,(115,0,14)),(5.4,(115,0,14))],
- 'pll_left_leg':[(0,(0,0,0)),(.7,(45,0,-12)),(1.5,(125,0,-14)),(5.4,(125,0,-14))],
- 'prfl_right_foreleg':[(0,(0,0,0)),(.7,(-80,0,0)),(1.5,(-115,0,0)),(5.4,(-115,0,0))],
- 'plfl_left_foreleg':[(0,(0,0,0)),(.7,(-80,0,0)),(1.5,(-125,0,0)),(5.4,(-125,0,0))]}
+ poses={'player_root':[(0,(0,0,0)),(.7,(-10,25,-4)),(1.5,(-25,70,-12)),(2,(-28,70,-12)),(5.4,(-28,70,-12))],
+ 'pw_waist':[(0,(0,0,0)),(1.5,(-8,0,0)),(5.4,(-8,0,0))],
+ 'pc_chest':[(0,(0,0,0)),(1.5,(-5,10,0)),(5.4,(-5,10,0))],
+ 'h_ph_head':[(0,(-10,0,0)),(1.5,(28,-65,0)),(5.4,(28,-65,0))],
+ 'pra_right_arm':[(0,(5,0,15)),(1.5,(35,0,-12)),(5.4,(35,0,-12))],
+ 'pla_left_arm':[(0,(5,0,-15)),(1.5,(-20,0,-12)),(5.4,(-20,0,-12))],
+ 'prfa_right_forearm':[(0,(0,0,0)),(1.5,(120,0,0)),(5.4,(120,0,0))],
+ 'plfa_left_forearm':[(0,(0,0,0)),(1.5,(65,0,0)),(5.4,(65,0,0))],
+ 'prl_right_leg':[(0,(0,0,0)),(.7,(40,0,12)),(1.5,(80,0,14)),(5.4,(80,0,14))],
+ 'pll_left_leg':[(0,(0,0,0)),(.7,(45,0,-12)),(1.5,(90,0,-14)),(5.4,(90,0,-14))],
+ 'prfl_right_foreleg':[(0,(0,0,0)),(.7,(-80,0,0)),(1.5,(-100,0,0)),(5.4,(-100,0,0))],
+ 'plfl_left_foreleg':[(0,(0,0,0)),(.7,(-80,0,0)),(1.5,(-115,0,0)),(5.4,(-115,0,0))]}
  for name,keys in poses.items():a['animators'][groups[name]['uuid']]=animator(groups[name],keys)
  m['animations']=[x for x in m['animations'] if x['name']!='titan_tackle']+[a];save('players/motionrp_titan_transform.bbmodel',m)
  body=json.loads((ROOT/'models/motionrp_titan_body.bbmodel').read_text());b=copy.deepcopy(a);bg={g['uuid']:g for g in body['groups']}
