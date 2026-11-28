@@ -7,11 +7,15 @@ class NightGuyTest {
  @Test void sprintCoversFiftyBlocksInTwentyTicksAndEndsWithoutRetreat(){
   double previous=0;for(int tick=0;tick<NightGuyTimeline.END;tick++){
    double d=NightGuyTimeline.forward(tick,50,28);assertTrue(d>=previous&&d<=78);previous=d;
-   assertTrue(NightGuyTimeline.height(tick)>=0&&NightGuyTimeline.height(tick)<=4.6);
+   assertTrue(NightGuyTimeline.height(tick)>=0&&NightGuyTimeline.height(tick)<=3.2);
   }
-  assertEquals(50,NightGuyTimeline.forward(NightGuyTimeline.DASH,50,28));assertEquals(78,NightGuyTimeline.forward(NightGuyTimeline.IMPACT,50,28));
+  assertEquals(50,NightGuyTimeline.forward(NightGuyTimeline.LEAP,50,28));assertEquals(78,NightGuyTimeline.forward(NightGuyTimeline.IMPACT,50,28));
   for(int tick=NightGuyTimeline.RUN;tick<NightGuyTimeline.LEAP;tick++)assertEquals(2.5,NightGuyTimeline.sprint(tick+1,50)-NightGuyTimeline.sprint(tick,50),1e-9);
   assertEquals(20,NightGuyTimeline.LEAP-NightGuyTimeline.RUN);
+  double firstAirStep=NightGuyTimeline.forward(NightGuyTimeline.LEAP+1,50,28)-NightGuyTimeline.forward(NightGuyTimeline.LEAP,50,28);
+  assertEquals(2.5,firstAirStep,.15,"Takeoff must preserve the sprint momentum instead of stopping");
+  assertTrue(NightGuyTimeline.height(NightGuyTimeline.LEAP+1)>.3);
+  assertEquals(3.2,NightGuyTimeline.height(132),1e-8);
   assertEquals(0,NightGuyTimeline.height(NightGuyTimeline.LANDED));assertEquals("DASH",NightGuyTimeline.phase(NightGuyTimeline.DASH));assertEquals("FINISHED",NightGuyTimeline.phase(NightGuyTimeline.END));
  }
  @Test void rightHeelLeadsTheHeadAndTheOppositeLegStaysBent()throws Exception{
@@ -19,11 +23,20 @@ class NightGuyTest {
   var clip=m.getAsJsonArray("animations").get(0).getAsJsonObject();assertEquals("night_guy",clip.get("name").getAsString());assertEquals(NightGuyTimeline.END/20.,clip.get("length").getAsDouble());
   var math=new RasenganAssetsTest();Map<String,JsonObject> groups=new HashMap<>();Map<String,String> names=new HashMap<>(),parents=new HashMap<>();
   for(var raw:m.getAsJsonArray("groups")){var g=raw.getAsJsonObject();String id=g.get("uuid").getAsString();groups.put(id,g);names.put(g.get("name").getAsString(),id);}math.parentTree(m.getAsJsonArray("outliner"),null,parents);
-  for(int tick=147;tick<=154;tick++){
+  for(int tick=130;tick<=138;tick++){
    var foot=math.posedPoint(names.get("prfl_right_foreleg"),new double[]{1.875,.3,-1.875},tick/20.,clip,groups,parents);
    var head=math.posedOrigin(names.get("h_ph_head"),tick/20.,clip,groups,parents);
    var tucked=math.posedPoint(names.get("plfl_left_foreleg"),new double[]{-1.875,.3,-1.875},tick/20.,clip,groups,parents);
    assertTrue(foot[2]<head[2]-8,"Heel must lead the torso and head into the kick");assertTrue(foot[2]<tucked[2]-6,"Opposite leg must remain tucked");
+  }
+  var root=clip.getAsJsonObject("animators").getAsJsonObject(names.get("player_root"));
+  assertTrue(root.getAsJsonArray("keyframes").asList().stream().anyMatch(k->k.getAsJsonObject().get("channel").getAsString().equals("rotation")),"Root rotation must survive position-track generation");
+  for(String bone:List.of("night_heel","night_head","night_knee")){
+   double[] previous=null;for(int tick=114;tick<=139;tick++){
+    var point=math.posedOrigin(names.get(bone),tick/20.,clip,groups,parents);
+    if(previous!=null){double distance=0;for(int axis=0;axis<3;axis++)distance+=Math.pow(point[axis]-previous[axis],2);assertTrue(Math.sqrt(distance)/16<.25,"Pose must not snap at takeoff: "+bone+" tick "+tick);}
+    previous=point;
+   }
   }
   for(var raw:clip.getAsJsonObject("animators").entrySet())for(var key:raw.getValue().getAsJsonObject().getAsJsonArray("keyframes"))assertTrue(key.getAsJsonObject().get("time").getAsDouble()<=NightGuyTimeline.END/20.);
  }

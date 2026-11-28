@@ -10,12 +10,13 @@ import org.bukkit.util.Vector;
 /** Red steam and a particle-only dragon accompany the owner's full-body flying kick. */
 final class NightGuyScene extends SummonScene {
  private final AerialAnchor pilot;
+ private final EntityTracker body;
  private double reach=28,runReach=RUN_DISTANCE;
  private Location landing;
  private Location impact;
  private static final Particle.DustOptions RED=new Particle.DustOptions(Color.fromRGB(235,24,35),2.2f),DARK=new Particle.DustOptions(Color.fromRGB(72,3,8),2.6f),HOT=new Particle.DustOptions(Color.fromRGB(255,155,105),1.2f);
  NightGuyScene(MotionPlugin plugin,Player owner,EntityTracker body){
-  super(plugin,owner,"NightGuy",END,144,true);pilot=new AerialAnchor(plugin,owner);body.rotation(()->new ModelRotation(0,origin.getYaw()));
+  super(plugin,owner,"NightGuy",END,144,true);pilot=new AerialAnchor(plugin,owner);this.body=body;body.rotation(()->new ModelRotation(0,origin.getYaw()));
  }
  @Override String phase(){return NightGuyTimeline.phase(tick);}
  @Override public boolean ownsMove(Location a,Location b){return pilot.owns(a,b);}
@@ -48,8 +49,11 @@ final class NightGuyScene extends SummonScene {
    trace("sprint begins distance="+runReach+" duration="+(LEAP-RUN));
    sound(origin,Sound.ENTITY_BREEZE_SHOOT,1.7f,.7f);
   }
-  if(tick==DASH){
-   for(double d=.2;d<=reach+3;d+=.2)if(!safe(at(0,runReach+d,4))){reach=Math.max(0,d-3.0);break;}
+  if(tick==LEAP){
+   for(double d=.2;d<=reach+3;d+=.2){
+    int predicted=LEAP+(int)Math.round((IMPACT-LEAP)*(1-Math.sqrt(Math.max(0,1-d/Math.max(.01,reach)))));
+    if(!safe(at(0,runReach+d,height(predicted)))){reach=Math.max(0,d-3.0);break;}
+   }
    for(int step=0;step<=(int)Math.ceil(reach/.25);step++){double d=Math.max(0,reach-step*.25);
     Location floor=ground(at(0,runReach+d,0));
     if(floor!=null){floor.subtract(0,.12,0);if(safe(floor)){landing=floor;reach=d;break;}}
@@ -59,14 +63,20 @@ final class NightGuyScene extends SummonScene {
   }
   if(tick>=RUN&&tick<=LANDED){
    double h=height(tick);
-   if(landing!=null&&tick>=RECOVER)h+=(landing.getY()-origin.getY())*ease((tick-RECOVER)/(double)(LANDED-RECOVER));
+   if(landing!=null&&tick>=LEAP)h+=(landing.getY()-origin.getY())*ease((tick-LEAP)/(double)(LANDED-LEAP));
    if(!move(at(0,forward(tick,runReach,reach),h))){plugin.playback().stop(owner.getUniqueId(),"突進経路が塞がれています");return;}
    if(tick<LEAP&&tick%2==0){particle(owner.getLocation(),Particle.DUST_PLUME,5,.25,.025);sound(owner.getLocation(),Sound.ENTITY_PLAYER_ATTACK_SWEEP,.3f,1.8f);}
    if(tick==LEAP)trace("sprint complete distance="+runReach+" duration="+(LEAP-RUN));
    if(tick==LANDED){pilot.finishAtCurrent();trace("landed at kick endpoint; no return");sound(owner.getLocation(),Sound.ENTITY_GENERIC_SMALL_FALL,.8f,.9f);}
   }
+  if((tick==DASH||tick==130)&&plugin.getConfig().getBoolean("debug-input",false)){
+   var heel=body.bone("night_heel");var head=body.bone("night_head");var hip=body.bone("night_hip");var up=body.bone("night_up");
+   if(heel!=null&&head!=null&&hip!=null&&up!=null){var forward=origin.getDirection();var lead=heel.worldPosition().sub(head.worldPosition(),new org.joml.Vector3f());var axis=up.worldPosition().sub(hip.worldPosition(),new org.joml.Vector3f()).normalize();trace("live flying kick tick="+tick+" heelLead="+(lead.x*forward.getX()+lead.z*forward.getZ())+" torsoForward="+(axis.x*forward.getX()+axis.z*forward.getZ()));}
+  }
   if(tick==IMPACT){
-   impact=relative(0,2.7,1.1);for(Player p:audience.players())p.spawnParticle(Particle.FLASH,impact,1,0,0,0,0,Color.fromRGB(255,92,65));
+   var contact=body.bone("night_heel");
+   if(contact==null)impact=relative(0,2.7,1.1);else{var p=contact.worldPosition();impact=owner.getLocation().clone().add(p.x,p.y,p.z);}
+   for(Player p:audience.players())p.spawnParticle(Particle.FLASH,impact,1,0,0,0,0,Color.fromRGB(255,92,65));
    particle(impact,Particle.GUST,8,2.3,.06);dust(impact,RED,180,3);dust(impact,DARK,100,2.6);
    sound(impact,Sound.ENTITY_GENERIC_EXPLODE,3,.6f);sound(impact,Sound.ENTITY_PLAYER_ATTACK_KNOCKBACK,2,.5f);trace("flying kick impact; no terrain or entity damage");
   }
