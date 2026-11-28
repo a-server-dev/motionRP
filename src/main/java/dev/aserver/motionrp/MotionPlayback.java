@@ -127,7 +127,7 @@ public final class MotionPlayback {
             };
             var timeout = Bukkit.getScheduler().runTaskLater(plugin, () -> finish(uuid, owned,"再生時間上限"), definition.maxTicks());
             playing.put(uuid, new Playing(owned, timeout, scene,!definition.effect().equals("performance"),definition.id(),definition.name(),Bukkit.getCurrentTick()));
-            owned.handleCloseEvent((closed,reason)->{
+            TrackerCompatibility.onClose(owned,(closed,reason)->{
                 if(!plugin.isEnabled())return;
                 Runnable stop=()->finish(uuid,owned,"モデルの外部終了 ("+reason+")");
                 if(Bukkit.isPrimaryThread())stop.run();else Bukkit.getScheduler().runTask(plugin,stop);

@@ -44,6 +44,36 @@ class EnergyPackLightingTest {
         }
         byte[] fixed=Files.readAllBytes(pack);assertFalse(EnergyPackLighting.prepare(pack));assertArrayEquals(fixed,Files.readAllBytes(pack));
     }
+    @Test void actualObfuscatedReferencesArePatchedAcrossOverlaysWithoutChangingOtherItems()throws Exception{
+        var pack=root.resolve("obfuscated.zip");String primitive="{\"elements\":[{\"faces\":{\"north\":{\"texture\":\"#0\"},\"south\":{\"texture\":\"#0\"}}}]}";
+        String item="{\"model\":{\"type\":\"minecraft:model\",\"model\":\"engine:shared\"}}";
+        var entries=new LinkedHashMap<String,String>();entries.put("pack.mcmeta","{\"pack\":{}}");
+        entries.put(EnergyPackLighting.MANIFEST,"{\"version\":1,\"items\":{\"engine:b/hashed_energy\":\"energy\",\"engine:b/hashed_mask\":\"mask\"}}");
+        for(String prefix:List.of("","overlay/")){
+            entries.put(prefix+"assets/engine/models/shared.json",primitive);
+            entries.put(prefix+"assets/engine/items/b/hashed_energy.json",item);entries.put(prefix+"assets/engine/items/b/hashed_mask.json",item);
+            entries.put(prefix+"assets/engine/items/b/other_plugin.json",item);
+            entries.put(prefix+"assets/custom/items/motionrp_genki_dama_orb_foreign.json",item);
+        }
+        try(var zip=new ZipOutputStream(Files.newOutputStream(pack))){for(var e:entries.entrySet()){zip.putNextEntry(new ZipEntry(e.getKey()));zip.write(e.getValue().getBytes(java.nio.charset.StandardCharsets.UTF_8));zip.closeEntry();}}
+        assertTrue(EnergyPackLighting.prepare(pack));
+        try(var zip=new ZipFile(pack.toFile())){
+            for(String prefix:List.of("","overlay/")){
+                for(String kind:List.of("energy","mask")){
+                    var json=JsonParser.parseString(new String(zip.getInputStream(zip.getEntry(prefix+"assets/engine/items/b/hashed_"+kind+".json")).readAllBytes())).getAsJsonObject();
+                    String ref=json.getAsJsonObject("model").get("model").getAsString();assertTrue(ref.startsWith("motionrp:energy/"));
+                    var model=JsonParser.parseString(new String(zip.getInputStream(zip.getEntry(prefix+"assets/motionrp/models/"+ref.split(":")[1]+".json")).readAllBytes())).getAsJsonObject();
+                    var cube=model.getAsJsonArray("elements").get(0).getAsJsonObject();assertEquals(15,cube.get("light_emission").getAsInt());
+                    if(kind.equals("mask"))assertEquals(Set.of("north"),cube.getAsJsonObject("faces").keySet());
+                }
+                assertEquals(item,new String(zip.getInputStream(zip.getEntry(prefix+"assets/engine/items/b/other_plugin.json")).readAllBytes()));
+                assertEquals(item,new String(zip.getInputStream(zip.getEntry(prefix+"assets/custom/items/motionrp_genki_dama_orb_foreign.json")).readAllBytes()));
+                assertEquals(primitive,new String(zip.getInputStream(zip.getEntry(prefix+"assets/engine/models/shared.json")).readAllBytes()));
+            }
+        }
+        byte[] stable=Files.readAllBytes(pack);assertFalse(EnergyPackLighting.prepare(pack));assertArrayEquals(stable,Files.readAllBytes(pack));
+    }
+
     @Test void incompleteEnergyArchivesAreNeverRepairedOrPublished()throws Exception{
         var file=root.resolve("partial.zip");
         try(var z=new ZipOutputStream(Files.newOutputStream(file))){

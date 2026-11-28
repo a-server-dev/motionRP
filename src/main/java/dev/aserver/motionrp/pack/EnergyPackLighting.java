@@ -10,6 +10,8 @@ import java.util.zip.*;
 /** Scoped full-bright energy copies and exterior-only Hollow mask triangles. */
 public final class EnergyPackLighting {
     private static final List<String> IDS=List.of("motionrp_hollow_mask_","motionrp_rho_aias_shield_","motionrp_getsuga_crescent_","motionrp_genki_dama_orb_","motionrp_kamehameha_orb_","motionrp_kamehameha_beam_","motionrp_excalibur_light_","motionrp_excalibur_pillar_","motionrp_excalibur_charge_","motionrp_excalibur_wave_");
+    public static final String MANIFEST="assets/motionrp/energy-targets.json";
+    public static String targetKind(String model){return IDS.contains(model+"_")?(model.equals("motionrp_hollow_mask")?"mask":"energy"):null;}
     private EnergyPackLighting() {}
     public static synchronized boolean prepare(Path path)throws IOException{
         var before=Files.readAttributes(path,java.nio.file.attribute.BasicFileAttributes.class);
@@ -31,13 +33,30 @@ public final class EnergyPackLighting {
                 if(files.putIfAbsent(entry.getName(),out.toByteArray())!=null)throw new IOException("Duplicate pack entry");
             }
         }
+        Map<String,String> targets=new HashMap<>();
+        if(files.containsKey(MANIFEST)){
+            try{
+                var manifest=JsonParser.parseString(new String(files.get(MANIFEST),StandardCharsets.UTF_8)).getAsJsonObject();
+                if(manifest.get("version").getAsInt()!=1)throw new IllegalArgumentException("Unsupported energy manifest");
+                var items=manifest.getAsJsonObject("items");if(items.size()>4096)throw new IllegalArgumentException("Too many energy targets");
+                for(var entry:items.entrySet()){
+                    String key=entry.getKey(),kind=entry.getValue().getAsString();
+                    if(!key.matches("[a-z0-9_.-]+:[a-z0-9_./-]+")||key.contains("..")||!Set.of("mask","energy").contains(kind))throw new IllegalArgumentException("Invalid energy target");
+                    targets.put(key,kind);
+                }
+            }catch(RuntimeException invalid){throw new IOException("Invalid energy manifest",invalid);}
+        }
         Map<String,byte[]> additions=new LinkedHashMap<>();boolean changed=false;
         try{
             for(var entry:new ArrayList<>(files.entrySet())){
                 String name=entry.getKey();int assets=name.indexOf("assets/");
-                if(assets<0 || !name.contains("/items/") || !name.endsWith(".json") || IDS.stream().noneMatch(id->name.substring(name.lastIndexOf('/')+1).startsWith(id)))continue;
+                if(assets<0 || !name.contains("/items/") || !name.endsWith(".json"))continue;
+                String relative=name.substring(assets+7);int itemPath=relative.indexOf("/items/");if(itemPath<1)continue;
+                String key=relative.substring(0,itemPath)+":"+relative.substring(itemPath+7,relative.length()-5);
+                String kind=targets.get(key);String base=name.substring(name.lastIndexOf('/')+1);
+                if(kind==null){if(files.containsKey(MANIFEST)||IDS.stream().noneMatch(base::startsWith))continue;kind=base.startsWith("motionrp_hollow_mask_")?"mask":"energy";}
                 JsonObject item=JsonParser.parseString(new String(entry.getValue(),StandardCharsets.UTF_8)).getAsJsonObject();
-                if(rewrite(item,name.substring(0,assets),files,additions,name.substring(name.lastIndexOf('/')+1).startsWith("motionrp_hollow_mask_"))) {files.put(name,item.toString().getBytes(StandardCharsets.UTF_8));changed=true;}
+                if(rewrite(item,name.substring(0,assets),files,additions,kind.equals("mask"))) {files.put(name,item.toString().getBytes(StandardCharsets.UTF_8));changed=true;}
             }
         }catch(RuntimeException invalid){throw new IOException("Invalid energy item definition",invalid);}
         if(!changed)return false;

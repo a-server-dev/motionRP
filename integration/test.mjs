@@ -255,9 +255,14 @@ async function verifyTitanRecovery(a,b,{sceneDisplays,sceneRemoved,removedByRole
 }
 
 async function checkMaskPack(){
-  await waitFor(()=>{try{execFileSync('python3',['-c',"import zipfile,json,sys;z=zipfile.ZipFile(sys.argv[1]);items=[json.loads(z.read(n)) for n in z.namelist() if '/items/'in n and 'motionrp_hollow_mask_'in n];assert items and all('mask_'in json.dumps(i) and 'motionrp:energy/mask_'in json.dumps(i) for i in items)",path.join(run,'plugins/BetterModel/build.zip')],{stdio:'pipe'});return true;}catch{return false;}},'single-sided mask pack preparation',20000);
+  const maskSetup=`manifest=json.loads(z.read('assets/motionrp/energy-targets.json')) if 'assets/motionrp/energy-targets.json' in z.namelist() else {'items':{}}
+mask_paths=['assets/'+key.split(':')[0]+'/items/'+key.split(':')[1]+'.json' for key,kind in manifest['items'].items() if kind=='mask']
+def is_mask(n):return '/items/' in n and ('motionrp_hollow_mask_' in n or any(n.endswith(path) for path in mask_paths))
+`;
+  await waitFor(()=>{try{execFileSync('python3',['-c',"import zipfile,json,sys;z=zipfile.ZipFile(sys.argv[1]);\n"+maskSetup+"items=[json.loads(z.read(n)) for n in z.namelist() if is_mask(n)];assert items and all('motionrp:energy/mask_'in json.dumps(i) for i in items)",path.join(run,'plugins/BetterModel/build.zip')],{stdio:'pipe'});return true;}catch{return false;}},'single-sided mask pack preparation',20000);
   execFileSync('python3',['-c',`import zipfile,json,sys,collections
 z=zipfile.ZipFile(sys.argv[1]);c=collections.Counter()
+${maskSetup}
 def walk(d):
  if isinstance(d,list):
   for x in d:walk(x)
@@ -270,7 +275,7 @@ def walk(d):
   for tint in d.get('tints',[]):c[tint['value']&0xffffff]+=1
   for v in d.values():walk(v)
 for n in z.namelist():
- if '/items/' in n and 'motionrp_hollow_mask_' in n:walk(json.loads(z.read(n)))
+ if is_mask(n):walk(json.loads(z.read(n)))
 white=sum(n for rgb,n in c.items() if min(rgb>>16&255,rgb>>8&255,rgb&255)>180)
 red=sum(n for rgb,n in c.items() if rgb>>16&255>130 and rgb>>8&255<50)
 dark=sum(n for rgb,n in c.items() if max(rgb>>16&255,rgb>>8&255,rgb&255)<50)
@@ -377,7 +382,7 @@ if(process.env.MOTIONRP_INAZUMA_ONLY==='1'){
   consoleCommand('clear '+names[0]);await sleep(300);consoleCommand('motionrp give all '+names[0]);await waitFor(()=>a.inventory.items().filter(i=>i.name==='amethyst_shard').length===1,'one complete full-set item');
   const sets=a.inventory.items().filter(i=>i.name==='amethyst_shard');let total=0;
   for(const item of sets){if(item.slot>=36&&item.slot<45){a.setQuickBarSlot(item.slot-36);await sleep(300);}else await a.equip(item,'hand');await menu(a);total+=registered(a);await closeMenu(a);}
-  assert.equal(total,31);pass('give all distributes all 31 motions across two independently editable controller items');
+  assert.equal(total,31);pass('give all distributes all 31 motions in one controller item');
   // Cancel while airborne and verify no later projectile or stale pilot journal.
   consoleCommand('clear '+names[0]);await sleep(250);consoleCommand('motionrp give controller '+names[0]);consoleCommand('motionrp give motion eternal_blizzard 1 '+names[0]);await waitFor(()=>tokens(a)===1,'cancel shot item');await a.equip(a.inventory.items().find(i=>i.name==='amethyst_shard'),'hand');await menu(a);await deposit(a);await closeMenu(a);
   spawns.forEach(s=>s.clear());removed.forEach(s=>s.clear());const cancel=output.length,origin=a.entity.position.clone();a._testLeftClick();await waitFor(()=>a.entity.position.y>origin.y+1,'airborne before cancel');a._testLeftClick();await waitFor(cleanup,'cancel removes all effects');await waitFor(()=>a.entity.position.distanceTo(origin)<.03,'cancel restores pilot');await sleep(4000);assert.ok(!output.slice(cancel).includes(' kick tick='));
