@@ -25,6 +25,8 @@ public final class CancellationProbe extends JavaPlugin implements org.bukkit.ev
    case "orphan" -> {Object old=channels().remove(p.getUniqueId());if(old==null)throw new IllegalStateException("Viewer was not registered");saved.put(p.getUniqueId(),old);}
    case "restore" -> {Object old=saved.remove(p.getUniqueId());if(old==null)throw new IllegalStateException("No saved handler");channels().putIfAbsent(p.getUniqueId(),old);}
    case "duplicate" -> {boolean reproduced=false;try{BetterModel.platform().manager(kr.toxicity.model.api.manager.PlayerManager.class).player(kr.toxicity.model.api.bukkit.platform.BukkitAdapter.adapt(p));}catch(IllegalArgumentException e){if(!e.getMessage().contains("Duplicate handler name: bettermodel_channel_handler"))throw e;reproduced=true;}if(!reproduced)throw new IllegalStateException("Expected duplicate handler error");getLogger().info("CHANNEL_DUPLICATE_REPRODUCED");}
+   case "givepolicy" -> {var choices=plugin.onTabComplete(Bukkit.getConsoleSender(),plugin.getCommand("motionrp"),"motionrp",new String[]{"give","motion",""});if(choices.contains("infinity_castle")||!choices.contains("roll"))throw new IllegalStateException("Give completion policy failed");getLogger().info("GIVE_POLICY_OK");}
+   case "oldcastle" -> p.getInventory().addItem(plugin.items().token(plugin.catalog().motions().get("infinity_castle"),1));
    case "legacy27" -> {
     try{var state=plugin.loadouts().read(p);var bytes=new java.io.ByteArrayOutputStream();var out=new java.io.DataOutputStream(bytes);
      out.writeInt(0x4D525031);out.writeByte(3);out.writeByte(27);out.writeByte(26);

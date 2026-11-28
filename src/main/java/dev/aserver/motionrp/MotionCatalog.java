@@ -11,7 +11,9 @@ import dev.aserver.motionrp.core.SenbonzakuraTimeline;
 import dev.aserver.motionrp.core.TitanTimeline;
 
 public record MotionCatalog(Map<String, Definition> motions, String controllerName, NamespacedKey controllerModel) {
-    public record Definition(String id, String name, String model, String animation, int maxTicks, NamespacedKey itemModel, String effect) {}
+    public record Definition(String id, String name, String model, String animation, int maxTicks, NamespacedKey itemModel, String effect) {
+        public boolean obtainable(){return !id.equals("infinity_castle")&&!effect.equals("infinity_castle");}
+    }
 
     public static MotionCatalog read(FileConfiguration config) {
         var section = config.getConfigurationSection("motions");

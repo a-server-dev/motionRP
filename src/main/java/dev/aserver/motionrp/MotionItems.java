@@ -38,7 +38,7 @@ public final class MotionItems {
     }
 
     public List<ItemStack> completeControllers(MotionCatalog catalog){
-        var definitions=new java.util.ArrayList<>(catalog.motions().values());var result=new java.util.ArrayList<ItemStack>();
+        var definitions=new java.util.ArrayList<>(catalog.motions().values().stream().filter(MotionCatalog.Definition::obtainable).toList());var result=new java.util.ArrayList<ItemStack>();
         int pages=Math.max(1,(definitions.size()+dev.aserver.motionrp.core.Loadout.SIZE-1)/dev.aserver.motionrp.core.Loadout.SIZE);
         for(int page=0;page<pages;page++){
             var subset=new java.util.LinkedHashMap<String,MotionCatalog.Definition>();
@@ -48,9 +48,9 @@ public final class MotionItems {
         return result;
     }
     public ItemStack completeController(MotionCatalog catalog) {
-        if(catalog.motions().size()>dev.aserver.motionrp.core.Loadout.SIZE)throw new IllegalArgumentException("全種セットは54種類までです。現在の設定数: "+catalog.motions().size());
+        if(catalog.motions().values().stream().filter(MotionCatalog.Definition::obtainable).count()>dev.aserver.motionrp.core.Loadout.SIZE)throw new IllegalArgumentException("全種セットは54種類までです。現在の設定数: "+catalog.motions().size());
         var state=dev.aserver.motionrp.core.Loadout.empty();
-        for(var d:catalog.motions().values())state=state.deposit(state.firstEmpty(),new dev.aserver.motionrp.core.StoredMotion(d.id(),token(d,1).serializeAsBytes()));
+        for(var d:catalog.motions().values())if(d.obtainable())state=state.deposit(state.firstEmpty(),new dev.aserver.motionrp.core.StoredMotion(d.id(),token(d,1).serializeAsBytes()));
         ItemStack stack=controller(catalog);var meta=stack.getItemMeta();
         meta.displayName(text(catalog.controllerName()+"（全部入り）",NamedTextColor.GOLD));
         var lore=new java.util.ArrayList<Component>(meta.lore());lore.add(text("このアイテム専用の登録内容 / 全種プリセット",NamedTextColor.YELLOW));meta.lore(lore);

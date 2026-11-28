@@ -264,6 +264,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
         } else if (args[1].equalsIgnoreCase("motion") && args.length >= 3 && args.length <= 5) {
             var definition = catalog.motions().get(args[2]);
             if (definition == null) throw new IllegalArgumentException("Unknown motion: " + args[2]);
+            if(!definition.obtainable()){tell(sender,"このモーションは現在入手できません: "+definition.name());return;}
             int amount = args.length >= 4 ? Integer.parseInt(args[3]) : 1;
             item = items.token(definition, amount);
             targetName = args.length == 5 ? args[4] : null;
@@ -302,7 +303,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
             choices.addAll(List.of("status","publish"));
         } else if (canGive(sender) && args[0].equalsIgnoreCase("give")) {
             if (args.length == 2) choices.addAll(List.of("controller", "motion", "all"));
-            else if (args.length == 3 && args[1].equalsIgnoreCase("motion")) choices.addAll(catalog.motions().keySet());
+            else if (args.length == 3 && args[1].equalsIgnoreCase("motion")) choices.addAll(catalog.motions().values().stream().filter(MotionCatalog.Definition::obtainable).map(MotionCatalog.Definition::id).toList());
             else if (args.length == 4 && args[1].equalsIgnoreCase("motion")) choices.addAll(List.of("1", "16", "64"));
             else if ((args.length == 3 && (args[1].equalsIgnoreCase("controller")||args[1].equalsIgnoreCase("all"))) || (args.length == 5 && args[1].equalsIgnoreCase("motion"))) {
                 Bukkit.getOnlinePlayers().forEach(p -> choices.add(p.getName()));
