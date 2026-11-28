@@ -124,7 +124,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
         var performances=new PerformanceCommands(this);
         getServer().getPluginManager().registerEvents(performances,this);
         for(String name:java.util.List.of("goalperformance","hrperformance")){var c=Objects.requireNonNull(getCommand(name));c.setExecutor(performances);c.setTabCompleter(performances);}
-        getLogger().info("MotionRP enabled: " + catalog.motions().size() + " motion(s), 27 slots per player.");
+        getLogger().info("MotionRP enabled: " + catalog.motions().size() + " motion(s), 54 slots per player.");
         controllerAssets=new ControllerAssets(this);
         // BetterModel may start its initial pack before dependent plugins enable.
         // Rebuild once after subscribing so the controller is included on every restart.

@@ -26,7 +26,7 @@ class LoadoutCodecTest {
         }
         byte[] corrupt = valid.clone(); corrupt[8] ^= 1;
         assertThrows(IOException.class, () -> codec.decode(corrupt));
-        assertThrows(IOException.class, () -> codec.decode(new byte[2_000_001]));
+        assertThrows(IOException.class, () -> codec.decode(new byte[4_000_001]));
         assertThrows(IOException.class, () -> codec.decode(null));
     }
 
@@ -76,6 +76,23 @@ class LoadoutCodecTest {
         out.writeLong(0);byte[] old=bytes.toByteArray();resign(old);var expanded=codec.decode(old);assertEquals(18,expanded.count());assertEquals(17,expanded.selected());
         for(int i=0;i<18;i++)assertArrayEquals(new byte[]{(byte)i,99},expanded.slot(i).item());assertNull(expanded.slot(26));
         var withNew=expanded.deposit(26,new StoredMotion("road_roller",new byte[]{1}));assertEquals(withNew,codec.decode(codec.encode(withNew)));assertEquals(26,withNew.next().selected());
+    }
+
+    @Test void twentySevenSlotV3ExpandsWithoutChangingItemsOrSelection() throws Exception {
+        var bytes=new java.io.ByteArrayOutputStream();var out=new java.io.DataOutputStream(bytes);
+        out.writeInt(0x4D525031);out.writeByte(3);out.writeByte(27);out.writeByte(26);
+        for(int i=0;i<27;i++){out.writeBoolean(true);out.writeUTF("old_"+i);out.writeInt(2);out.write(new byte[]{(byte)i,77});}
+        out.writeLong(0);byte[] old=bytes.toByteArray();resign(old);var expanded=codec.decode(old);
+        assertEquals(26,expanded.selected());assertEquals(27,expanded.count());
+        for(int i=0;i<27;i++)assertArrayEquals(new byte[]{(byte)i,77},expanded.slot(i).item());
+        for(int i=27;i<54;i++)assertNull(expanded.slot(i));
+        var full=expanded.deposit(53,new StoredMotion("new_motion",new byte[]{1}));
+        assertEquals(53,full.next().selected());assertEquals(full,codec.decode(codec.encode(full)));
+    }
+
+    @Test void allFiftyFourMaximumSizedItemsCanRoundTrip() throws Exception {
+        var state=Loadout.empty();for(int i=0;i<54;i++)state=state.deposit(i,new StoredMotion("motion_"+i,new byte[StoredMotion.MAX_ITEM_BYTES]));
+        state=state.select(53);assertEquals(state,codec.decode(codec.encode(state)));
     }
 
     private static void resign(byte[] data) {

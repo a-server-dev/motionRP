@@ -25,6 +25,16 @@ public final class CancellationProbe extends JavaPlugin implements org.bukkit.ev
    case "orphan" -> {Object old=channels().remove(p.getUniqueId());if(old==null)throw new IllegalStateException("Viewer was not registered");saved.put(p.getUniqueId(),old);}
    case "restore" -> {Object old=saved.remove(p.getUniqueId());if(old==null)throw new IllegalStateException("No saved handler");channels().putIfAbsent(p.getUniqueId(),old);}
    case "duplicate" -> {boolean reproduced=false;try{BetterModel.platform().manager(kr.toxicity.model.api.manager.PlayerManager.class).player(kr.toxicity.model.api.bukkit.platform.BukkitAdapter.adapt(p));}catch(IllegalArgumentException e){if(!e.getMessage().contains("Duplicate handler name: bettermodel_channel_handler"))throw e;reproduced=true;}if(!reproduced)throw new IllegalStateException("Expected duplicate handler error");getLogger().info("CHANNEL_DUPLICATE_REPRODUCED");}
+   case "legacy27" -> {
+    try{var state=plugin.loadouts().read(p);var bytes=new java.io.ByteArrayOutputStream();var out=new java.io.DataOutputStream(bytes);
+     out.writeInt(0x4D525031);out.writeByte(3);out.writeByte(27);out.writeByte(26);
+     for(int i=0;i<27;i++){var slot=state.slot(i);out.writeBoolean(slot!=null);if(slot!=null){out.writeUTF(slot.id());var item=slot.item();out.writeInt(item.length);out.write(item);}}
+     var crc=new java.util.zip.CRC32();crc.update(bytes.toByteArray());out.writeLong(crc.getValue());
+     var item=p.getInventory().getItemInMainHand();var meta=item.getItemMeta();
+     if(meta.getPersistentDataContainer().has(new org.bukkit.NamespacedKey(plugin,"controller_set_id"))){meta.getPersistentDataContainer().set(new org.bukkit.NamespacedKey(plugin,"controller_loadout_v1"),org.bukkit.persistence.PersistentDataType.BYTE_ARRAY,bytes.toByteArray());item.setItemMeta(meta);p.getInventory().setItemInMainHand(item);}
+     else p.getPersistentDataContainer().set(new org.bukkit.NamespacedKey(plugin,"loadout_v1"),org.bukkit.persistence.PersistentDataType.BYTE_ARRAY,bytes.toByteArray());p.saveData();
+    }catch(java.io.IOException e){throw new java.io.UncheckedIOException(e);}
+   }
    case "legacy" -> {var item=p.getInventory().getItemInMainHand();var meta=item.getItemMeta();item.setType(org.bukkit.Material.CARROT_ON_A_STICK);item.setItemMeta(meta);p.getInventory().setItemInMainHand(item);}
    case "inspect" -> {var state=plugin.loadouts().read(p);getLogger().info("SELECT_PROBE selected="+state.selected()+" count="+state.count()+" favorites="+plugin.loadouts().favorites(p,state).size()+" material="+p.getInventory().getItemInMainHand().getType());}
    case "zero" -> Bukkit.getPluginManager().callEvent(new EntityDamageEvent(p,EntityDamageEvent.DamageCause.CUSTOM,0));

@@ -6,8 +6,8 @@ import java.util.zip.CRC32;
 /** Bounded, versioned data. Corruption must never become an empty, overwritable loadout. */
 public final class LoadoutCodec {
     private static final int MAGIC = 0x4D525031;
-    private static final int VERSION = 3;
-    private static final int MAX_BYTES = 2_000_000;
+    private static final int VERSION = 4;
+    private static final int MAX_BYTES = 4_000_000;
 
     public byte[] encode(Loadout loadout) {
         try {
@@ -46,7 +46,7 @@ public final class LoadoutCodec {
             var in = new DataInputStream(new ByteArrayInputStream(data, 0, data.length - 8));
             if (in.readInt() != MAGIC) throw new IOException("Unsupported loadout format");
             int version=in.readUnsignedByte(),count=in.readUnsignedByte();
-            if (!((version==1 && count==9) || (version==2 && count==18) || (version==VERSION && count==Loadout.SIZE))) throw new IOException("Unsupported loadout shape");
+            if (!((version==1 && count==9) || (version==2 && count==18) || (version==3 && count==27) || (version==VERSION && count==Loadout.SIZE))) throw new IOException("Unsupported loadout shape");
             int selected = in.readUnsignedByte();
             if(selected>=count) throw new IOException("Invalid saved selection");
             var slots = new StoredMotion[Loadout.SIZE];
