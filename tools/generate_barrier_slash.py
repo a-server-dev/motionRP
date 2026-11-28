@@ -9,7 +9,7 @@ from generate_energy import mesh_model,add_mesh,glow
 from generate_rasengan import hand_path
 from hollow_kinematics import sampler,matrix,mul,vector,euler
 PINK=[(188,34,119,255),(232,66,157,255),(255,139,210,255),(255,210,241,255),(138,22,94,255),(246,104,185,255),(255,173,228,255),(255,244,253,255)]
-DARK=[(9,5,15,255),(28,8,40,255),(72,16,120,255),(142,42,235,255),(211,110,255,255),(95,22,160,255),(229,180,255,255),(255,238,255,255)]
+DARK=[(8,3,5,255),(35,5,10,255),(110,9,22,255),(235,22,45,255),(255,77,85,255),(160,16,30,255),(255,163,165,255),(255,230,231,255)]
 def shield():
     m=mesh_model('motionrp_rho_aias_shield',PINK);a=animation('bloom',1,{})
     def dome(rad,tan):return -8.5*math.sqrt(max(0,1-min(1,(rad*rad+tan*tan)/(18*18))))

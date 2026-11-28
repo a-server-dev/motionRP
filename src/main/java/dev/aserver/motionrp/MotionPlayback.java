@@ -12,7 +12,7 @@ import java.util.*;
 
 /** Owns only trackers created by MotionRP; never closes another plugin's model. */
 public final class MotionPlayback {
-    private record Playing(EntityTracker tracker, BukkitTask timeout, MotionScene scene, boolean filtered,String id,String name,int started) {}
+    private record Playing(EntityTracker tracker, BukkitTask timeout, BukkitTask heldItemMask, MotionScene scene, boolean filtered,String id,String name,int started) {}
     private final MotionPlugin plugin;
     private final Map<UUID, Playing> playing = new HashMap<>();
     private final Map<UUID,String> lastStops=new LinkedHashMap<>(){@Override protected boolean removeEldestEntry(Map.Entry<UUID,String> entry){return size()>512;}};
@@ -89,6 +89,7 @@ public final class MotionPlayback {
             boolean fixedAudience=Set.of("susanoo","kamehameha","genki_dama").contains(definition.effect());
             tracker = Objects.requireNonNull(BetterModel.limbOrNull(definition.model()))
                     .create(BukkitAdapter.adapt(player), TrackerModifier.DEFAULT,t->{
+                        hideController(t,player);
                         if(!definition.effect().equals("performance"))t.spawnCondition(p->{
                             var center=fixedAudience?castOrigin:t.location();
                             return plugin.visibility().enabled(p.uuid()) && p.location().world().equals(center.world())
@@ -126,7 +127,8 @@ public final class MotionPlayback {
                 default -> definition.effect().startsWith("studio:")?new StudioScene(plugin,player,owned,plugin.studio().project(definition.effect())):null;
             };
             var timeout = Bukkit.getScheduler().runTaskLater(plugin, () -> finish(uuid, owned,"再生時間上限"), definition.maxTicks());
-            playing.put(uuid, new Playing(owned, timeout, scene,!definition.effect().equals("performance"),definition.id(),definition.name(),Bukkit.getCurrentTick()));
+            var heldItemMask=Bukkit.getScheduler().runTaskTimer(plugin,()->{if(!owned.isClosed())hideController(owned,player);},0,1);
+            playing.put(uuid, new Playing(owned, timeout, heldItemMask, scene,!definition.effect().equals("performance"),definition.id(),definition.name(),Bukkit.getCurrentTick()));
             TrackerCompatibility.onClose(owned,(closed,reason)->{
                 if(!plugin.isEnabled())return;
                 Runnable stop=()->finish(uuid,owned,"モデルの外部終了 ("+reason+")");
@@ -142,11 +144,22 @@ public final class MotionPlayback {
             plugin.visibility().playbackStarted(player,!definition.effect().equals("performance"));
         } catch (RuntimeException failure) {
             stop(player.getUniqueId());
+            ControllerHandView.restore(player);
             if (tracker != null && !tracker.isClosed()) tracker.close();
             if(definition.effect().equals("infinity_castle") && failure instanceof IllegalArgumentException){plugin.tell(player,failure.getMessage());return;}
             plugin.getLogger().log(java.util.logging.Level.WARNING, "Motion playback failed for " + player.getUniqueId(), failure);
             plugin.tell(player, "モーション再生に失敗しました。管理者に連絡してください。");
         }
+    }
+
+    private void hideController(EntityTracker tracker,Player player){
+        boolean right=plugin.items().controller(player.getInventory().getItemInMainHand());
+        boolean left=plugin.items().controller(player.getInventory().getItemInOffHand());
+        ControllerHandView.hide(plugin,player,right,left);
+        if(right||left)tracker.update(kr.toxicity.model.api.tracker.TrackerUpdateAction.togglePart(false),bone->{
+            String name=bone.name().rawName();
+            return (right&&name.equals("pri_right_item"))||(left&&name.equals("pli_left_item"));
+        });
     }
 
     private void finish(UUID uuid, EntityTracker expected,String reason) {
@@ -163,6 +176,8 @@ public final class MotionPlayback {
         lastStops.put(player,record);
         if(plugin.getConfig().getBoolean("debug-input",false))plugin.getLogger().info("Playback stopped: "+player+" "+record);
         current.timeout.cancel();
+        current.heldItemMask.cancel();
+        ControllerHandView.restore(Bukkit.getPlayer(player));
         try { if (current.scene != null) current.scene.close(); }
         finally { if (!current.tracker.isClosed()) current.tracker.close(); }
     }

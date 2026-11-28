@@ -18,8 +18,9 @@ final class BarrierSlashScene extends SummonScene {
     private final DummyTracker[] trails=new DummyTracker[2];
     private final java.util.Set<Player> maskHeard=new java.util.HashSet<>();
     private final java.util.Set<Player> chargingHeard=new java.util.HashSet<>();private DummyTracker sword,wave;
-    private double reach=29.5,hitDistance=32;private int impactTick=GETSUGA_IMPACT;private boolean impacted;
-    private static final Particle.DustOptions PINK=new Particle.DustOptions(Color.fromRGB(255,115,202),1.2f),VIOLET=new Particle.DustOptions(Color.fromRGB(166,52,245),1.5f),BLACK=new Particle.DustOptions(Color.fromRGB(15,4,20),2);
+    private static final double WAVE_RADIUS=4.2,WAVE_HEIGHT=4.3;
+    private double reach=27.8,hitDistance=32;private int impactTick=GETSUGA_IMPACT;private boolean impacted;
+    private static final Particle.DustOptions PINK=new Particle.DustOptions(Color.fromRGB(255,115,202),1.2f),RED=new Particle.DustOptions(Color.fromRGB(235,22,45),1.5f),BLACK=new Particle.DustOptions(Color.fromRGB(10,3,5),2);
     BarrierSlashScene(MotionPlugin plugin,Player owner,EntityTracker body,boolean shield){
         super(plugin,owner,shield?"RhoAias":"GetsugaTensho",end(shield));this.shield=shield;this.body=body;
         body.rotation(()->new ModelRotation(0,origin.getYaw()));body.update(TrackerUpdateAction.moveDuration(0));
@@ -75,10 +76,11 @@ final class BarrierSlashScene extends SummonScene {
                 Location point=at((a.right()+(b.right()-a.right())*blade)*(1-time)+(c.right()+(d.right()-c.right())*blade)*time,
                     (a.forward()+(b.forward()-a.forward())*blade)*(1-time)+(c.forward()+(d.forward()-c.forward())*blade)*time,
                     (a.height()+(b.height()-a.height())*blade)*(1-time)+(c.height()+(d.height()-c.height())*blade)*time);
-                dust(point,BLACK,1,.025);dust(point,VIOLET,1,.015);
+                dust(point,BLACK,1,.025);dust(point,RED,1,.015);
             }
             if(tick==52){sound(palm(),Sound.ENTITY_PLAYER_ATTACK_SWEEP,.8f,1.2f);trace("clearing swing trails blade; no projectile");}
         }
+        if(tick>=GETSUGA_PREFIX && tick<GETSUGA_RELEASE+12)bodyPressure();
         if(tick==GETSUGA_FLOURISH_END)trace("clearing swing ends; both hands prepare overhead");
         if(tick>=GETSUGA_CHARGE && tick<GETSUGA_RELEASE){
             var blade=GetsugaBladePath.at(tick);var tip=blade.tip();var grip=blade.grip();
@@ -86,7 +88,7 @@ final class BarrierSlashScene extends SummonScene {
                 double f=.23+j*.77/8;Location p=at(grip.right()+(tip.right()-grip.right())*f,grip.forward()+(tip.forward()-grip.forward())*f,grip.height()+(tip.height()-grip.height())*f);
                 dust(p,BLACK,5,.09);particle(p,Particle.LARGE_SMOKE,2,.07,.018);
                 if(tick%2==0)particle(p,Particle.SQUID_INK,1,.06,.025);
-                if(j%3==0){dust(p,VIOLET,1,.04);if(tick%4==0)particle(p,Particle.END_ROD,1,.04,.008);}
+                if(j%3==0){dust(p,RED,1,.04);if(tick%4==0)particle(p,Particle.END_ROD,1,.04,.008);}
             }
             if(tick%3==0){dust(at(0,0,.12),BLACK,3,.32);particle(at(0,0,.15),Particle.SMOKE,1,.25,.01);}
         }
@@ -95,33 +97,56 @@ final class BarrierSlashScene extends SummonScene {
             stopCharge();
             // Bound ray tracing to already loaded chunks; a cosmetic cast must not load terrain.
             for(double d=.5;d<=32;d+=.5){Location p=at(0,d,0);if(!p.getWorld().isChunkLoaded(p.getBlockX()>>4,p.getBlockZ()>>4)){hitDistance=Math.max(0,d-.5);break;}}
-            if(hitDistance>0)for(double h:new double[]{.4,1.8,3.2}){
+            if(hitDistance>0)for(double h:new double[]{.4,2.2,4.3,6.4,7.8}){
                 Location start=at(0,0,h);var hit=start.getWorld().rayTraceBlocks(start,origin.getDirection(),hitDistance,FluidCollisionMode.NEVER,true);
                 if(hit!=null)hitDistance=Math.min(hitDistance,hit.getHitPosition().distance(start.toVector()));
             }
-            reach=Math.max(0,hitDistance-2.5);
+            reach=Math.max(0,hitDistance-WAVE_RADIUS);
             impactTick=GETSUGA_RELEASE+Math.max(1,(int)Math.ceil(reach/.8));
-            if(reach>0){wave=model("motionrp_getsuga_crescent",at(0,0,2.5),1.6f,"crescent");wave.update(TrackerUpdateAction.moveDuration(0));
+            if(reach>0){wave=model("motionrp_getsuga_crescent",at(0,0,WAVE_HEIGHT),2.8f,"crescent");wave.update(TrackerUpdateAction.moveDuration(0));
             wave.rotation(()->new ModelRotation(0,origin.getYaw()));}
             sound(origin,Sound.ENTITY_PLAYER_ATTACK_SWEEP,1.4f,.65f);sound(origin,Sound.ENTITY_BREEZE_SHOOT,1.3f,.55f);trace("release reach="+reach+" impactTick="+impactTick);
         }
         if(wave!=null && !impacted){
-            double d=Math.min(reach,distance(tick));Location point=at(0,d,2.5);wave.location(BukkitAdapter.adapt(point));wave.forceUpdate(true);
+            double d=Math.min(reach,distance(tick));Location point=at(0,d,WAVE_HEIGHT);wave.location(BukkitAdapter.adapt(point));wave.forceUpdate(true);
             for(int i=0;i<2;i++){
-                if(tick>=GETSUGA_RELEASE+2+i*2 && trails[i]==null){trails[i]=model("motionrp_getsuga_crescent",at(0,Math.max(0,d-.8*(i+1)),2.5),1.4f-i*.2f,"crescent_trail"+i);trails[i].update(TrackerUpdateAction.moveDuration(0));trails[i].rotation(()->new ModelRotation(0,origin.getYaw()));}
-                if(trails[i]!=null){trails[i].location(BukkitAdapter.adapt(at(0,Math.max(0,d-.8*(i+1)),2.5)));trails[i].forceUpdate(true);}
+                if(tick>=GETSUGA_RELEASE+2+i*2 && trails[i]==null){trails[i]=model("motionrp_getsuga_crescent",at(0,Math.max(0,d-.8*(i+1)),WAVE_HEIGHT),2.5f-i*.3f,"crescent_trail"+i);trails[i].update(TrackerUpdateAction.moveDuration(0));trails[i].rotation(()->new ModelRotation(0,origin.getYaw()));}
+                if(trails[i]!=null){trails[i].location(BukkitAdapter.adapt(at(0,Math.max(0,d-.8*(i+1)),WAVE_HEIGHT)));trails[i].forceUpdate(true);}
             }
             for(int j=0;j<13;j++){
-                double a=-1.4+j*2.8/12,y=2.4*Math.sin(a);Location p=at(y*Math.sin(Math.toRadians(35)),d+2.4*Math.cos(a),2.5+y*Math.cos(Math.toRadians(35)));
-                dust(p,BLACK,6,.18);dust(p,VIOLET,3,.1);particle(p,Particle.SMOKE,2,.15,.015);
+                double a=-1.4+j*2.8/12,y=WAVE_RADIUS*Math.sin(a);Location p=at(y*Math.sin(Math.toRadians(35)),d+WAVE_RADIUS*Math.cos(a),WAVE_HEIGHT+y*Math.cos(Math.toRadians(35)));
+                dust(p,BLACK,6,.18);dust(p,RED,3,.1);particle(p,Particle.SMOKE,2,.15,.015);
             }
-            if(tick%2==0)particle(at(0,Math.max(0,d-.5),2.5),Particle.SQUID_INK,6,.4,.04);
+            if(tick%2==0)particle(at(0,Math.max(0,d-.5),WAVE_HEIGHT),Particle.SQUID_INK,6,.4,.04);
         }
         if(!impacted && tick>=GETSUGA_RELEASE && tick>=impactTick){
-            impacted=true;audience.hide(wave);wave=null;for(int i=0;i<2;i++){audience.hide(trails[i]);trails[i]=null;}Location p=at(0,hitDistance,.5);flash(p,Color.fromRGB(255,67,100));particle(p,Particle.EXPLOSION,2,.5,0);particle(p,Particle.DUST_PLUME,45,1.3,.045);particle(p,Particle.CLOUD,45,1,.07);dust(p,VIOLET,70,1.7);sound(p,Sound.ENTITY_GENERIC_EXPLODE,1.8f,.65f);trace("crescent impact distance="+hitDistance+" tick="+tick);
+            impacted=true;audience.hide(wave);wave=null;for(int i=0;i<2;i++){audience.hide(trails[i]);trails[i]=null;}Location p=at(0,hitDistance,.5);flash(p,Color.fromRGB(255,67,100));particle(p,Particle.EXPLOSION,2,.5,0);particle(p,Particle.DUST_PLUME,45,1.3,.045);particle(p,Particle.CLOUD,45,1,.07);dust(p,RED,100,2.4);dust(p,BLACK,100,2.4);sound(p,Sound.ENTITY_GENERIC_EXPLODE,1.8f,.65f);trace("crescent impact distance="+hitDistance+" tick="+tick);
         }
 
+        if(impacted && tick-impactTick<40)impactPressure(tick-impactTick);
         if(tick==GETSUGA_FADE){audience.hide(sword);sword=null;}
+    }
+    /** Rising ribbons start with the clearing swing and continue through release. */
+    private void bodyPressure(){
+        for(int i=0;i<12;i++){
+            double progress=((tick-GETSUGA_PREFIX+i*3)%28)/28.0;
+            double angle=i*Math.PI*2/12+tick*.12,radius=.65+progress*.65;
+            Location p=at(Math.cos(angle)*radius,Math.sin(angle)*radius,.15+progress*3.3);
+            dust(p,BLACK,3,.12);dust(p,RED,2,.09);
+            if(i%3==0)particle(p,Particle.SMOKE,1,.06,.025);
+        }
+    }
+    /** Animated ascending columns remain anchored to the impact; the scene owns their lifetime. */
+    private void impactPressure(int age){
+        double fade=Math.min(1,(40-age)/10.0);
+        for(int i=0;i<28;i++){
+            double progress=((age+i*3)%28)/28.0,angle=i*2.39996+age*.045;
+            double radius=(.5+(i%7)*.43)*(1-progress*.35);
+            Location p=at(Math.cos(angle)*radius,hitDistance+Math.sin(angle)*radius,.2+progress*8);
+            dust(p,BLACK,Math.max(1,(int)(7*fade)),.28);
+            dust(p,RED,Math.max(1,(int)(5*fade)),.2);
+            if(i%4==0)particle(p,Particle.LARGE_SMOKE,1,.12,.055);
+        }
     }
     private void hollowMask(){
         var p=HollowHeadPath.at(tick);Location head=at(p.right(),p.forward(),p.height());
