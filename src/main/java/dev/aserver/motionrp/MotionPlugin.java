@@ -189,7 +189,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
         }
         if(args[0].equalsIgnoreCase("reload")){
             if(!(sender instanceof Player player)){tell(sender,"ゲーム内で /motionrp reload を実行してください。設定の再読込は /motionrp configreload です。");return true;}
-            if(!player.hasPermission("motionrp.use")){tell(sender,"権限がありません。");return true;}
+            if(!player.hasPermission("motionrp.reload")){tell(sender,"権限がありません。");return true;}
             if(args.length!=1){tell(sender,"/motionrp reload（自分のリソースパックのみ再適用）");return true;}
             if(resourcePack==null)tell(sender,packStatus());else resourcePack.reload(player);
             return true;
@@ -271,7 +271,8 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
     @Override public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         List<String> choices = new ArrayList<>();
         if(args.length==1){
-            if(sender instanceof Player&&sender.hasPermission("motionrp.use"))choices.addAll(List.of("gui","view","accept","laststop","reload"));
+            if(sender instanceof Player&&sender.hasPermission("motionrp.use"))choices.addAll(List.of("gui","view","accept","laststop"));
+            if(sender instanceof Player&&sender.hasPermission("motionrp.reload"))choices.add("reload");
             if(canGiveMotion(sender)||sender.hasPermission("motionrp.give.controller"))choices.add("give");
             for(String action:List.of("configreload","status","pack"))if(sender.hasPermission("motionrp."+action))choices.add(action);
         }else if(args.length==2&&args[0].equalsIgnoreCase("view")&&sender.hasPermission("motionrp.use")){choices.addAll(List.of("on","off"));

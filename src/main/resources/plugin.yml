@@ -11,8 +11,11 @@ commands:
     usage: /motionrp [gui|view|accept|laststop|give|reload|configreload|status|pack]
 permissions:
   motionrp.use:
-    description: 登録GUI・アイテム再生・表示切替・招待承諾・個人パック再適用
+    description: 登録GUI・アイテム再生・表示切替・招待承諾
     default: true
+  motionrp.reload:
+    description: 自分のリソースパック再適用（管理者向け）
+    default: op
   motionrp.give.controller:
     description: 自分用の空の専用セットを入手
     default: true

@@ -29,6 +29,7 @@ public final class CancellationProbe extends JavaPlugin implements org.bukkit.ev
    case "commandpolicy" -> {
     if(plugin.getDescription().getCommands().size()!=1||plugin.getCommand("goalperformance")!=null||plugin.getCommand("hrperformance")!=null)throw new IllegalStateException("Legacy commands still registered");
     var choices=plugin.onTabComplete(p,plugin.getCommand("motionrp"),"motionrp",new String[]{""});
+    if(choices.contains("reload")!=p.hasPermission("motionrp.reload"))throw new IllegalStateException("Reload tab permission mismatch");
     for(String old:java.util.List.of("fusion","broly","balse","emperor_penguin_2"))if(choices.contains(old))throw new IllegalStateException("Direct playback completion retained");
     var plain=net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText();
     for(var definition:plugin.catalog().motions().values()){

@@ -300,6 +300,15 @@ if(process.env.MOTIONRP_GIVE_ONLY==='1'){
   c.chat('/motionrp give motion');await waitFor(()=>sets(c)===1,'OP receives full set');
   consoleCommand('motionprobe commandpolicy '+an);await waitFor(()=>output.includes('COMMAND_POLICY_OK'),'command registration, completions and all item lore');
   pass('Public empty controllers, restricted full sets, removed direct commands and every token lore verified');
+  for(const bot of [a,b]){const start=bot._testMessages.length;bot.chat('/mrp reload');await waitFor(()=>bot._testMessages.slice(start).some(m=>m.includes('権限がありません')),'non-OP reload denied, including named give exception');}
+  const checkReload=async(bot,allowed)=>{const start=bot._testMessages.length;bot.chat('/motionrp reload invalid');await waitFor(()=>bot._testMessages.slice(start).some(m=>m.includes(allowed?'自分のリソースパックのみ再適用':'権限がありません')),'reload permission '+allowed);};
+  await checkReload(c,true);
+  consoleCommand('lp user '+cn+' permission set motionrp.reload false');await sleep(700);await checkReload(c,false);
+  consoleCommand('lp user '+bn+' permission set motionrp.admin true');await sleep(700);await checkReload(b,false);
+  consoleCommand('lp user '+bn+' permission unset motionrp.admin');
+  consoleCommand('lp user '+bn+' permission set motionrp.reload true');await sleep(700);await checkReload(b,true);
+  consoleCommand('lp user '+bn+' permission unset motionrp.reload');await sleep(700);
+  pass('Reload is OP by default, independent of use/admin/named distribution access; LuckPerms grant/deny works');
   let start=b._testMessages.length;b.chat('/motionrp give motion');await waitFor(()=>b._testMessages.slice(start).some(m=>m.includes('OPまたはEmeraldREX91')),'ordinary player denied full set');
   consoleCommand('lp user '+bn+' permission set motionrp.give.motion true');await sleep(700);
   start=b._testMessages.length;b.chat('/motionrp give motion');await waitFor(()=>b._testMessages.slice(start).some(m=>m.includes('OPまたはEmeraldREX91')),'LP grant does not bypass eligibility');assert.equal(sets(b),1);
