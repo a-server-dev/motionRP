@@ -386,6 +386,40 @@ if(process.env.MOTIONRP_INAZUMA_ONLY==='1'){
  process.exit(code);
 }
 
+if(process.env.MOTIONRP_FUSION_ONLY==='1'){
+ let code=0;
+ try{
+  fs.copyFileSync(path.join(project,`build/libs/motionRP-${version}.jar`),path.join(run,'plugins/MotionRP.jar'));
+  log=fs.createWriteStream(path.join(project,'build/fusion-smoke.log'));await startServer();
+  const timer=setInterval(()=>consoleCommand('motionrp status'),500);
+  try{await waitFor(()=>output.includes('fusion: 利用可能'),'fusion ready',90000);}finally{clearInterval(timer);}
+  const suffix=String(Date.now()).slice(-5),an='FuseA'+suffix,bn='FuseB'+suffix,cn='FuseC'+suffix;
+  const a=await connect(an),b=await connect(bn),c=await connect(cn);c.chat('/motionrp view off');
+  consoleCommand('fill -3 -61 -3 10 -61 6 grass_block');consoleCommand('fill -3 -60 -3 10 -54 6 air');
+  for(const [name,x]of [[an,.5],[bn,5.5],[cn,8.5]])consoleCommand(`tp ${name} ${x} -60 .5 0 0`);await sleep(500);
+  const bases=[a.entity.position.clone(),b.entity.position.clone()],health=[a.health,b.health];
+  const spawned=[new Set(),new Set(),new Set()],removed=[new Set(),new Set(),new Set()],kinds=[new Map(),new Map(),new Map()];
+  for(const [i,bot]of [a,b,c].entries()){
+   bot._client.on('spawn_entity',p=>{if(p.type===bot.registry.entitiesByName.item_display.id)spawned[i].add(p.entityId);});
+   bot._client.on('entity_destroy',p=>p.entityIds.forEach(id=>removed[i].add(id)));
+   bot._client.on('world_particles',p=>{const name=p.particle.type;kinds[i].set(name,(kinds[i].get(name)||0)+1);});
+  }
+  const clean=()=>[0,1].every(i=>spawned[i].size>0&&[...spawned[i]].every(id=>removed[i].has(id)));
+  async function start(){const n=b._testMessages.length;a.chat('/motionrp fusion '+bn);await waitFor(()=>b._testMessages.slice(n).some(m=>m.includes('fusion accept '+an)),'fusion invitation');const begin=output.length;b.chat('/motionrp fusion accept '+an);await waitFor(()=>output.slice(begin).includes('FusionRight phase: ARMS'),'both roles start');return begin;}
+  let begin=await start();await waitFor(()=>output.slice(begin).includes('temporary fused warrior revealed'),'warrior reveal',15000);
+  const warrior=output.slice(begin).match(/FusionLeft displays fusion_warrior ids=([0-9,]+)/)[1].split(',').map(Number);
+  await sleep(4000);for(const i of [0,1])assert.ok(warrior.some(id=>spawned[i].has(id)&&!removed[i].has(id)),'warrior remains beyond old 3.4-second duration');
+  await waitFor(clean,'natural fusion cleanup',10000);assert.ok(output.slice(begin).includes('FusionLeft phase: FADE tick=218'));
+  for(const i of [0,1]){assert.ok(kinds[i].get('flash')>=4,'repeated white flashes');assert.ok(kinds[i].get('firework')>100,'sparkling burst and rings');assert.ok(kinds[i].get('end_rod')>100,'lasting golden aura');assert.ok(a.entity.position.distanceTo(bases[0])<.02&&b.entity.position.distanceTo(bases[1])<.02);}
+  assert.equal(spawned[2].size,0);assert.equal(kinds[2].size,0);assert.deepEqual([a.health,b.health],health);
+  pass('Both participants receive repeated flashes, firework rings and aura; Gogeta remains for 5.4 seconds; OFF viewer receives no effects');
+  for(const set of [...spawned,...removed])set.clear();begin=await start();await waitFor(()=>output.slice(begin).includes('temporary fused warrior revealed'),'warrior before cancellation',15000);b.chat('/motionrp fusion cancel');await waitFor(clean,'both roles cancelled cleanup');await sleep(600);assert.ok(a.entity.position.distanceTo(bases[0])<.02&&b.entity.position.distanceTo(bases[1])<.02);pass('Cancelling during the fused form clears every model and restores both players');
+  assert.ok(!/scene failed|Motion playback failed/.test(output));
+ }catch(e){code=1;console.error(e.stack);}
+ finally{for(const bot of bots)try{bot.quit();}catch{}try{await stopServer();}catch{}log?.end();fs.writeFileSync(path.join(project,'build/fusion-smoke-result.json'),JSON.stringify({passed:code===0,version,checks},null,2));}
+ process.exit(code);
+}
+
 if(process.env.MOTIONRP_CHANNEL_ONLY==='1'){
  let code=0;const probeJar=path.join(run,'plugins/CancellationProbe.jar');
  try{

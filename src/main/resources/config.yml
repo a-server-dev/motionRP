@@ -63,7 +63,7 @@ motions:
     model: motionrp_fusion_left
     animation: fusion_left
     effect: pair_fusion
-    max-ticks: 204
+    max-ticks: 244
   broly:
     name: 岩盤
     model: motionrp_broly_attacker

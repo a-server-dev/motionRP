@@ -10,10 +10,40 @@ final class FusionScene extends SummonScene {
  @Override void update(){
   body.update(TrackerUpdateAction.togglePart(false),b->java.util.Set.of("pri_right_item","pli_left_item").contains(b.name().rawName()));
   var center=plugin.fusion().center(owner.getUniqueId());if(center==null){plugin.playback().stop(owner.getUniqueId());return;}
-  if(left&&tick==CONTACT){for(Player p:audience.players())p.spawnParticle(Particle.FLASH,center.clone().add(0,1.28,0),1,0,0,0,0,Color.fromRGB(255,251,192));particle(center.clone().add(0,1,0),Particle.END_ROD,90,1.5,.12);sound(center,Sound.BLOCK_BEACON_ACTIVATE,2,1.3f);trace("fingertips meet; two-player flash");}
+  if(left&&tick==CONTACT){
+   particle(center.clone().add(0,1.28,0),Particle.FIREWORK,150,.7,.16);
+   particle(center.clone().add(0,1.28,0),Particle.END_ROD,100,.8,.12);
+   sound(center,Sound.BLOCK_BEACON_ACTIVATE,2,1.3f);
+   sound(center,Sound.ENTITY_FIREWORK_ROCKET_TWINKLE,1.3f,.8f);
+   trace("fingertips meet; two-player flash");
+  }
+  if(left&&tick>=CONTACT&&tick<=FUSED+16)fusionLight(center);
   if(tick==FUSED){body.update(TrackerUpdateAction.togglePart(false));if(left){warrior=model("motionrp_fusion_warrior",center,1.0f,"fusion_warrior");loop(warrior,"fusion_idle");particle(center.clone().add(0,1,0),Particle.CLOUD,60,1.4,.06);trace("temporary fused warrior revealed");}}
   if(tick>=FUSED)body.update(TrackerUpdateAction.togglePart(false));
-  if(left&&tick>=FUSED&&tick<FADE&&tick%4==0){var dust=new Particle.DustOptions(Color.fromRGB(255,225,91),1.1f);dust(center.clone().add(0,1,0),dust,8,.9);}
+  if(left&&tick>=FUSED&&tick<FADE&&tick%4==0){
+   dust(center.clone().add(0,1,0),new Particle.DustOptions(Color.fromRGB(255,225,91),1.3f),14,.8);
+   particle(center.clone().add(0,1,0),Particle.FIREWORK,8,.7,.025);
+   for(int i=0;i<8;i++){
+    double angle=tick*.09+i*Math.PI/4;
+    particle(center.clone().add(Math.cos(angle)*.85,.15+(tick+i*3)%36/18.0,Math.sin(angle)*.85),Particle.END_ROD,1,0,0);
+   }
+  }
   if(tick==FADE){audience.hide(warrior);warrior=null;if(left)particle(center.clone().add(0,1,0),Particle.CLOUD,50,1.1,.05); }
+ }
+ private void fusionLight(Location center){
+  int elapsed=tick-CONTACT;
+  if(elapsed==0||elapsed==4||tick==FUSED||tick==FUSED+6){
+   for(Player p:audience.players())p.spawnParticle(Particle.FLASH,center.clone().add(0,1.28,0),1,0,0,0,0,Color.fromRGB(255,253,230));
+  }
+  if(elapsed%2!=0)return;
+  double radius=.35+elapsed*.12;
+  var gold=new Particle.DustOptions(Color.fromRGB(255,235,125),1.6f);
+  for(int i=0;i<24;i++){
+   double angle=i*Math.PI/12+elapsed*.08;
+   var ring=center.clone().add(Math.cos(angle)*radius,1.05+Math.sin(angle*2)*.3,Math.sin(angle)*radius);
+   dust(ring,gold,1,.025);
+   particle(ring,Particle.FIREWORK,1,.025,.025);
+  }
+  particle(center.clone().add(0,1.25,0),Particle.END_ROD,12,.6,.035);
  }
 }

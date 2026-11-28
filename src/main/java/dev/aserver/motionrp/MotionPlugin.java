@@ -101,6 +101,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
         if(!getConfig().contains("visibility.range",true)){getConfig().set("visibility.range",48);saveConfig();}
         if("motionrp_getsuga_tensho".equals(getConfig().getString("motions.getsuga_tensho.model")) && "getsuga_tensho".equals(getConfig().getString("motions.getsuga_tensho.effect")) && getConfig().getInt("motions.getsuga_tensho.max-ticks",0)<dev.aserver.motionrp.core.BarrierSlashTimeline.GETSUGA_END){getConfig().set("motions.getsuga_tensho.max-ticks",186);saveConfig();}
         for(String id:java.util.List.of("road_roller","chibaku_tensei","kokuryuha"))if(("motionrp_"+id).equals(getConfig().getString("motions."+id+".model"))&&id.equals(getConfig().getString("motions."+id+".effect"))&&getConfig().getInt("motions."+id+".max-ticks",0)<dev.aserver.motionrp.core.EpicTimeline.end(id)){getConfig().set("motions."+id+".max-ticks",dev.aserver.motionrp.core.EpicTimeline.end(id)+10);saveConfig();}
+        if("motionrp_fusion_left".equals(getConfig().getString("motions.fusion.model"))&&"pair_fusion".equals(getConfig().getString("motions.fusion.effect"))&&getConfig().getInt("motions.fusion.max-ticks",0)<dev.aserver.motionrp.core.FusionTimeline.END){getConfig().set("motions.fusion.max-ticks",dev.aserver.motionrp.core.FusionTimeline.END+10);saveConfig();}
         if(MotionNames.migrate(getConfig()))saveConfig();
         studio=new StudioProjects(this);
         catalog = studio.merge(MotionCatalog.read(getConfig()));

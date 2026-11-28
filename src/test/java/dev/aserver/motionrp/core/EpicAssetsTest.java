@@ -35,7 +35,7 @@ class EpicAssetsTest {
  }
  @Test void retainedRocksCoverTheWholeSphere(){
   for(int i=0;i<EpicTimeline.ROCK_COUNT;i++){var n=EpicTimeline.rockNormal(i);assertEquals(1,Math.sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2]),1e-9);}
-  assertEquals(312,EpicTimeline.end("chibaku_tensei"));assertEquals(194,FusionTimeline.END);
+  assertEquals(312,EpicTimeline.end("chibaku_tensei"));assertEquals(234,FusionTimeline.END);
   assertTrue(EpicTimeline.rockRadius(0)<EpicTimeline.rockRadius(24));assertTrue(EpicTimeline.rockRadius(24)<EpicTimeline.rockRadius(72));
   assertEquals(24,java.util.stream.IntStream.range(0,144).filter(i->EpicTimeline.rockLayer(i)==0).count());
   assertEquals(48,java.util.stream.IntStream.range(0,144).filter(i->EpicTimeline.rockLayer(i)==1).count());
