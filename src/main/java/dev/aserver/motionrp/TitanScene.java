@@ -56,13 +56,20 @@ final class TitanScene extends SummonScene {
             body.update(TrackerUpdateAction.togglePart(false));
             double value=TitanTimeline.scale(tick,state.originalScale());state.scale(value);
             giant.scaler(ModelScaler.value((float)Objects.requireNonNull(owner.getAttribute(org.bukkit.attribute.Attribute.SCALE)).getValue()));
-            Location current=owner.getLocation();current.setPitch(0);giant.location(BukkitAdapter.adapt(current));
+            if(tick<DRIVE){Location current=owner.getLocation();current.setPitch(0);giant.location(BukkitAdapter.adapt(current));}
             if(tick==GROWN) trace("scale="+owner.getAttribute(org.bukkit.attribute.Attribute.SCALE).getBaseValue()+" skin="+(state.bundledSkin()?"bundled:titan.png":state.skin().getPath()));
         }
         if(tick==TACKLE && giant!=null){giant.stopAnimation("titan_idle");giant.animate("titan_tackle",AnimationModifier.DEFAULT_WITH_PLAY_ONCE);trace("low shoulder tackle begins");}
         if(tick>=DRIVE && giant!=null){
             giant.location(BukkitAdapter.adapt(at(0,tackleDistance(tick),0)));giant.forceUpdate(true);
             if(tick%4==0){Location foot=at(0,tackleDistance(tick),.2);particle(foot,Particle.DUST_PLUME,12,1.8,.04);sound(foot,Sound.ENTITY_IRON_GOLEM_STEP,.7f,.6f);}
+        }
+        if(tick==EXIT-2 && plugin.getConfig().getBoolean("debug-input",false)&&giant!=null){
+            var hip=giant.bone(state.bundledSkin()?"titanbonephiphip":"phip_hip");
+            var chest=giant.bone(state.bundledSkin()?"titanbonepcchest":"pc_chest");
+            if(hip!=null&&chest!=null){var delta=chest.worldPosition().sub(hip.worldPosition(),new org.joml.Vector3f());var ahead=origin.getDirection();
+                trace("live tackle shoulderLead="+(delta.x*ahead.getX()+delta.z*ahead.getZ())+" shoulderRise="+delta.y);
+            }
         }
         if(tick>=FLASH && tick<GROWN+8 && tick%4==2) {
             double a=(tick-FLASH)*.9;Location location=at(Math.cos(a)*2.8,Math.sin(a)*2.8,0);
@@ -84,7 +91,7 @@ final class TitanScene extends SummonScene {
         }
         if(tick>=TRANSFORM && tick%4==0) {
             double height=tick>=GROWN?12:Math.max(2,owner.getAttribute(org.bukkit.attribute.Attribute.SCALE).getValue()*1.2);
-            particle(at(0,0,height*.5),Particle.CLOUD,tick>=EXIT?45:8,height*.25,.025);
+            particle(at(0,tackleDistance(tick),height*.5),Particle.CLOUD,tick>=EXIT?45:8,height*.25,.025);
         }
         if(tick==GROWN) sound(at(0,0,10),Sound.ENTITY_ENDER_DRAGON_GROWL,1,.6f);
         if(tick==EXIT) {
@@ -99,7 +106,7 @@ final class TitanScene extends SummonScene {
             for(var viewer:registry.viewedPlayer().toList()) registry.remove(viewer.player());
             state.restoreAppearance();registry.refresh();
             trace("nape exit height="+TitanTacklePath.at(EXIT).height()+" tick="+tick);
-            sound(at(0,-1.8,NAPE_HEIGHT),Sound.ENTITY_PLAYER_BREATH,.9f,.8f);
+            var nape=TitanTacklePath.at(EXIT);sound(at(nape.right(),tackleDistance(EXIT)+nape.forward(),nape.height()),Sound.ENTITY_PLAYER_BREATH,.9f,.8f);
         }
         if(tick>=EXIT && tick<=LAND) {
             var pose=exitPose(tick,landing.getY()-origin.getY());

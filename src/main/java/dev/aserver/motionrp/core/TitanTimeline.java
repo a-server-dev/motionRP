@@ -10,7 +10,7 @@ public final class TitanTimeline {
         p=p*p*(3-2*p);return original+(SCALE-original)*p;
     }
     public record ExitPose(double forward,double height) {}
-    public static double tackleDistance(int tick){double p=Math.clamp((tick-DRIVE)/58.,0,1);return 8*p*p*(3-2*p);}
+    public static double tackleDistance(int tick){double p=Math.clamp((tick-DRIVE)/32.,0,1);return 14*p*p*(3-2*p);}
     public static ExitPose exitPose(int tick,double ground){
         var nape=TitanTacklePath.at(EXIT);double start=tackleDistance(EXIT)+nape.forward();
         if(tick<DIVE){double p=Math.clamp((tick-EXIT)/(double)(DIVE-EXIT),0,1);return new ExitPose(start-3*p,nape.height()+.7*Math.sin(p*Math.PI));}

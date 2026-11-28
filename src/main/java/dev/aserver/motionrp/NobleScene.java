@@ -77,16 +77,22 @@ final class NobleScene extends SummonScene {
             double progress=Math.clamp((tick-NobleTimeline.release(gold))/(double)(NobleTimeline.impact(gold)-NobleTimeline.release(gold)),0,1);
             EnergyVisuals.stream(audience.players(),start,focus,tick,true);
             if(wave!=null){Location front=start.clone().add(focus.toVector().subtract(start.toVector()).multiply(progress));
-                front.setY(origin.getY()+.2);wave.location(BukkitAdapter.adapt(front));wave.scaler(ModelScaler.value((float)(1+5*progress)));}
+                front.setY(origin.getY()+.2);wave.location(BukkitAdapter.adapt(front));wave.scaler(ModelScaler.value((float)(.25+.45*progress)));}
             if(tick%2==0)for(int sample=0;sample<10;sample++){
                 double f=(sample+1)/10.*progress,r=.3+2.8*f;Location center=start.clone().add(focus.toVector().subtract(start.toVector()).multiply(f));
                 double a=tick*.8+sample*1.7;double yaw=Math.toRadians(origin.getYaw());Location flare=center.add(-Math.cos(yaw)*Math.cos(a)*r,Math.abs(Math.sin(a))*r*.7,-Math.sin(yaw)*Math.cos(a)*r);spark(flare);
+            }
+            if(gold)for(int j=0;j<64;j++){
+                double f=j/63.*progress,angle=j*2.39996+tick*.35,r=.2+.55*Math.sin(j*.7+tick*.17);
+                Location center=start.clone().add(focus.toVector().subtract(start.toVector()).multiply(f));
+                double yaw=Math.toRadians(origin.getYaw());center.add(Math.cos(yaw)*Math.cos(angle)*r,Math.sin(angle)*r,-Math.sin(yaw)*Math.cos(angle)*r);
+                dust(center,energy,3,.08);if(j%3==0)particle(center,Particle.END_ROD,1,.06,.018);
             }
             Vector line=focus.toVector().subtract(start.toVector());int visible=(int)Math.ceil(beam.length*progress);
             for(int i=0;i<visible;i++) {
                 Location at=start.clone().add(line.clone().multiply((i+.5)/beam.length));at.setDirection(line);
                 if(beam[i]==null) {
-                    beam[i]=model(gold?SummonAssets.EXCALIBUR_LIGHT:SummonAssets.GAE_TRAIL,at,gold?2.3f:2.5f,"beam"+i);
+                    beam[i]=model(gold?SummonAssets.EXCALIBUR_LIGHT:SummonAssets.GAE_TRAIL,at,gold?.45f:2.5f,"beam"+i);
                     loop(beam[i],"flow");TreasuryScene.point(beam[i],at);
                 }
                 if(tick%3==0) {dust(at,energy,6,gold?.5:.2);particle(at,gold?Particle.END_ROD:Particle.ELECTRIC_SPARK,2,.2,.03);}
@@ -94,7 +100,7 @@ final class NobleScene extends SummonScene {
         }
         if(tick==NobleTimeline.impact(gold)) {
             audience.hide(wave);wave=null;flash(focus);trace("impact reach="+String.format(Locale.ROOT,"%.2f",focus.distance(origin)));
-            if(gold) {pillar=model(SummonAssets.EXCALIBUR_PILLAR,focus,20,"light_pillar");pillar.update(TrackerUpdateAction.viewRange(4));loop(pillar,"surge");}
+            if(gold) {pillar=model(SummonAssets.EXCALIBUR_PILLAR,focus,5,"light_pillar");pillar.update(TrackerUpdateAction.viewRange(4));loop(pillar,"surge");}
             if(!gold) thorns=model(SummonAssets.GAE_THORNS,focus,2,"heart_thorns");
             particle(focus,Particle.EXPLOSION_EMITTER,gold?5:1,gold?3:.2,0);particle(focus,Particle.DUST_PLUME,gold?60:12,gold?4:1,.06);
             particle(focus,Particle.CLOUD,gold?90:15,gold?4:1,.08);dust(focus,energy,gold?80:40,gold?3:.7);

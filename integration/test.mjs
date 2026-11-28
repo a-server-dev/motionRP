@@ -947,7 +947,7 @@ if(process.env.MOTIONRP_FINAL_BATTLE_ONLY==='1'){
  process.exit(code);
 }
 
-if(process.env.MOTIONRP_NIGHT_GUY_ONLY==='1'||process.env.MOTIONRP_REVISION088_ONLY==='1'||process.env.MOTIONRP_REVISION088_ITEMS_ONLY==='1'){
+if(process.env.MOTIONRP_TACKLE090_ONLY==='1'||process.env.MOTIONRP_REVISION090_ONLY==='1'||process.env.MOTIONRP_NIGHT_GUY_ONLY==='1'||process.env.MOTIONRP_REVISION088_ONLY==='1'||process.env.MOTIONRP_REVISION088_ITEMS_ONLY==='1'){
  let code=0;
  try{
   fs.copyFileSync(path.join(project,`build/libs/motionRP-${version}.jar`),path.join(run,'plugins/MotionRP.jar'));
@@ -965,7 +965,7 @@ if(process.env.MOTIONRP_NIGHT_GUY_ONLY==='1'||process.env.MOTIONRP_REVISION088_O
   consoleCommand(`motionrp give motion roll 1 ${an}`);await waitFor(()=>output.includes('Unknown motion: roll'),'retired roll cannot be given');
   consoleCommand(`motionrp give controller ${an}`);
   await waitFor(()=>a.inventory.items().some(i=>i.name==='amethyst_shard'),'controller distribution');
-  const defs=process.env.MOTIONRP_NIGHT_GUY_ONLY==='1'?[['night_guy','NightGuy',236]]:process.env.MOTIONRP_REVISION088_ITEMS_ONLY==='1'?[]:[['kokuryuha','kokuryuha',320],['kokujo_tengen_myoo','kokujo_tengen_myoo',220],['titan_transform','Titan',244],['excalibur','Excalibur',176]];
+  const defs=process.env.MOTIONRP_TACKLE090_ONLY==='1'?[['titan_transform','Titan',244]]:process.env.MOTIONRP_REVISION090_ONLY==='1'?[['kokuryuha','kokuryuha',320],['titan_transform','Titan',244],['excalibur','Excalibur',176]]:process.env.MOTIONRP_NIGHT_GUY_ONLY==='1'?[['night_guy','NightGuy',236]]:process.env.MOTIONRP_REVISION088_ITEMS_ONLY==='1'?[]:[['kokuryuha','kokuryuha',320],['kokujo_tengen_myoo','kokujo_tengen_myoo',220],['titan_transform','Titan',244],['excalibur','Excalibur',176]];
   for(const [slot,[id]]of defs.entries()){
    consoleCommand(`motionrp give motion ${id} 1 ${an}`);await waitFor(()=>tokens(a)===1,id+' token');await menu(a);await deposit(a);assert.equal(registered(a),slot+1);await closeMenu(a);
   }
@@ -976,17 +976,18 @@ if(process.env.MOTIONRP_NIGHT_GUY_ONLY==='1'||process.env.MOTIONRP_REVISION088_O
    if(id==='titan_transform'){
     await waitFor(()=>output.slice(begin).includes('low shoulder tackle begins'),'tackle starts after growth',15000);
     await waitFor(()=>output.slice(begin).includes('Titan phase: EXIT'),'tackle nape ejection',10000);
-    await waitFor(()=>a.entity.position.y>origin.y+9&&a.entity.position.y<origin.y+13,'human emerges from lowered animated nape');
+    await waitFor(()=>Math.abs(a.entity.position.y-origin.y-Number(fs.readFileSync(path.join(project,'src/main/resources/bettermodel/titan-tackle-nape.csv'),'utf8').trim().split('\n')[50].split(',')[2]))<1.2,'human emerges from lowered animated nape');
    }
    await waitFor(()=>a.heldItem?.name==='amethyst_shard'&&clean(),id+' completes and restores hand',duration*50+12000);
    assert.equal(spawned[2].size,0);assert.equal(fx[2].length,0);assert.deepEqual([a.health,b.health],health);
    if(id==='kokuryuha'){
-    assert.ok(!/displays (dragon_|black_flame)/.test(output.slice(begin)),'no block models used for dragon or cloak');
+    assert.ok(output.slice(begin).includes('displays dragon_head')&&output.slice(begin).includes('displays returning_dragon_head'),'dragon head present on outward and returning flight');assert.ok(!/displays (dragon_segment|black_flame)/.test(output.slice(begin)),'body and wings stay particles');assert.ok(output.slice(begin).includes('black wings spread behind shoulders; body kept clear'));assert.ok(fx[1].some(p=>p.particle.type==='dust'&&Math.abs(p.x-origin.x)>3.5&&p.z<origin.z-.5),'wings spread laterally behind caster');
     assert.ok(fx[1].filter(p=>p.particle.type==='dust').length>1500,'dense black flame flight, return and mantle');assert.ok(!fx[1].some(p=>p.particle.type==='soul_fire_flame'));
    }
    if(id==='night_guy'){assert.ok(fx[1].filter(p=>p.particle.type==='dust').length>2000,'red dragon and steam reach observers');assert.ok(a.entity.position.distanceTo(origin)<.02,'normal kick returns to origin');assert.ok(!(await readSaved(an)).data.BukkitValues?.['motionrp:aerial_return_v1']);assert.ok(output.slice(begin).includes('flying kick impact;'));}
    if(id==='excalibur'){assert.ok(!output.slice(begin).includes('displays light_blade'),'no solid charge slab');assert.ok(fx[1].filter(p=>p.particle.type==='end_rod'&&p.y>origin.y+10).length>30,'tall particle charge');}
    if(id==='titan_transform'){
+    if(process.env.MOTIONRP_TACKLE090_ONLY==='1'){const pose=output.slice(begin).match(/live tackle shoulderLead=([-0-9.E]+) shoulderRise=([-0-9.E]+)/);assert.ok(pose,'live BetterModel tackle pose');assert.ok(Number(pose[1])>2,'shoulders lead hips at runtime: '+pose[0]);assert.ok(Math.abs(Number(pose[2]))<Number(pose[1]),'torso is closer to horizontal than upright: '+pose[0]);}
     assert.ok(Math.abs(a.entity.position.y-origin.y)<.1);const saved=await readSaved(an);assert.ok(!Object.keys(saved.data.BukkitValues||{}).some(k=>k.startsWith('motionrp:titan_')),'titan appearance/scale/recovery restored');
     consoleCommand(`tp ${an} 0 -60 0 0 0`);await sleep(350);
    }

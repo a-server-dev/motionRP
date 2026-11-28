@@ -36,7 +36,11 @@ class TackleAndArmorTest {
    for(int side:new int[]{-1,1})for(double x:new double[]{side<0?-3.75:0,side<0?0:3.75})for(double y:new double[]{0,5.625})for(double z:new double[]{-1.875,1.875})low=Math.min(low,math.posedPoint(names.get(side<0?"plfl_left_foreleg":"prfl_right_foreleg"),new double[]{x,y,z},age/20.,clip,groups,parents)[1]);
    assertEquals(0,low,1e-6,"Feet must stay at ground level");
   }
-  assertTrue(TitanTacklePath.at(TitanTimeline.EXIT).height()<12);
+  assertTrue(TitanTacklePath.at(TitanTimeline.EXIT).height()<9,"Nape must descend into a low tackle");
+  var shoulder=math.posedPoint(names.get("pc_chest"),new double[]{0,22,0},2.5,clip,groups,parents);
+  var hip=math.posedOrigin(names.get("phip_hip"),2.5,clip,groups,parents);
+  assertTrue(shoulder[2]<hip[2]-7,"Shoulders must lead the hips, not remain upright");
+  assertEquals(14,TitanTimeline.tackleDistance(TitanTimeline.DRIVE+32));
   assertEquals(-5,TitanTimeline.exitPose(TitanTimeline.LAND,0).forward());
  }
 }

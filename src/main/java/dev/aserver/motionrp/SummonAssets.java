@@ -29,7 +29,8 @@ final class SummonAssets {
             case "infinity_castle" -> List.of("motionrp_castle_chamber","motionrp_castle_platform","motionrp_castle_fusuma","motionrp_castle_hatch");
             case "final_battle_naruto","final_battle_sasuke" -> List.of("motionrp_duel_kurama","motionrp_duel_asura_kurama","motionrp_duel_susanoo","motionrp_duel_indra_susanoo","motionrp_duel_gold_rasenshuriken","motionrp_duel_dark_rasenshuriken","motionrp_duel_indra_arrow","motionrp_duel_clash_orb","motionrp_duel_chakra_spark","motionrp_duel_chakra_storm");
             case "road_roller" -> List.of("motionrp_the_world","motionrp_the_world_upper","motionrp_road_roller","motionrp_roller_debris");
-            case "night_guy","kokuryuha" -> List.of();
+            case "night_guy" -> List.of();
+            case "kokuryuha" -> List.of("motionrp_black_dragon_head");
             case "kokujo_tengen_myoo" -> List.of("motionrp_tengen_myoo");
             case "chibaku_tensei" -> List.of("motionrp_gravity_core","motionrp_gravity_rock","motionrp_rock_moon");
             case "broly_attacker","broly_victim" -> List.of("motionrp_broly_wall","motionrp_broly_dented_wall","motionrp_broly_crater","motionrp_broly_debris");

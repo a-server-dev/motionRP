@@ -77,27 +77,35 @@ final class EpicScene extends SummonScene {
  }
  private void dragon(){
   if(tick>=16&&tick<50){blackFlame(palm(),.35,0);if(tick==16)cue(palm(),Sound.ENTITY_WARDEN_SONIC_CHARGE,1,.6f);}
-  if(tick==50){stopCue(Sound.ENTITY_WARDEN_SONIC_CHARGE);cue(origin,Sound.ENTITY_ENDER_DRAGON_GROWL,2,.7f);trace("particle dragon released; no solid geometry");}
+  if(tick==50){stopCue(Sound.ENTITY_WARDEN_SONIC_CHARGE);cue(origin,Sound.ENTITY_ENDER_DRAGON_GROWL,2,.7f);main=model("motionrp_black_dragon_head",dragonPoint(0),3.2f,"dragon_head");loop(main,"flame");trace("dragon head restored; particle-only body");}
   if(tick>=50&&tick<96){
-   double distance=EpicTimeline.dragonDistance(tick);
+   double distance=EpicTimeline.dragonDistance(tick);Location head=dragonPoint(distance);head.setDirection(dragonPoint(distance+.1).toVector().subtract(head.toVector()));locate(main,head);TreasuryScene.point(main,head);
    for(int i=0;i<24;i++)if(distance>=i*.8)blackFlame(dragonPoint(distance-i*.8),Math.max(.18,1.1-i*.035),i);
   }
-  if(tick==96){var p=at(0,36,.8);blast(p,5);dust(p,BLACK,180,4);trace("black dragon impact");}
+  if(tick==96){audience.hide(main);main=null;var p=at(0,36,.8);blast(p,5);dust(p,BLACK,180,4);trace("black dragon impact");}
+  if(tick==112){main=model("motionrp_black_dragon_head",returningDragon(tick),3.2f,"returning_dragon_head");loop(main,"flame");}
+  if(tick>=112&&tick<188&&main!=null){Location head=returningDragon(tick);head.setDirection(returningDragon(tick+.2).toVector().subtract(head.toVector()));locate(main,head);TreasuryScene.point(main,head);}
+  if(tick==188){audience.hide(main);main=null;}
   if(tick>=112&&tick<208){
-   for(int i=0;i<22;i++)if(tick>=112+i){double time=tick-i;blackFlame(returningDragon(time),Math.max(.15,(1.05-i*.035)*Math.clamp((208-time)/20.,0,1)),i);}
+   for(int i=0;i<22;i++)if(tick>=112+i&&tick-i<188){double time=tick-i;blackFlame(returningDragon(time),Math.max(.15,(1.05-i*.035)*Math.clamp((208-time)/20.,0,1)),i);}
    if(tick==112)trace("black dragon returns overhead");
   }
   if(tick==208){cue(origin,Sound.ENTITY_ENDER_DRAGON_GROWL,1,.5f);trace("black dragon devoured caster; particle flame mantle formed");}
   if(tick>=188&&tick<320){
    double strength=Math.clamp((tick-188)/20.,0,1)*Math.clamp((320-tick)/24.,0,1);
-   for(int i=0;i<20;i++){
-    double age=((tick+i*7)%30)/30.,angle=i*2.39996+tick*.045;
-    double spread=(.55+age*1.35)*strength;
-    Location p=owner.getLocation().clone().add(Math.cos(angle)*spread,.3+age*3.9*strength,Math.sin(angle)*spread*.6);
-    dust(p,BLACK,5,.12);if(i%4==0)particle(p,Particle.SMOKE,1,.07,.035);
+   // Shoulder roots and long, separated feather/flame fingers form two wings behind the caster.
+   // Keep the face, chest and legs clear instead of wrapping the body in a cylinder of smoke.
+   for(int side:new int[]{-1,1})for(int finger=0;finger<6;finger++)for(int j=0;j<12;j++){
+    double p=j/11.,spread=(.48+p*(3.6-finger*.22))*strength;
+    double height=1.55+p*(2.6-finger*.55)+.38*Math.sin(Math.PI*p);
+    double back=-.5-p*.8-.12*Math.sin(tick*.12+finger);
+    Location q=at(side*spread,back,height).add(owner.getLocation().toVector().subtract(origin.toVector()));
+    dust(q,BLACK,2,.035);
    }
+   if(tick==208)trace("black wings spread behind shoulders; body kept clear");
   }
  }
+
  private Location returningDragon(double time){if(time<172){double p=Math.clamp((time-112)/60,0,1);return at(2.5*Math.sin(p*Math.PI*4)*(1-p),36*(1-p)*(1-p),1.8+18*Math.sin(Math.PI*p)+10*p);}double p=Math.clamp((time-172)/16,0,1);return owner.getLocation().clone().add(0,11.8-10.1*p,0);}
  private Location myooBase(){var p=owner.getLocation().clone();double yaw=Math.toRadians(p.getYaw());p.add(Math.sin(yaw)*6,0,-Math.cos(yaw)*6);var surface=ground(p);if(surface!=null)p.setY(surface.getY()-.12);return p;}
  private void myoo(){
