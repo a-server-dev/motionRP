@@ -44,14 +44,19 @@ final class NobleScene extends SummonScene {
             sound(hand,Sound.ENTITY_PLAYER_ATTACK_SWEEP,.8f,.8f);
         }
         if(weapon!=null) weapon.location(BukkitAdapter.adapt(hand));
-        if(gold && tick==NobleTimeline.LIGHT_BLADE){
-            chargeBlade=model(SummonAssets.EXCALIBUR_CHARGE,hand,.1f,"light_blade");chargeBlade.update(TrackerUpdateAction.composite(TrackerUpdateAction.viewRange(4),TrackerUpdateAction.moveDuration(1)));
-            chargeBlade.animate("cleave",AnimationModifier.DEFAULT_WITH_PLAY_ONCE);flash(hand);trace("raised light blade tick="+tick);
-        }
-        if(chargeBlade!=null){
-            chargeBlade.location(BukkitAdapter.adapt(hand));chargeBlade.scaler(ModelScaler.value((float)(.1+7.9*Math.clamp((tick-NobleTimeline.LIGHT_BLADE)/16.,0,1))));
-            if(tick%2==0){ring(at(0,0,.15),1+5*Math.clamp((tick-64)/26.,0,1));
-                for(int ray=0;ray<6;ray++)for(int j=1;j<=6;j++){double d=j*.35;Location star=hand.clone().add(ray==0?d:ray==1?-d:0,ray==2?d:ray==3?-d:0,ray==4?d:ray==5?-d:0);spark(star);}}
+        if(gold && tick==NobleTimeline.LIGHT_BLADE){flash(hand);trace("raised light blade tick="+tick+" particle charge");}
+        if(gold && tick>=NobleTimeline.LIGHT_BLADE && tick<NobleTimeline.release(true)){
+            double growth=Math.clamp((tick-NobleTimeline.LIGHT_BLADE)/20.,0,1),height=2+15*growth;
+            for(int j=0;j<42;j++){
+                double f=j/41.,angle=tick*.22+j*.65,r=.09+.24*Math.sin(Math.PI*f);
+                Location p=hand.clone().add(Math.cos(angle)*r,f*height,Math.sin(angle)*r);
+                dust(p,energy,2,.035);if(j%4==0)particle(p,Particle.END_ROD,1,.03,.012);
+            }
+            for(int j=0;j<12;j++){
+                double f=((tick+j*3)%36)/36.,angle=j*2.39996+tick*.06,r=4*(1-f);
+                Location p=hand.clone().add(Math.cos(angle)*r,.3+f*height*.25,Math.sin(angle)*r);
+                dust(p,energy,1,.05);if(j%3==0)particle(p,Particle.END_ROD,1,.02,.005);
+            }
         }
         if(tick>=32 && tick<NobleTimeline.release(gold)) {
             if((tick-32)%20==0) {heard.addAll(audience.players());sound(hand,Sound.ENTITY_BREEZE_CHARGE,.8f,gold?.7f:1.1f);}

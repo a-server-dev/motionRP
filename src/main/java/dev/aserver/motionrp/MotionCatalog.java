@@ -20,6 +20,7 @@ public record MotionCatalog(Map<String, Definition> motions, String controllerNa
         if (section == null || section.getKeys(false).isEmpty()) throw new IllegalArgumentException("motions is empty");
         var definitions = new LinkedHashMap<String, Definition>();
         for (String id : section.getKeys(false)) {
+            if(id.equals("roll"))continue; // Retired test animation, including saved tokens/loadouts.
             if (!id.matches("[a-z0-9_-]{1,64}")) throw new IllegalArgumentException("Invalid motion id: " + id);
             String base = "motions." + id + ".";
             if(id.equals("emperor_penguin_2") || config.getString(base+"effect","").startsWith("pair_emperor_penguin_2")) continue; // Retain saved configuration, hide the retired two-player version.

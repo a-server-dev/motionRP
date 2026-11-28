@@ -179,7 +179,7 @@ async function verifyTitanRecovery(a,b,{sceneDisplays,sceneRemoved,removedByRole
   assert.ok(nativeLightning.size>=4,'No vanilla lightning entities reached the observer');
   pass('hand bite triggers native lightning/flash, a giant skin model, real scale 10 and the exact embedded user skin');
   await waitFor(()=>output.slice(titanBegin).includes('Titan phase: EXIT'),'human exits the nape',20000);
-  await waitFor(()=>a.entity.position.y>titanOrigin.y+13,'client sees human emerge at nape',2000);
+  await waitFor(()=>a.entity.position.y>titanOrigin.y+9,'client sees human emerge at nape',2000);
   await waitFor(()=>Math.abs(scaleUpdates.at(-1)-1.25)<.001,'observer receives restored original scale',3000);assert.equal((profileUpdates.at(-1)?.length??0),0);
   await sleep(300);assert.equal(playerFlags.at(-1)&0x20,0,'The real player remains hidden after leaving its model');
   a._testStep(.2,.1,.2); // Inputs cannot cancel the owned dive.
@@ -295,7 +295,7 @@ if(process.env.MOTIONRP_GIVE_ONLY==='1'){
   consoleCommand('deop '+an);consoleCommand('deop '+bn);consoleCommand('op '+cn);for(const name of [an,bn,cn])consoleCommand('clear '+name);await sleep(400);
   const sets=bot=>bot.inventory.items().filter(i=>i.name==='amethyst_shard').length;
   a.chat('/motionrp give controller');await waitFor(()=>sets(a)===1,'named non-OP receives controller');
-  a.chat('/motionrp give motion roll 1');await waitFor(()=>tokens(a)===1,'named non-OP receives motion token');
+  a.chat('/motionrp give motion fire_tornado 1');await waitFor(()=>tokens(a)===1,'named non-OP receives motion token');
   a.chat('/motionrp give all');await waitFor(()=>sets(a)===3,'named non-OP receives both full-controller pages');
   a.chat('/motionrp give controller '+bn);await waitFor(()=>sets(b)===1,'named non-OP may distribute to another player');
   pass('EmeraldREX91 without OP can use controller, motion and all give subcommands, including another recipient');
@@ -305,8 +305,8 @@ if(process.env.MOTIONRP_GIVE_ONLY==='1'){
   pass('The named exception does not grant status, configuration reload or pack publication');
   const denied=b._testMessages.length;b.chat('/motionrp give all');await waitFor(()=>b._testMessages.slice(denied).some(m=>m.includes('OPまたはEmeraldREX91')),'other non-OP is denied');assert.equal(sets(b),1);
   c.chat('/motionrp give controller');await waitFor(()=>sets(c)===1,'OP receives controller');
-  consoleCommand('deop '+cn);await sleep(300);const afterDeop=c._testMessages.length;c.chat('/motionrp give motion roll');await waitFor(()=>c._testMessages.slice(afterDeop).some(m=>m.includes('OPまたはEmeraldREX91')),'de-OP immediately loses give access');assert.equal(tokens(c),0);
-  consoleCommand('motionrp give motion roll 1 '+cn);await waitFor(()=>tokens(c)===1,'console distribution remains available');
+  consoleCommand('deop '+cn);await sleep(300);const afterDeop=c._testMessages.length;c.chat('/motionrp give motion fire_tornado');await waitFor(()=>c._testMessages.slice(afterDeop).some(m=>m.includes('OPまたはEmeraldREX91')),'de-OP immediately loses give access');assert.equal(tokens(c),0);
+  consoleCommand('motionrp give motion fire_tornado 1 '+cn);await waitFor(()=>tokens(c)===1,'console distribution remains available');
   pass('OP is allowed, other non-OPs and de-OPed players are denied, and console distribution still works');
  }catch(e){code=1;console.error(e.stack);}
  finally{for(const bot of bots)try{bot.quit();}catch{}try{await stopServer();}catch{}log?.end();fs.writeFileSync(path.join(project,'build/give-smoke-result.json'),JSON.stringify({passed:code===0,version,checks},null,2));}
@@ -382,7 +382,7 @@ if(process.env.MOTIONRP_INAZUMA_ONLY==='1'){
   consoleCommand('clear '+names[0]);await sleep(300);consoleCommand('motionrp give all '+names[0]);await waitFor(()=>a.inventory.items().filter(i=>i.name==='amethyst_shard').length===1,'one complete full-set item');
   const sets=a.inventory.items().filter(i=>i.name==='amethyst_shard');let total=0;
   for(const item of sets){if(item.slot>=36&&item.slot<45){a.setQuickBarSlot(item.slot-36);await sleep(300);}else await a.equip(item,'hand');await menu(a);total+=registered(a);await closeMenu(a);}
-  assert.equal(total,30);pass('give all distributes all 30 obtainable motions in one controller item');
+  assert.equal(total,29);pass('give all distributes all 29 obtainable motions in one controller item');
   // Cancel while airborne and verify no later projectile or stale pilot journal.
   consoleCommand('clear '+names[0]);await sleep(250);consoleCommand('motionrp give controller '+names[0]);consoleCommand('motionrp give motion eternal_blizzard 1 '+names[0]);await waitFor(()=>tokens(a)===1,'cancel shot item');await a.equip(a.inventory.items().find(i=>i.name==='amethyst_shard'),'hand');await menu(a);await deposit(a);await closeMenu(a);
   spawns.forEach(s=>s.clear());removed.forEach(s=>s.clear());const cancel=output.length,origin=a.entity.position.clone();a._testLeftClick();await waitFor(()=>a.entity.position.y>origin.y+1,'airborne before cancel');a._testLeftClick();await waitFor(cleanup,'cancel removes all effects');await waitFor(()=>a.entity.position.distanceTo(origin)<.03,'cancel restores pilot');await sleep(4000);assert.ok(!output.slice(cancel).includes(' kick tick='));
@@ -401,9 +401,9 @@ if(process.env.MOTIONRP_ACQUISITION_ONLY==='1'){
   let begin=output.length;consoleCommand('motionrp give motion infinity_castle 1 '+name);await waitFor(()=>output.slice(begin).includes('現在入手できません'),'console acquisition denied');assert.equal(tokens(a),0);
   consoleCommand('op '+name);await sleep(300);const messages=a._testMessages.length;a.chat('/motionrp give motion infinity_castle');await waitFor(()=>a._testMessages.slice(messages).some(m=>m.includes('現在入手できません')),'OP acquisition denied');assert.equal(tokens(a),0);
   begin=output.length;consoleCommand('motionprobe givepolicy '+name);await waitFor(()=>output.slice(begin).includes('GIVE_POLICY_OK'),'hidden give completion');pass('Console and OP cannot obtain Infinity Castle and give completions omit it');
-  consoleCommand('motionrp give all '+name);await waitFor(()=>a.inventory.items().some(i=>i.name==='amethyst_shard'),'full controller');await a.equip(a.inventory.items().find(i=>i.name==='amethyst_shard'),'hand');await menu(a);assert.equal(registered(a),30);assert.ok(!a.currentWindow.slots.slice(0,54).some(i=>i&&JSON.stringify(i).includes('infinity_castle')));await closeMenu(a);pass('The full controller contains the other 30 motions and excludes Infinity Castle');
-  consoleCommand('motionprobe oldcastle '+name);await waitFor(()=>tokens(a)===1,'preexisting castle token');await menu(a);await deposit(a);assert.equal(registered(a),31);assert.equal(tokens(a),0);await click(a,30);assert.equal(registered(a),30);assert.equal(tokens(a),1);await closeMenu(a);pass('Existing castle tokens and registered data can still be retained and withdrawn');
-  consoleCommand('motionrp give motion roll 1 '+name);await waitFor(()=>tokens(a)===2,'another motion remains obtainable');pass('Other individual motion distribution remains available');
+  consoleCommand('motionrp give all '+name);await waitFor(()=>a.inventory.items().some(i=>i.name==='amethyst_shard'),'full controller');await a.equip(a.inventory.items().find(i=>i.name==='amethyst_shard'),'hand');await menu(a);assert.equal(registered(a),29);assert.ok(!a.currentWindow.slots.slice(0,54).some(i=>i&&JSON.stringify(i).includes('infinity_castle')));await closeMenu(a);pass('The full controller contains the other 29 motions and excludes Infinity Castle');
+  consoleCommand('motionprobe oldcastle '+name);await waitFor(()=>tokens(a)===1,'preexisting castle token');await menu(a);await deposit(a);assert.equal(registered(a),31);assert.equal(tokens(a),0);await click(a,30);assert.equal(registered(a),29);assert.equal(tokens(a),1);await closeMenu(a);pass('Existing castle tokens and registered data can still be retained and withdrawn');
+  consoleCommand('motionrp give motion fire_tornado 1 '+name);await waitFor(()=>tokens(a)===2,'another motion remains obtainable');pass('Other individual motion distribution remains available');
   assert.ok(!/scene failed|Motion playback failed|Cannot read saved loadout/.test(output));
  }catch(e){code=1;console.error(e.stack);}
  finally{for(const bot of bots)try{bot.quit();}catch{}try{await stopServer();}catch{}log?.end();fs.rmSync(probeJar,{force:true});fs.writeFileSync(path.join(project,'build/acquisition-smoke-result.json'),JSON.stringify({passed:code===0,version,checks},null,2));}
@@ -418,9 +418,9 @@ if(process.env.MOTIONRP_EXPAND_ONLY==='1'){
   const suffix=String(Date.now()).slice(-5),an='ExpandA'+suffix,bn='ExpandB'+suffix;let a=await connect(an);const b=await connect(bn);
   async function probe(action,name){const begin=output.length;consoleCommand(`motionprobe ${action} ${name}`);await waitFor(()=>output.slice(begin).includes(`CANCEL_PROBE ${action} ${name}`),'probe '+action);return output.slice(begin);}
   async function inspect(name,selected,count,favorites=0){assert.ok((await probe('inspect',name)).includes(`SELECT_PROBE selected=${selected} count=${count} favorites=${favorites}`));}
-  consoleCommand('motionrp give all '+bn);await waitFor(()=>b.inventory.items().filter(i=>i.name==='amethyst_shard').length===1,'all 30 obtainable motions in one controller');await b.equip(b.inventory.items().find(i=>i.name==='amethyst_shard'),'hand');await menu(b);assert.equal(b.currentWindow.inventoryStart,54);assert.equal(registered(b),30);await closeMenu(b);
-  await probe('legacy27',bn);await menu(b);assert.equal(registered(b),27);assert.equal(b.currentWindow.inventoryStart,54);await closeMenu(b);await inspect(bn,26,27);pass('All 30 obtainable motions fit in one 54-slot controller; an old embedded 27-slot set retains its contents and selection');
-  consoleCommand('motionrp give controller '+an);consoleCommand('motionrp give motion roll 64 '+an);await waitFor(()=>tokens(a)===64,'registration tokens');await a.equip(a.inventory.items().find(i=>i.name==='amethyst_shard'),'hand');await menu(a);
+  consoleCommand('motionrp give all '+bn);await waitFor(()=>b.inventory.items().filter(i=>i.name==='amethyst_shard').length===1,'all 29 obtainable motions in one controller');await b.equip(b.inventory.items().find(i=>i.name==='amethyst_shard'),'hand');await menu(b);assert.equal(b.currentWindow.inventoryStart,54);assert.equal(registered(b),29);await closeMenu(b);
+  await probe('legacy27',bn);await menu(b);assert.equal(registered(b),27);assert.equal(b.currentWindow.inventoryStart,54);await closeMenu(b);await inspect(bn,26,27);pass('All 29 obtainable motions fit in one 54-slot controller; an old embedded 27-slot set retains its contents and selection');
+  consoleCommand('motionrp give controller '+an);consoleCommand('motionrp give motion fire_tornado 64 '+an);await waitFor(()=>tokens(a)===64,'registration tokens');await a.equip(a.inventory.items().find(i=>i.name==='amethyst_shard'),'hand');await menu(a);
   for(let i=0;i<27;i++)await deposit(a);assert.equal(registered(a),27);await closeMenu(a);await probe('legacy27',an);await menu(a);assert.equal(registered(a),27);
   for(let i=27;i<54;i++)await deposit(a);assert.equal(registered(a),54);assert.equal(tokens(a),10);await deposit(a);assert.equal(registered(a),54);assert.equal(tokens(a),10);await closeMenu(a);await inspect(an,26,54);pass('Old per-player data expands safely, slots 28–54 accept real tokens and a full GUI cannot consume a 55th token');
   async function selector(){a.setControlState('sneak',true);await sleep(250);a._testLookUp();a._client.write('use_item',{hand:'main_hand',sequence:1,rotation:{x:0,y:-60}});await waitFor(()=>a.currentWindow?.inventoryStart===45,'selector');a.setControlState('sneak',false);await sleep(250);}
@@ -448,7 +448,7 @@ if(process.env.MOTIONRP_SELECTOR_ONLY==='1'){
   const model=JSON.parse(execFileSync('unzip',['-p',zip,'assets/motionrp/models/item/controller.json'],{encoding:'utf8'}));assert.ok(model.elements.length>=20);
   assert.ok(execFileSync('unzip',['-p',zip,'assets/motionrp/textures/item/controller.png']).length>60);pass('BetterModel builds the dedicated remote item, geometry and texture into its existing pack');
   const name='Select'+String(Date.now()).slice(-5);let a=await connect(name);consoleCommand('motionrp give all '+name);consoleCommand('motionrp give all '+name);await waitFor(()=>a.inventory.items().filter(i=>i.name==='amethyst_shard').length===2,'two independent full controllers');
-  let pages=a.inventory.items().filter(i=>i.name==='amethyst_shard');await a.equip(pages[0],'hand');await menu(a);assert.equal(registered(a),30);await closeMenu(a);
+  let pages=a.inventory.items().filter(i=>i.name==='amethyst_shard');await a.equip(pages[0],'hand');await menu(a);assert.equal(registered(a),29);await closeMenu(a);
   async function inspect(selected,count,favorites){const begin=output.length;consoleCommand('motionprobe inspect '+name);await waitFor(()=>output.slice(begin).includes(`SELECT_PROBE selected=${selected} count=${count} favorites=${favorites} material=AMETHYST_SHARD`),'selection and favorites persisted');}
   async function selector(){a.setControlState('sneak',true);await sleep(250);a._testLookUp();a._client.write('use_item',{hand:'main_hand',sequence:1,rotation:{x:0,y:-60}});await waitFor(()=>a.currentWindow?.inventoryStart===45,'shift-right selection menu');a.setControlState('sneak',false);await sleep(250);}
   await selector();assert.equal(a.currentWindow.slots.slice(9,36).filter(i=>i?.name==='paper').length,27);
@@ -458,7 +458,7 @@ if(process.env.MOTIONRP_SELECTOR_ONLY==='1'){
   pages=a.inventory.items().filter(i=>i.name==='amethyst_shard');await a.equip(pages.find(i=>i.slot!==a.heldItem.slot),'hand');await selector();assert.equal(a.currentWindow.slots.slice(0,9).filter(i=>i?.name==='paper').length,0);await closeMenu(a);pass('Favorites belong to the held complete-set item and do not leak to another page');
   pages=a.inventory.items().filter(i=>i.name==='amethyst_shard');await a.equip(pages.find(i=>i.slot!==a.heldItem.slot),'hand');await disconnect(a);a=await connect(name);await inspect(26,30,9);
   let begin=output.length;consoleCommand('motionprobe legacy '+name);await waitFor(()=>output.slice(begin).includes('CANCEL_PROBE legacy'),'legacy controller prepared');await selector();await closeMenu(a);await inspect(26,30,9);pass('Reconnect and migration from the old carrot-on-a-stick preserve selected motion, escrow and favorites');
-  await selector();await click(a,40);await waitFor(()=>a.currentWindow?.inventoryStart===54,'registration button');assert.equal(registered(a),30);await click(a,26);assert.equal(registered(a),29);assert.equal(tokens(a),1);await deposit(a);assert.equal(registered(a),30);assert.equal(tokens(a),0);await closeMenu(a);pass('The selector links to registration, which still conserves deposited and withdrawn motion items');
+  await selector();await click(a,40);await waitFor(()=>a.currentWindow?.inventoryStart===54,'registration button');assert.equal(registered(a),29);await click(a,26);assert.equal(registered(a),29);assert.equal(tokens(a),1);await deposit(a);assert.equal(registered(a),29);assert.equal(tokens(a),0);await closeMenu(a);pass('The selector links to registration, which still conserves deposited and withdrawn motion items');
   assert.ok(!/scene failed|Motion playback failed|Cannot read saved loadout/.test(output));
  }catch(e){code=1;console.error(e.stack);}
  finally{for(const bot of bots)try{bot.quit();}catch{}try{await stopServer();}catch{}log?.end();fs.rmSync(probeJar,{force:true});fs.writeFileSync(path.join(project,'build/selector-smoke-result.json'),JSON.stringify({passed:code===0,version,checks},null,2));}
@@ -565,7 +565,7 @@ if(process.env.MOTIONRP_CANCEL_ONLY==='1'){
   consoleCommand('motionrp give controller '+bn);consoleCommand('motionrp give motion gigant_pistol 1 '+bn);await waitFor(()=>tokens(b)===1,'pistol token');await b.equip(b.inventory.items().find(i=>i.name==='amethyst_shard'),'hand');await menu(b);await deposit(b);await closeMenu(b);
   begin=output.length;b._testLeftClick();await waitFor(()=>output.slice(begin).includes('GigantPistol phase: INFLATE'),'second scene active');for(const action of ['zero','tiny','sameheld'])await probe(action,true,bn);await waitFor(()=>output.slice(begin).includes('GigantPistol giant fist impact'),'second scene reaches impact',15000);await sleep(4000);await probe('state',false,bn);pass('The shared fix also preserves Gigant Pistol through its full punch');
   // Basic animations without an effect still finish on the model callback.
-  await menu(a);await click(a,0);await closeMenu(a);consoleCommand('clear '+an+' minecraft:paper');await sleep(250);consoleCommand('motionrp give motion roll 1 '+an);await waitFor(()=>tokens(a)===1,'roll token');await menu(a);await deposit(a);await closeMenu(a);
+  await menu(a);await click(a,0);await closeMenu(a);consoleCommand('clear '+an+' minecraft:paper');await sleep(250);consoleCommand('motionrp give motion fire_tornado 1 '+an);await waitFor(()=>tokens(a)===1,'roll token');await menu(a);await deposit(a);await closeMenu(a);
   reset();a._testLeftClick();await waitFor(clean,'basic roll animation natural finish',15000);await last('アニメーション完了');pass('A basic animation without a scene still ends naturally');
   await menu(a);await click(a,0);await closeMenu(a);consoleCommand('clear '+an+' minecraft:paper');await sleep(250);consoleCommand('motionrp give motion fire_tornado 1 '+an);await waitFor(()=>tokens(a)===1,'aerial token');await menu(a);await deposit(a);await closeMenu(a);reset();await probe('rotate',false);begin=output.length;a._testLeftClick();await waitFor(()=>output.slice(begin).includes('Football-fire_tornado landing up='),'owned flight survives rotation modifications',20000);await waitFor(clean,'aerial cleanup',12000);await probe('unrotate',false);await last('演出完了');pass('Aerial teleports remain owned when another plugin changes only their yaw or pitch');
   let pair=output.length;a.chat('/motionrp balse');await waitFor(()=>b._testMessages.some(m=>m.includes('balse accept '+an)),'paired stop diagnosis invitation');b.chat('/motionrp accept');await waitFor(()=>output.slice(pair).includes('Balse phase: HANDS'),'paired stop diagnosis starts');await probe('hurt',false);let messages=b._testMessages.length;b.chat('/motionrp laststop');await waitFor(()=>b._testMessages.slice(messages).some(m=>m.includes('二人用の相手側: ダメージ')),'paired partner receives original stop cause');pass('Two-player stop diagnosis explains when the other participant caused the stop');
@@ -622,7 +622,7 @@ if(process.env.MOTIONRP_PISTOL_BALSE_ONLY==='1'){
   assert.ok(fireworks[0]>=6000&&fireworks[1]>=6000&&fireworks[2]===0);assert.ok(nearFlashes[0]>=10&&nearFlashes[1]>=10&&nearFlashes[2]===0,'White flashes appear directly in front of ON viewers only: '+JSON.stringify(nearFlashes));assert.ok(output.slice(begin).includes('whiteout: fireworks and eye-level white veil'));
   assert.ok(fx[0]>100&&fx[1]>100&&fx[2]===0);assert.equal(spawned[2].size,0);pass('Balse requires consent, emits one shared expanding light and many particles, then cleans both roles');
   reset();begin=output.length;a.chat('/motionrp balse');await sleep(500);b.chat('/motionrp accept');await waitFor(()=>output.slice(begin).includes('Balse phase: HANDS'),'pair restarted');b.chat('/motionrp balse cancel');await waitFor(clean,'cancel pair cleanup');await sleep(4000);assert.ok(!output.slice(begin).includes('shared flash released'));pass('Either participant can cancel Balse before release without a delayed flash');
-  consoleCommand('clear '+an);await sleep(300);consoleCommand('motionrp give all '+an);await waitFor(()=>a.inventory.items().filter(i=>i.name==='amethyst_shard').length===1,'one complete full-set item');let total=0;for(const item of a.inventory.items().filter(i=>i.name==='amethyst_shard')){if(item.slot>=36&&item.slot<45){a.setQuickBarSlot(item.slot-36);await sleep(300);}else await a.equip(item,'hand');await menu(a);total+=registered(a);await closeMenu(a);}assert.equal(total,30);pass('give all includes the new solo and pair entries in one set item');
+  consoleCommand('clear '+an);await sleep(300);consoleCommand('motionrp give all '+an);await waitFor(()=>a.inventory.items().filter(i=>i.name==='amethyst_shard').length===1,'one complete full-set item');let total=0;for(const item of a.inventory.items().filter(i=>i.name==='amethyst_shard')){if(item.slot>=36&&item.slot<45){a.setQuickBarSlot(item.slot-36);await sleep(300);}else await a.equip(item,'hand');await menu(a);total+=registered(a);await closeMenu(a);}assert.equal(total,29);pass('give all includes the new solo and pair entries in one set item');
   assert.ok(!/Entei scene failed|Balse scene failed|GigantPistol scene failed|Motion playback failed/.test(output));
  }catch(e){code=1;console.error(e.stack);}
  finally{for(const bot of bots)try{bot.quit();}catch{}try{await stopServer();}catch{}log?.end();fs.writeFileSync(path.join(project,'build/pistol-balse-smoke-result.json'),JSON.stringify({passed:code===0,version,checks},null,2));}
@@ -775,7 +775,7 @@ if(process.env.MOTIONRP_NOTICE_ONLY==='1'){
   const suffix=String(Date.now()).slice(-6),an='NoteA'+suffix,bn='NoteB'+suffix,cn='NoteC'+suffix,dn='NoteD'+suffix;
   const a=await connect(an),b=await connect(bn),c=await connect(cn),d=await connect(dn);c.chat('/motionrp view off');d.chat('/motionrp view off');
   for(const [name,x]of [[an,.5],[bn,3.5],[cn,6.5],[dn,100.5]])consoleCommand(`tp ${name} ${x} -60.0 0.5 0 0`);await sleep(500);
-  consoleCommand('motionrp give controller '+an);consoleCommand('motionrp give motion roll 1 '+an);await waitFor(()=>tokens(a)===1,'roll token');await a.equip(a.inventory.items().find(i=>i.name==='amethyst_shard'),'hand');await menu(a);await deposit(a);await closeMenu(a);
+  consoleCommand('motionrp give controller '+an);consoleCommand('motionrp give motion fire_tornado 1 '+an);await waitFor(()=>tokens(a)===1,'roll token');await a.equip(a.inventory.items().find(i=>i.name==='amethyst_shard'),'hand');await menu(a);await deposit(a);await closeMenu(a);
   const notices=bot=>bot._testMessages.filter(m=>m.includes('近くでモーションが再生'));const components=[];c.on('message',m=>{if(m.toString().includes('近くでモーションが再生'))components.push(m.json);});
   a._testLookUp();await sleep(200);a._testLeftClick();await waitFor(()=>notices(c).length===1,'nearby OFF warning');assert.ok(notices(c)[0].includes('演出表示がOFF'));assert.ok(JSON.stringify(components).includes('/motionrp view on'));assert.equal(notices(b).length,0);assert.equal(notices(d).length,0);assert.ok(!notices(c)[0].includes('リソパ'));pass('A nearby OFF viewer receives one clickable warning; ON and distant viewers do not, and an unknown local pack is not called missing');
   a.chat('/goalperformance stop');await sleep(300);a._testLeftClick();await sleep(700);assert.equal(notices(c).length,1);pass('Repeated nearby playback does not spam the same viewer inside the cooldown');
@@ -793,15 +793,15 @@ if(process.env.MOTIONRP_ALL_SET_ONLY==='1'){
   fs.copyFileSync(path.join(project,`build/libs/motionRP-${version}.jar`),path.join(run,'plugins/MotionRP.jar'));log=fs.createWriteStream(path.join(project,'build/all-set-smoke.log'));await startServer();
   const suffix=String(Date.now()).slice(-6),an='AllA'+suffix,bn='AllB'+suffix;let a=await connect(an),b=await connect(bn);
   for(const [name,x]of [[an,.5],[bn,4.5]])consoleCommand(`tp ${name} ${x} -60.0 0.5 0 0`);await sleep(400);
-  consoleCommand('motionrp give controller '+an);consoleCommand('motionrp give motion roll 1 '+an);await waitFor(()=>tokens(a)===1,'normal set materials');await a.equip(a.inventory.items().find(i=>i.name==='amethyst_shard'),'hand');await menu(a);await deposit(a);await closeMenu(a);const normal=(await readSaved(an)).loadout;
-  consoleCommand('motionrp give all '+an);await waitFor(()=>a.inventory.items().filter(i=>i.name==='amethyst_shard').length===2,'complete controller pages distributed');const normalSlot=36+a.quickBarSlot,full=a.inventory.items().find(i=>i.name==='amethyst_shard'&&i.slot!==normalSlot);assert.ok(full);await a.equip(full,'hand');await menu(a);assert.equal(registered(a),30);await closeMenu(a);assert.deepEqual((await readSaved(an)).loadout,normal);pass('The all command gives a separate 30-motion controller including paired scenes, leaving existing registration unchanged');
+  consoleCommand('motionrp give controller '+an);consoleCommand('motionrp give motion fire_tornado 1 '+an);await waitFor(()=>tokens(a)===1,'normal set materials');await a.equip(a.inventory.items().find(i=>i.name==='amethyst_shard'),'hand');await menu(a);await deposit(a);await closeMenu(a);const normal=(await readSaved(an)).loadout;
+  consoleCommand('motionrp give all '+an);await waitFor(()=>a.inventory.items().filter(i=>i.name==='amethyst_shard').length===2,'complete controller pages distributed');const normalSlot=36+a.quickBarSlot,full=a.inventory.items().find(i=>i.name==='amethyst_shard'&&i.slot!==normalSlot);assert.ok(full);await a.equip(full,'hand');await menu(a);assert.equal(registered(a),29);await closeMenu(a);assert.deepEqual((await readSaved(an)).loadout,normal);pass('The all command gives a separate 30-motion controller including paired scenes, leaving existing registration unchanged');
   const spawned=new Set(),removed=new Set();a._client.on('spawn_entity',p=>{if(p.type===a.registry.entitiesByName.item_display.id)spawned.add(p.entityId);});a._client.on('entity_destroy',p=>p.entityIds.forEach(id=>removed.add(id)));a._testLookUp();await sleep(200);a._testLeftClick();await waitFor(()=>spawned.size>0,'complete controller playback');await sleep(300);a._testLeftClick();await waitFor(()=>[...spawned].every(id=>removed.has(id)),'complete controller playback cancellation');pass('A preloaded motion plays directly from the full controller and cancels normally');
-  await menu(a);const before=tokens(a);await click(a,0);assert.equal(registered(a),29);assert.equal(tokens(a),before+1);await closeMenu(a);assert.deepEqual((await readSaved(an)).loadout,normal);await menu(a);await deposit(a);assert.equal(registered(a),30);await closeMenu(a);pass('Withdrawing and registering tokens changes only the held complete controller and conserves item counts');
+  await menu(a);const before=tokens(a);await click(a,0);assert.equal(registered(a),29);assert.equal(tokens(a),before+1);await closeMenu(a);assert.deepEqual((await readSaved(an)).loadout,normal);await menu(a);await deposit(a);assert.equal(registered(a),29);await closeMenu(a);pass('Withdrawing and registering tokens changes only the held complete controller and conserves item counts');
   // Bind the GUI to the controller selected when it opens, even if a client changes its hotbar underneath it.
   await menu(a);a.setQuickBarSlot((a.quickBarSlot+1)%9);await sleep(300);if(a.currentWindow){await click(a,0);await waitFor(()=>a.currentWindow===null,'mismatched set closes GUI');}assert.equal(tokens(a),0);assert.deepEqual((await readSaved(an)).loadout,normal);pass('Switching hotbar slots under the GUI cannot mutate a different set or release its tokens');
-  const allItem=a.inventory.items().find(i=>i.name==='amethyst_shard'&&JSON.stringify(i.components??i.nbt).includes('controller_set_id'));assert.ok(allItem,'Embedded controller metadata');await a.equip(allItem,'hand');await menu(a);assert.equal(registered(a),30);await closeMenu(a);a._testLookUp();a.setControlState('sneak',true);await sleep(250);a._testLeftClick();await sleep(300);a.setControlState('sneak',false);assert.deepEqual((await readSaved(an)).loadout,normal);pass('Cycling the full controller selection does not change the normal controller selection');
+  const allItem=a.inventory.items().find(i=>i.name==='amethyst_shard'&&JSON.stringify(i.components??i.nbt).includes('controller_set_id'));assert.ok(allItem,'Embedded controller metadata');await a.equip(allItem,'hand');await menu(a);assert.equal(registered(a),29);await closeMenu(a);a._testLookUp();a.setControlState('sneak',true);await sleep(250);a._testLeftClick();await sleep(300);a.setControlState('sneak',false);assert.deepEqual((await readSaved(an)).loadout,normal);pass('Cycling the full controller selection does not change the normal controller selection');
   // Copy to an empty hand then clear the source: exercise vanilla ItemStack/PDC portability without altering the recipient registration.
-  consoleCommand(`item replace entity ${bn} weapon.mainhand from entity ${an} weapon.mainhand`);consoleCommand(`item replace entity ${an} weapon.mainhand with air`);await waitFor(()=>b.inventory.items().some(i=>i.name==='amethyst_shard'),'controller transferred');await menu(b);assert.equal(registered(b),30);await click(b,0);assert.equal(registered(b),29);await closeMenu(b);await disconnect(b);b=await connect(bn);await menu(b);assert.equal(registered(b),29);await closeMenu(b);pass('The item carries its own registration to another player and retains edits across reconnect');
+  consoleCommand(`item replace entity ${bn} weapon.mainhand from entity ${an} weapon.mainhand`);consoleCommand(`item replace entity ${an} weapon.mainhand with air`);await waitFor(()=>b.inventory.items().some(i=>i.name==='amethyst_shard'),'controller transferred');await menu(b);assert.equal(registered(b),29);await click(b,0);assert.equal(registered(b),29);await closeMenu(b);await disconnect(b);b=await connect(bn);await menu(b);assert.equal(registered(b),29);await closeMenu(b);pass('The item carries its own registration to another player and retains edits across reconnect');
   const denied=b._testMessages.length;b.chat('/motionrp give all');await waitFor(()=>b._testMessages.slice(denied).some(m=>m.includes('OPまたはEmeraldREX91')),'give access required');pass('Other non-OP players cannot distribute complete sets');
   for(let slot=1;slot<9;slot++)consoleCommand(`item replace entity ${bn} hotbar.${slot} with stone 64`);for(let slot=0;slot<27;slot++)consoleCommand(`item replace entity ${bn} inventory.${slot} with stone 64`);await sleep(350);const begin=output.length;consoleCommand('motionrp give all '+bn);await waitFor(()=>output.slice(begin).includes('所持品に空き'),'full inventory rejected');assert.equal(b.inventory.items().filter(i=>i.name==='amethyst_shard').length,1);pass('A full inventory rejects distribution without replacing the existing controller');
   await a.equip(a.inventory.items().find(i=>i.name==='amethyst_shard'),'hand');await menu(a);assert.equal(registered(a),1);await closeMenu(a);pass('The original normal controller still opens its unchanged one-motion registration');
@@ -947,6 +947,63 @@ if(process.env.MOTIONRP_FINAL_BATTLE_ONLY==='1'){
  process.exit(code);
 }
 
+if(process.env.MOTIONRP_REVISION088_ONLY==='1'||process.env.MOTIONRP_REVISION088_ITEMS_ONLY==='1'){
+ let code=0;
+ try{
+  fs.copyFileSync(path.join(project,`build/libs/motionRP-${version}.jar`),path.join(run,'plugins/MotionRP.jar'));
+  log=fs.createWriteStream(path.join(project,'build/revision088-smoke.log'));await startServer();
+  const suffix=String(Date.now()).slice(-6),an='RevA'+suffix,bn='RevB'+suffix,cn='RevC'+suffix;
+  const a=await connect(an),b=await connect(bn),c=await connect(cn);c.chat('/motionrp view off');
+  consoleCommand(`tp ${an} 0 -60 0 0 0`);consoleCommand(`tp ${bn} 5 -60 0 0 0`);consoleCommand(`tp ${cn} 8 -60 0 0 0`);await sleep(500);
+  const spawned=[new Set(),new Set(),new Set()],removed=[new Set(),new Set(),new Set()],fx=[[],[],[]];
+  for(const [i,bot]of[a,b,c].entries()){
+   bot._client.on('spawn_entity',p=>{if(p.type===bot.registry.entitiesByName.item_display.id){spawned[i].add(p.entityId);removed[i].delete(p.entityId);}});
+   bot._client.on('entity_destroy',p=>p.entityIds.forEach(id=>removed[i].add(id)));
+   bot._client.on('world_particles',p=>fx[i].push(p));
+  }
+  const clean=()=>spawned.every((s,i)=>[...s].every(id=>removed[i].has(id)));
+  consoleCommand(`motionrp give motion roll 1 ${an}`);await waitFor(()=>output.includes('Unknown motion: roll'),'retired roll cannot be given');
+  consoleCommand(`motionrp give controller ${an}`);
+  await waitFor(()=>a.inventory.items().some(i=>i.name==='amethyst_shard'),'controller distribution');
+  const defs=process.env.MOTIONRP_REVISION088_ITEMS_ONLY==='1'?[]:[['kokuryuha','kokuryuha',320],['kokujo_tengen_myoo','kokujo_tengen_myoo',220],['titan_transform','Titan',244],['excalibur','Excalibur',176]];
+  for(const [slot,[id]]of defs.entries()){
+   consoleCommand(`motionrp give motion ${id} 1 ${an}`);await waitFor(()=>tokens(a)===1,id+' token');await menu(a);await deposit(a);assert.equal(registered(a),slot+1);await closeMenu(a);
+  }
+  await a.equip(a.inventory.items().find(i=>i.name==='amethyst_shard'),'hand');const origin=a.entity.position.clone(),health=[a.health,b.health];
+  for(const [slot,[id,prefix,duration]]of defs.entries()){
+   for(const s of spawned)s.clear();for(const f of fx)f.length=0;
+   let begin=output.length;a._testLeftClick();await waitFor(()=>output.slice(begin).includes(prefix+' phase:'),id+' starts');
+   if(id==='titan_transform'){
+    await waitFor(()=>output.slice(begin).includes('low shoulder tackle begins'),'tackle starts after growth',15000);
+    await waitFor(()=>output.slice(begin).includes('Titan phase: EXIT'),'tackle nape ejection',10000);
+    await waitFor(()=>a.entity.position.y>origin.y+9&&a.entity.position.y<origin.y+13,'human emerges from lowered animated nape');
+   }
+   await waitFor(()=>a.heldItem?.name==='amethyst_shard'&&clean(),id+' completes and restores hand',duration*50+12000);
+   assert.equal(spawned[2].size,0);assert.equal(fx[2].length,0);assert.deepEqual([a.health,b.health],health);
+   if(id==='kokuryuha'){
+    assert.ok(!/displays (dragon_|black_flame)/.test(output.slice(begin)),'no block models used for dragon or cloak');
+    assert.ok(fx[1].filter(p=>p.particle.type==='dust').length>1500,'dense black flame flight, return and mantle');assert.ok(!fx[1].some(p=>p.particle.type==='soul_fire_flame'));
+   }
+   if(id==='excalibur'){assert.ok(!output.slice(begin).includes('displays light_blade'),'no solid charge slab');assert.ok(fx[1].filter(p=>p.particle.type==='end_rod'&&p.y>origin.y+10).length>30,'tall particle charge');}
+   if(id==='titan_transform'){
+    assert.ok(Math.abs(a.entity.position.y-origin.y)<.1);const saved=await readSaved(an);assert.ok(!Object.keys(saved.data.BukkitValues||{}).some(k=>k.startsWith('motionrp:titan_')),'titan appearance/scale/recovery restored');
+    consoleCommand(`tp ${an} 0 -60 0 0 0`);await sleep(350);
+   }
+   pass(id+' finishes, restores state, respects OFF viewers and uses revised visuals');
+   for(const s of spawned)s.clear();begin=output.length;const off=fx[2].length;a._testLeftClick();
+   const cue=id==='kokuryuha'?'phase: CLOAK':id==='titan_transform'?'low shoulder tackle begins':id==='excalibur'?'raised light blade':'phase: WINDUP';
+   await waitFor(()=>output.slice(begin).includes(cue),id+' cancellation phase',22000);a._testLeftClick();await waitFor(()=>clean()&&a.heldItem?.name==='amethyst_shard',id+' cancel cleanup');
+   await sleep(300);const count=fx[0].length;await sleep(650);assert.equal(fx[0].length,count);assert.equal(fx[2].length,off);pass(id+' cancellation stops all particles and removes displays');
+   if(slot<defs.length-1){a.setControlState('sneak',true);await sleep(250);a._testLeftClick();await sleep(250);a.setControlState('sneak',false);await sleep(250);}
+  }
+  consoleCommand(`motionrp give all ${bn}`);await waitFor(()=>b.inventory.items().some(i=>i.name==='amethyst_shard'),'full set without test motion');await b.equip(b.inventory.items().find(i=>i.name==='amethyst_shard'),'hand');await menu(b);assert.equal(registered(b),29);assert.ok(!JSON.stringify(b.currentWindow.slots.slice(0,54)).includes('前転'));await closeMenu(b);pass('Retired roll is absent from the full 29-motion controller');
+  assert.ok(!/scene failed|Motion playback failed|Cannot hide first-person controller/.test(output));
+  await disconnect(a);await disconnect(b);await disconnect(c);await stopServer();
+ }catch(error){code=1;console.error(error.stack);}
+ finally{for(const bot of bots)try{bot.quit();}catch{}try{await stopServer();}catch{}log?.end();fs.writeFileSync(path.join(project,'build/revision088-result.json'),JSON.stringify({passed:code===0,version,checks},null,2));}
+ process.exit(code);
+}
+
 if(process.env.MOTIONRP_EPIC_ONLY==='1'||process.env.MOTIONRP_ROLLER_ONLY==='1'){
  let code=0;
  try{
@@ -978,7 +1035,7 @@ if(process.env.MOTIONRP_EPIC_ONLY==='1'||process.env.MOTIONRP_ROLLER_ONLY==='1')
   }
   pass(ids.length+' motion(s) stack to 64 and register in the expanded 27-slot GUI');
   await a.equip(a.inventory.items().find(i=>i.name==='amethyst_shard'),'hand');const health=[a.health,b.health],anchor=a.entity.position.clone();
-  const essential={road_roller:['the_world','the_world_upper','road_roller','arm_afterimage0','arm_afterimage11'],kokuryuha:['dragon_head','dragon_segment17','black_flame_cloak'],kokujo_tengen_myoo:['tengen_myoo'],chibaku_tensei:['gravity_core','attracted_rock0','attracted_rock71','attracted_rock143']};
+  const essential={road_roller:['the_world','the_world_upper','road_roller','arm_afterimage0','arm_afterimage11'],kokuryuha:[],kokujo_tengen_myoo:['tengen_myoo'],chibaku_tensei:['gravity_core','attracted_rock0','attracted_rock71','attracted_rock143']};
   for(const [i,id]of ids.entries()){
    if(i<Number(process.env.MOTIONRP_EPIC_START_AT||0)){a.setControlState('sneak',true);await sleep(250);a._testLeftClick();await sleep(250);a.setControlState('sneak',false);await sleep(250);continue;}
    clear();const begin=output.length,off=particles[2];a._testLeftClick();if(id==='kokujo_tengen_myoo'){await waitFor(()=>output.slice(begin).includes(id+' phase: WINDUP'),'following giant windup');const moved=a.entity.position.clone();moved.x+=1;a._testStep(1,0,0);Object.assign(a.entity.position,moved);await sleep(250);const query=output.length;consoleCommand('data get entity '+an+' Pos');await waitFor(()=>output.slice(query).replace(/\u001b\[[0-9;]*m/g,'').includes('['+moved.x+'d, '+moved.y.toFixed(1)+'d, '+moved.z+'d]'),'Myoo allows walking while the giant follows');a._testStep(-1,0,0);Object.assign(a.entity.position,anchor);}if(id==='chibaku_tensei'){await waitFor(()=>output.slice(begin).includes(id+' phase: MOON'),'all rocks have accumulated',30000);const rocks=[...output.slice(begin).matchAll(/chibaku_tensei displays attracted_rock\d+ ids=([0-9,]+)/g)];assert.equal(rocks.length,144);for(const rock of rocks)for(const entityId of rock[1].split(',').map(Number))assert.ok(!removed[0].has(entityId)&&!removed[1].has(entityId),'arrived rock remains visible on the completed sphere');}await waitFor(()=>output.slice(begin).includes(id+' phase: FADE'),id+' completes',30000);await waitFor(cleanup,id+' cleanup');
@@ -987,7 +1044,7 @@ if(process.env.MOTIONRP_EPIC_ONLY==='1'||process.env.MOTIONRP_ROLLER_ONLY==='1')
    if(id==='chibaku_tensei')assert.equal((output.slice(begin).match(/rock retained on shell index=/g)||[]).length,144);
    assert.ok(spawned[0].size>0&&spawned[1].size>0);assert.equal(spawned[2].size,0);assert.equal(particles[2],off);assert.deepEqual([a.health,b.health],health);assert.ok(a.entity.position.distanceTo(anchor)<.01);
    assert.ok(!(await readSaved(an)).data.BukkitValues?.['motionrp:aerial_return_v1']);pass(id+' renders for two ON viewers, remains hidden from OFF, finishes without damage and cleans up');
-   clear();const cancel=output.length;a._testLeftClick();await waitFor(()=>id==='road_roller'?a.entity.position.y>anchor.y+5:output.slice(cancel).includes(id+' displays '),'cancel '+id+' during effect');a._testLeftClick();await waitFor(cleanup,id+' cancelled cleanup');await sleep(600);assert.ok(cleanup());assert.ok(a.entity.position.distanceTo(anchor)<.01);pass(id+' cancellation clears every model and restores any flight state');
+   clear();const cancel=output.length;a._testLeftClick();await waitFor(()=>id==='road_roller'?a.entity.position.y>anchor.y+5:output.slice(cancel).includes(id+(id==='kokuryuha'?' phase: DRAGON':' displays ')),'cancel '+id+' during effect');a._testLeftClick();await waitFor(cleanup,id+' cancelled cleanup');await sleep(600);assert.ok(cleanup());assert.ok(a.entity.position.distanceTo(anchor)<.01);pass(id+' cancellation clears every model and restores any flight state');
    if(id==='kokuryuha'){for(const phase of ['RETURN','DEVOUR','CLOAK']){clear();const start=output.length;a._testLeftClick();await waitFor(()=>output.slice(start).includes('kokuryuha phase: '+phase),'black dragon '+phase,20000);a._testLeftClick();await waitFor(cleanup,'cancel black dragon '+phase);await sleep(600);assert.ok(cleanup());pass('black dragon '+phase+' cancellation removes all flame and dragon models');}}
    if(id==='road_roller'){clear();const after=output.length;a._testLeftClick();await waitFor(()=>output.slice(after).includes('displays arm_afterimage11'),'all arm ghosts start');a._testLeftClick();await waitFor(cleanup,'cancel rapid arm ghosts');await sleep(600);assert.ok(cleanup());assert.ok(!output.slice(after).includes('final road roller blast'));pass('cancelling during the arm barrage removes every afterimage and prevents the final blast');}
    if(i<ids.length-1){a.setControlState('sneak',true);await sleep(250);a._testLeftClick();await sleep(250);a.setControlState('sneak',false);await sleep(250);}
@@ -1346,7 +1403,7 @@ if(process.env.MOTIONRP_NOBLE_ONLY==='1') {
       await waitFor(()=>output.slice(start).includes(prefix+' phase: FADE'),prefix+' smoke release',20000);
       const entries=[...output.slice(start).matchAll(new RegExp(prefix+' displays (\\w+) ids=([0-9,]+)','g'))].map(m=>({kind:m[1],ids:m[2].split(',').map(Number)}));
       assert.equal(entries.filter(e=>e.kind.startsWith('beam')).length,segments);
-      if(prefix==='Excalibur')for(const kind of ['light_blade','wavefront','light_pillar'])assert.ok(entries.some(e=>e.kind===kind),kind+' present');
+      if(prefix==='Excalibur')for(const kind of ['wavefront','light_pillar'])assert.ok(entries.some(e=>e.kind===kind),kind+' present');
       for(const role of ['owner','observer']) assert.ok(entries.every(e=>e.ids.some(id=>(items[role].get(id)?.itemCount||0)>0)));
       await waitFor(()=>['owner','observer'].every(role=>[...spawned[role]].every(id=>removed[role].has(id))),prefix+' smoke cleanup');
       assert.deepEqual([a.health,b.health],health);pass(prefix+' final model reload, release, both-client display and cleanup');
@@ -1356,7 +1413,7 @@ if(process.env.MOTIONRP_NOBLE_ONLY==='1') {
     a.setControlState('sneak',false);await sleep(300);
     for(const kind of ['light_blade','wavefront']){
       const begin=output.length;for(const role of ['owner','observer'])spawned[role].clear();a._testLeftClick();
-      await waitFor(()=>output.slice(begin).includes('Excalibur displays '+kind),'Excalibur '+kind+' before cancellation');a._testLeftClick();
+      await waitFor(()=>output.slice(begin).includes(kind==='light_blade'?'Excalibur raised light blade':'Excalibur displays '+kind),'Excalibur '+kind+' before cancellation');a._testLeftClick();
       await waitFor(()=>['owner','observer'].every(role=>[...spawned[role]].every(id=>removed[role].has(id))),'Excalibur '+kind+' cancellation cleanup');
       await sleep(1200);assert.ok(!output.slice(begin).includes('Excalibur displays light_pillar'));
       pass('cancelling Excalibur '+kind+' removes every effect and prevents the impact pillar');
@@ -1447,7 +1504,7 @@ try {
       .replace(/  gate_of_babylon:\n[\s\S]*?(?=  susanoo:)/, '')
       .replace(/  susanoo:\n[\s\S]*?(?=  rasenshuriken:)/, '')
       .replace(/  rasenshuriken:\n[\s\S]*?(?=  rasengan:)/, '')
-      .replace(/  rasengan:\n[\s\S]*?(?=  roll:)/, ''));
+      .replace(/  rasengan:\n[\s\S]*?(?=\ncontroller:)/, ''));
   // Mineflayer currently supports 26.1. Official Via plugins adapt the test
   // clients to a real 26.3 server; MotionRP still runs against the 26.3 API.
   for (const [name, checksum] of [
@@ -1516,7 +1573,7 @@ generate-structures=false
   let a = await connect('MotionTesterA');
   let b = await connect('MotionTesterB');
   consoleCommand('motionrp give controller MotionTesterA');
-  consoleCommand('motionrp give motion roll 64 MotionTesterA');
+  consoleCommand('motionrp give motion fire_tornado 64 MotionTesterA');
   await waitFor(() => tokens(a) === 64, 'stack of 64 motion items');
   assert.ok(a.inventory.items().some(i => i.name === 'amethyst_shard' && i.count === 1));
   pass('controller distribution and stack of 64 identical motion tokens');
@@ -1626,7 +1683,7 @@ generate-structures=false
   await menu(a);
   await deposit(a);
   await closeMenu(a);
-  consoleCommand('motionrp give motion roll 1 MotionTesterA');
+  consoleCommand('motionrp give motion fire_tornado 1 MotionTesterA');
   await waitFor(() => tokens(a) === 64, 'full paper stack');
   const empty = a.inventory.emptySlotCount();
   consoleCommand('give MotionTesterA minecraft:stone ' + (empty * 64));

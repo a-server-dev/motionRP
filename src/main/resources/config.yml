@@ -2,7 +2,7 @@
 debug-input: false
 
 # BetterModel/players にあるプレイヤーモデルを指定します。
-# 標準の steve.bbmodel に含まれる roll を初期モーションとして使用します。
+# モーションは専用モデルと演出を使用します。
 motions:
   entei:
     name: 大炎戒・炎帝
@@ -184,14 +184,6 @@ motions:
     animation: rasengan
     effect: rasengan
     max-ticks: 140
-  roll:
-    name: 前転
-    model: steve
-    animation: roll
-    # ループ設定に関係なく1回だけ再生します。安全のための終了上限（tick）。
-    max-ticks: 100
-    # 任意。配布するリソースパック側に対応するアイテムモデルが必要です。
-    # item-model: motionrp:roll
 
 controller:
   name: モーションセット

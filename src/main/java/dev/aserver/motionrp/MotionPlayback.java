@@ -45,7 +45,7 @@ public final class MotionPlayback {
             return "黄金の門の回転アニメーションが未登録";
         if(definition.effect().equals("senbonzakura") && BetterModel.modelOrNull(SummonAssets.CHERRY_PETALS).animation("swirl").isEmpty())
             return "千本桜の旋回アニメーションが未登録";
-        if(definition.effect().equals("titan_transform") && (model.animation("titan_idle").isEmpty() || BetterModel.modelOrNull(SummonAssets.TITAN_BODY).animation("titan_idle").isEmpty())) return "巨人化の待機アニメーションが未登録";
+        if(definition.effect().equals("titan_transform") && (model.animation("titan_idle").isEmpty() || model.animation("titan_tackle").isEmpty() || BetterModel.modelOrNull(SummonAssets.TITAN_BODY).animation("titan_tackle").isEmpty())) return "巨人化モデルの待機・タックルアニメーションを更新してください";
         if (Set.of("rasengan", "rasenshuriken").contains(definition.effect())) {
             if (model.animation("rasengan_helper").isEmpty()) return "分身アニメーションが未登録: rasengan_helper";
             var orb = BetterModel.modelOrNull(definition.effect().equals("rasenshuriken") ? BundledModels.SHURIKEN_ORB : BundledModels.ORB);

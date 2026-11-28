@@ -1,6 +1,7 @@
 package dev.aserver.motionrp;
 
 import dev.aserver.motionrp.core.TitanTimeline;
+import dev.aserver.motionrp.core.TitanTacklePath;
 import kr.toxicity.model.api.BetterModel;
 import kr.toxicity.model.api.animation.*;
 import kr.toxicity.model.api.bukkit.platform.BukkitAdapter;
@@ -58,6 +59,11 @@ final class TitanScene extends SummonScene {
             Location current=owner.getLocation();current.setPitch(0);giant.location(BukkitAdapter.adapt(current));
             if(tick==GROWN) trace("scale="+owner.getAttribute(org.bukkit.attribute.Attribute.SCALE).getBaseValue()+" skin="+(state.bundledSkin()?"bundled:titan.png":state.skin().getPath()));
         }
+        if(tick==TACKLE && giant!=null){giant.stopAnimation("titan_idle");giant.animate("titan_tackle",AnimationModifier.DEFAULT_WITH_PLAY_ONCE);trace("low shoulder tackle begins");}
+        if(tick>=DRIVE && giant!=null){
+            giant.location(BukkitAdapter.adapt(at(0,tackleDistance(tick),0)));giant.forceUpdate(true);
+            if(tick%4==0){Location foot=at(0,tackleDistance(tick),.2);particle(foot,Particle.DUST_PLUME,12,1.8,.04);sound(foot,Sound.ENTITY_IRON_GOLEM_STEP,.7f,.6f);}
+        }
         if(tick>=FLASH && tick<GROWN+8 && tick%4==2) {
             double a=(tick-FLASH)*.9;Location location=at(Math.cos(a)*2.8,Math.sin(a)*2.8,0);
             bolts.add(new Bolt(model(SummonAssets.TITAN_BOLT,location,2,"lightning"+tick),tick+6));
@@ -92,12 +98,13 @@ final class TitanScene extends SummonScene {
             var registry=body.registry();
             for(var viewer:registry.viewedPlayer().toList()) registry.remove(viewer.player());
             state.restoreAppearance();registry.refresh();
-            trace("nape exit height="+NAPE_HEIGHT+" tick="+tick);
+            trace("nape exit height="+TitanTacklePath.at(EXIT).height()+" tick="+tick);
             sound(at(0,-1.8,NAPE_HEIGHT),Sound.ENTITY_PLAYER_BREATH,.9f,.8f);
         }
         if(tick>=EXIT && tick<=LAND) {
             var pose=exitPose(tick,landing.getY()-origin.getY());
-            Location next=at(0,pose.forward(),pose.height());
+            double lateral=TitanTacklePath.at(EXIT).right()*(1-Math.clamp((tick-EXIT)/(double)(LAND-EXIT),0,1));
+            Location next=at(lateral,pose.forward(),pose.height());
             next.setYaw(owner.getLocation().getYaw());next.setPitch(owner.getLocation().getPitch());
             if(!move(next,tick==EXIT)) { plugin.playback().stop(owner.getUniqueId());return; }
             owner.setFallDistance(0);owner.setVelocity(new Vector());
