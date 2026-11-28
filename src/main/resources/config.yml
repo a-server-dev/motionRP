@@ -4,6 +4,12 @@ debug-input: false
 # BetterModel/players にあるプレイヤーモデルを指定します。
 # モーションは専用モデルと演出を使用します。
 motions:
+  night_guy:
+    name: 夜ガイ
+    model: motionrp_night_guy
+    animation: night_guy
+    effect: night_guy
+    max-ticks: 246
   entei:
     name: 大炎戒・炎帝
     model: motionrp_entei
