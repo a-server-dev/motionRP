@@ -393,7 +393,7 @@ class RasenganAssetsTest {
         }
         var weapon=read("models/motionrp_getsuga_tensa.bbmodel");var clip=weapon.getAsJsonArray("animations").get(0).getAsJsonObject();
         String socket=weapon.getAsJsonArray("groups").asList().stream().map(JsonElement::getAsJsonObject).filter(g->g.get("name").getAsString().equals("sword_socket")).findFirst().orElseThrow().get("uuid").getAsString();
-        double[] rot=sample(clip,socket,"rotation",(BarrierSlashTimeline.GETSUGA_RELEASE-(BarrierSlashTimeline.GETSUGA_PREFIX+8))/20.0);double rx=Math.toRadians(rot[0]),ry=Math.toRadians(rot[1]),rz=Math.toRadians(rot[2]);
+        double[] rot=sample(clip,socket,"rotation",BarrierSlashTimeline.GETSUGA_RELEASE/20.0);double rx=Math.toRadians(rot[0]),ry=Math.toRadians(rot[1]),rz=Math.toRadians(rot[2]);
         double x=Math.cos(rz)*Math.sin(ry)*Math.sin(rx)-Math.sin(rz)*Math.cos(rx),y=Math.sin(rz)*Math.sin(ry)*Math.sin(rx)+Math.cos(rz)*Math.cos(rx);
         assertTrue(x<-.2 && y<-.6,"Forceful sword cut must finish diagonally down-left");
         var names=weapon.getAsJsonArray("elements").asList().stream().map(e->e.getAsJsonObject().get("name").getAsString()).toList();

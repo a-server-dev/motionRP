@@ -3,7 +3,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
-/** Grip midpoint and blade tip are baked from the same two-hand swing as the player. */
+/** The clearing swing, two-hand grip and blade tip are baked from the player choreography. */
 public final class GetsugaBladePath {
     public record Blade(RasenganHandPath.Hand grip,RasenganHandPath.Hand tip) {}
     private static final Blade[] PATH;

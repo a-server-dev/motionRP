@@ -15,7 +15,7 @@ class HollowMaskTest {
   Map<String,JsonObject> groups=new HashMap<>();Map<String,String> parents=new HashMap<>();String head=null;
   for(var raw:actor.getAsJsonArray("groups")){var g=raw.getAsJsonObject();String id=g.get("uuid").getAsString();groups.put(id,g);if(g.get("name").getAsString().equals("h_ph_head"))head=id;}
   var math=new RasenganAssetsTest();math.parentTree(actor.getAsJsonArray("outliner"),null,parents);
-  for(int tick:new int[]{12,26,44,72,94,100,140,175})for(var raw:mask.getAsJsonArray("elements")){
+  for(int tick:new int[]{12,26,44,48,52,56,68,96,118,124,164,199})for(var raw:mask.getAsJsonArray("elements")){
    var mesh=raw.getAsJsonObject();Map<String,double[]> world=new HashMap<>();
    for(var entry:mesh.getAsJsonObject("vertices").entrySet()){var v=entry.getValue().getAsJsonArray();world.put(entry.getKey(),math.posedPoint(head,new double[]{v.get(0).getAsDouble(),22.5+v.get(1).getAsDouble(),v.get(2).getAsDouble()},tick/20.0,clip,groups,parents));}
    Set<Set<String>> seen=new HashSet<>();

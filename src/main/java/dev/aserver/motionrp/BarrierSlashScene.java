@@ -19,12 +19,12 @@ final class BarrierSlashScene extends SummonScene {
     private final java.util.Set<Player> maskHeard=new java.util.HashSet<>();
     private final java.util.Set<Player> chargingHeard=new java.util.HashSet<>();private DummyTracker sword,wave;
     private double reach=29.5,hitDistance=32;private int impactTick=GETSUGA_IMPACT;private boolean impacted;
-    private static final Particle.DustOptions PINK=new Particle.DustOptions(Color.fromRGB(255,115,202),1.2f),RED=new Particle.DustOptions(Color.fromRGB(226,15,61),1.5f),BLACK=new Particle.DustOptions(Color.fromRGB(15,4,20),2);
+    private static final Particle.DustOptions PINK=new Particle.DustOptions(Color.fromRGB(255,115,202),1.2f),VIOLET=new Particle.DustOptions(Color.fromRGB(166,52,245),1.5f),BLACK=new Particle.DustOptions(Color.fromRGB(15,4,20),2);
     BarrierSlashScene(MotionPlugin plugin,Player owner,EntityTracker body,boolean shield){
         super(plugin,owner,shield?"RhoAias":"GetsugaTensho",end(shield));this.shield=shield;this.body=body;
         body.rotation(()->new ModelRotation(0,origin.getYaw()));body.update(TrackerUpdateAction.moveDuration(0));
     }
-    @Override String phase(){return shield?(tick<16?"PREPARE":tick<72?"UNFURL":tick<146?"HOLD":"FADE"):(tick<GETSUGA_PREFIX?"HOLLOW_MASK":tick<GETSUGA_CHARGE?"DRAW":tick<GETSUGA_RELEASE?"CHARGE":tick<impactTick?"FLIGHT":tick<GETSUGA_FADE?"IMPACT":"FADE");}
+    @Override String phase(){return shield?(tick<16?"PREPARE":tick<72?"UNFURL":tick<146?"HOLD":"FADE"):(tick<GETSUGA_PREFIX?"HOLLOW_MASK":tick<GETSUGA_FLOURISH_END?"FLOURISH":tick<GETSUGA_CHARGE?"DRAW":tick<GETSUGA_RELEASE?"CHARGE":tick<impactTick?"FLIGHT":tick<GETSUGA_FADE?"IMPACT":"FADE");}
     @Override void update(){
         body.update(TrackerUpdateAction.togglePart(false),b->Set.of("pri_right_item","pli_left_item").contains(b.name().rawName()));
         if(shield)barrier();else slash();
@@ -64,16 +64,29 @@ final class BarrierSlashScene extends SummonScene {
     }
     private void slash(){
         hollowMask();
-        if(tick<GETSUGA_PREFIX)return;
-        if(tick==GETSUGA_PREFIX+8){sword=model("motionrp_getsuga_tensa",palm(),.65f,"tensa_zangetsu");sword.update(TrackerUpdateAction.moveDuration(0));sword.animate("cut",AnimationModifier.DEFAULT_WITH_PLAY_ONCE);sound(palm(),Sound.ITEM_ARMOR_EQUIP_NETHERITE,.8f,.8f);}
+        if(tick==0){sword=model("motionrp_getsuga_tensa",palm(),.65f,"tensa_zangetsu");sword.update(TrackerUpdateAction.moveDuration(0));sword.animate("cut",AnimationModifier.DEFAULT_WITH_PLAY_ONCE);sound(palm(),Sound.ITEM_ARMOR_EQUIP_NETHERITE,.8f,.8f);}
         if(sword!=null){sword.location(BukkitAdapter.adapt(palm()));sword.rotation(()->new ModelRotation(0,origin.getYaw()));sword.forceUpdate(true);}
+        if(tick==GETSUGA_PREFIX)trace("one-handed clearing swing begins after mask");
+        if(tick>=50 && tick<=58){
+            var now=GetsugaBladePath.at(tick);var before=GetsugaBladePath.at(tick-1);
+            for(int i=0;i<7;i++)for(int j=0;j<3;j++){
+                double blade=.3+i*.7/6,time=j/2.0;
+                var a=before.grip();var b=before.tip();var c=now.grip();var d=now.tip();
+                Location point=at((a.right()+(b.right()-a.right())*blade)*(1-time)+(c.right()+(d.right()-c.right())*blade)*time,
+                    (a.forward()+(b.forward()-a.forward())*blade)*(1-time)+(c.forward()+(d.forward()-c.forward())*blade)*time,
+                    (a.height()+(b.height()-a.height())*blade)*(1-time)+(c.height()+(d.height()-c.height())*blade)*time);
+                dust(point,BLACK,1,.025);dust(point,VIOLET,1,.015);
+            }
+            if(tick==52){sound(palm(),Sound.ENTITY_PLAYER_ATTACK_SWEEP,.8f,1.2f);trace("clearing swing trails blade; no projectile");}
+        }
+        if(tick==GETSUGA_FLOURISH_END)trace("clearing swing ends; both hands prepare overhead");
         if(tick>=GETSUGA_CHARGE && tick<GETSUGA_RELEASE){
             var blade=GetsugaBladePath.at(tick);var tip=blade.tip();var grip=blade.grip();
             for(int j=0;j<9;j++){
                 double f=.23+j*.77/8;Location p=at(grip.right()+(tip.right()-grip.right())*f,grip.forward()+(tip.forward()-grip.forward())*f,grip.height()+(tip.height()-grip.height())*f);
                 dust(p,BLACK,5,.09);particle(p,Particle.LARGE_SMOKE,2,.07,.018);
                 if(tick%2==0)particle(p,Particle.SQUID_INK,1,.06,.025);
-                if(j%3==0)dust(p,RED,1,.04);
+                if(j%3==0){dust(p,VIOLET,1,.04);if(tick%4==0)particle(p,Particle.END_ROD,1,.04,.008);}
             }
             if(tick%3==0){dust(at(0,0,.12),BLACK,3,.32);particle(at(0,0,.15),Particle.SMOKE,1,.25,.01);}
         }
@@ -100,12 +113,12 @@ final class BarrierSlashScene extends SummonScene {
             }
             for(int j=0;j<13;j++){
                 double a=-1.4+j*2.8/12,y=2.4*Math.sin(a);Location p=at(y*Math.sin(Math.toRadians(35)),d+2.4*Math.cos(a),2.5+y*Math.cos(Math.toRadians(35)));
-                dust(p,BLACK,6,.18);dust(p,RED,3,.1);particle(p,Particle.SMOKE,2,.15,.015);
+                dust(p,BLACK,6,.18);dust(p,VIOLET,3,.1);particle(p,Particle.SMOKE,2,.15,.015);
             }
             if(tick%2==0)particle(at(0,Math.max(0,d-.5),2.5),Particle.SQUID_INK,6,.4,.04);
         }
         if(!impacted && tick>=GETSUGA_RELEASE && tick>=impactTick){
-            impacted=true;audience.hide(wave);wave=null;for(int i=0;i<2;i++){audience.hide(trails[i]);trails[i]=null;}Location p=at(0,hitDistance,.5);flash(p,Color.fromRGB(255,67,100));particle(p,Particle.EXPLOSION,2,.5,0);particle(p,Particle.DUST_PLUME,45,1.3,.045);particle(p,Particle.CLOUD,45,1,.07);dust(p,RED,70,1.7);sound(p,Sound.ENTITY_GENERIC_EXPLODE,1.8f,.65f);trace("crescent impact distance="+hitDistance+" tick="+tick);
+            impacted=true;audience.hide(wave);wave=null;for(int i=0;i<2;i++){audience.hide(trails[i]);trails[i]=null;}Location p=at(0,hitDistance,.5);flash(p,Color.fromRGB(255,67,100));particle(p,Particle.EXPLOSION,2,.5,0);particle(p,Particle.DUST_PLUME,45,1.3,.045);particle(p,Particle.CLOUD,45,1,.07);dust(p,VIOLET,70,1.7);sound(p,Sound.ENTITY_GENERIC_EXPLODE,1.8f,.65f);trace("crescent impact distance="+hitDistance+" tick="+tick);
         }
 
         if(tick==GETSUGA_FADE){audience.hide(sword);sword=null;}

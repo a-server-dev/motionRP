@@ -9,7 +9,7 @@ from generate_energy import mesh_model,add_mesh,glow
 from generate_rasengan import hand_path
 from hollow_kinematics import sampler,matrix,mul,vector,euler
 PINK=[(188,34,119,255),(232,66,157,255),(255,139,210,255),(255,210,241,255),(138,22,94,255),(246,104,185,255),(255,173,228,255),(255,244,253,255)]
-DARK=[(9,5,15,255),(35,8,28,255),(110,9,37,255),(235,22,65,255),(255,77,101,255),(160,16,47,255),(255,163,175,255),(255,230,231,255)]
+DARK=[(9,5,15,255),(28,8,40,255),(72,16,120,255),(142,42,235,255),(211,110,255,255),(95,22,160,255),(229,180,255,255),(255,238,255,255)]
 def shield():
     m=mesh_model('motionrp_rho_aias_shield',PINK);a=animation('bloom',1,{})
     def dome(rad,tan):return -8.5*math.sqrt(max(0,1-min(1,(rad*rad+tan*tan)/(18*18))))
@@ -144,7 +144,68 @@ def actors(rig):
             generate(m,end)
 
 
+def reference_getsuga():
+    """Mask -> one-handed clearing swing -> two-handed overhead charge -> release."""
+    model=json.loads((ROOT/'players/motionrp_getsuga_tensho.bbmodel').read_text())
+    clip=model['animations'][0];assert clip['length']==8.8,'Regenerate the base choreography before refining it'
+    groups={g['name']:g for g in model['groups']};tracks=clip['animators'];end=200
+    # Insert 24 ticks before the existing overhead draw. Keep the solved two-hand
+    # grip and the planted-foot finishing stroke, retimed together as one unit.
+    for track in tracks.values():
+        for key in track['keyframes']:
+            if key['time']>=2.2:key['time']=round(key['time']+1.2,8)
+    clip['length']=end/20
+    def extend(name,keys):
+        track=tracks[groups[name]['uuid']]
+        replacements=player_animator(groups[name],[(t/20,q)for t,q in keys])['keyframes']
+        times={k['time']for k in replacements}
+        track['keyframes']=[k for k in track['keyframes'] if k['time']not in times]+replacements
+        track['keyframes'].sort(key=lambda k:k['time'])
+    extend('pla_left_arm',[(36,(0,0,-8)),(44,(0,0,-8)),(52,(8,0,-15)),(60,(4,0,-12)),(68,(0,0,0))])
+    extend('plfa_left_forearm',[(36,(0,0,0)),(44,(0,0,0)),(52,(-12,0,0)),(60,(-8,0,0)),(68,(0,0,0))])
+    extend('pra_right_arm',[(36,(0,0,0)),(44,(-72,-30,32)),(48,(-100,-35,46)),(52,(-68,12,-22)),(56,(-28,25,-38)),(62,(-12,10,-12)),(68,(0,0,0))])
+    extend('prfa_right_forearm',[(36,(0,0,0)),(44,(-55,0,0)),(48,(-40,0,0)),(52,(-18,0,0)),(56,(-8,0,0)),(62,(-5,0,0)),(68,(0,0,0))])
+    extend('pw_waist',[(36,(0,0,0)),(44,(0,-8,0)),(48,(0,-10,0)),(52,(0,4,0)),(56,(0,12,0)),(62,(0,5,0)),(68,(0,0,0))])
+    extend('pc_chest',[(36,(0,0,0)),(44,(0,-15,0)),(48,(0,-18,0)),(52,(0,8,0)),(56,(0,20,0)),(62,(0,10,0)),(68,(0,0,0))])
+    extend('h_ph_head',[(36,(0,0,0)),(44,(0,18,0)),(48,(0,20,0)),(52,(0,-8,0)),(56,(0,-22,0)),(62,(0,-10,0)),(68,(0,0,0))])
+    save('players/motionrp_getsuga_tensho.bbmodel',model)
+    right=[[float(v)for v in row.split(',')]for row in hand_path(model,end).splitlines()]
+    (ROOT/'getsuga_tensho-hand-path.csv').write_text(hand_path(model,end))
+    (ROOT/'getsuga_tensho-left-hand-path.csv').write_text(hand_path(model,end,'pli_left_item'))
+    head=[]
+    for row in hand_path(model,end,'h_ph_head').splitlines():
+        p=[float(v)for v in row.split(',')];p[1]-=.05;p[2]-=.03;head.append(','.join(f'{v:.8f}'for v in p))
+    (ROOT/'getsuga_tensho-head-path.csv').write_text('\n'.join(head)+'\n')
+    def sample(keys,t):
+        lo=max((k for k in keys if k[0]<=t),default=keys[0]);hi=min((k for k in keys if k[0]>=t),default=keys[-1]);f=(t-lo[0])/(hi[0]-lo[0])if hi[0]!=lo[0]else 0
+        return tuple(a*(1-f)+b*f for a,b in zip(lo[1],hi[1]))
+    flourish=[(0,(-100,0,0)),(36,(-100,0,0)),(44,(-10,0,-75)),(48,(20,0,-12)),(52,(-70,0,35)),(56,(-135,0,-35)),(62,(-105,0,10)),(68,(-68,0,0)),(76,(-20,0,0))]
+    rotation=sampler(model);rows=[];weapon_keys=[];previous=None
+    for tick,palm in enumerate(right):
+        old=max(0,tick-68)
+        if tick<76:pitch,yaw,roll=sample(flourish,tick)
+        elif old<28:f=max(0,min(1,(old-8)/20));pitch=-20+55*f;yaw=0;roll=-25*f
+        elif old<=50:pitch,yaw,roll=35,0,-25
+        elif old<=56:f=(old-50)/6;pitch=35-160*f;yaw=0;roll=-25-20*f
+        elif old<=106:pitch,yaw,roll=-125,0,-45
+        else:f=(old-106)/26;pitch=-125+105*f;yaw=0;roll=-45+45*f
+        total=mul(rotation('pc_chest',tick/20),matrix(pitch,yaw,roll));axis_source=vector(total,[0,1,0]);axis=[axis_source[0],-axis_source[2],axis_source[1]]
+        grip=[v-a*(1.75/16*max(0,min(1,(tick-68)/8)))for v,a in zip(palm,axis)]
+        tip=[v+a*(35.7*.65/16)for v,a in zip(grip,axis)];rows.append(','.join(f'{v:.8f}'for v in grip+tip))
+        angles=euler(total)
+        if previous:
+            for i in range(3):
+                while angles[i]-previous[i]>180:angles[i]-=360
+                while angles[i]-previous[i]<-180:angles[i]+=360
+        previous=angles;weapon_keys.append((tick/20,angles))
+    (ROOT/'getsuga_tensho-blade-path.csv').write_text('\n'.join(rows)+'\n')
+    weapon=json.loads((ROOT/'models/motionrp_getsuga_tensa.bbmodel').read_text());socket=next(g for g in weapon['groups']if g['name']=='sword_socket');edge=next(g for g in weapon['groups']if g['name']=='edge_down_roll');weapon['animations']=[animation('cut',end/20,{socket['uuid']:animator(socket,weapon_keys),edge['uuid']:animator(edge,[(0,(0,-90,0)),(end/20,(0,-90,0))])})]
+    save('models/motionrp_getsuga_tensa.bbmodel',weapon)
+    from generate_hollow_mask import generate
+    generate(model,end)
+
+
 if __name__=='__main__':
     raw=Path(sys.argv[1]).read_bytes()
     if hashlib.sha256(raw).hexdigest()!=RIG_SHA:raise ValueError('Not the pinned rig')
-    shield();crescent();weapon();actors(json.loads(raw))
+    shield();crescent();weapon();actors(json.loads(raw));reference_getsuga()
