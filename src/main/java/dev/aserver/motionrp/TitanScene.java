@@ -56,11 +56,14 @@ final class TitanScene extends SummonScene {
             body.update(TrackerUpdateAction.togglePart(false));
             double value=TitanTimeline.scale(tick,state.originalScale());state.scale(value);
             giant.scaler(ModelScaler.value((float)Objects.requireNonNull(owner.getAttribute(org.bukkit.attribute.Attribute.SCALE)).getValue()));
-            if(tick<DRIVE){Location current=owner.getLocation();current.setPitch(0);giant.location(BukkitAdapter.adapt(current));}
+            if(tick<SPRINT){Location current=owner.getLocation();current.setPitch(0);giant.location(BukkitAdapter.adapt(current));}
             if(tick==GROWN) trace("scale="+owner.getAttribute(org.bukkit.attribute.Attribute.SCALE).getBaseValue()+" skin="+(state.bundledSkin()?"bundled:titan.png":state.skin().getPath()));
         }
-        if(tick==TACKLE && giant!=null){giant.stopAnimation("titan_idle");giant.animate("titan_tackle",AnimationModifier.DEFAULT_WITH_PLAY_ONCE);trace("low shoulder tackle begins");}
-        if(tick>=DRIVE && giant!=null){
+        if(tick==SPRINT&&giant!=null){giant.stopAnimation("titan_idle");giant.animate("titan_sprint",AnimationModifier.DEFAULT_WITH_PLAY_ONCE);trace("giant sprint begins distance=50 duration=20");}
+        if(tick==TACKLE)trace("giant sprint complete distance=50 duration=20");
+        if(tick==TACKLE && giant!=null){giant.stopAnimation("titan_idle");giant.stopAnimation("titan_sprint");giant.animate("titan_tackle",AnimationModifier.DEFAULT_WITH_PLAY_ONCE);trace("low shoulder tackle begins");}
+        if(tick>=SPRINT && giant!=null){
+            if(tick<EXIT){Location run=at(0,tackleDistance(tick),0);run.setYaw(origin.getYaw());run.setPitch(owner.getPitch());if(!move(run,false)){plugin.playback().stop(owner.getUniqueId(),"巨人の疾走経路が塞がれています");return;}}
             giant.location(BukkitAdapter.adapt(at(0,tackleDistance(tick),0)));giant.forceUpdate(true);
             if(tick%4==0){Location foot=at(0,tackleDistance(tick),.2);particle(foot,Particle.DUST_PLUME,12,1.8,.04);sound(foot,Sound.ENTITY_IRON_GOLEM_STEP,.7f,.6f);}
         }
@@ -96,7 +99,7 @@ final class TitanScene extends SummonScene {
         }
         if(tick==GROWN) sound(at(0,0,10),Sound.ENTITY_ENDER_DRAGON_GROWL,1,.6f);
         if(tick==EXIT) {
-            landing=ground(at(0,-5,0));
+            landing=ground(at(0,LANDING_FORWARD,0));
             if(landing==null) { plugin.playback().stop(owner.getUniqueId());return; }
             landing.subtract(0,.12,0);
             state.prepareExit(origin);
@@ -131,7 +134,7 @@ final class TitanScene extends SummonScene {
         int steps=emerge?1:Math.max(1,(int)Math.ceil(delta.length()/.15));
         for(int i=1;i<=steps;i++) {
             Vector offset=delta.clone().multiply(i/(double)steps);Location point=from.clone().add(offset);
-            for(double x:new double[]{-.5,.5}) for(double z:new double[]{-.5,.5})
+            for(double x:new double[]{-owner.getBoundingBox().getWidthX()/2,owner.getBoundingBox().getWidthX()/2}) for(double z:new double[]{-owner.getBoundingBox().getWidthZ()/2,owner.getBoundingBox().getWidthZ()/2})
                 if(!point.getWorld().isChunkLoaded((int)Math.floor(point.getX()+x)>>4,(int)Math.floor(point.getZ()+z)>>4)) return false;
             if(!point.getWorld().getWorldBorder().isInside(point) || owner.wouldCollideUsing(owner.getBoundingBox().shift(offset))) return false;
         }

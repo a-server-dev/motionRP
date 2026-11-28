@@ -10,14 +10,14 @@ public final class BlackFlameMantle {
    double p=j/9.,seed=lobe*13+tongue*2.39996;
    double flicker=Math.sin(tick*.19+seed),length=.88+.19*Math.sin(seed*1.7)+.07*flicker;
    double center=lobe==0?0:lobe==1?-.65:.65;
-   double drift=lobe==0?.45*Math.sin(seed):lobe==1?-3.0:3.65;
+   double drift=lobe==0?(tongue-3)*.22+.25*Math.sin(seed):lobe==1?-1.35+.35*Math.sin(seed):1.65+.35*Math.sin(seed);
    double x=center+drift*p*length+(tongue-3)*.15*Math.sin(Math.PI*p)+.22*Math.sin(p*7+seed+tick*.08)*p;
-   double y=(lobe==0?2.05:1.45)+p*(lobe==0?3.7:2.5)*length+.24*Math.sin(p*5+seed)*p;
+   double y=(lobe==0?2.05:1.45)+p*(lobe==0?1.3:1.1)*length+.24*Math.sin(p*5+seed)*p;
    points.add(new Point(x,-.65-.35*p+.1*Math.sin(seed),y));
   }
   for(int i=0;i<12;i++)for(int j=0;j<3;j++){
    double side=i%2==0?1:-1,p=j/2.,age=((tick+i*7)%37)/37.;
-   points.add(new Point(side*(1.05+(i%5)*.37+.2*Math.sin(i+age*5)), -.7-.2*Math.cos(i),.2+(i%4)*.55+age*.9+p*.4));
+   points.add(new Point(side*(1.0+(i%5)*.22+.2*Math.sin(i+age*5)), -.7-.2*Math.cos(i),.2+(i%4)*.4+age*.6+p*.25));
   }
   return points;
  }

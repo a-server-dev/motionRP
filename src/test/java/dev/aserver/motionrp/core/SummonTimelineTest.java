@@ -68,8 +68,8 @@ class SummonTimelineTest {
             var end=TitanTimeline.exitPose(TitanTimeline.LAND,ground);
             assertEquals(TitanTacklePath.at(TitanTimeline.EXIT).height(),start.height());assertEquals(TitanTimeline.tackleDistance(TitanTimeline.EXIT)+TitanTacklePath.at(TitanTimeline.EXIT).forward(),start.forward());
             assertTrue(start.height()<13&&start.height()>8,"Exit follows lowered shoulder tackle");
-            assertEquals("TACKLE",TitanTimeline.phase(TitanTimeline.TACKLE));
-            assertEquals(ground,end.height(),1e-9);assertEquals(-5,end.forward());
+            assertEquals("BODY_CHECK",TitanTimeline.phase(TitanTimeline.TACKLE));
+            assertEquals(ground,end.height(),1e-9);assertEquals(TitanTimeline.LANDING_FORWARD,end.forward());
             for(int tick=TitanTimeline.DIVE+1;tick<=TitanTimeline.LAND;tick++) {
                 var before=TitanTimeline.exitPose(tick-1,ground);var next=TitanTimeline.exitPose(tick,ground);
                 assertTrue(next.height()<before.height());assertTrue(next.forward()<before.forward());

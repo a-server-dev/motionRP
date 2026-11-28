@@ -10,7 +10,8 @@ import org.bukkit.util.Vector;
 /** Red steam and a particle-only dragon accompany the owner's full-body flying kick. */
 final class NightGuyScene extends SummonScene {
  private final AerialAnchor pilot;
- private double reach=28;
+ private double reach=28,runReach=RUN_DISTANCE;
+ private Location landing;
  private Location impact;
  private static final Particle.DustOptions RED=new Particle.DustOptions(Color.fromRGB(235,24,35),2.2f),DARK=new Particle.DustOptions(Color.fromRGB(72,3,8),2.6f),HOT=new Particle.DustOptions(Color.fromRGB(255,155,105),1.2f);
  NightGuyScene(MotionPlugin plugin,Player owner,EntityTracker body){
@@ -40,13 +41,29 @@ final class NightGuyScene extends SummonScene {
    }
   }
   if(tick>=DRAGON&&tick<RECOVER){dragon();if(tick==DRAGON){trace("red particle dragon forms around caster");sound(origin,Sound.ENTITY_ENDER_DRAGON_GROWL,1.4f,.7f);}}
+  if(tick==RUN){
+   for(double d=.2;d<=RUN_DISTANCE;d+=.2){Location p=at(0,d,0);Location floor=safe(p)?ground(p):null;
+    if(floor==null||Math.abs(floor.getY()-.12-origin.getY())>.25){runReach=Math.max(0,d-.4);break;}
+   }
+   trace("sprint begins distance="+runReach+" duration="+(LEAP-RUN));
+   sound(origin,Sound.ENTITY_BREEZE_SHOOT,1.7f,.7f);
+  }
   if(tick==DASH){
-   // Sweep the entire prospective body path before the fast kick. Never load chunks or cross a wall.
-   for(double d=.2;d<=reach+3;d+=.2)if(!safe(at(0,d,4))){reach=Math.max(0,d-3.0);break;}
+   for(double d=.2;d<=reach+3;d+=.2)if(!safe(at(0,runReach+d,4))){reach=Math.max(0,d-3.0);break;}
+   for(int step=0;step<=(int)Math.ceil(reach/.25);step++){double d=Math.max(0,reach-step*.25);
+    Location floor=ground(at(0,runReach+d,0));
+    if(floor!=null){floor.subtract(0,.12,0);if(safe(floor)){landing=floor;reach=d;break;}}
+   }
+   if(landing==null){plugin.playback().stop(owner.getUniqueId(),"着地できる地面がありません");return;}
    trace("kick dash reach="+reach);sound(owner.getLocation(),Sound.ENTITY_BREEZE_SHOOT,2,.55f);
   }
-  if(tick>=LEAP&&tick<RETURN){
-   if(!move(at(0,forward(tick,reach),height(tick)))){plugin.playback().stop(owner.getUniqueId(),"突進経路が塞がれています");return;}
+  if(tick>=RUN&&tick<=LANDED){
+   double h=height(tick);
+   if(landing!=null&&tick>=RECOVER)h+=(landing.getY()-origin.getY())*ease((tick-RECOVER)/(double)(LANDED-RECOVER));
+   if(!move(at(0,forward(tick,runReach,reach),h))){plugin.playback().stop(owner.getUniqueId(),"突進経路が塞がれています");return;}
+   if(tick<LEAP&&tick%2==0){particle(owner.getLocation(),Particle.DUST_PLUME,5,.25,.025);sound(owner.getLocation(),Sound.ENTITY_PLAYER_ATTACK_SWEEP,.3f,1.8f);}
+   if(tick==LEAP)trace("sprint complete distance="+runReach+" duration="+(LEAP-RUN));
+   if(tick==LANDED){pilot.finishAtCurrent();trace("landed at kick endpoint; no return");sound(owner.getLocation(),Sound.ENTITY_GENERIC_SMALL_FALL,.8f,.9f);}
   }
   if(tick==IMPACT){
    impact=relative(0,2.7,1.1);for(Player p:audience.players())p.spawnParticle(Particle.FLASH,impact,1,0,0,0,0,Color.fromRGB(255,92,65));
@@ -57,12 +74,7 @@ final class NightGuyScene extends SummonScene {
    double age=tick-IMPACT,r=1+age*.27;
    for(int i=0;i<28;i++){double a=i*Math.PI/14;dust(impact.clone().add(at(Math.cos(a)*r,0,Math.sin(a)*r*.7).toVector().subtract(origin.toVector())),RED,2,.12);}
   }
-  if(tick>=RETURN&&tick<=LANDED){
-   double p=ease((tick-RETURN)/(double)(LANDED-RETURN));
-   // Retrace the corridor rather than interpolate diagonally through nearby scenery.
-   if(!move(at(0,reach*(1-p),0))){plugin.playback().stop(owner.getUniqueId(),"帰還経路が塞がれています");return;}
-   if(tick==LANDED){pilot.close();trace("returned to cast origin");}
-  }
+
  }
  private void dragon(){
   double grow=ease((tick-DRAGON)/20.),fade=tick<IMPACT?1:1-ease((tick-IMPACT)/(double)(RECOVER-IMPACT));

@@ -77,23 +77,25 @@ def titan():
  p=ROOT/'players/motionrp_titan_transform.bbmodel';m=json.loads(p.read_text());groups={g['name']:g for g in m['groups']}
  a=animation('titan_tackle',5.4,{});a['override']=True
  # Actual Blockbench rotations: torso folds forward while knees bend into a low drive.
- poses={'player_root':[(0,(0,0,0)),(.7,(-10,25,-4)),(1.5,(-25,70,-12)),(2,(-28,70,-12)),(5.4,(-28,70,-12))],
- 'pw_waist':[(0,(0,0,0)),(1.5,(-8,0,0)),(5.4,(-8,0,0))],
- 'pc_chest':[(0,(0,0,0)),(1.5,(-5,10,0)),(5.4,(-5,10,0))],
- 'h_ph_head':[(0,(-10,0,0)),(1.5,(28,-65,0)),(5.4,(28,-65,0))],
- 'pra_right_arm':[(0,(5,0,15)),(1.5,(35,0,-12)),(5.4,(35,0,-12))],
- 'pla_left_arm':[(0,(5,0,-15)),(1.5,(-20,0,-12)),(5.4,(-20,0,-12))],
- 'prfa_right_forearm':[(0,(0,0,0)),(1.5,(120,0,0)),(5.4,(120,0,0))],
- 'plfa_left_forearm':[(0,(0,0,0)),(1.5,(65,0,0)),(5.4,(65,0,0))],
- 'prl_right_leg':[(0,(0,0,0)),(.7,(40,0,12)),(1.5,(80,0,14)),(5.4,(80,0,14))],
- 'pll_left_leg':[(0,(0,0,0)),(.7,(45,0,-12)),(1.5,(90,0,-14)),(5.4,(90,0,-14))],
- 'prfl_right_foreleg':[(0,(0,0,0)),(.7,(-80,0,0)),(1.5,(-100,0,0)),(5.4,(-100,0,0))],
- 'plfl_left_foreleg':[(0,(0,0,0)),(.7,(-80,0,0)),(1.5,(-115,0,0)),(5.4,(-115,0,0))]}
- for name,keys in poses.items():a['animators'][groups[name]['uuid']]=animator(groups[name],keys)
- m['animations']=[x for x in m['animations'] if x['name']!='titan_tackle']+[a];save('players/motionrp_titan_transform.bbmodel',m)
+ poses={'player_root':[(0,(0,0,0)),(.15,(-10,25,-4)),(.35,(-25,70,-12)),(.5,(-28,70,-12)),(5.4,(-28,70,-12))],
+ 'pw_waist':[(0,(0,0,0)),(.35,(-8,0,0)),(5.4,(-8,0,0))],
+ 'pc_chest':[(0,(0,0,0)),(.35,(-5,10,0)),(5.4,(-5,10,0))],
+ 'h_ph_head':[(0,(-10,0,0)),(.35,(28,-65,0)),(5.4,(28,-65,0))],
+ 'pra_right_arm':[(0,(5,0,15)),(.35,(35,0,-12)),(5.4,(35,0,-12))],
+ 'pla_left_arm':[(0,(5,0,-15)),(.35,(-20,0,-12)),(5.4,(-20,0,-12))],
+ 'prfa_right_forearm':[(0,(0,0,0)),(.35,(120,0,0)),(5.4,(120,0,0))],
+ 'plfa_left_forearm':[(0,(0,0,0)),(.35,(65,0,0)),(5.4,(65,0,0))],
+ 'prl_right_leg':[(0,(0,0,0)),(.15,(40,0,12)),(.35,(80,0,14)),(5.4,(80,0,14))],
+ 'pll_left_leg':[(0,(0,0,0)),(.15,(45,0,-12)),(.35,(90,0,-14)),(5.4,(90,0,-14))],
+ 'prfl_right_foreleg':[(0,(0,0,0)),(.15,(-80,0,0)),(.35,(-100,0,0)),(5.4,(-100,0,0))],
+ 'plfl_left_foreleg':[(0,(0,0,0)),(.15,(-80,0,0)),(.35,(-115,0,0)),(5.4,(-115,0,0))]}
+ sprint_end={'player_root':(-8,0,0),'pw_waist':(-18,0,0),'pc_chest':(-8,-4,0),'h_ph_head':(25,0,0),'pra_right_arm':(50,0,12),'pla_left_arm':(-50,0,-12),'prfa_right_forearm':(60,0,0),'plfa_left_forearm':(100,0,0),'prl_right_leg':(-55,0,8),'pll_left_leg':(55,0,-8),'prfl_right_foreleg':(-90,0,0),'plfl_left_foreleg':(-40,0,0)}
+ for name,keys in poses.items():
+  keys[0]=(0,sprint_end[name]);a['animators'][groups[name]['uuid']]=animator(groups[name],keys)
+ m['animations']=[x for x in m['animations'] if x['name']not in ('titan_tackle','titan_sprint')]+[a];save('players/motionrp_titan_transform.bbmodel',m)
  body=json.loads((ROOT/'models/motionrp_titan_body.bbmodel').read_text());b=copy.deepcopy(a);bg={g['uuid']:g for g in body['groups']}
  for uid,t in b['animators'].items():t['name']=bg[uid]['name']
- body['animations']=[x for x in body['animations'] if x['name']!='titan_tackle']+[b];save('models/motionrp_titan_body.bbmodel',body)
+ body['animations']=[x for x in body['animations'] if x['name']not in ('titan_tackle','titan_sprint')]+[b];save('models/motionrp_titan_body.bbmodel',body)
  # Ground the bent knees by lowering the whole rig, then bake the actual nape position.
  from hollow_kinematics import matrix,vector
  parents={}
@@ -125,5 +127,7 @@ def titan():
  b=copy.deepcopy(a)
  for uid,t in b['animators'].items():t['name']=bg[uid]['name']
  body['animations'][-1]=b;save('models/motionrp_titan_body.bbmodel',body)
+ from generate_titan_sprint import generate
+ generate()
 
 if __name__=='__main__':refine_myoo();titan()

@@ -42,7 +42,10 @@ class TackleAndArmorTest {
   var hip=math.posedOrigin(names.get("phip_hip"),2.5,clip,groups,parents);
   assertTrue(right[2]<left[2]-6,"Right shoulder, not both shoulders together, must lead the charge");
   assertTrue(right[2]<hip[2]-3,"Leading shoulder must pass ahead of the hips");
-  assertEquals(14,TitanTimeline.tackleDistance(TitanTimeline.DRIVE+32));
-  assertEquals(-5,TitanTimeline.exitPose(TitanTimeline.LAND,0).forward());
+  assertEquals(64,TitanTimeline.tackleDistance(TitanTimeline.DRIVE+32));
+  for(int tick=TitanTimeline.SPRINT;tick<TitanTimeline.TACKLE;tick++)assertEquals(2.5,TitanTimeline.sprintDistance(tick+1)-TitanTimeline.sprintDistance(tick),1e-9);
+  var run=m.getAsJsonArray("animations").asList().stream().map(JsonElement::getAsJsonObject).filter(a->a.get("name").getAsString().equals("titan_sprint")).findFirst().orElseThrow();
+  for(String name:List.of("h_ph_head","pra_right_arm","pla_left_arm","prfl_right_foreleg","plfl_left_foreleg"))assertArrayEquals(math.posedOrigin(names.get(name),1,run,groups,parents),math.posedOrigin(names.get(name),0,clip,groups,parents),1e-5,"Sprint must flow into the shoulder check without a pose reset");
+  assertEquals(TitanTimeline.LANDING_FORWARD,TitanTimeline.exitPose(TitanTimeline.LAND,0).forward());
  }
 }

@@ -190,7 +190,7 @@ async function verifyTitanRecovery(a,b,{sceneDisplays,sceneRemoved,removedByRole
   assert.ok(Math.abs(scaleUpdates.at(-1)-1.25)<.001,'Scale did not restore: '+scaleUpdates.at(-1));
   assert.ok(profileUpdates.every(urls=>urls.length===0),'Original empty test-player texture properties did not restore');
   assert.ok(Math.abs(a.entity.position.y-titanOrigin.y)<.01);
-  assert.ok(Math.abs(a.entity.position.z-(titanOrigin.z-5))<.01);assert.deepEqual([a.health,b.health],titanHealth);
+  assert.ok(Math.abs(a.entity.position.z-(titanOrigin.z+45))<.01);assert.deepEqual([a.health,b.health],titanHealth);
   assert.ok([...nativeLightning].every(id=>removedByRole.observer.has(id)));
   pass('real player dives five blocks behind the giant, lands without damage and all lightning/models clean up');
 
@@ -965,26 +965,28 @@ if(process.env.MOTIONRP_TACKLE090_ONLY==='1'||process.env.MOTIONRP_REVISION090_O
   consoleCommand(`motionrp give motion roll 1 ${an}`);await waitFor(()=>output.includes('Unknown motion: roll'),'retired roll cannot be given');
   consoleCommand(`motionrp give controller ${an}`);
   await waitFor(()=>a.inventory.items().some(i=>i.name==='amethyst_shard'),'controller distribution');
-  const defs=process.env.MOTIONRP_TACKLE090_ONLY==='1'?[['titan_transform','Titan',244]]:process.env.MOTIONRP_REVISION090_ONLY==='1'?[['kokuryuha','kokuryuha',320],['titan_transform','Titan',244]]:process.env.MOTIONRP_NIGHT_GUY_ONLY==='1'?[['night_guy','NightGuy',236]]:process.env.MOTIONRP_REVISION088_ITEMS_ONLY==='1'?[]:[['kokuryuha','kokuryuha',320],['kokujo_tengen_myoo','kokujo_tengen_myoo',220],['titan_transform','Titan',244],['excalibur','Excalibur',176]];
+  const defs=process.env.MOTIONRP_TACKLE090_ONLY==='1'?[['titan_transform','Titan',244]]:process.env.MOTIONRP_REVISION090_ONLY==='1'?[['kokuryuha','kokuryuha',320],['titan_transform','Titan',244]]:process.env.MOTIONRP_NIGHT_GUY_ONLY==='1'?[['night_guy','NightGuy',226]]:process.env.MOTIONRP_REVISION088_ITEMS_ONLY==='1'?[]:[['kokuryuha','kokuryuha',320],['kokujo_tengen_myoo','kokujo_tengen_myoo',220],['titan_transform','Titan',244],['excalibur','Excalibur',176]];
   for(const [slot,[id]]of defs.entries()){
    consoleCommand(`motionrp give motion ${id} 1 ${an}`);await waitFor(()=>tokens(a)===1,id+' token');await menu(a);await deposit(a);assert.equal(registered(a),slot+1);await closeMenu(a);
   }
   await a.equip(a.inventory.items().find(i=>i.name==='amethyst_shard'),'hand');const origin=a.entity.position.clone(),health=[a.health,b.health];
   for(const [slot,[id,prefix,duration]]of defs.entries()){
+   if(id==='titan_transform'){consoleCommand('fill -4 -60 0 4 -35 75 minecraft:air');await sleep(350);}
    for(const s of spawned)s.clear();for(const f of fx)f.length=0;
    let begin=output.length;a._testLeftClick();await waitFor(()=>output.slice(begin).includes(prefix+' phase:'),id+' starts');
+   if(id==='night_guy'){await waitFor(()=>/sprint complete distance=50(?:\.0)? duration=20/.test(output.slice(begin)),'twenty-tick fifty-block sprint',15000);await waitFor(()=>Math.abs(a.entity.position.z-origin.z-50)<.1,'ground sprint actually reaches fifty blocks');}
    if(id==='titan_transform'){
-    await waitFor(()=>output.slice(begin).includes('low shoulder tackle begins'),'tackle starts after growth',15000);
+    await waitFor(()=>output.slice(begin).includes('giant sprint complete distance=50 duration=20'),'full sprint before shoulder check',15000);await waitFor(()=>a.entity.position.z>origin.z+49&&a.entity.position.z<origin.z+52,'giant physically sprints fifty blocks');await waitFor(()=>output.slice(begin).includes('low shoulder tackle begins'),'body check after sprint',15000);
     await waitFor(()=>output.slice(begin).includes('Titan phase: EXIT'),'tackle nape ejection',10000);
-    await waitFor(()=>Math.abs(a.entity.position.y-origin.y-Number(fs.readFileSync(path.join(project,'src/main/resources/bettermodel/titan-tackle-nape.csv'),'utf8').trim().split('\n')[50].split(',')[2]))<1.2,'human emerges from lowered animated nape');
+    await waitFor(()=>Math.abs(a.entity.position.y-origin.y-Number(fs.readFileSync(path.join(project,'src/main/resources/bettermodel/titan-tackle-nape.csv'),'utf8').trim().split('\n')[20].split(',')[2]))<1.2,'human emerges from lowered animated nape');
    }
    await waitFor(()=>a.heldItem?.name==='amethyst_shard'&&clean(),id+' completes and restores hand',duration*50+12000);
    assert.equal(spawned[2].size,0);assert.equal(fx[2].length,0);assert.deepEqual([a.health,b.health],health);
    if(id==='kokuryuha'){
-    assert.ok(output.slice(begin).includes('displays dragon_head')&&output.slice(begin).includes('displays returning_dragon_head'),'dragon head present on outward and returning flight');assert.ok(!/displays (dragon_segment|black_flame)/.test(output.slice(begin)),'body and wings stay particles');assert.ok(output.slice(begin).includes('ragged black flame mantle; crown and torn side plumes; arms lowered'));assert.ok(fx[1].some(p=>p.particle.type==='dust'&&Math.abs(p.x-origin.x)>3.5&&p.z<origin.z-.5),'wings spread laterally behind caster');
+    assert.ok(output.slice(begin).includes('displays dragon_head')&&output.slice(begin).includes('displays returning_dragon_head'),'dragon head present on outward and returning flight');assert.ok(!/displays (dragon_segment|black_flame)/.test(output.slice(begin)),'body and wings stay particles');assert.ok(output.slice(begin).includes('ragged black flame mantle; crown and torn side plumes; arms lowered'));assert.ok(fx[1].some(p=>p.particle.type==='dust'&&Math.abs(p.x-origin.x)>1.7&&p.z<origin.z-.5),'compact flames spread behind caster');
     assert.ok(fx[1].filter(p=>p.particle.type==='dust').length>1500,'dense black flame flight, return and mantle');assert.ok(!fx[1].some(p=>p.particle.type==='soul_fire_flame'));
    }
-   if(id==='night_guy'){assert.ok(fx[1].filter(p=>p.particle.type==='dust').length>2000,'red dragon and steam reach observers');assert.ok(a.entity.position.distanceTo(origin)<.02,'normal kick returns to origin');assert.ok(!(await readSaved(an)).data.BukkitValues?.['motionrp:aerial_return_v1']);assert.ok(output.slice(begin).includes('flying kick impact;'));}
+   if(id==='night_guy'){assert.ok(fx[1].filter(p=>p.particle.type==='dust').length>2000,'red dragon and steam reach observers');assert.ok(Math.abs(a.entity.position.z-origin.z-78)<.1,'normal kick stays at far endpoint');assert.ok(Math.abs(a.entity.position.y-origin.y)<.15,'lands at endpoint');assert.ok(output.slice(begin).includes('landed at kick endpoint; no return'));consoleCommand(`tp ${an} 0 -60 0 0 0`);await sleep(350);assert.ok(!(await readSaved(an)).data.BukkitValues?.['motionrp:aerial_return_v1']);assert.ok(output.slice(begin).includes('flying kick impact;'));}
    if(id==='excalibur'){assert.ok(!output.slice(begin).includes('displays light_blade'),'no solid charge slab');assert.ok(fx[1].filter(p=>p.particle.type==='end_rod'&&p.y>origin.y+10).length>30,'tall particle charge');}
    if(id==='titan_transform'){
     {const pose=output.slice(begin).match(/live shoulder check rightLead=([-0-9.E]+) crossLead=([-0-9.E]+)/);assert.ok(pose,'live BetterModel shoulder body check');assert.ok(Number(pose[1])>1,'right shoulder leads hips: '+pose[0]);assert.ok(Number(pose[2])>3,'right shoulder leads left shoulder: '+pose[0]);}
@@ -994,9 +996,9 @@ if(process.env.MOTIONRP_TACKLE090_ONLY==='1'||process.env.MOTIONRP_REVISION090_O
    pass(id+' finishes, restores state, respects OFF viewers and uses revised visuals');
    for(const s of spawned)s.clear();begin=output.length;const off=fx[2].length;a._testLeftClick();
    const cue=id==='night_guy'?'phase: DASH':id==='kokuryuha'?'phase: CLOAK':id==='titan_transform'?'low shoulder tackle begins':id==='excalibur'?'raised light blade':'phase: WINDUP';
-   await waitFor(()=>output.slice(begin).includes(cue),id+' cancellation phase',22000);if(id==='night_guy')await waitFor(()=>a.entity.position.z>origin.z+4,'airborne dash before cancellation');a._testLeftClick();await waitFor(()=>clean()&&a.heldItem?.name==='amethyst_shard',id+' cancel cleanup');
+   await waitFor(()=>output.slice(begin).includes(cue),id+' cancellation phase',22000);if(id==='night_guy')await waitFor(()=>a.entity.position.z>origin.z+51&&a.entity.position.y>origin.y+3.8,'airborne dash before cancellation');a._testLeftClick();await waitFor(()=>clean()&&a.heldItem?.name==='amethyst_shard',id+' cancel cleanup');
    await sleep(300);const count=fx[0].length;await sleep(650);assert.equal(fx[0].length,count);assert.equal(fx[2].length,off);pass(id+' cancellation stops all particles and removes displays');
-   if(id==='night_guy'){assert.ok(a.entity.position.distanceTo(origin)<.02,'cancel returns to origin');consoleCommand('fill -3 -60 10 3 -50 10 minecraft:stone');await sleep(350);const wall=output.length;a._testLeftClick();await waitFor(()=>output.slice(wall).includes('flying kick impact;'),'kick stops at wall',20000);const reach=Number(output.slice(wall).match(/kick dash reach=([0-9.]+)/)[1]);assert.ok(reach>0&&reach<8);await waitFor(()=>clean()&&a.heldItem?.name==='amethyst_shard','wall kick cleanup',20000);consoleCommand('fill -3 -60 10 3 -50 10 minecraft:air');assert.ok(a.entity.position.distanceTo(origin)<.02);pass('Night Guy collision sweep stops before the wall and safely returns');}
+   if(id==='night_guy'){assert.ok(a.entity.position.distanceTo(origin)<.02,'cancel returns to origin');consoleCommand('fill -3 -60 60 3 -50 60 minecraft:stone');await sleep(350);const wall=output.length;a._testLeftClick();await waitFor(()=>output.slice(wall).includes('flying kick impact;'),'kick stops at wall',20000);const reach=Number(output.slice(wall).match(/kick dash reach=([0-9.]+)/)[1]);assert.ok(reach>0&&reach<8);await waitFor(()=>clean()&&a.heldItem?.name==='amethyst_shard','wall kick cleanup',20000);consoleCommand('fill -3 -60 60 3 -50 60 minecraft:air');assert.ok(a.entity.position.z>origin.z+50&&a.entity.position.z<origin.z+60);assert.ok(!(await readSaved(an)).data.BukkitValues?.['motionrp:aerial_return_v1']);pass('Night Guy stops before the wall and lands there without retreating');}
    if(slot<defs.length-1){a.setControlState('sneak',true);await sleep(250);a._testLeftClick();await sleep(250);a.setControlState('sneak',false);await sleep(250);}
   }
   consoleCommand(`motionrp give all ${bn}`);await waitFor(()=>b.inventory.items().some(i=>i.name==='amethyst_shard'),'full set without test motion');await b.equip(b.inventory.items().find(i=>i.name==='amethyst_shard'),'hand');await menu(b);assert.equal(registered(b),30);assert.ok(!JSON.stringify(b.currentWindow.slots.slice(0,54)).includes('前転'));await closeMenu(b);pass('Retired roll is absent from the full 30-motion controller');

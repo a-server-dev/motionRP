@@ -6,9 +6,10 @@ class BlackFlameMantleTest {
   for(int tick=208;tick<288;tick+=4){
    var points=BlackFlameMantle.samples(tick);
    assertTrue(points.stream().allMatch(p->p.forward()<-.4));
-   assertTrue(points.stream().anyMatch(p->p.height()>5));
-   assertTrue(points.stream().anyMatch(p->p.right()<-2.5));assertTrue(points.stream().anyMatch(p->p.right()>3.3));
+   assertTrue(points.stream().anyMatch(p->p.height()>3.2));
+   assertTrue(points.stream().anyMatch(p->p.right()<-1.7));assertTrue(points.stream().anyMatch(p->p.right()>1.9));
    assertTrue(points.stream().noneMatch(p->Math.abs(p.right())<.4&&p.height()<2));
+   assertTrue(points.stream().allMatch(p->p.height()<4&&Math.abs(p.right())<3.2),"Flames must stay compact");
    assertTrue(points.size()<300,"Bound per-viewer particle emission");
   }
  }
