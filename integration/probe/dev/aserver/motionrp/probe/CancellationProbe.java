@@ -25,7 +25,24 @@ public final class CancellationProbe extends JavaPlugin implements org.bukkit.ev
    case "orphan" -> {Object old=channels().remove(p.getUniqueId());if(old==null)throw new IllegalStateException("Viewer was not registered");saved.put(p.getUniqueId(),old);}
    case "restore" -> {Object old=saved.remove(p.getUniqueId());if(old==null)throw new IllegalStateException("No saved handler");channels().putIfAbsent(p.getUniqueId(),old);}
    case "duplicate" -> {boolean reproduced=false;try{BetterModel.platform().manager(kr.toxicity.model.api.manager.PlayerManager.class).player(kr.toxicity.model.api.bukkit.platform.BukkitAdapter.adapt(p));}catch(IllegalArgumentException e){if(!e.getMessage().contains("Duplicate handler name: bettermodel_channel_handler"))throw e;reproduced=true;}if(!reproduced)throw new IllegalStateException("Expected duplicate handler error");getLogger().info("CHANNEL_DUPLICATE_REPRODUCED");}
-   case "givepolicy" -> {var choices=plugin.onTabComplete(Bukkit.getConsoleSender(),plugin.getCommand("motionrp"),"motionrp",new String[]{"give","motion",""});if(choices.contains("infinity_castle")||!choices.contains("roll"))throw new IllegalStateException("Give completion policy failed");getLogger().info("GIVE_POLICY_OK");}
+   case "givepolicy" -> {var choices=plugin.onTabComplete(Bukkit.getConsoleSender(),plugin.getCommand("motionrp"),"motionrp",new String[]{"give",""});if(!choices.contains("motion")||choices.contains("all"))throw new IllegalStateException("Give completion policy failed");getLogger().info("GIVE_POLICY_OK");}
+   case "commandpolicy" -> {
+    if(plugin.getDescription().getCommands().size()!=1||plugin.getCommand("goalperformance")!=null||plugin.getCommand("hrperformance")!=null)throw new IllegalStateException("Legacy commands still registered");
+    var choices=plugin.onTabComplete(p,plugin.getCommand("motionrp"),"motionrp",new String[]{""});
+    for(String old:java.util.List.of("fusion","broly","balse","emperor_penguin_2"))if(choices.contains(old))throw new IllegalStateException("Direct playback completion retained");
+    var plain=net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText();
+    for(var definition:plugin.catalog().motions().values()){
+     var token=plugin.items().token(definition,1);var meta=token.getItemMeta();
+     if(meta.lore().stream().noneMatch(line->plain.serialize(line).contains("/motionrp give controller")))throw new IllegalStateException("Missing token hint: "+definition.id());
+     meta.lore(java.util.List.of(net.kyori.adventure.text.Component.text("custom lore")));token.setItemMeta(meta);
+     plugin.items().refreshName(token);plugin.items().refreshName(token);
+     var lines=token.getItemMeta().lore();if(lines.size()!=2||!plain.serialize(lines.getFirst()).equals("custom lore"))throw new IllegalStateException("Token hint migration not idempotent");
+    }
+    int count=0;var codec=new dev.aserver.motionrp.core.LoadoutCodec();
+    for(var item:p.getInventory().getContents())if(item!=null){var meta=item.getItemMeta();var data=meta.getPersistentDataContainer().get(new org.bukkit.NamespacedKey(plugin,"controller_loadout_v1"),org.bukkit.persistence.PersistentDataType.BYTE_ARRAY);if(data!=null){dev.aserver.motionrp.core.Loadout state;try{state=codec.decode(data);}catch(java.io.IOException e){throw new java.io.UncheckedIOException(e);}count+=state.count();for(int i=0;i<dev.aserver.motionrp.core.Loadout.SIZE;i++)if(state.slot(i)!=null&&state.slot(i).id().equals("infinity_castle"))throw new IllegalStateException("Unavailable motion in full set");}}
+    if(count!=plugin.catalog().motions().values().stream().filter(dev.aserver.motionrp.MotionCatalog.Definition::obtainable).count())throw new IllegalStateException("Full set missing tokens");
+    getLogger().info("COMMAND_POLICY_OK");
+   }
    case "oldcastle" -> p.getInventory().addItem(plugin.items().token(plugin.catalog().motions().get("infinity_castle"),1));
    case "legacy27" -> {
     try{var state=plugin.loadouts().read(p);var bytes=new java.io.ByteArrayOutputStream();var out=new java.io.DataOutputStream(bytes);

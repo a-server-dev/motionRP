@@ -10,6 +10,7 @@ import org.bukkit.persistence.PersistentDataType;
 import java.util.List;
 
 public final class MotionItems {
+    private static final String CONTROLLER_HINT="/motionrp give controller で専用セットアイテムを入手できます";
     private final MotionPlugin plugin;
     private final NamespacedKey kind;
     private final NamespacedKey motion;
@@ -73,6 +74,7 @@ public final class MotionItems {
         var lore=new java.util.ArrayList<Component>(List.of(text("GUIでこのアイテムをクリックして1個登録", NamedTextColor.GRAY),
                 text("モーション: " + definition.id(), NamedTextColor.DARK_GRAY)));
         if(dev.aserver.motionrp.core.PairMotion.fromEffect(definition.effect()).isPresent())lore.add(text("二人用: 左クリックで最寄りの相手へ招待（8ブロック以内）",NamedTextColor.YELLOW));
+        lore.add(text(CONTROLLER_HINT,NamedTextColor.YELLOW));
         meta.lore(lore);
         meta.getPersistentDataContainer().set(kind, PersistentDataType.STRING, "motion");
         meta.getPersistentDataContainer().set(motion, PersistentDataType.STRING, definition.id());
@@ -94,7 +96,10 @@ public final class MotionItems {
             stack.setItemMeta(original);return;
         }
         String id=motionId(stack);if(id==null)return;
-        var meta=stack.getItemMeta();if(meta.displayName()==null)return;
+        var meta=stack.getItemMeta();
+        var lore=new java.util.ArrayList<Component>(meta.lore()==null?List.of():meta.lore());
+        if(lore.stream().noneMatch(line->net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(line).equals(CONTROLLER_HINT)))lore.add(text(CONTROLLER_HINT,NamedTextColor.YELLOW));
+        meta.lore(lore);stack.setItemMeta(meta);if(meta.displayName()==null)return;
         String old=net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(meta.displayName());
         String next=MotionNames.updated(id,old);
         if(!old.equals(next)){meta.displayName(text(next,NamedTextColor.AQUA));stack.setItemMeta(meta);}

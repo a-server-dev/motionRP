@@ -290,24 +290,35 @@ if(process.env.MOTIONRP_GIVE_ONLY==='1'){
  try{
   fs.copyFileSync(path.join(project,`build/libs/motionRP-${version}.jar`),path.join(run,'plugins/MotionRP.jar'));
   log=fs.createWriteStream(path.join(project,'build/give-smoke.log'));await startServer();
+  assert(output.includes('LuckPerms'),'LuckPerms is installed for this permission test');
   const suffix=String(Date.now()).slice(-5),an='EmeraldREX91',bn='GiveNo'+suffix,cn='GiveOp'+suffix;
   const a=await connect(an),b=await connect(bn),c=await connect(cn);
-  consoleCommand('deop '+an);consoleCommand('deop '+bn);consoleCommand('op '+cn);for(const name of [an,bn,cn])consoleCommand('clear '+name);await sleep(400);
+  consoleCommand('deop '+an);consoleCommand('deop '+bn);consoleCommand('op '+cn);for(const name of [an,bn,cn]){consoleCommand('lp user '+name+' permission clear');consoleCommand('clear '+name);}await sleep(800);
   const sets=bot=>bot.inventory.items().filter(i=>i.name==='amethyst_shard').length;
-  a.chat('/motionrp give controller');await waitFor(()=>sets(a)===1,'named non-OP receives controller');
-  a.chat('/motionrp give motion fire_tornado 1');await waitFor(()=>tokens(a)===1,'named non-OP receives motion token');
-  a.chat('/motionrp give all');await waitFor(()=>sets(a)===3,'named non-OP receives both full-controller pages');
-  a.chat('/motionrp give controller '+bn);await waitFor(()=>sets(b)===1,'named non-OP may distribute to another player');
-  pass('EmeraldREX91 without OP can use controller, motion and all give subcommands, including another recipient');
-  for(const command of ['status','configreload','pack publish']){
-   const start=a._testMessages.length;a.chat('/motionrp '+command);await waitFor(()=>a._testMessages.slice(start).some(m=>m.includes('管理者権限')),'named player receives no extra admin access: '+command);
-  }
-  pass('The named exception does not grant status, configuration reload or pack publication');
-  const denied=b._testMessages.length;b.chat('/motionrp give all');await waitFor(()=>b._testMessages.slice(denied).some(m=>m.includes('OPまたはEmeraldREX91')),'other non-OP is denied');assert.equal(sets(b),1);
-  c.chat('/motionrp give controller');await waitFor(()=>sets(c)===1,'OP receives controller');
-  consoleCommand('deop '+cn);await sleep(300);const afterDeop=c._testMessages.length;c.chat('/motionrp give motion fire_tornado');await waitFor(()=>c._testMessages.slice(afterDeop).some(m=>m.includes('OPまたはEmeraldREX91')),'de-OP immediately loses give access');assert.equal(tokens(c),0);
-  consoleCommand('motionrp give motion fire_tornado 1 '+cn);await waitFor(()=>tokens(c)===1,'console distribution remains available');
-  pass('OP is allowed, other non-OPs and de-OPed players are denied, and console distribution still works');
+  b.chat('/motionrp give controller');await waitFor(()=>sets(b)===1,'ordinary player gets empty controller');
+  a.chat('/motionrp give motion');await waitFor(()=>sets(a)===1,'named non-OP receives full set');
+  c.chat('/motionrp give motion');await waitFor(()=>sets(c)===1,'OP receives full set');
+  consoleCommand('motionprobe commandpolicy '+an);await waitFor(()=>output.includes('COMMAND_POLICY_OK'),'command registration, completions and all item lore');
+  pass('Public empty controllers, restricted full sets, removed direct commands and every token lore verified');
+  let start=b._testMessages.length;b.chat('/motionrp give motion');await waitFor(()=>b._testMessages.slice(start).some(m=>m.includes('OPまたはEmeraldREX91')),'ordinary player denied full set');
+  consoleCommand('lp user '+bn+' permission set motionrp.give.motion true');await sleep(700);
+  start=b._testMessages.length;b.chat('/motionrp give motion');await waitFor(()=>b._testMessages.slice(start).some(m=>m.includes('OPまたはEmeraldREX91')),'LP grant does not bypass eligibility');assert.equal(sets(b),1);
+  start=b._testMessages.length;b.chat('/motionrp give controller '+cn);await waitFor(()=>b._testMessages.slice(start).some(m=>m.includes('他のプレイヤー')),'public controller cannot spam others');
+  consoleCommand('lp user '+bn+' permission set motionrp.give.controller false');await sleep(700);
+  start=b._testMessages.length;b.chat('/motionrp give controller');await waitFor(()=>b._testMessages.slice(start).some(m=>m.includes('権限がありません')),'LP deny controller');assert.equal(sets(b),1);
+  consoleCommand('lp user '+an+' permission set motionrp.give.motion false');await sleep(700);
+  start=a._testMessages.length;a.chat('/motionrp give motion');await waitFor(()=>a._testMessages.slice(start).some(m=>m.includes('OPまたはEmeraldREX91')),'LP deny named exception');assert.equal(sets(a),1);
+  consoleCommand('lp user '+an+' permission unset motionrp.give.motion');await sleep(700);
+  a.chat('/motionrp give motion '+bn);await waitFor(()=>sets(b)===2,'named player can distribute full sets to others');
+  consoleCommand('motionrp give motion '+cn);await waitFor(()=>sets(c)===2,'console distribution');
+  pass('LuckPerms explicit denials work; positive grants cannot bypass OP/name restriction; named and console target distribution works');
+  for(const command of ['give all','give motion fire_tornado','fusion','broly','balse']){start=a._testMessages.length;a.chat('/motionrp '+command);await waitFor(()=>a._testMessages.length>start,'obsolete command handled');}assert.equal(tokens(a),0);assert.equal(sets(a),1);
+  consoleCommand('lp user '+bn+' permission set motionrp.status true');await sleep(700);
+  start=b._testMessages.length;b.chat('/motionrp status');await waitFor(()=>b._testMessages.slice(start).some(m=>m.includes('BetterModel')),'LP grants status without other admin commands');
+  start=b._testMessages.length;b.chat('/motionrp configreload');await waitFor(()=>b._testMessages.slice(start).some(m=>m.includes('管理者権限')),'LP status does not grant config reload');
+  consoleCommand('lp user '+bn+' permission set motionrp.use false');await sleep(700);
+  for(const command of ['gui','view off','accept','reload','laststop']){start=b._testMessages.length;b.chat('/motionrp '+command);await waitFor(()=>b._testMessages.slice(start).some(m=>m.includes('権限がありません')),'use deny '+command);}
+  pass('Legacy give/direct playback entrances no longer execute; granular LuckPerms status grant and use denial verified');
  }catch(e){code=1;console.error(e.stack);}
  finally{for(const bot of bots)try{bot.quit();}catch{}try{await stopServer();}catch{}log?.end();fs.writeFileSync(path.join(project,'build/give-smoke-result.json'),JSON.stringify({passed:code===0,version,checks},null,2));}
  process.exit(code);

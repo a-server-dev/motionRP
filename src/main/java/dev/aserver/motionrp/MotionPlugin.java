@@ -121,9 +121,6 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
         var command = Objects.requireNonNull(getCommand("motionrp"));
         command.setExecutor(this);
         command.setTabCompleter(this);
-        var performances=new PerformanceCommands(this);
-        getServer().getPluginManager().registerEvents(performances,this);
-        for(String name:java.util.List.of("goalperformance","hrperformance")){var c=Objects.requireNonNull(getCommand(name));c.setExecutor(performances);c.setTabCompleter(performances);}
         getLogger().info("MotionRP enabled: " + catalog.motions().size() + " motion(s), 54 slots per player.");
         controllerAssets=new ControllerAssets(this);
         // BetterModel may start its initial pack before dependent plugins enable.
@@ -175,12 +172,8 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
             tell(sender,playback.lastStop(player.getUniqueId()));return true;
         }
         if(args.length>0&&args[0].equalsIgnoreCase("accept")){
-            if(!(sender instanceof Player p)){tell(sender,"プレイヤーのみ実行できます。");return true;}if(args.length>2){tell(sender,"/motionrp accept [招待ID]");return true;}return fusion.acceptCurrent(p,args.length==2?args[1]:null);
+            if(!(sender instanceof Player p)){tell(sender,"プレイヤーのみ実行できます。");return true;}if(!p.hasPermission("motionrp.use")){tell(sender,"権限がありません。");return true;}if(args.length>2){tell(sender,"/motionrp accept [招待ID]");return true;}return fusion.acceptCurrent(p,args.length==2?args[1]:null);
         }
-        if(args.length>0&&args[0].equalsIgnoreCase("emperor_penguin_2")){if(sender instanceof Player p)return fusion.penguin(p,args);tell(sender,"プレイヤーのみ実行できます。");return true;}
-        if(args.length>0&&args[0].equalsIgnoreCase("balse")){if(sender instanceof Player p)return fusion.balse(p,args);tell(sender,"プレイヤーのみ実行できます。");return true;}
-        if(args.length>0&&args[0].equalsIgnoreCase("broly")){if(sender instanceof Player p)return fusion.broly(p,args);tell(sender,"プレイヤーのみ実行できます。");return true;}
-        if(args.length>0&&args[0].equalsIgnoreCase("fusion")){if(sender instanceof Player p)return fusion.command(p,args);tell(sender,"プレイヤーのみ実行できます。");return true;}
         if(args.length>0 && args[0].equalsIgnoreCase("view")){
             if(!(sender instanceof Player player)){tell(sender,"プレイヤーのみ実行できます。");return true;}
             if(!player.hasPermission("motionrp.use")){tell(sender,"権限がありません。");return true;}
@@ -190,7 +183,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
             tell(sender,"MotionRPの演出表示: "+(value?"ON":"OFF")+"（保存済み）");return true;
         }
         if (args.length == 0 || args[0].equalsIgnoreCase("gui")) {
-            if (sender instanceof Player player) menu.open(player);
+            if (sender instanceof Player player) {if(player.hasPermission("motionrp.use"))menu.open(player);else tell(sender,"権限がありません。");}
             else tell(sender, "プレイヤーのみ実行できます。");
             return true;
         }
@@ -201,9 +194,10 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
             if(resourcePack==null)tell(sender,packStatus());else resourcePack.reload(player);
             return true;
         }
-        boolean giving=args[0].equalsIgnoreCase("give");
-        if(giving?!canGive(sender):!sender.hasPermission("motionrp.admin")){
-            tell(sender,giving?"give はOPまたはEmeraldREX91のみ利用できます。":"管理者権限が必要です。");return true;
+        String action=args[0].toLowerCase(Locale.ROOT);
+        if(!List.of("give","configreload","status","pack").contains(action)){usage(sender);return true;}
+        if(!action.equals("give")&&!sender.hasPermission("motionrp."+action)){
+            tell(sender,"管理者権限が必要です。");return true;
         }
         try {
             switch (args[0].toLowerCase(Locale.ROOT)) {
@@ -228,6 +222,7 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
                     }
                 }
                 case "pack" -> {
+                    if(args.length>2||(args.length==2&&!List.of("status","publish").contains(args[1].toLowerCase(Locale.ROOT)))){tell(sender,"/motionrp pack [status|publish]");return true;}
                     if(args.length==2 && args[1].equalsIgnoreCase("publish")) {
                         tell(sender,resourcePack!=null && resourcePack.publishNow()?"パックの確認と公開を予約しました。/motionrp pack status で確認できます。":"resource-pack.enabled を有効にしてください。");
                     } else tell(sender,"リソースパック: "+packStatus());
@@ -241,75 +236,51 @@ public final class MotionPlugin extends JavaPlugin implements CommandExecutor, T
         return true;
     }
 
-    private boolean canGive(CommandSender sender){
-        if(sender instanceof Player player)return dev.aserver.motionrp.core.GiveAccess.playerAllowed(player.getName(),player.isOp());
-        return sender instanceof ConsoleCommandSender || sender instanceof RemoteConsoleCommandSender;
+    private boolean canGiveMotion(CommandSender sender){
+        boolean eligible=sender instanceof Player player
+                ? dev.aserver.motionrp.core.GiveAccess.playerAllowed(player.getName(),player.isOp())
+                : sender instanceof ConsoleCommandSender || sender instanceof RemoteConsoleCommandSender;
+        return eligible&&(!sender.isPermissionSet("motionrp.give.motion")||sender.hasPermission("motionrp.give.motion"));
+    }
+    private boolean canGiveOthers(CommandSender sender){
+        return canGiveMotion(sender)&&(!sender.isPermissionSet("motionrp.give.others")||sender.hasPermission("motionrp.give.others"));
     }
     private void give(CommandSender sender, String[] args) {
-        if (args.length < 2) { usage(sender); return; }
-        if(args[1].equalsIgnoreCase("all")&&args.length<=3){
-            Player target=args.length==3?Bukkit.getPlayerExact(args[2]):(sender instanceof Player p?p:null);
-            if(target==null){tell(sender,"オンラインの配布先プレイヤーを指定してください。");return;}
-            if(target.getOpenInventory().getTopInventory().getHolder() instanceof LoadoutMenu.Holder){tell(sender,"配布先の登録GUIを閉じてから配布してください。");return;}
-            var sets=items.completeControllers(catalog);long empty=java.util.Arrays.stream(target.getInventory().getStorageContents()).filter(i->i==null||i.getType().isAir()).count();
-            if(empty<sets.size()){tell(sender,"配布先の所持品に空きがありません。");return;}
-            target.getInventory().addItem(sets.toArray(ItemStack[]::new));target.saveData();tell(sender,target.getName()+" に全種セットを "+sets.size()+" 個配布しました。");return;
+        if(args.length<2||args.length>3||!List.of("controller","motion").contains(args[1].toLowerCase(Locale.ROOT))){usage(sender);return;}
+        boolean full=args[1].equalsIgnoreCase("motion");
+        if(full?!canGiveMotion(sender):!sender.hasPermission("motionrp.give.controller")){
+            tell(sender,full?"全種セットの配布はOPまたはEmeraldREX91のみ利用できます（権限設定も確認してください）。":"権限がありません。");return;
         }
-        ItemStack item;
-        String targetName;
-        if (args[1].equalsIgnoreCase("controller") && args.length <= 3) {
-            item = items.controller(catalog);
-            targetName = args.length == 3 ? args[2] : null;
-
-        } else if (args[1].equalsIgnoreCase("motion") && args.length >= 3 && args.length <= 5) {
-            var definition = catalog.motions().get(args[2]);
-            if (definition == null) throw new IllegalArgumentException("Unknown motion: " + args[2]);
-            if(!definition.obtainable()){tell(sender,"このモーションは現在入手できません: "+definition.name());return;}
-            int amount = args.length >= 4 ? Integer.parseInt(args[3]) : 1;
-            item = items.token(definition, amount);
-            targetName = args.length == 5 ? args[4] : null;
-        } else { usage(sender); return; }
-        Player target = targetName == null ? (sender instanceof Player p ? p : null) : Bukkit.getPlayerExact(targetName);
-        if (target == null) { tell(sender, "オンラインの配布先プレイヤーを指定してください。"); return; }
-        if (target.getOpenInventory().getTopInventory().getHolder() instanceof LoadoutMenu.Holder) {
-            tell(sender, "配布先の登録GUIを閉じてから配布してください。"); return;
-        }
-        if (!LoadoutMenu.fits(target.getInventory(), item)) { tell(sender, "配布先の所持品に空きがありません。"); return; }
-        target.getInventory().addItem(item);
-        target.saveData();
-        tell(sender, target.getName() + " に " + item.getAmount() + " 個配布しました。");
+        Player target=args.length==3?Bukkit.getPlayerExact(args[2]):(sender instanceof Player p?p:null);
+        if(target==null){tell(sender,"オンラインの配布先プレイヤーを指定してください。");return;}
+        if(target!=sender&&!canGiveOthers(sender)){tell(sender,"他のプレイヤーへの配布権限がありません。");return;}
+        if(target.getOpenInventory().getTopInventory().getHolder() instanceof LoadoutMenu.Holder){tell(sender,"配布先の登録GUIを閉じてから配布してください。");return;}
+        var sets=full?items.completeControllers(catalog):List.of(items.controller(catalog));
+        long empty=java.util.Arrays.stream(target.getInventory().getStorageContents()).filter(i->i==null||i.getType().isAir()).count();
+        if(empty<sets.size()){tell(sender,"配布先の所持品に空きがありません。");return;}
+        target.getInventory().addItem(sets.toArray(ItemStack[]::new));target.saveData();
+        tell(sender,target.getName()+" に"+(full?"全種セット":"専用セット")+"を "+sets.size()+" 個配布しました。");
     }
 
     private void usage(CommandSender sender) {
-        tell(sender, "/motionrp gui | view [on|off] | laststop | reload | status | configreload | pack status | pack publish");
-        tell(sender, "/motionrp balse [相手] | balse accept [招待者] | balse cancel");
-        tell(sender, "/motionrp broly [相手] | broly accept [招待者] | broly cancel");
-        tell(sender,"/motionrp accept — 届いている招待に参加");
-        tell(sender, "/motionrp fusion [相手] | fusion accept [招待者] | fusion cancel");
-        tell(sender, "/motionrp give controller [プレイヤー] | give all [プレイヤー]");
-        tell(sender, "/motionrp give motion <ID> [個数1〜64] [プレイヤー]");
+        tell(sender,"/motionrp gui | view [on|off] | accept [招待ID] | laststop | reload");
+        tell(sender,"/motionrp give controller [プレイヤー] | give motion [プレイヤー]");
+        tell(sender,"/motionrp status | configreload | pack [status|publish]");
     }
 
     @Override public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         List<String> choices = new ArrayList<>();
-        if (args.length == 1) {
-            choices.add("gui");choices.add("view");choices.add("fusion");choices.add("broly");choices.add("balse");choices.add("accept");choices.add("laststop");choices.add("reload");
-            if(canGive(sender))choices.add("give");
-            if (sender.hasPermission("motionrp.admin")) choices.addAll(List.of("configreload", "status", "pack"));
-        } else if((args.length==2||args.length==3)&&(args[0].equalsIgnoreCase("fusion")||args[0].equalsIgnoreCase("broly")||args[0].equalsIgnoreCase("balse"))){if(args.length==2)choices.addAll(List.of("accept","cancel"));
-            if(args.length==2||args[1].equalsIgnoreCase("accept"))Bukkit.getOnlinePlayers().stream().filter(p->p!=sender&&(!(sender instanceof Player viewer)||viewer.canSee(p))).forEach(p->choices.add(p.getName()));
-        } else if(args.length==2 && args[0].equalsIgnoreCase("view")){choices.addAll(List.of("on","off"));
-        } else if(sender.hasPermission("motionrp.admin") && args[0].equalsIgnoreCase("pack") && args.length==2) {
-            choices.addAll(List.of("status","publish"));
-        } else if (canGive(sender) && args[0].equalsIgnoreCase("give")) {
-            if (args.length == 2) choices.addAll(List.of("controller", "motion", "all"));
-            else if (args.length == 3 && args[1].equalsIgnoreCase("motion")) choices.addAll(catalog.motions().values().stream().filter(MotionCatalog.Definition::obtainable).map(MotionCatalog.Definition::id).toList());
-            else if (args.length == 4 && args[1].equalsIgnoreCase("motion")) choices.addAll(List.of("1", "16", "64"));
-            else if ((args.length == 3 && (args[1].equalsIgnoreCase("controller")||args[1].equalsIgnoreCase("all"))) || (args.length == 5 && args[1].equalsIgnoreCase("motion"))) {
-                Bukkit.getOnlinePlayers().forEach(p -> choices.add(p.getName()));
-            }
+        if(args.length==1){
+            if(sender instanceof Player&&sender.hasPermission("motionrp.use"))choices.addAll(List.of("gui","view","accept","laststop","reload"));
+            if(canGiveMotion(sender)||sender.hasPermission("motionrp.give.controller"))choices.add("give");
+            for(String action:List.of("configreload","status","pack"))if(sender.hasPermission("motionrp."+action))choices.add(action);
+        }else if(args.length==2&&args[0].equalsIgnoreCase("view")&&sender.hasPermission("motionrp.use")){choices.addAll(List.of("on","off"));
+        }else if(args.length==2&&args[0].equalsIgnoreCase("pack")&&sender.hasPermission("motionrp.pack")){choices.addAll(List.of("status","publish"));
+        }else if(args[0].equalsIgnoreCase("give")){
+            if(args.length==2){if(sender.hasPermission("motionrp.give.controller"))choices.add("controller");if(canGiveMotion(sender))choices.add("motion");}
+            else if(args.length==3&&canGiveOthers(sender)&&(args[1].equalsIgnoreCase("motion")||args[1].equalsIgnoreCase("controller")))Bukkit.getOnlinePlayers().forEach(p->choices.add(p.getName()));
         }
-        String prefix = args.length == 0 ? "" : args[args.length - 1].toLowerCase(Locale.ROOT);
-        return choices.stream().filter(c -> c.toLowerCase(Locale.ROOT).startsWith(prefix)).toList();
+        String prefix=args.length==0?"":args[args.length-1].toLowerCase(Locale.ROOT);
+        return choices.stream().filter(c->c.toLowerCase(Locale.ROOT).startsWith(prefix)).toList();
     }
 }

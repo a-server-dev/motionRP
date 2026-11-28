@@ -53,8 +53,8 @@ final class FusionCoordinator implements AutoCloseable {
   for(boolean left:new boolean[]{true,false}){String error=plugin.playback().unavailable(definition(left,command));if(error!=null){plugin.tell(player,error);return true;}}
   if(accept){var session=sessions.accept(player.getUniqueId(),other.getUniqueId(),System.currentTimeMillis(),command);if(session.isEmpty()){plugin.tell(player,"その相手からの有効な招待がありません。");return true;}start(other,player,command);}
   else if(sessions.invite(player.getUniqueId(),other.getUniqueId(),System.currentTimeMillis(),command)){
-   plugin.tell(player,other.getName()+" に招待しました（30秒）。");plugin.tell(other,player.getName()+" と"+title+": /motionrp "+command+" accept "+player.getName()+"（30秒以内）"+(broly?" 招待者=ブロリー側、あなた=相手役":battle?" 招待者=ナルト、あなた=サスケ":""));
    var invite=sessions.incoming(other.getUniqueId(),System.currentTimeMillis()).orElseThrow();
+   plugin.tell(player,other.getName()+" に招待しました（30秒）。");plugin.tell(other,player.getName()+" と"+title+": /motionrp accept "+invite.id()+"（30秒以内）"+(broly?" 招待者=ブロリー側、あなた=相手役":battle?" 招待者=ナルト、あなた=サスケ":""));
    other.sendMessage(Component.text("[MotionRP] ",NamedTextColor.GOLD).append(Component.text("(accept)",NamedTextColor.GREEN).decorate(TextDecoration.BOLD).clickEvent(ClickEvent.runCommand("/motionrp accept "+invite.id())).hoverEvent(Component.text("クリックしてこの招待に参加",NamedTextColor.WHITE))).append(Component.text("  モーションセットの右クリックでも参加できます。",NamedTextColor.WHITE)));
   }
   else plugin.tell(player,"二人のどちらかが招待・再生中です。");

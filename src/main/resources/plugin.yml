@@ -8,20 +8,33 @@ commands:
   motionrp:
     description: モーションの登録・管理
     aliases: [mrp]
-    usage: /motionrp [gui|view|fusion|broly|balse|accept|laststop|give|reload|configreload|status|pack]
-  goalperformance:
-    description: ゴールパフォーマンスを直接再生
-    usage: /goalperformance [ronaldo|mbappe|kneeslide|kazu|stop]
-  hrperformance:
-    description: ホームランパフォーマンスを直接再生
-    usage: /hrperformance [yamakawa|matsuda|destasha|stop]
+    usage: /motionrp [gui|view|accept|laststop|give|reload|configreload|status|pack]
 permissions:
-  motionrp.performance:
-    description: ゴール・ホームランパフォーマンスのコマンド再生
-    default: true
   motionrp.use:
-    description: モーションの登録・再生
+    description: 登録GUI・アイテム再生・表示切替・招待承諾・個人パック再適用
     default: true
+  motionrp.give.controller:
+    description: 自分用の空の専用セットを入手
+    default: true
+  motionrp.give.motion:
+    description: 全種セット配布（OPまたはEmeraldREX91限定、明示的な拒否を優先）
+    default: op
+  motionrp.give.others:
+    description: 他プレイヤーへのセット配布（OPまたはEmeraldREX91限定）
+    default: op
   motionrp.admin:
-    description: 設定の再読み込み・状態確認・パック管理（giveはOPまたはEmeraldREX91のみ）
+    description: 設定・状態確認・パック管理
+    default: op
+    children:
+      motionrp.configreload: true
+      motionrp.status: true
+      motionrp.pack: true
+  motionrp.configreload:
+    description: 設定再読込
+    default: op
+  motionrp.status:
+    description: 状態確認
+    default: op
+  motionrp.pack:
+    description: リソースパック状態確認・公開
     default: op
